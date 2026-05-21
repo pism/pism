@@ -17,19 +17,16 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/coupler/ocean/Frac_SMB.hh"
-#include "pism/util/ScalarForcing.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/ScalarForcing.hh"
 
 namespace pism {
 namespace ocean {
 
 Frac_SMB::Frac_SMB(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in)
-  : OceanModel(g, in) {
+    : OceanModel(g, in) {
 
-  m_forcing.reset(new ScalarForcing(*g->ctx(),
-                                    "ocean.frac_mass_flux",
-                                    "frac_mass_flux",
-                                    "1", "1",
+  m_forcing.reset(new ScalarForcing(*g->ctx(), "ocean.frac_mass_flux", "frac_mass_flux", "1", "1",
                                     "ice-shelf-base mass flux factor"));
 
   m_shelf_base_mass_flux = allocate_shelf_base_mass_flux(g);
@@ -43,8 +40,7 @@ void Frac_SMB::init_impl(const Geometry &geometry) {
 
   m_input_model->init(geometry);
 
-  m_log->message(2,
-                 "* Initializing ice shelf base mass flux forcing using scalar offsets...\n");
+  m_log->message(2, "* Initializing ice shelf base mass flux forcing using scalar offsets...\n");
 }
 
 void Frac_SMB::update_impl(const Inputs &inputs, double t, double dt) {
@@ -54,7 +50,7 @@ void Frac_SMB::update_impl(const Inputs &inputs, double t, double dt) {
   m_shelf_base_mass_flux->scale(m_forcing->value(t + 0.5 * dt));
 }
 
-const array::Scalar& Frac_SMB::shelf_base_mass_flux_impl() const {
+const array::Scalar &Frac_SMB::shelf_base_mass_flux_impl() const {
   return *m_shelf_base_mass_flux;
 }
 

@@ -87,7 +87,7 @@ public:
   virtual ~BTU_Full() = default;
 
   //! Bedrock thermal layer temperature field.
-  const array::Array3D& temperature() const;
+  const array::Array3D &temperature() const;
 
 protected:
   virtual void bootstrap(const array::Scalar &bedrock_top_temperature);
@@ -101,11 +101,11 @@ protected:
   virtual MaxTimestep max_timestep_impl(double my_t) const;
 
   using BedThermalUnit::update_impl;
-  virtual void update_impl(const array::Scalar &bedrock_top_temperature,
-                           double t, double dt);
+  virtual void update_impl(const array::Scalar &bedrock_top_temperature, double t, double dt);
 
   virtual std::set<VariableMetadata> state_impl() const;
   virtual void write_state_impl(const OutputFile &output) const;
+
 protected:
   //! bedrock thermal layer temperature, in kelvin; part of state; uses equally-spaced
   //! layers.

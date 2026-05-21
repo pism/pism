@@ -20,8 +20,8 @@
 #ifndef _PISMUNITS_H_
 #define _PISMUNITS_H_
 
-#include <string>
 #include <memory>
+#include <string>
 
 namespace pism {
 
@@ -45,6 +45,7 @@ class System {
 public:
   System(const std::string &path = "");
   typedef std::shared_ptr<System> Ptr;
+
 private:
   friend class Unit;
 
@@ -52,11 +53,11 @@ private:
   std::shared_ptr<Impl> m_impl;
 
   System(const System &);
-  System& operator=(System const &);
+  System &operator=(System const &);
 };
 
-double convert(System::Ptr system, double input,
-               const std::string &spec1, const std::string &spec2);
+double convert(System::Ptr system, double input, const std::string &spec1,
+               const std::string &spec2);
 
 struct DateTime {
   int year, month, day, hour, minute;
@@ -73,12 +74,13 @@ public:
   DateTime date(double T, const std::string &calendar) const;
   double time(const DateTime &d, const std::string &calendar) const;
 
-  Unit& operator=(const Unit& other);
+  Unit &operator=(const Unit &other);
   std::string string() const;
 
   operator std::string() const;
 
   System::Ptr system() const;
+
 private:
   friend class Converter;
   void reset();
@@ -113,14 +115,14 @@ public:
    */
   void convert_doubles(double *data, size_t length) const;
   double operator()(double input) const;
-private:
 
+private:
   struct Impl;
   std::shared_ptr<Impl> m_impl;
 
   // hide copy constructor and the assignment operator
   Converter(const Converter &);
-  Converter& operator=(Converter const &);
+  Converter &operator=(Converter const &);
 };
 
 } // end of namespace units

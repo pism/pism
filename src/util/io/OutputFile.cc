@@ -18,8 +18,8 @@
  */
 #include <string>
 
-#include "pism/util/io/OutputWriter.hh"
 #include "pism/util/VariableMetadata.hh"
+#include "pism/util/io/OutputWriter.hh"
 
 namespace pism {
 
@@ -54,20 +54,21 @@ void OutputFile::write_array(const std::string &variable_name,
 }
 
 void OutputFile::write_distributed_array(const std::string &variable_name,
-                                        const double *input) const {
+                                         const double *input) const {
   m_writer->write_distributed_array(m_file_name, variable_name, input);
 }
 
 void OutputFile::write_timeseries(const std::string &variable_name,
-                                           const std::vector<unsigned int> &start,
-                                           const std::vector<unsigned int> &count,
-                                           const std::vector<double> &input) const {
+                                  const std::vector<unsigned int> &start,
+                                  const std::vector<unsigned int> &count,
+                                  const std::vector<double> &input) const {
   m_writer->write_timeseries(m_file_name, variable_name, start, count, input);
 }
 
 void OutputFile::write_text(const std::string &variable_name,
                             const std::vector<unsigned int> &start,
-                            const std::vector<unsigned int> &count, const std::string &input) const {
+                            const std::vector<unsigned int> &count,
+                            const std::string &input) const {
   m_writer->write_text(m_file_name, variable_name, start, count, input);
 }
 

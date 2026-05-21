@@ -17,8 +17,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/stressbalance/ssa/tests/SSATestCase.hh"
-#include "pism/stressbalance/ssa/SSAFD_SNES.hh"
 #include "pism/stressbalance/StressBalance.hh"
+#include "pism/stressbalance/ssa/SSAFD_SNES.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Interpolation1D.hh"
 #include "pism/util/io/File.hh"
@@ -29,8 +29,8 @@
 #include "pism/stressbalance/ssa/SSAFEM.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/io/SynchronousOutputWriter.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/io/SynchronousOutputWriter.hh"
 #include "pism/util/io/io_helpers.hh"
 #include <vector>
 
@@ -38,16 +38,16 @@ namespace pism {
 namespace stressbalance {
 
 SSATestCase::SSATestCase(std::shared_ptr<SSA> ssa)
-  : m_grid(ssa->grid()),
-    m_ctx(m_grid->ctx()),
-    m_config(m_ctx->config()),
-    m_sys(m_ctx->unit_system()),
-    m_tauc(m_grid, "tauc"),
-    m_ice_enthalpy(m_grid, "enthalpy", array::WITH_GHOSTS, m_grid->z(), 1),
-    m_bc_values(m_grid, "_bc"), // u_bc and v_bc
-    m_bc_mask(m_grid, "bc_mask"),
-    m_geometry(m_grid),
-    m_ssa(ssa) {
+    : m_grid(ssa->grid()),
+      m_ctx(m_grid->ctx()),
+      m_config(m_ctx->config()),
+      m_sys(m_ctx->unit_system()),
+      m_tauc(m_grid, "tauc"),
+      m_ice_enthalpy(m_grid, "enthalpy", array::WITH_GHOSTS, m_grid->z(), 1),
+      m_bc_values(m_grid, "_bc"), // u_bc and v_bc
+      m_bc_mask(m_grid, "bc_mask"),
+      m_geometry(m_grid),
+      m_ssa(ssa) {
 
   m_bc_mask.set_interpolation_type(NEAREST);
 
@@ -71,7 +71,7 @@ SSATestCase::SSATestCase(std::shared_ptr<SSA> ssa)
       .units("m s^-1")
       .output_units("m year^-1");
 
-  units::System::Ptr sys  = m_grid->ctx()->unit_system();
+  units::System::Ptr sys = m_grid->ctx()->unit_system();
   double fill_value =
       units::convert(sys, m_config->get_number("output.fill_value"), "m year^-1", "m second^-1");
 
@@ -99,7 +99,7 @@ std::shared_ptr<SSA> SSATestCase::solver(std::shared_ptr<Grid> grid, const std::
   if (method == "fd") {
     return std::make_shared<SSAFD>(grid, false);
   }
-  return  std::make_shared<SSAFD_SNES>(grid, false);
+  return std::make_shared<SSAFD_SNES>(grid, false);
 }
 
 //! Initialize the test case at the start of a run
@@ -208,11 +208,8 @@ void SSATestCase::report(const std::string &testname) {
 }
 
 namespace details {
-static void write(const File &file, const char *name,
-                  const char *units,
-                  const char *long_name,
-                  unsigned int start, double value,
-                  io::Type type = io::PISM_DOUBLE) {
+static void write(const File &file, const char *name, const char *units, const char *long_name,
+                  unsigned int start, double value, io::Type type = io::PISM_DOUBLE) {
   file.define_dimension("N", io::PISM_UNLIMITED);
   file.define_variable(name, type, { "N" });
   file.write_attribute(name, "units", units);
@@ -317,7 +314,7 @@ void SSATestCase::write(const std::string &filename) {
 
   // write all easily available diagnostics:
   {
-    std::vector<std::shared_ptr<array::Array>> vecs;
+    std::vector<std::shared_ptr<array::Array> > vecs;
     for (auto &pair : m_ssa->spatial_diagnostics()) {
       try {
         vecs.push_back(pair.second->compute());
@@ -340,19 +337,14 @@ void SSATestCase::write(const std::string &filename) {
   }
 
   array::Vector tmp(m_grid, "_exact");
-  tmp.metadata(0)
-      .long_name("X-component of the SSA exact solution")
-      .units("m s^-1");
-  tmp.metadata(1)
-      .long_name("Y-component of the SSA exact solution")
-      .units("m s^-1");
+  tmp.metadata(0).long_name("X-component of the SSA exact solution").units("m s^-1");
+  tmp.metadata(1).long_name("Y-component of the SSA exact solution").units("m s^-1");
 
   array::AccessScope list(tmp);
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
-    exactSolution(i, j, m_grid->x(i), m_grid->y(j),
-                  &(tmp(i,j).u), &(tmp(i,j).v));
+    exactSolution(i, j, m_grid->x(i), m_grid->y(j), &(tmp(i, j).u), &(tmp(i, j).v));
   }
 
   // define
@@ -363,13 +355,13 @@ void SSATestCase::write(const std::string &filename) {
   tmp.write(file);
 
   tmp.metadata(0)
-    .set_name("u_error")
-    .long_name("X-component of the error (exact - computed)")
-    .units("m s^-1");
+      .set_name("u_error")
+      .long_name("X-component of the error (exact - computed)")
+      .units("m s^-1");
   tmp.metadata(1)
-    .set_name("v_error")
-    .long_name("Y-component of the error (exact - computed)")
-    .units("m s^-1");
+      .set_name("v_error")
+      .long_name("Y-component of the error (exact - computed)")
+      .units("m s^-1");
 
   tmp.add(-1.0, m_ssa->velocity());
   // define

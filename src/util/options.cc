@@ -21,39 +21,36 @@
 
 #include <petscsys.h>
 
-#include "pism/util/error_handling.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/Units.hh"
-#include "pism/util/pism_utilities.hh"
+#include "pism/util/error_handling.hh"
 #include "pism/util/pism_options.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace options {
 
-String::String(const std::string& option,
-               const std::string& description) {
+String::String(const std::string &option, const std::string &description) {
   int errcode = process(option, description, "", DONT_ALLOW_EMPTY);
   if (errcode != 0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "failed to process option %s", option.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "failed to process option %s",
+                                  option.c_str());
   }
 }
 
-String::String(const std::string& option,
-               const std::string& description,
-               const std::string& default_value,
-               ArgumentFlag argument_flag) {
+String::String(const std::string &option, const std::string &description,
+               const std::string &default_value, ArgumentFlag argument_flag) {
   int errcode = process(option, description, default_value, argument_flag);
   if (errcode != 0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "failed to process option %s", option.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "failed to process option %s",
+                                  option.c_str());
   }
 }
 
 static const int TEMPORARY_STRING_LENGTH = 32768;
 
-int String::process(const std::string& option,
-                    const std::string& description,
-                    const std::string& default_value,
-                    ArgumentFlag argument_flag) {
+int String::process(const std::string &option, const std::string &description,
+                    const std::string &default_value, ArgumentFlag argument_flag) {
 
   char string[TEMPORARY_STRING_LENGTH];
   memset(string, 0, TEMPORARY_STRING_LENGTH);
@@ -63,10 +60,7 @@ int String::process(const std::string& option,
   PetscErrorCode ierr;
   ierr = PetscOptionsGetString(NULL, // default option database
                                NULL, // no prefix
-                               option.c_str(),
-                               string,
-                               TEMPORARY_STRING_LENGTH,
-                               &flag);
+                               option.c_str(), string, TEMPORARY_STRING_LENGTH, &flag);
   PISM_CHK(ierr, "PetscOptionsGetString");
 
   std::string result = string;
@@ -92,16 +86,14 @@ int String::process(const std::string& option,
   return 0;
 }
 
-Keyword::Keyword(const std::string& option,
-                 const std::string& description,
-                 const std::string& choices,
-                 const std::string& default_value) {
+Keyword::Keyword(const std::string &option, const std::string &description,
+                 const std::string &choices, const std::string &default_value) {
 
   if (choices.empty()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "empty choices argument");
   }
 
-  std::string list = "[" + choices + "]";
+  std::string list             = "[" + choices + "]";
   std::string long_description = description + " Choose one of " + list;
 
   String input(option, long_description, default_value, DONT_ALLOW_EMPTY);
@@ -133,21 +125,16 @@ Keyword::Keyword(const std::string& option,
   }
 }
 
-Integer::Integer(const std::string& option,
-                 const std::string& description,
-                 int default_value) {
+Integer::Integer(const std::string &option, const std::string &description, int default_value) {
 
-  String input(option, description,
-               pism::printf("%d", default_value),
-               DONT_ALLOW_EMPTY);
+  String input(option, description, pism::printf("%d", default_value), DONT_ALLOW_EMPTY);
 
   if (input.is_set()) {
     long int result = 0;
     try {
       result = parse_integer(input);
     } catch (RuntimeError &e) {
-      e.add_context("processing command-line option '%s %s'",
-                    option.c_str(), input->c_str());
+      e.add_context("processing command-line option '%s %s'", option.c_str(), input->c_str());
       throw;
     }
     this->set(static_cast<int>(result), true);
@@ -156,28 +143,23 @@ Integer::Integer(const std::string& option,
   }
 }
 
-Real::Real(std::shared_ptr<units::System> system,
-           const std::string& option,
-           const std::string& description,
-           const std::string& units,
-           double default_value) {
+Real::Real(std::shared_ptr<units::System> system, const std::string &option,
+           const std::string &description, const std::string &units, double default_value) {
 
   std::string buffer = pism::printf("%f", default_value);
 
   String input(option, description, buffer, DONT_ALLOW_EMPTY);
 
   if (input.is_set()) {
-    char *endptr = NULL;
+    char *endptr  = NULL;
     double result = strtod(input->c_str(), &endptr);
     if (*endptr != '\0') {
       // assume that "input" contains units and try converting to "units":
       try {
         result = units::convert(system, 1.0, input.value(), units);
       } catch (RuntimeError &e) {
-        e.add_context("trying to convert '%s' to '%s'",
-                      input->c_str(), units.c_str());
-        e.add_context("processing the command-line option %s",
-                      option.c_str());
+        e.add_context("trying to convert '%s' to '%s'", input->c_str(), units.c_str());
+        e.add_context("processing the command-line option %s", option.c_str());
         throw;
       }
     }
@@ -187,19 +169,18 @@ Real::Real(std::shared_ptr<units::System> system,
   }
 }
 
-bool Bool(const std::string& option,
-          const std::string& description) {
+bool Bool(const std::string &option, const std::string &description) {
   return String(option, description, "", ALLOW_EMPTY).is_set();
 }
 
 //! Stop if an option `old_name` is set, printing a message that `new_name` should be used instead.
 void deprecated(const std::string &old_name, const std::string &new_name) {
 
-  String option(old_name, "no description", "default",
-                options::ALLOW_EMPTY);
+  String option(old_name, "no description", "default", options::ALLOW_EMPTY);
 
   if (option.is_set()) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "command-line option '%s' is deprecated."
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "command-line option '%s' is deprecated."
                                   " Please use '%s' instead.",
                                   old_name.c_str(), new_name.c_str());
   }
@@ -211,8 +192,7 @@ void ignored(const Logger &log, const std::string &name) {
   String option(name, "no description", "default");
 
   if (option.is_set()) {
-    log.message(1, "PISM WARNING: ignoring command-line option '%s'.\n",
-                name.c_str());
+    log.message(1, "PISM WARNING: ignoring command-line option '%s'.\n", name.c_str());
   }
 }
 

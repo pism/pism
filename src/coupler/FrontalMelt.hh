@@ -33,7 +33,6 @@ public:
 
   // used by DischargeRouting
   const array::Scalar *subglacial_water_flux;
-
 };
 
 //! @brief Frontal melt models and modifiers.
@@ -53,9 +52,9 @@ public:
 
   void update(const FrontalMeltInputs &inputs, double t, double dt);
 
-  const array::Scalar& frontal_melt_rate() const;
+  const array::Scalar &frontal_melt_rate() const;
 
-  const array::Scalar& retreat_rate() const;
+  const array::Scalar &retreat_rate() const;
 
 protected:
   virtual void init_impl(const Geometry &geometry);
@@ -70,7 +69,7 @@ protected:
   virtual DiagnosticList spatial_diagnostics_impl() const;
   virtual TSDiagnosticList scalar_diagnostics_impl() const;
 
-  virtual const array::Scalar& frontal_melt_rate_impl() const = 0;
+  virtual const array::Scalar &frontal_melt_rate_impl() const = 0;
 
   void compute_retreat_rate(const Geometry &geometry, const array::Scalar &frontal_melt_rate,
                             array::Scalar &result) const;
@@ -86,4 +85,4 @@ protected:
 } // end of namespace frontalmelt
 } // end of namespace pism
 
-#endif  // __PISMFrontalMelt_hh
+#endif // __PISMFrontalMelt_hh

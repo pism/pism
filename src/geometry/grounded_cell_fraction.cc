@@ -18,13 +18,13 @@
  */
 
 #include <cassert>
-#include <cmath>                // fabs, isnan
+#include <cmath> // fabs, isnan
 
 #include "pism/geometry/grounded_cell_fraction.hh"
 
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh" // clip
-#include "pism/util/array/Scalar.hh"
 
 namespace pism {
 
@@ -70,9 +70,9 @@ static inline double triangle_area(const Point &a, const Point &b, const Point &
  */
 Point intersect_ab(double a, double b) {
   if (a != b) {
-    return {a / (a - b), 0.0};
+    return { a / (a - b), 0.0 };
   }
-  return {-1.0, -1.0};        // no intersection
+  return { -1.0, -1.0 }; // no intersection
 }
 
 /*!
@@ -80,9 +80,9 @@ Point intersect_ab(double a, double b) {
  */
 Point intersect_bc(double b, double c) {
   if (b != c) {
-    return {c / (c - b), b / (b - c)};
+    return { c / (c - b), b / (b - c) };
   }
-  return {-1.0, -1.0};        // no intersection
+  return { -1.0, -1.0 }; // no intersection
 }
 
 /*!
@@ -90,9 +90,9 @@ Point intersect_bc(double b, double c) {
  */
 Point intersect_ac(double a, double c) {
   if (a != c) {
-    return {0.0, a / (a - c)};
+    return { 0.0, a / (a - c) };
   }
-  return {-1.0, -1.0};        // no intersection
+  return { -1.0, -1.0 }; // no intersection
 }
 
 /*!
@@ -146,15 +146,12 @@ double grounded_area_fraction(double a, double b, double c) {
   // the area of the triangle (0,0)-(1,0)-(0,1)
   const double total_area = 0.5;
 
-  const Point
-    ab = intersect_ab(a, b),
-    bc = intersect_bc(b, c),
-    ac = intersect_ac(a, c);
+  const Point ab = intersect_ab(a, b), bc = intersect_bc(b, c), ac = intersect_ac(a, c);
 
   if (invalid(bc)) {
-    assert(not (invalid(ab) or invalid(ac)));
+    assert(not(invalid(ab) or invalid(ac)));
 
-    double ratio = triangle_area({0.0, 0.0}, ab, ac) / total_area;
+    double ratio = triangle_area({ 0.0, 0.0 }, ab, ac) / total_area;
     assert((ratio >= 0.0) and (ratio <= 1.0));
 
     if (a > 0.0) {
@@ -164,9 +161,9 @@ double grounded_area_fraction(double a, double b, double c) {
   }
 
   if (invalid(ac)) {
-    assert(not (invalid(ab) or invalid(bc)));
+    assert(not(invalid(ab) or invalid(bc)));
 
-    double ratio = triangle_area({1.0, 0.0}, bc, ab) / total_area;
+    double ratio = triangle_area({ 1.0, 0.0 }, bc, ab) / total_area;
     assert((ratio >= 0.0) and (ratio <= 1.0));
 
     if (b > 0.0) {
@@ -176,9 +173,9 @@ double grounded_area_fraction(double a, double b, double c) {
   }
 
   if (invalid(ab)) {
-    assert(not (invalid(bc) or invalid(ac)));
+    assert(not(invalid(bc) or invalid(ac)));
 
-    double ratio = triangle_area({0.0, 1.0}, ac, bc) / total_area;
+    double ratio = triangle_area({ 0.0, 1.0 }, ac, bc) / total_area;
     assert((ratio >= 0.0) and (ratio <= 1.0));
 
     if (c > 0.0) {
@@ -191,7 +188,7 @@ double grounded_area_fraction(double a, double b, double c) {
 
   // the a == 0 case, the line F = 0 goes through A
   if (same(ab, ac)) {
-    double ratio = triangle_area({1.0, 0.0}, bc, ab) / total_area;
+    double ratio = triangle_area({ 1.0, 0.0 }, bc, ab) / total_area;
     assert((ratio >= 0.0) and (ratio <= 1.0));
 
     if (b > 0.0) {
@@ -202,7 +199,7 @@ double grounded_area_fraction(double a, double b, double c) {
 
   // the b == 0 case and the c == 0 case
   if (same(ab, bc) or same(ac, bc)) {
-    double ratio = triangle_area({0.0, 0.0}, ab, ac) / total_area;
+    double ratio = triangle_area({ 0.0, 0.0 }, ab, ac) / total_area;
     assert((ratio >= 0.0) and (ratio <= 1.0));
 
     if (a > 0.0) {
@@ -215,17 +212,16 @@ double grounded_area_fraction(double a, double b, double c) {
   // above. For example, when F=0 coincides with AC, we have a = c = 0 and intersect_ac(a, c)
   // returns an invalid intersection point.
 
-  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                "the logic in grounded_area_fraction failed! Please submit a bug report.");
+  throw RuntimeError::formatted(
+      PISM_ERROR_LOCATION,
+      "the logic in grounded_area_fraction failed! Please submit a bug report.");
 }
 
 /*!
  * The flotation criterion.
  */
 static double F(double SL, double B, double H, double alpha) {
-  double
-    water_depth = SL - B,
-    shelf_depth = H * alpha;
+  double water_depth = SL - B, shelf_depth = H * alpha;
   return shelf_depth - water_depth;
 }
 
@@ -235,15 +231,9 @@ static double F(double SL, double B, double H, double alpha) {
  */
 using Box = stencils::Box<double>;
 static Box F(const Box &SL, const Box &B, const Box &H, double alpha) {
-  return {F(SL.c, B.c, H.c, alpha),
-          F(SL.n,  B.n,  H.n,  alpha),
-          F(SL.nw, B.nw, H.nw, alpha),
-          F(SL.w,  B.w,  H.w,  alpha),
-          F(SL.sw, B.sw, H.sw, alpha),
-          F(SL.s,  B.s,  H.s,  alpha),
-          F(SL.se, B.se, H.se, alpha),
-          F(SL.e,  B.e,  H.e,  alpha),
-          F(SL.ne, B.ne, H.ne, alpha)};
+  return { F(SL.c, B.c, H.c, alpha),    F(SL.n, B.n, H.n, alpha),    F(SL.nw, B.nw, H.nw, alpha),
+           F(SL.w, B.w, H.w, alpha),    F(SL.sw, B.sw, H.sw, alpha), F(SL.s, B.s, H.s, alpha),
+           F(SL.se, B.se, H.se, alpha), F(SL.e, B.e, H.e, alpha),    F(SL.ne, B.ne, H.ne, alpha) };
 }
 
 /*!
@@ -254,16 +244,14 @@ static Box F(const Box &SL, const Box &B, const Box &H, double alpha) {
  * @param[in] bed_topography bed elevation, m
  * @param[out] result grounded cell fraction, between 0 (floating) and 1 (grounded)
  */
-void compute_grounded_cell_fraction(double ice_density,
-                                    double ocean_density,
+void compute_grounded_cell_fraction(double ice_density, double ocean_density,
                                     const array::Scalar1 &sea_level,
                                     const array::Scalar1 &ice_thickness,
-                                    const array::Scalar1 &bed_topography,
-                                    array::Scalar &result) {
-  auto grid = result.grid();
+                                    const array::Scalar1 &bed_topography, array::Scalar &result) {
+  auto grid    = result.grid();
   double alpha = ice_density / ocean_density;
 
-  array::AccessScope list{&sea_level, &ice_thickness, &bed_topography, &result};
+  array::AccessScope list{ &sea_level, &ice_thickness, &bed_topography, &result };
 
   ParallelSection loop(grid->com);
   try {
@@ -295,7 +283,7 @@ void compute_grounded_cell_fraction(double ice_density,
 
         auto x = F(S, B, H, alpha);
 
-        f.c = x.c;
+        f.c  = x.c;
         f.sw = 0.25 * (x.sw + x.s + x.c + x.w);
         f.se = 0.25 * (x.s + x.se + x.e + x.c);
         f.ne = 0.25 * (x.c + x.e + x.ne + x.n);
@@ -309,17 +297,13 @@ void compute_grounded_cell_fraction(double ice_density,
 
       // compute the grounding fraction for the current cell by breaking it into 8
       // triangles
-      double fraction = 0.125 * (grounded_area_fraction(f.c, f.ne, f.n) +
-                                 grounded_area_fraction(f.c, f.n,  f.nw) +
-                                 grounded_area_fraction(f.c, f.nw, f.w) +
-                                 grounded_area_fraction(f.c, f.w,  f.sw) +
-                                 grounded_area_fraction(f.c, f.sw, f.s) +
-                                 grounded_area_fraction(f.c, f.s,  f.se) +
-                                 grounded_area_fraction(f.c, f.se, f.e) +
-                                 grounded_area_fraction(f.c, f.e,  f.ne));
+      double fraction =
+          0.125 * (grounded_area_fraction(f.c, f.ne, f.n) + grounded_area_fraction(f.c, f.n, f.nw) +
+                   grounded_area_fraction(f.c, f.nw, f.w) + grounded_area_fraction(f.c, f.w, f.sw) +
+                   grounded_area_fraction(f.c, f.sw, f.s) + grounded_area_fraction(f.c, f.s, f.se) +
+                   grounded_area_fraction(f.c, f.se, f.e) + grounded_area_fraction(f.c, f.e, f.ne));
 
       result(i, j) = clip(fraction, 0.0, 1.0);
-
     }
   } catch (...) {
     loop.failed();

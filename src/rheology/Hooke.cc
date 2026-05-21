@@ -27,9 +27,8 @@ namespace rheology {
 
 // Hooke
 
-Hooke::Hooke(double exponent,
-             const Config &config, std::shared_ptr<EnthalpyConverter> ec)
-  : PatersonBudd(exponent, config, ec) {
+Hooke::Hooke(double exponent, const Config &config, std::shared_ptr<EnthalpyConverter> ec)
+    : PatersonBudd(exponent, config, ec) {
   m_name = "Hooke";
 
   m_Q_Hooke  = config.get_number("flow_law.Hooke.Q");
@@ -40,8 +39,8 @@ Hooke::Hooke(double exponent,
 }
 
 double Hooke::softness_from_temp(double T_pa) const {
-  return m_A_Hooke * exp(-m_Q_Hooke/(m_ideal_gas_constant * T_pa)
-                         + 3.0 * m_C_Hooke * pow(m_Tr_Hooke - T_pa, -m_K_Hooke));
+  return m_A_Hooke * exp(-m_Q_Hooke / (m_ideal_gas_constant * T_pa) +
+                         3.0 * m_C_Hooke * pow(m_Tr_Hooke - T_pa, -m_K_Hooke));
 }
 
 } // end of namespace rheology

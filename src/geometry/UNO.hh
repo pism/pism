@@ -21,8 +21,8 @@
 #define PISM_UNO_2D_H
 
 #include "pism/util/array/Scalar.hh"
-#include "pism/util/array/Vector.hh"
 #include "pism/util/array/Staggered.hh"
+#include "pism/util/array/Vector.hh"
 
 namespace pism {
 
@@ -32,7 +32,7 @@ namespace array {
 class CellType1;
 } // end of namespace array
 
-enum UNOType {PISM_UNO_UPWIND1, PISM_UNO_LAX_WENDROFF, PISM_UNO_FROMM, PISM_UNO_2, PISM_UNO_3};
+enum UNOType { PISM_UNO_UPWIND1, PISM_UNO_LAX_WENDROFF, PISM_UNO_FROMM, PISM_UNO_2, PISM_UNO_3 };
 
 /*!
  * Implementation of Upwind Nonoscillatory advection schemes UNO2 and UNO3.
@@ -48,22 +48,18 @@ class UNO {
 public:
   UNO(std::shared_ptr<const Grid> grid, UNOType type);
 
-  void update(double dt,
-              const array::CellType1 &cell_type,
-              const array::Scalar &x,
-              const array::Vector &velocity,
-              bool nonnegative = false);
+  void update(double dt, const array::CellType1 &cell_type, const array::Scalar &x,
+              const array::Vector &velocity, bool nonnegative = false);
 
-  const array::Scalar& x() const;
+  const array::Scalar &x() const;
 
 private:
-  void compute_interface_fluxes(const array::CellType1 &cell_type,
-                                const array::Vector1 &velocity,
-                                const array::Scalar2 &x_old,
-                                double dt,
+  void compute_interface_fluxes(const array::CellType1 &cell_type, const array::Vector1 &velocity,
+                                const array::Scalar2 &x_old, double dt,
                                 array::Staggered &result) const;
 
-  typedef double (*MidFluxApproximation)(const double *, const double *, size_t, double, double, double);
+  typedef double (*MidFluxApproximation)(const double *, const double *, size_t, double, double,
+                                         double);
 
   MidFluxApproximation m_approx;
 

@@ -18,8 +18,8 @@
  */
 
 #include "pism/util/yac_utilities.hh"
-#include "pism/util/error_handling.hh"
 #include "pism/util/LonLatGrid.hh"
+#include "pism/util/error_handling.hh"
 
 #if (Pism_USE_YAC == 0)
 #error "This code requires YAC"

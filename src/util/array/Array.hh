@@ -19,9 +19,9 @@
 #ifndef PISM_ARRAY_H
 #define PISM_ARRAY_H
 
+#include <cstdint> // uint64_t
 #include <initializer_list>
-#include <memory>               // shared_ptr, dynamic_pointer_cast
-#include <cstdint>              // uint64_t
+#include <memory> // shared_ptr, dynamic_pointer_cast
 #include <set>
 
 #include "pism/util/error_handling.hh" // RuntimeError
@@ -33,7 +33,7 @@ enum InterpolationType : int;
 namespace io {
 enum Type : int;
 class Default;
-}
+} // namespace io
 
 class Grid;
 class File;
@@ -52,15 +52,15 @@ class System;
 
 class PetscAccessible {
 public:
-  virtual ~PetscAccessible() = default;
+  virtual ~PetscAccessible()        = default;
   virtual void begin_access() const = 0;
-  virtual void end_access() const = 0;
+  virtual void end_access() const   = 0;
 };
 
 namespace array {
 
 //! What "kind" of a vector to create: with or without ghosts.
-enum Kind {WITHOUT_GHOSTS=0, WITH_GHOSTS=1};
+enum Kind { WITHOUT_GHOSTS = 0, WITH_GHOSTS = 1 };
 
 //! Makes sure that we call begin_access() and end_access() for all accessed array::Arrays.
 class AccessScope {
@@ -70,16 +70,17 @@ public:
   AccessScope(const PetscAccessible &v);
   ~AccessScope();
   void add(const PetscAccessible &v);
-  void add(const std::vector<const PetscAccessible*> &vecs);
+  void add(const std::vector<const PetscAccessible *> &vecs);
+
 private:
-  std::vector<const PetscAccessible*> m_vecs;
+  std::vector<const PetscAccessible *> m_vecs;
 };
 
 /*!
  * Interpolation helper. Does not check if points needed for interpolation are within the current
  * processor's sub-domain.
  */
-template<class F, typename T>
+template <class F, typename T>
 T interpolate(const F &field, double x, double y) {
   auto grid = field.grid();
 
@@ -88,10 +89,8 @@ T interpolate(const F &field, double x, double y) {
 
   auto w = grid->compute_interp_weights(x, y);
 
-  return (w[0] * field(i_left,  j_bottom) +
-          w[1] * field(i_right, j_bottom) +
-          w[2] * field(i_right, j_top) +
-          w[3] * field(i_left,  j_top));
+  return (w[0] * field(i_left, j_bottom) + w[1] * field(i_right, j_bottom) +
+          w[2] * field(i_right, j_top) + w[3] * field(i_left, j_top));
 }
 
 //! \brief Abstract class for reading, writing, allocating, and accessing a
@@ -217,7 +216,7 @@ public:
   unsigned int ndof() const;
   unsigned int stencil_width() const;
 
-  const std::vector<double>& levels() const;
+  const std::vector<double> &levels() const;
 
   std::vector<double> norm(int n) const;
 
@@ -225,11 +224,11 @@ public:
   void shift(double alpha);
   void scale(double alpha);
 
-  petsc::Vec& vec() const;
+  petsc::Vec &vec() const;
   std::shared_ptr<petsc::DM> dm() const;
 
   void set_name(const std::string &name);
-  const std::string& get_name() const;
+  const std::string &get_name() const;
 
   void read(const std::string &filename, unsigned int time);
   void read(const File &file, unsigned int time);
@@ -249,9 +248,9 @@ public:
 
   void set(double c);
 
-  VariableMetadata& metadata(unsigned int N = 0);
+  VariableMetadata &metadata(unsigned int N = 0);
 
-  const VariableMetadata& metadata(unsigned int N = 0) const;
+  const VariableMetadata &metadata(unsigned int N = 0) const;
 
   std::vector<VariableMetadata> all_metadata() const;
   int state_counter() const;
@@ -262,12 +261,8 @@ public:
   void view(std::vector<std::shared_ptr<petsc::Viewer> > viewers) const;
 
 protected:
-  Array(std::shared_ptr<const Grid> grid,
-        const std::string &name,
-        Kind ghostedp,
-        size_t dof,
-        size_t stencil_width,
-        const std::vector<double> &zlevels);
+  Array(std::shared_ptr<const Grid> grid, const std::string &name, Kind ghostedp, size_t dof,
+        size_t stencil_width, const std::vector<double> &zlevels);
   struct Impl;
   Impl *m_impl;
 
@@ -288,14 +283,16 @@ protected:
 
   void copy_to_vec(std::shared_ptr<petsc::DM> destination_da, petsc::Vec &destination) const;
   void get_dof(std::shared_ptr<petsc::DM> da_result, petsc::Vec &result, unsigned int start,
-               unsigned int count=1) const;
+               unsigned int count = 1) const;
   void set_dof(std::shared_ptr<petsc::DM> da_source, petsc::Vec &source, unsigned int start,
-               unsigned int count=1);
+               unsigned int count = 1);
+
 private:
   size_t size() const;
   // disable copy constructor and the assignment operator:
   Array(const Array &other);
-  Array& operator=(const Array&);
+  Array &operator=(const Array &);
+
 public:
   //! Dump an Array to a file. *This is for debugging only.*
   //! Uses const char[] to make it easier to call it from gdb.
@@ -304,7 +301,7 @@ public:
   uint64_t fletcher64_serial() const;
   uint64_t fletcher64() const;
   std::string checksum(bool serial) const;
-  void print_checksum(const char *prefix = "", bool serial=false) const;
+  void print_checksum(const char *prefix = "", bool serial = false) const;
 
 protected:
   void put_on_proc0(petsc::Vec &parallel, petsc::Vec &onp0) const;
@@ -335,8 +332,8 @@ std::set<VariableMetadata> metadata(std::initializer_list<const Array *> vecs);
  * @param spec1 source unit specification string
  * @param spec2 destination unit specification string
  */
-void convert_vec(petsc::Vec &v, std::shared_ptr<units::System> system,
-                 const std::string &spec1, const std::string &spec2);
+void convert_vec(petsc::Vec &v, std::shared_ptr<units::System> system, const std::string &spec1,
+                 const std::string &spec2);
 
 } // end of namespace pism
 

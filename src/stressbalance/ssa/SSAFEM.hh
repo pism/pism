@@ -20,11 +20,11 @@
 #define _SSAFEM_H_
 
 #include "pism/stressbalance/ssa/SSA.hh"
+#include "pism/util/Mask.hh"
+#include "pism/util/TerminationReason.hh"
 #include "pism/util/fem/Element.hh"
 #include "pism/util/fem/ElementIterator.hh"
 #include "pism/util/petscwrappers/SNES.hh"
-#include "pism/util/TerminationReason.hh"
-#include "pism/util/Mask.hh"
 
 namespace pism {
 
@@ -73,33 +73,21 @@ protected:
 
   array::Array2D<Coefficients> m_coefficients;
 
-  void quad_point_values(const fem::Element &E,
-                         const Coefficients *x,
-                         int *mask,
-                         double *thickness,
-                         double *tauc,
-                         double *hardness) const;
+  void quad_point_values(const fem::Element &E, const Coefficients *x, int *mask, double *thickness,
+                         double *tauc, double *hardness) const;
 
-  static void explicit_driving_stress(const fem::Element &E,
-                                      const Coefficients *x,
+  static void explicit_driving_stress(const fem::Element &E, const Coefficients *x,
                                       Vector2d *result);
 
   void driving_stress(const fem::Element &E, const Coefficients *x, Vector2d *result) const;
 
-  void PointwiseNuHAndBeta(double thickness,
-                           double hardness,
-                           int mask,
-                           double tauc,
-                           const Vector2d &U,
-                           const Vector2d &U_x,
-                           const Vector2d &U_y,
-                           double *nuH, double *dnuH,
-                           double *beta, double *dbeta);
+  void PointwiseNuHAndBeta(double thickness, double hardness, int mask, double tauc,
+                           const Vector2d &U, const Vector2d &U_x, const Vector2d &U_y, double *nuH,
+                           double *dnuH, double *beta, double *dbeta);
 
-  void compute_local_function(Vector2d const *const * velocity,
-                              Vector2d **residual);
+  void compute_local_function(Vector2d const *const *velocity, Vector2d **residual);
 
-  void compute_local_jacobian(Vector2d const *const * velocity, Mat J);
+  void compute_local_jacobian(Vector2d const *const *velocity, Mat J);
 
   virtual void solve(const Inputs &inputs);
 
@@ -141,20 +129,18 @@ protected:
   // gradient of a periodic function. (See commit ffb4be16.)
   const array::Scalar *m_driving_stress_x;
   const array::Scalar *m_driving_stress_y;
+
 private:
   void cache_residual_cfbc(const Inputs &inputs);
   void monitor_jacobian(Mat Jac);
-  void monitor_function(Vector2d const *const * velocity_global,
-                        Vector2d const *const * residual_global);
+  void monitor_function(Vector2d const *const *velocity_global,
+                        Vector2d const *const *residual_global);
 
   //! SNES callbacks.
   /*! These simply forward the call on to the SSAFEM member of the CallbackData */
-  static PetscErrorCode function_callback(DMDALocalInfo *info,
-                                          Vector2d const *const * velocity,
-                                          Vector2d **residual,
-                                          CallbackData *fe);
-  static PetscErrorCode jacobian_callback(DMDALocalInfo *info,
-                                          Vector2d const *const * velocity,
+  static PetscErrorCode function_callback(DMDALocalInfo *info, Vector2d const *const *velocity,
+                                          Vector2d **residual, CallbackData *fe);
+  static PetscErrorCode jacobian_callback(DMDALocalInfo *info, Vector2d const *const *velocity,
                                           Mat A, Mat J, CallbackData *fe);
 };
 

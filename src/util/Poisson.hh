@@ -30,20 +30,19 @@ class Poisson {
 public:
   Poisson(std::shared_ptr<const Grid> grid);
 
-  int solve(const array::Scalar& mask, const array::Scalar& bc, double rhs,
+  int solve(const array::Scalar &mask, const array::Scalar &bc, double rhs,
             bool reuse_matrix = false);
 
   const array::Scalar &solution() const;
+
 private:
   void assemble_matrix(const array::Scalar1 &mask, Mat A);
-  void assemble_rhs(double rhs,
-                    const array::Scalar &mask,
-                    const array::Scalar &bc,
+  void assemble_rhs(double rhs, const array::Scalar &mask, const array::Scalar &bc,
                     array::Scalar &b);
 
   std::shared_ptr<const Grid> m_grid;
   std::shared_ptr<const Logger> m_log;
-  std::shared_ptr<petsc::DM> m_da;         // dof=1 DA used by the KSP solver
+  std::shared_ptr<petsc::DM> m_da; // dof=1 DA used by the KSP solver
   petsc::KSP m_KSP;
   petsc::Mat m_A;
   array::Scalar m_b;

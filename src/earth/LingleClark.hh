@@ -20,7 +20,7 @@
 #ifndef PISM_LINGLE_CLARK_H
 #define PISM_LINGLE_CLARK_H
 
-#include <memory>               // std::unique_ptr
+#include <memory> // std::unique_ptr
 
 #include "pism/earth/BedDef.hh"
 
@@ -35,18 +35,18 @@ public:
   LingleClark(std::shared_ptr<const Grid> g);
   virtual ~LingleClark();
 
-  const array::Scalar& total_displacement() const;
+  const array::Scalar &total_displacement() const;
 
-  const array::Scalar& viscous_displacement() const;
+  const array::Scalar &viscous_displacement() const;
 
-  const array::Scalar& elastic_displacement() const;
+  const array::Scalar &elastic_displacement() const;
 
-  const array::Scalar& relief() const;
+  const array::Scalar &relief() const;
 
-  void step(const array::Scalar &load_thickness,
-            double dt);
+  void step(const array::Scalar &load_thickness, double dt);
 
   std::shared_ptr<array::Scalar> elastic_load_response_matrix() const;
+
 protected:
   virtual std::set<VariableMetadata> state_impl() const;
   virtual void write_state_impl(const OutputFile &output) const;
@@ -55,10 +55,8 @@ protected:
 
   void init_impl(const InputOptions &opts, const array::Scalar &ice_thickness,
                  const array::Scalar &sea_level_elevation);
-  void bootstrap_impl(const array::Scalar &bed_elevation,
-                      const array::Scalar &bed_uplift,
-                      const array::Scalar &ice_thickness,
-                      const array::Scalar &sea_level_elevation);
+  void bootstrap_impl(const array::Scalar &bed_elevation, const array::Scalar &bed_uplift,
+                      const array::Scalar &ice_thickness, const array::Scalar &sea_level_elevation);
   void update_impl(const array::Scalar &load, double t, double dt);
 
   //! Total (viscous and elastic) bed displacement.

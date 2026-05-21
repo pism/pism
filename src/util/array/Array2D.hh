@@ -28,65 +28,64 @@ namespace pism {
 namespace array {
 
 //! A storage vector combining related fields in a struct
-template<typename T>
+template <typename T>
 class Array2D : public Array {
 public:
   using value_type = T;
 
-  Array2D(std::shared_ptr<const Grid> grid, const std::string &short_name,
-          Kind ghostedp, unsigned int stencil_width = 1)
-    : Array(grid, short_name, ghostedp,
-            sizeof(T) / sizeof(double), stencil_width, {}) {
+  Array2D(std::shared_ptr<const Grid> grid, const std::string &short_name, Kind ghostedp,
+          unsigned int stencil_width = 1)
+      : Array(grid, short_name, ghostedp, sizeof(T) / sizeof(double), stencil_width, {}) {
     set_begin_access_use_dof(false);
   }
 
-  T** array() {
-    return reinterpret_cast<T**>(m_array);
+  T **array() {
+    return reinterpret_cast<T **>(m_array);
   }
 
-  T const* const* array() const {
-    return reinterpret_cast<T const* const*>(m_array);
+  T const *const *array() const {
+    return reinterpret_cast<T const *const *>(m_array);
   }
 
-  inline T& operator()(int i, int j) {
-#if (Pism_DEBUG==1)
+  inline T &operator()(int i, int j) {
+#if (Pism_DEBUG == 1)
     check_array_indices(i, j, 0);
 #endif
-    return static_cast<T**>(m_array)[j][i];
+    return static_cast<T **>(m_array)[j][i];
   }
 
-  inline const T& operator()(int i, int j) const {
-#if (Pism_DEBUG==1)
+  inline const T &operator()(int i, int j) const {
+#if (Pism_DEBUG == 1)
     check_array_indices(i, j, 0);
 #endif
-    return static_cast<T**>(m_array)[j][i];
+    return static_cast<T **>(m_array)[j][i];
   }
 
   /*!
    * Value at the north neighbor of (i, j)
    */
-  inline const T& N(int i, int j) const {
+  inline const T &N(int i, int j) const {
     return (*this)(i, j + 1);
   }
 
   /*!
    * Value at the east neighbor of (i, j)
    */
-  inline const T& E(int i, int j) const {
+  inline const T &E(int i, int j) const {
     return (*this)(i + 1, j);
   }
 
   /*!
    * Value at the south neighbor of (i, j)
    */
-  inline const T& S(int i, int j) const {
+  inline const T &S(int i, int j) const {
     return (*this)(i, j - 1);
   }
 
   /*!
    * Value at the west neighbor of (i, j)
    */
-  inline const T& W(int i, int j) const {
+  inline const T &W(int i, int j) const {
     return (*this)(i - 1, j);
   }
 
@@ -103,17 +102,16 @@ public:
   }
 
 protected:
-
   inline stencils::Star<T> star(int i, int j) const {
     const auto &self = *this;
 
     stencils::Star<T> result;
 
-    result.c = self(i,j);
-    result.e = E(i,j);
-    result.w = W(i,j);
-    result.n = N(i,j);
-    result.s = S(i,j);
+    result.c = self(i, j);
+    result.e = E(i, j);
+    result.w = W(i, j);
+    result.n = N(i, j);
+    result.s = S(i, j);
 
     return result;
   }
@@ -121,14 +119,9 @@ protected:
   inline stencils::Box<T> box(int i, int j) const {
     const auto &x = *this;
 
-    const int
-      E = i + 1,
-      W = i - 1,
-      N = j + 1,
-      S = j - 1;
+    const int E = i + 1, W = i - 1, N = j + 1, S = j - 1;
 
-    return {x(i, j), x(i, N), x(W, N), x(W, j), x(W, S),
-            x(i, S), x(E, S), x(E, j), x(E, N)};
+    return { x(i, j), x(i, N), x(W, N), x(W, j), x(W, S), x(i, S), x(E, S), x(E, j), x(E, N) };
   }
 };
 

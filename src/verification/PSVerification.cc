@@ -20,37 +20,37 @@
 #include <algorithm>
 #include <vector>
 
-#include "pism/verification/PSVerification.hh"
 #include "pism/coupler/AtmosphereModel.hh"
 #include "pism/rheology/PatersonBuddCold.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/Config.hh"
+#include "pism/verification/PSVerification.hh"
 
-#include "pism/verification/tests/exactTestsABCD.h"
-#include "pism/verification/tests/exactTestsFG.hh"
 #include "pism/verification/tests/exactTestH.h"
 #include "pism/verification/tests/exactTestL.hh"
+#include "pism/verification/tests/exactTestsABCD.h"
+#include "pism/verification/tests/exactTestsFG.hh"
 
-#include "pism/util/error_handling.hh"
+#include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/MaxTimestep.hh"
-#include "pism/util/Context.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 namespace surface {
 
 const double Verification::ablationRateOutside = 0.02; // m year-1
-const double Verification::secpera = 3.15569259747e7;
+const double Verification::secpera             = 3.15569259747e7;
 
-const double Verification::ST = 1.67e-5;
-const double Verification::Tmin = 223.15;  // K
+const double Verification::ST     = 1.67e-5;
+const double Verification::Tmin   = 223.15; // K
 const double Verification::LforFG = 750000; // m
-const double Verification::ApforG = 200; // m
+const double Verification::ApforG = 200;    // m
 
-Verification::Verification(std::shared_ptr<const Grid> g,
-                           std::shared_ptr<EnthalpyConverter> EC, int test)
-  : PSFormulas(g), m_testname(test), m_EC(EC) {
+Verification::Verification(std::shared_ptr<const Grid> g, std::shared_ptr<EnthalpyConverter> EC,
+                           int test)
+    : PSFormulas(g), m_testname(test), m_EC(EC) {
   // empty
 }
 
@@ -71,7 +71,7 @@ void Verification::write_state_impl(const OutputFile &output) const {
 }
 
 MaxTimestep Verification::max_timestep_impl(double t) const {
-  (void) t;
+  (void)t;
   return MaxTimestep("verification surface model");
 }
 
@@ -93,29 +93,26 @@ void Verification::update_KO() {
  * @return 0 on success
  */
 void Verification::update_L() {
-  double     A0, T0;
+  double A0, T0;
 
   double n = m_config->get_number("stress_balance.sia.Glen_exponent");
   rheology::PatersonBuddCold tgaIce(n, *m_config, m_EC);
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for PatersonBuddCold);
   // set all temps to this constant
-  A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
+  A0 = 1.0e-16 / secpera; // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
   T0 = tgaIce.tempFromSoftness(A0);
 
   m_temperature->set(T0);
 
-  const double
-    ice_density = m_config->get_number("constants.ice.density"),
-    a0          = units::convert(m_sys, 0.3, "m year^-1", "m second^-1"),
-    L           = 750e3,
-    Lsqr        = L * L;
+  const double ice_density = m_config->get_number("constants.ice.density"),
+               a0 = units::convert(m_sys, 0.3, "m year^-1", "m second^-1"), L = 750e3, Lsqr = L * L;
 
   array::AccessScope list(*m_mass_flux);
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
-    double r = grid::radius(*m_grid, i, j);
+    double r             = grid::radius(*m_grid, i, j);
     (*m_mass_flux)(i, j) = a0 * (1.0 - (2.0 * r * r / Lsqr));
 
     (*m_mass_flux)(i, j) *= ice_density; // convert to [kg m-2 s-1]
@@ -132,8 +129,8 @@ void Verification::update_V() {
 }
 
 void Verification::update_impl(const Geometry &geometry, double t, double dt) {
-  (void) geometry;
-  (void) dt;
+  (void)geometry;
+  (void)dt;
 
   switch (m_testname) {
   case 'A':
@@ -151,12 +148,11 @@ void Verification::update_impl(const Geometry &geometry, double t, double dt) {
   case 'O':
     update_KO();
     break;
-  case 'L':
-    {
-      update_L();
-      // return here; note update_L() uses correct units
-      return;
-    }
+  case 'L': {
+    update_L();
+    // return here; note update_L() uses correct units
+    return;
+  }
   case 'V':
     update_V();
     break;
@@ -175,14 +171,15 @@ void Verification::update_impl(const Geometry &geometry, double t, double dt) {
 void Verification::update_ABCDH(double time) {
   double A0, T0, accum;
 
-  double f = m_config->get_number("constants.ice.density") / m_config->get_number("bed_deformation.mantle_density");
+  double f = m_config->get_number("constants.ice.density") /
+             m_config->get_number("bed_deformation.mantle_density");
 
   double n = m_config->get_number("stress_balance.sia.Glen_exponent");
   rheology::PatersonBuddCold tgaIce(n, *m_config, m_EC);
 
   // compute T so that A0 = A(T) = Acold exp(-Qcold/(R T))  (i.e. for PatersonBuddCold);
   // set all temps to this constant
-  A0 = 1.0e-16/secpera;    // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
+  A0 = 1.0e-16 / secpera; // = 3.17e-24  1/(Pa^3 s);  (EISMINT value) flow law parameter
   T0 = tgaIce.tempFromSoftness(A0);
 
   m_temperature->set(T0);
@@ -227,7 +224,7 @@ void Verification::update_FG(double time) {
   const double t = m_testname == 'F' ? 0.0 : time;
   const double A = m_testname == 'F' ? 0.0 : ApforG;
 
-  array::AccessScope list{m_mass_flux.get(), m_temperature.get()};
+  array::AccessScope list{ m_mass_flux.get(), m_temperature.get() };
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
@@ -239,7 +236,7 @@ void Verification::update_FG(double time) {
 
     if (r > LforFG - 1.0) {
       // if (essentially) outside of sheet
-      (*m_mass_flux)(i, j) = - ablationRateOutside / secpera;
+      (*m_mass_flux)(i, j) = -ablationRateOutside / secpera;
     } else {
       (*m_mass_flux)(i, j) = exactFG(t, r, m_grid->z(), A).M;
     }

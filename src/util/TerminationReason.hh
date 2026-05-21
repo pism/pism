@@ -19,28 +19,26 @@
 #ifndef TERMINATIONREASON_HH_JW17MC8V
 #define TERMINATIONREASON_HH_JW17MC8V
 
-#include <string>
-#include <sstream>
 #include <memory>
+#include <sstream>
+#include <string>
 
-#include <petscsnes.h>
 #include <petscksp.h>
+#include <petscsnes.h>
 
 namespace pism {
 
 class TerminationReason {
 public:
-  TerminationReason()
-    : m_reason(0) {
+  TerminationReason() : m_reason(0) {
   }
 
-  TerminationReason(int code)
-    : m_reason(code) {
+  TerminationReason(int code) : m_reason(code) {
   }
 
   virtual ~TerminationReason() {
   }
-  
+
   virtual int reason() {
     return m_reason;
   }
@@ -50,19 +48,19 @@ public:
     this->get_description(sdesc);
     return sdesc.str();
   }
-  virtual void get_description(std::ostream &desc,int indent_level=0) = 0;
+  virtual void get_description(std::ostream &desc, int indent_level = 0) = 0;
 
-  virtual std::string nested_description(int indent_level=0) {
+  virtual std::string nested_description(int indent_level = 0) {
     std::stringstream sdesc;
-    this->get_nested_description(sdesc,indent_level);
+    this->get_nested_description(sdesc, indent_level);
     return sdesc.str();
   }
-  virtual void get_nested_description(std::ostream &desc,int indent_level=0) {
-    this->get_description(desc,indent_level);
+  virtual void get_nested_description(std::ostream &desc, int indent_level = 0) {
+    this->get_description(desc, indent_level);
     if (this->has_root_cause()) {
       indent_level++;
       desc << std::endl;
-      this->root_cause()->get_nested_description(desc,indent_level);
+      this->root_cause()->get_nested_description(desc, indent_level);
     }
   }
 
@@ -77,19 +75,19 @@ public:
   void set_root_cause(std::shared_ptr<TerminationReason> cause) {
     m_root_cause = cause;
   }
-  
+
   bool succeeded() {
-    return (this->reason())>0;
+    return (this->reason()) > 0;
   }
-  
+
   bool failed() {
-    return (this->reason())<0;
+    return (this->reason()) < 0;
   }
-  
+
   bool done() {
-    return (this->reason())!= 0;
+    return (this->reason()) != 0;
   }
-  
+
 protected:
   int m_reason;
   std::shared_ptr<TerminationReason> m_root_cause;
@@ -97,56 +95,61 @@ protected:
 
 private:
   TerminationReason(TerminationReason const &reason);
-  TerminationReason &operator =(TerminationReason const &reason);
+  TerminationReason &operator=(TerminationReason const &reason);
 };
 
-class KSPTerminationReason: public TerminationReason {
+class KSPTerminationReason : public TerminationReason {
 public:
   KSPTerminationReason(KSPConvergedReason r);
-  virtual void get_description(std::ostream &desc,int indent_level=0);
+  virtual void get_description(std::ostream &desc, int indent_level = 0);
 };
 
-class SNESTerminationReason: public TerminationReason {
+class SNESTerminationReason : public TerminationReason {
 public:
   SNESTerminationReason(SNESConvergedReason r);
-  virtual void get_description(std::ostream &desc,int indent_level=0);
+  virtual void get_description(std::ostream &desc, int indent_level = 0);
 };
 
-class GenericTerminationReason: public TerminationReason {
+class GenericTerminationReason : public TerminationReason {
 public:
   GenericTerminationReason(int code, std::string &desc)
-    : TerminationReason(code), m_description(desc) {
+      : TerminationReason(code), m_description(desc) {
   }
 
   GenericTerminationReason(int code, const std::string &desc)
-    : TerminationReason(code), m_description(desc) {
+      : TerminationReason(code), m_description(desc) {
   }
 
   virtual ~GenericTerminationReason() {
     // empty
   }
-  
+
   static std::shared_ptr<TerminationReason> keep_iterating() {
-    static std::shared_ptr<TerminationReason> sm_keep_iterating(new GenericTerminationReason(0,"Keep iterating."));
+    static std::shared_ptr<TerminationReason> sm_keep_iterating(
+        new GenericTerminationReason(0, "Keep iterating."));
     return sm_keep_iterating;
   }
 
   static std::shared_ptr<TerminationReason> max_iter() {
-    static std::shared_ptr<TerminationReason> sm_max_iter(new GenericTerminationReason(-1,"Iteration count exceeded."));
+    static std::shared_ptr<TerminationReason> sm_max_iter(
+        new GenericTerminationReason(-1, "Iteration count exceeded."));
     return sm_max_iter;
   }
 
   static std::shared_ptr<TerminationReason> success() {
-    static std::shared_ptr<TerminationReason> sm_success(new GenericTerminationReason(1,"Success."));
+    static std::shared_ptr<TerminationReason> sm_success(
+        new GenericTerminationReason(1, "Success."));
     return sm_success;
   }
 
   static std::shared_ptr<TerminationReason> failure() {
-    static std::shared_ptr<TerminationReason> sm_failure(new GenericTerminationReason(-1,"Failure."));
+    static std::shared_ptr<TerminationReason> sm_failure(
+        new GenericTerminationReason(-1, "Failure."));
     return sm_failure;
   }
 
-  virtual void get_description(std::ostream &desc, int indent_level=0); 
+  virtual void get_description(std::ostream &desc, int indent_level = 0);
+
 protected:
   std::string m_description;
 };

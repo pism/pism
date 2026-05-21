@@ -20,12 +20,12 @@
 #ifndef PISM_ERROR_HANDLING_H
 #define PISM_ERROR_HANDLING_H
 
-#include <mpi.h>                // MPI_Comm
+#include <mpi.h> // MPI_Comm
 #include <stdexcept>
 #include <string>
 #include <vector>
 
-#include "pism/pism_config.hh"  // Pism_DEBUG
+#include "pism/pism_config.hh" // Pism_DEBUG
 
 namespace pism {
 
@@ -37,7 +37,7 @@ public:
   int line_number;
 };
 
-#if (Pism_DEBUG==1)
+#if (Pism_DEBUG == 1)
 #define PISM_ERROR_LOCATION pism::ErrorLocation(__FILE__, __LINE__)
 #else
 #define PISM_ERROR_LOCATION pism::ErrorLocation()
@@ -48,10 +48,11 @@ public:
   RuntimeError(const ErrorLocation &location, const std::string &message);
   ~RuntimeError() throw();
 
-  typedef void (*Hook)(RuntimeError*);
+  typedef void (*Hook)(RuntimeError *);
 
   //! @brief build a RuntimeError with a formatted message
-  static RuntimeError formatted(const ErrorLocation &location, const char format[], ...) __attribute__((format(printf, 2, 3)));
+  static RuntimeError formatted(const ErrorLocation &location, const char format[], ...)
+      __attribute__((format(printf, 2, 3)));
 
   static void set_hook(Hook new_hook);
 
@@ -60,7 +61,8 @@ public:
   void add_context(const std::string &message);
   void add_context(const char format[], ...) __attribute__((format(printf, 2, 3)));
   void print(MPI_Comm com);
-  protected:
+
+protected:
   std::vector<std::string> m_context;
   static Hook sm_hook;
   ErrorLocation m_location;
@@ -73,6 +75,7 @@ public:
   void check();
   void failed();
   void reset();
+
 private:
   bool m_failed;
   MPI_Comm m_com;
@@ -80,14 +83,18 @@ private:
 
 void handle_fatal_errors(MPI_Comm com);
 
-void check_c_call(int errcode, int success, const char* function_name,
-                  const char *file, int line);
+void check_c_call(int errcode, int success, const char *function_name, const char *file, int line);
 
-void check_petsc_call(int errcode, const char* function_name,
-                      const char *file, int line);
+void check_petsc_call(int errcode, const char *function_name, const char *file, int line);
 
-#define PISM_C_CHK(errcode,success,name) do { pism::check_c_call(errcode, success, name, __FILE__, __LINE__); } while (0)
-#define PISM_CHK(errcode,name) do { pism::check_petsc_call(errcode, name, __FILE__, __LINE__); } while (0)
+#define PISM_C_CHK(errcode, success, name)                                                         \
+  do {                                                                                             \
+    pism::check_c_call(errcode, success, name, __FILE__, __LINE__);                                \
+  } while (0)
+#define PISM_CHK(errcode, name)                                                                    \
+  do {                                                                                             \
+    pism::check_petsc_call(errcode, name, __FILE__, __LINE__);                                     \
+  } while (0)
 
 } // end of namespace pism
 

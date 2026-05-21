@@ -16,9 +16,9 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <set>
 #include <algorithm>
 #include <cmath>
+#include <set>
 #include <string>
 #include <utility>
 
@@ -54,10 +54,11 @@ VariableMetadata::VariableMetadata(const std::string &name, units::System::Ptr s
 VariableMetadata::VariableMetadata(const std::string &name,
                                    const std::vector<std::tuple<std::string, int> > &dimensions,
                                    std::shared_ptr<units::System> system)
-  : VariableMetadata(name, system, 0) {
+    : VariableMetadata(name, system, 0) {
 
   for (const auto &dim : dimensions) {
-    m_dimensions.emplace_back(DimensionMetadata{std::get<0>(dim), system, std::get<1>(dim), false});
+    m_dimensions.emplace_back(
+        DimensionMetadata{ std::get<0>(dim), system, std::get<1>(dim), false });
   }
 }
 
@@ -71,17 +72,16 @@ VariableMetadata::VariableMetadata(std::shared_ptr<units::System> system, const 
   // spatial variables are time-dependent by default
   set_time_dependent(true);
 
-  m_dimensions = {{"y", system, (int)grid.My(), true},
-                  {"x", system, (int)grid.Mx(), true}};
+  m_dimensions = { { "y", system, (int)grid.My(), true }, { "x", system, (int)grid.Mx(), true } };
 
-  auto &x = dimension("x");
+  auto &x             = dimension("x");
   x["axis"]           = "X";
   x["long_name"]      = "X-coordinate in Cartesian system";
   x["standard_name"]  = "projection_x_coordinate";
   x["units"]          = "m";
   x["spacing_meters"] = { grid.dx() };
 
-  auto &y = dimension("y");
+  auto &y             = dimension("y");
   y["axis"]           = "Y";
   y["long_name"]      = "Y-coordinate in Cartesian system";
   y["standard_name"]  = "projection_y_coordinate";
@@ -91,7 +91,7 @@ VariableMetadata::VariableMetadata(std::shared_ptr<units::System> system, const 
   if (not levels.empty()) {
     m_dimensions.push_back({ "z", system, (int)levels.size(), true });
 
-    auto &z = dimension("z");
+    auto &z        = dimension("z");
     z["axis"]      = "Z";
     z["long_name"] = "Z-coordinate in Cartesian system";
     z["units"]     = "m";
@@ -140,17 +140,18 @@ std::vector<DimensionMetadata> VariableMetadata::dimensions_impl() const {
   return m_dimensions;
 }
 
-const DimensionMetadata& VariableMetadata::dimension(const std::string &name) const {
-  return const_cast<VariableMetadata*>(this)->dimension(name);
+const DimensionMetadata &VariableMetadata::dimension(const std::string &name) const {
+  return const_cast<VariableMetadata *>(this)->dimension(name);
 }
 
-DimensionMetadata& VariableMetadata::dimension(const std::string &name) {
+DimensionMetadata &VariableMetadata::dimension(const std::string &name) {
   for (auto &dim : m_dimensions) {
     if (dim.get_name() == name) {
       return dim;
     }
   }
-  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable '%s' does not have the '%s' dimension",
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                "variable '%s' does not have the '%s' dimension",
                                 get_name().c_str(), name.c_str());
 }
 
@@ -235,7 +236,7 @@ void VariableMetadata::check_range(const std::string &filename, double min, doub
 
 DimensionMetadata::DimensionMetadata(const std::string &name, std::shared_ptr<units::System> system,
                                      int length, bool coordinate_variable)
-  : VariableMetadata(name, system), m_length(length), m_coordinate_variable(coordinate_variable) {
+    : VariableMetadata(name, system), m_length(length), m_coordinate_variable(coordinate_variable) {
   // empty
 }
 
@@ -309,11 +310,12 @@ VariableMetadata &VariableMetadata::set_name(const std::string &name) {
 
 //! Set a scalar attribute to a single (scalar) value.
 VariableMetadata &VariableMetadata::set_number(const std::string &name, double value) {
-  return set_numbers(name, {value});
+  return set_numbers(name, { value });
 }
 
 //! Set a scalar attribute to a single (scalar) value.
-VariableMetadata &VariableMetadata::set_numbers(const std::string &name, const std::vector<double> &values) {
+VariableMetadata &VariableMetadata::set_numbers(const std::string &name,
+                                                const std::vector<double> &values) {
   m_attributes.numbers[name] = values;
 
   return *this;
@@ -413,7 +415,7 @@ VariableMetadata &VariableMetadata::set_string(const std::string &name, const st
  */
 std::string VariableMetadata::get_string(const std::string &name) const {
   if (name == "short_name") {
-     return get_name();
+    return get_name();
   }
 
   auto j = m_attributes.strings.find(name);
@@ -448,13 +450,13 @@ void VariableMetadata::report_to_stdout(const Logger &log, int verbosity_thresho
       continue;
     }
 
-    log.message(verbosity_threshold, "  %s%s = \"%s\"\n",
-                name.c_str(), padding.c_str(), value.c_str());
+    log.message(verbosity_threshold, "  %s%s = \"%s\"\n", name.c_str(), padding.c_str(),
+                value.c_str());
   }
 
   // Print double attributes:
   for (const auto &d : doubles) {
-    std::string name  = d.first;
+    std::string name           = d.first;
     std::vector<double> values = d.second;
     std::string padding(max_name_length - name.size(), ' ');
 
@@ -466,22 +468,21 @@ void VariableMetadata::report_to_stdout(const Logger &log, int verbosity_thresho
     const double small = 1.0e-4;
     if ((std::fabs(values[0]) >= large) || (std::fabs(values[0]) <= small)) {
       // use scientific notation if a number is big or small
-      log.message(verbosity_threshold, "  %s%s = %12.3e\n",
-                  name.c_str(), padding.c_str(), values[0]);
+      log.message(verbosity_threshold, "  %s%s = %12.3e\n", name.c_str(), padding.c_str(),
+                  values[0]);
     } else {
-      log.message(verbosity_threshold, "  %s%s = %12.5f\n",
-                  name.c_str(), padding.c_str(), values[0]);
+      log.message(verbosity_threshold, "  %s%s = %12.5f\n", name.c_str(), padding.c_str(),
+                  values[0]);
     }
-
   }
 }
 
 ConstAttribute::ConstAttribute(const VariableMetadata *var, const std::string &name)
-  : m_name(name), m_var(const_cast<VariableMetadata*>(var)) {
+    : m_name(name), m_var(const_cast<VariableMetadata *>(var)) {
 }
 
-ConstAttribute::ConstAttribute(ConstAttribute&& a) noexcept
-  : m_name(std::move(a.m_name)), m_var(a.m_var) {
+ConstAttribute::ConstAttribute(ConstAttribute &&a) noexcept : m_name(std::move(a.m_name)),
+                                                              m_var(a.m_var) {
   a.m_name.clear();
   a.m_var = nullptr;
 }
@@ -495,12 +496,11 @@ ConstAttribute::operator double() const {
   if (values.size() == 1) {
     return values[0];
   }
-  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                "%s:%s has more than one value",
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s:%s has more than one value",
                                 m_var->get_name().c_str(), m_name.c_str());
 }
 
-ConstAttribute::operator std::vector<double> () const {
+ConstAttribute::operator std::vector<double>() const {
   return m_var->get_numbers(m_name);
 }
 

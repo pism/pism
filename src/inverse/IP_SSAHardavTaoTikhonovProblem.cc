@@ -28,12 +28,12 @@ void IP_SSAHardavTaoTikhonovProblem::connect(Tao tao) {
   IPTaoTikhonovProblem<IP_SSAHardavForwardProblem>::connect(tao);
 
   const char *type;
-  ierr = TaoGetType(tao,&type);
+  ierr = TaoGetType(tao, &type);
   PISM_CHK(ierr, "TaoGetType");
 
-  if (strcmp(type,"blmvm") == 0) {
-    taoutil::TaoGetVariableBoundsCallback<IP_SSAHardavTaoTikhonovProblem>::connect(tao,*this);
-  }  
+  if (strcmp(type, "blmvm") == 0) {
+    taoutil::TaoGetVariableBoundsCallback<IP_SSAHardavTaoTikhonovProblem>::connect(tao, *this);
+  }
 }
 
 
@@ -45,13 +45,13 @@ void IP_SSAHardavTaoTikhonovProblem::getVariableBounds(Tao /*tao*/, Vec lo, Vec 
   hardav_max = m_grid->ctx()->config()->get_number("inverse.ssa.hardav_max");
 
   IPDesignVariableParameterization &design_param = m_forward.design_param();
-  design_param.fromDesignVariable(hardav_min,&zeta_min);
-  design_param.fromDesignVariable(hardav_max,&zeta_max);
+  design_param.fromDesignVariable(hardav_min, &zeta_min);
+  design_param.fromDesignVariable(hardav_max, &zeta_max);
 
-  PetscErrorCode ierr = VecSet(lo,zeta_min);
+  PetscErrorCode ierr = VecSet(lo, zeta_min);
   PISM_CHK(ierr, "VecSet");
 
-  ierr = VecSet(hi,zeta_max);
+  ierr = VecSet(hi, zeta_max);
   PISM_CHK(ierr, "VecSet");
 }
 

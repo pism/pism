@@ -25,22 +25,21 @@ namespace pism {
 namespace ocean {
 
 //! @brief Reads and uses shelf_basal_mass_flux *anomalies* from a file
-class Anomaly : public OceanModel
-{
+class Anomaly : public OceanModel {
 public:
   Anomaly(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in);
   virtual ~Anomaly() = default;
+
 protected:
   virtual void init_impl(const Geometry &geometry);
   virtual void update_impl(const Inputs &inputs, double t, double dt);
 
-  virtual const array::Scalar& shelf_base_mass_flux_impl() const;
+  virtual const array::Scalar &shelf_base_mass_flux_impl() const;
 
 protected:
   std::shared_ptr<array::Scalar> m_shelf_base_mass_flux;
 
   std::shared_ptr<array::Forcing> m_shelf_base_mass_flux_anomaly;
-
 };
 
 } // end of namespace ocean

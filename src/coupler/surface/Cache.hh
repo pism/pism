@@ -29,6 +29,7 @@ class Cache : public SurfaceModel {
 public:
   Cache(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> in);
   virtual ~Cache() = default;
+
 protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
@@ -39,11 +40,12 @@ protected:
   const array::Scalar &mass_flux_impl() const;
   const array::Scalar &layer_thickness_impl() const;
 
-  virtual const array::Scalar& accumulation_impl() const;
-  virtual const array::Scalar& melt_impl() const;
-  virtual const array::Scalar& runoff_impl() const;
+  virtual const array::Scalar &accumulation_impl() const;
+  virtual const array::Scalar &melt_impl() const;
+  virtual const array::Scalar &runoff_impl() const;
 
   MaxTimestep max_timestep_impl(double t) const;
+
 protected:
   // storage for the rest of the fields is inherited from SurfaceModel
   std::shared_ptr<array::Scalar> m_mass_flux;

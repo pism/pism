@@ -19,22 +19,21 @@
 
 #include "pism/util/petscwrappers/Viewer.hh"
 
-#include <petscdraw.h>
-#include <cassert>
 #include "pism/util/error_handling.hh"
+#include <cassert>
+#include <petscdraw.h>
 
 namespace pism {
 namespace petsc {
 
-Viewer::Viewer(MPI_Comm com,  const std::string &title, unsigned int target_size,
-               double Lx, double Ly) {
+Viewer::Viewer(MPI_Comm com, const std::string &title, unsigned int target_size, double Lx,
+               double Ly) {
   PetscErrorCode ierr;
   unsigned int X, Y;
 
   compute_size(target_size, Lx, Ly, X, Y);
 
-  ierr = PetscViewerDrawOpen(com, NULL, title.c_str(),
-                             PETSC_DECIDE, PETSC_DECIDE, X, Y, &m_value);
+  ierr = PetscViewerDrawOpen(com, NULL, title.c_str(), PETSC_DECIDE, PETSC_DECIDE, X, Y, &m_value);
   PISM_CHK(ierr, "PetscViewerDrawOpen");
 
   // following should be redundant, but may put up a title even under 2.3.3-p1:3 where
@@ -62,11 +61,13 @@ Viewer::Viewer() {
 
 Viewer::~Viewer() {
   if (m_value != NULL) {
-    PetscErrorCode ierr = PetscViewerDestroy(&m_value); CHKERRCONTINUE(ierr);
+    PetscErrorCode ierr = PetscViewerDestroy(&m_value);
+    CHKERRCONTINUE(ierr);
   }
 }
 
-void Viewer::compute_size(unsigned int target_size, double Lx, double Ly, unsigned int &X, unsigned int &Y) {
+void Viewer::compute_size(unsigned int target_size, double Lx, double Ly, unsigned int &X,
+                          unsigned int &Y) {
 
   assert(Lx > 0 && Ly > 0);
 
@@ -74,18 +75,18 @@ void Viewer::compute_size(unsigned int target_size, double Lx, double Ly, unsign
   const double yTOx = Ly / Lx;
   if (Ly > Lx) {
     X = target_size;
-    Y = (unsigned int) ((double)target_size * yTOx);
+    Y = (unsigned int)((double)target_size * yTOx);
   } else {
     Y = target_size;
-    X = (unsigned int) ((double)target_size / yTOx);
+    X = (unsigned int)((double)target_size / yTOx);
   }
 
   // if either dimension is larger than twice the target, shrink appropriately
   if (X > 2 * target_size) {
-    Y = (unsigned int) ((double)(Y) * (2.0 * (double)target_size / (double)(X)));
+    Y = (unsigned int)((double)(Y) * (2.0 * (double)target_size / (double)(X)));
     X = 2 * target_size;
   } else if (Y > 2 * target_size) {
-    X = (unsigned int) ((double)(X) * (2.0 * (double)target_size / (double)(Y)));
+    X = (unsigned int)((double)(X) * (2.0 * (double)target_size / (double)(Y)));
     Y = 2 * target_size;
   }
 

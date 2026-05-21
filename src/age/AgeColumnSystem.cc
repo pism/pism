@@ -22,15 +22,11 @@
 
 namespace pism {
 
-AgeColumnSystem::AgeColumnSystem(const std::vector<double>& storage_grid,
-                                 const std::string &my_prefix,
-                                 double dx, double dy, double dt,
-                                 const array::Array3D &age,
-                                 const array::Array3D &u3,
-                                 const array::Array3D &v3,
-                                 const array::Array3D &w3)
-  : columnSystemCtx(storage_grid, my_prefix, dx, dy, dt, u3, v3, w3),
-    m_age3(age) {
+AgeColumnSystem::AgeColumnSystem(const std::vector<double> &storage_grid,
+                                 const std::string &my_prefix, double dx, double dy, double dt,
+                                 const array::Array3D &age, const array::Array3D &u3,
+                                 const array::Array3D &v3, const array::Array3D &w3)
+    : columnSystemCtx(storage_grid, my_prefix, dx, dy, dt, u3, v3, w3), m_age3(age) {
 
   size_t Mz = m_z.size();
   m_A.resize(Mz);
@@ -53,11 +49,11 @@ void AgeColumnSystem::init(int i, int j, double thickness) {
   coarse_to_fine(m_v3, i, j, &m_v[0]);
   coarse_to_fine(m_w3, i, j, &m_w[0]);
 
-  coarse_to_fine(m_age3, m_i, m_j,   &m_A[0]);
-  coarse_to_fine(m_age3, m_i, m_j+1, &m_A_n[0]);
-  coarse_to_fine(m_age3, m_i+1, m_j, &m_A_e[0]);
-  coarse_to_fine(m_age3, m_i, m_j-1, &m_A_s[0]);
-  coarse_to_fine(m_age3, m_i-1, m_j, &m_A_w[0]);
+  coarse_to_fine(m_age3, m_i, m_j, &m_A[0]);
+  coarse_to_fine(m_age3, m_i, m_j + 1, &m_A_n[0]);
+  coarse_to_fine(m_age3, m_i + 1, m_j, &m_A_e[0]);
+  coarse_to_fine(m_age3, m_i, m_j - 1, &m_A_s[0]);
+  coarse_to_fine(m_age3, m_i - 1, m_j, &m_A_w[0]);
 }
 
 //! First-order upwind scheme with implicit in the vertical: one column solve.
@@ -72,12 +68,10 @@ void AgeColumnSystem::solve(std::vector<double> &x) {
   // set up system: 0 <= k < m_ks
   for (unsigned int k = 0; k < m_ks; k++) {
     // do lowest-order upwinding, explicitly for horizontal
-    S.RHS(k) =  (m_u[k] < 0 ?
-                 m_u[k] * (m_A_e[k] -  m_A[k]) / m_dx :
-                 m_u[k] * (m_A[k]  - m_A_w[k]) / m_dx);
-    S.RHS(k) += (m_v[k] < 0 ?
-                 m_v[k] * (m_A_n[k] -  m_A[k]) / m_dy :
-                 m_v[k] * (m_A[k]  - m_A_s[k]) / m_dy);
+    S.RHS(k) =
+        (m_u[k] < 0 ? m_u[k] * (m_A_e[k] - m_A[k]) / m_dx : m_u[k] * (m_A[k] - m_A_w[k]) / m_dx);
+    S.RHS(k) +=
+        (m_v[k] < 0 ? m_v[k] * (m_A_n[k] - m_A[k]) / m_dy : m_v[k] * (m_A[k] - m_A_s[k]) / m_dy);
     // note it is the age eqn: dage/dt = 1.0 and we have moved the hor.
     //   advection terms over to right:
     S.RHS(k) = m_A[k] + m_dt * (1.0 - S.RHS(k));
@@ -86,43 +80,43 @@ void AgeColumnSystem::solve(std::vector<double> &x) {
     double AA = m_nu * m_w[k];
     if (k > 0) {
       if (AA >= 0) { // upward velocity
-        S.L(k) = - AA;
+        S.L(k) = -AA;
         S.D(k) = 1.0 + AA;
         S.U(k) = 0.0;
       } else { // downward velocity; note  -AA >= 0
         S.L(k) = 0.0;
         S.D(k) = 1.0 - AA;
-        S.U(k) = + AA;
+        S.U(k) = +AA;
       }
     } else { // k == 0 case
       // note L[0] is not used
       if (AA > 0) { // if strictly upward velocity apply boundary condition:
                     // age = 0 because ice is being added to base
-        S.D(0) = 1.0;
-        S.U(0) = 0.0;
+        S.D(0)   = 1.0;
+        S.U(0)   = 0.0;
         S.RHS(0) = 0.0;
       } else { // downward velocity; note  -AA >= 0
         S.D(0) = 1.0 - AA;
-        S.U(0) = + AA;
+        S.U(0) = +AA;
         // keep rhs[0] as is
       }
     }
-  }  // done "set up system: 0 <= k < m_ks"
+  } // done "set up system: 0 <= k < m_ks"
 
   // surface b.c. at m_ks
   if (m_ks > 0) {
-    S.L(m_ks) = 0;
-    S.D(m_ks) = 1.0;   // ignore U[m_ks]
-    S.RHS(m_ks) = 0.0;  // age zero at surface
+    S.L(m_ks)   = 0;
+    S.D(m_ks)   = 1.0; // ignore U[m_ks]
+    S.RHS(m_ks) = 0.0; // age zero at surface
   }
 
   // solve it
   try {
     S.solve(m_ks + 1, x);
-  }
-  catch (RuntimeError &e) {
+  } catch (RuntimeError &e) {
     e.add_context("solving the tri-diagonal system (AgeColumnSystem) at (%d, %d)\n"
-                  "saving system to m-file... ", m_i, m_j);
+                  "saving system to m-file... ",
+                  m_i, m_j);
     reportColumnZeroPivotErrorMFile(m_ks + 1);
     throw;
   }

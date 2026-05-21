@@ -39,7 +39,7 @@ private:
   void begin_pointwise_access_impl() const;
   void end_pointwise_access_impl() const;
 
-  const array::Scalar& air_temperature_impl() const;
+  const array::Scalar &air_temperature_impl() const;
 
   void init_timeseries_impl(const std::vector<double> &ts) const;
   void temp_time_series_impl(int i, int j, std::vector<double> &values) const;

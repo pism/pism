@@ -16,9 +16,9 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <cstring>
-#include <cstdlib>
 #include <cassert>
+#include <cstdlib>
+#include <cstring>
 #include <memory>
 #include <petscvec.h>
 
@@ -27,13 +27,13 @@
 #include "pism/util/Config.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
+#include "pism/util/InputInterpolation.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/array/Array_impl.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/io/io_helpers.hh"
-#include "pism/util/InputInterpolation.hh"
 
 namespace pism {
 namespace array {
@@ -246,8 +246,7 @@ void Array3D::copy_from(const Array3D &input) {
 
 std::shared_ptr<Array3D> Array3D::duplicate(Kind ghostedp) const {
 
-  auto result =
-      std::make_shared<Array3D>(this->grid(), this->get_name(), ghostedp, this->levels());
+  auto result = std::make_shared<Array3D>(this->grid(), this->get_name(), ghostedp, this->levels());
 
   result->metadata() = this->metadata();
 

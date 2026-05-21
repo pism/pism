@@ -18,10 +18,10 @@
 
 #include "pism/coupler/ocean/sea_level/Delta_SL_2D.hh"
 
-#include "pism/util/Grid.hh"
 #include "pism/coupler/util/options.hh"
-#include "pism/util/array/Forcing.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/array/Forcing.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
@@ -29,7 +29,7 @@ namespace ocean {
 namespace sea_level {
 
 Delta_SL_2D::Delta_SL_2D(std::shared_ptr<const Grid> grid, std::shared_ptr<SeaLevel> in)
-  : SeaLevel(grid, in) {
+    : SeaLevel(grid, in) {
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.delta_sl_2d");
 
@@ -38,16 +38,10 @@ Delta_SL_2D::Delta_SL_2D(std::shared_ptr<const Grid> grid, std::shared_ptr<SeaLe
 
     File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    m_forcing = std::make_shared<array::Forcing>(m_grid,
-                                                 file,
-                                                 "delta_SL",
+    m_forcing = std::make_shared<array::Forcing>(m_grid, file, "delta_SL",
                                                  "", // no standard name
-                                                 buffer_size,
-                                                 opt.periodic,
-                                                 LINEAR);
-    m_forcing->metadata(0)
-        .long_name("two-dimensional sea level offsets")
-        .units("meters");
+                                                 buffer_size, opt.periodic, LINEAR);
+    m_forcing->metadata(0).long_name("two-dimensional sea level offsets").units("meters");
   }
 }
 

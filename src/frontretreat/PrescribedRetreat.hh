@@ -44,8 +44,7 @@ public:
 
   void init();
 
-  void update(double t, double dt,
-              array::Scalar &ice_thickness,
+  void update(double t, double dt, array::Scalar &ice_thickness,
               array::Scalar &ice_area_specific_volume);
 
 protected:

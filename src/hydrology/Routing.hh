@@ -80,24 +80,21 @@ namespace hydrology {
 */
 class Routing : public Hydrology {
 public:
-
   Routing(std::shared_ptr<const Grid> g);
   virtual ~Routing() = default;
 
-  const array::Scalar& subglacial_water_pressure() const;
-  const array::Staggered& velocity_staggered() const;
+  const array::Scalar &subglacial_water_pressure() const;
+  const array::Staggered &velocity_staggered() const;
 
 protected:
   virtual void restart_impl(const File &input_file, int record);
 
-  virtual void bootstrap_impl(const File &input_file,
-                              const array::Scalar &ice_thickness);
+  virtual void bootstrap_impl(const File &input_file, const array::Scalar &ice_thickness);
 
-  virtual void init_impl(const array::Scalar &W_till,
-                               const array::Scalar &W,
-                               const array::Scalar &P);
+  virtual void init_impl(const array::Scalar &W_till, const array::Scalar &W,
+                         const array::Scalar &P);
 
-  virtual void update_impl(double t, double dt, const Inputs& inputs);
+  virtual void update_impl(double t, double dt, const Inputs &inputs);
 
   virtual std::map<std::string, Diagnostic::Ptr> spatial_diagnostics_impl() const;
   virtual std::map<std::string, TSDiagnostic::Ptr> scalar_diagnostics_impl() const;
@@ -107,8 +104,8 @@ protected:
 
   double max_timestep_W_diff(double KW_max) const;
   double max_timestep_W_cfl() const;
-protected:
 
+protected:
   // edge-centered (staggered) advection flux
   array::Staggered1 m_Qstag;
 
@@ -134,57 +131,37 @@ protected:
 
   array::Scalar1 m_bottom_surface;
 
-  void water_thickness_staggered(const array::Scalar &W,
-                                 const array::CellType1 &mask,
+  void water_thickness_staggered(const array::Scalar &W, const array::CellType1 &mask,
                                  array::Staggered &result);
 
-  void compute_conductivity(const array::Staggered &W,
-                            const array::Scalar &P,
-                            const array::Scalar &bed,
-                            array::Staggered &result,
+  void compute_conductivity(const array::Staggered &W, const array::Scalar &P,
+                            const array::Scalar &bed, array::Staggered &result,
                             double &maxKW) const;
 
-  void compute_velocity(const array::Staggered &W,
-                        const array::Scalar &P,
-                        const array::Scalar &bed,
-                        const array::Staggered &K,
-                        const array::Scalar1 *no_model_mask,
+  void compute_velocity(const array::Staggered &W, const array::Scalar &P, const array::Scalar &bed,
+                        const array::Staggered &K, const array::Scalar1 *no_model_mask,
                         array::Staggered &result) const;
 
-  void advective_fluxes(const array::Staggered &V,
-                        const array::Scalar &W,
+  void advective_fluxes(const array::Staggered &V, const array::Scalar &W,
                         array::Staggered &result) const;
 
-  void W_change_due_to_flow(double dt,
-                            const array::Scalar1    &W,
-                            const array::Staggered1 &Wstag,
-                            const array::Staggered1 &K,
-                            const array::Staggered1 &Q,
+  void W_change_due_to_flow(double dt, const array::Scalar1 &W, const array::Staggered1 &Wstag,
+                            const array::Staggered1 &K, const array::Staggered1 &Q,
                             array::Scalar &result);
-  void update_W(double dt,
-                const array::Scalar     &surface_input_rate,
-                const array::Scalar     &basal_melt_rate,
-                const array::Scalar1    &W,
-                const array::Staggered1 &Wstag,
-                const array::Scalar     &Wtill,
-                const array::Scalar     &Wtill_new,
-                const array::Staggered1 &K,
-                const array::Staggered1 &Q,
-                array::Scalar           &W_new);
+  void update_W(double dt, const array::Scalar &surface_input_rate,
+                const array::Scalar &basal_melt_rate, const array::Scalar1 &W,
+                const array::Staggered1 &Wstag, const array::Scalar &Wtill,
+                const array::Scalar &Wtill_new, const array::Staggered1 &K,
+                const array::Staggered1 &Q, array::Scalar &W_new);
 
-  void update_Wtill(double dt,
-                    const array::Scalar &Wtill,
-                    const array::Scalar &surface_input_rate,
-                    const array::Scalar &basal_melt_rate,
-                    array::Scalar &Wtill_new);
+  void update_Wtill(double dt, const array::Scalar &Wtill, const array::Scalar &surface_input_rate,
+                    const array::Scalar &basal_melt_rate, array::Scalar &Wtill_new);
 
 private:
   virtual void initialization_message() const;
 };
 
-void wall_melt(const Routing &model,
-               const array::Scalar &bed_elevation,
-               array::Scalar &result);
+void wall_melt(const Routing &model, const array::Scalar &bed_elevation, array::Scalar &result);
 
 } // end of namespace hydrology
 } // end of namespace pism

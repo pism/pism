@@ -25,7 +25,9 @@
 namespace pism {
 
 class Config;
-namespace array { class Scalar; }
+namespace array {
+class Scalar;
+}
 
 namespace inverse {
 
@@ -59,12 +61,10 @@ namespace inverse {
   \f]
   where \f$d_{\rm scale}={\tt design_param_tauc_scale}\f$.
 */
-class IPDesignVariableParameterization 
-{
+class IPDesignVariableParameterization {
 public:
-  
   IPDesignVariableParameterization() {};
-  
+
   virtual ~IPDesignVariableParameterization() {};
 
   virtual void set_scales(const Config &config, const std::string &design_var_name);
@@ -75,23 +75,24 @@ public:
     \param[out] value The value \f$g(\zeta)\f$.
     \param[out] derivative The value \f$g'(\zeta)\f$. */
   virtual void toDesignVariable(double zeta, double *value, double *derivative) = 0;
-  
-  //! Converts from \f$d\f$ to a parameterization value \f$\zeta\f$ such that \f$d=g(\zeta)\f$.  
+
+  //! Converts from \f$d\f$ to a parameterization value \f$\zeta\f$ such that \f$d=g(\zeta)\f$.
   /*! More than one such \f$\zeta\f$ may exist; only one is returned. */
   virtual void fromDesignVariable(double d, double *OUTPUT) = 0;
 
-  virtual void convertToDesignVariable(array::Scalar &zeta, array::Scalar &d, bool communicate = true);
+  virtual void convertToDesignVariable(array::Scalar &zeta, array::Scalar &d,
+                                       bool communicate = true);
 
-  virtual void convertFromDesignVariable(array::Scalar &d, array::Scalar &zeta,  bool communicate = true);
+  virtual void convertFromDesignVariable(array::Scalar &d, array::Scalar &zeta,
+                                         bool communicate = true);
+
 protected:
-  
   /// Value of \f$d\f$ in PISM units that equals 1 for IPDesignVariableParameterization's units.
   double m_d_scale;
 };
 
 //! Parameterization \f$d=d_{\rm scale}g(\zeta)\f$ with \f$g(\zeta)=\zeta\f$.
-class IPDesignVariableParamIdent: public IPDesignVariableParameterization
-{
+class IPDesignVariableParamIdent : public IPDesignVariableParameterization {
 public:
   IPDesignVariableParamIdent() { /*do nothing*/ };
 
@@ -103,8 +104,7 @@ public:
 };
 
 //! Parameterization \f$\tau_c=\tau_{\rm scale}g(\zeta)\f$ with \f$g(\zeta)=\zeta^2\f$.
-class IPDesignVariableParamSquare: public IPDesignVariableParameterization
-{
+class IPDesignVariableParamSquare : public IPDesignVariableParameterization {
 public:
   IPDesignVariableParamSquare() { /*do nothing*/ };
 
@@ -116,8 +116,7 @@ public:
 };
 
 //! Parameterization \f$\tau_c=\tau_{\rm scale}g(\zeta)\f$ with \f$g(\zeta)=\exp(\zeta)\f$.
-class IPDesignVariableParamExp: public IPDesignVariableParameterization
-{
+class IPDesignVariableParamExp : public IPDesignVariableParameterization {
 public:
   IPDesignVariableParamExp() { /*do nothing*/ };
 
@@ -138,8 +137,7 @@ private:
 /*! More specifically, \f$g(\zeta)\rightarrow 0\f$ as \f$\zeta\rightarrow-\infty\f$ and \f$g(\zeta)\approx p\f$ 
   for large values of \f$\zeta\f$.  The transition from a nonlinear to an approximately linear 
   function occurs in the neighbourhood of the parameter \f$d_0\f$. */
-class IPDesignVariableParamTruncatedIdent: public IPDesignVariableParameterization
-{
+class IPDesignVariableParamTruncatedIdent : public IPDesignVariableParameterization {
 public:
   IPDesignVariableParamTruncatedIdent() {};
 

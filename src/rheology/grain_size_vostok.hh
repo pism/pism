@@ -47,17 +47,18 @@ public:
    * Return grain size in meters given ice age in years.
    */
   double operator()(double a);
+
 private:
   static const int m_N = 22;
   static const double m_age[m_N];
   static const double m_grain_size[m_N];
 
-  gsl_interp_accel* m_acc;
-  gsl_spline*       m_spline;
+  gsl_interp_accel *m_acc;
+  gsl_spline *m_spline;
 
   // disable copy constructor and the assignment operator:
   grain_size_vostok(const grain_size_vostok &other);
-  grain_size_vostok& operator=(const grain_size_vostok&);
+  grain_size_vostok &operator=(const grain_size_vostok &);
 };
 
 } // end of namespace rheology

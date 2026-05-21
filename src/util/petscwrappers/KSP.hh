@@ -27,7 +27,7 @@
 namespace pism {
 namespace petsc {
 
-class KSP : public Wrapper< ::KSP > {
+class KSP : public Wrapper< ::KSP> {
 public:
   KSP();
   KSP(::KSP ksp);

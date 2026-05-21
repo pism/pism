@@ -40,6 +40,7 @@ namespace surface {
 class InitializationHelper : public SurfaceModel {
 public:
   InitializationHelper(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> in);
+
 protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
@@ -50,16 +51,16 @@ protected:
   const array::Scalar &mass_flux_impl() const;
   const array::Scalar &layer_thickness_impl() const;
 
-  const array::Scalar& accumulation_impl() const;
-  const array::Scalar& melt_impl() const;
-  const array::Scalar& runoff_impl() const;
+  const array::Scalar &accumulation_impl() const;
+  const array::Scalar &melt_impl() const;
+  const array::Scalar &runoff_impl() const;
 
   std::set<VariableMetadata> state_impl() const;
   void write_state_impl(const OutputFile &output) const;
 
 private:
   // store pointers to fields so that we can iterate over them
-  std::vector<array::Array*> m_variables;
+  std::vector<array::Array *> m_variables;
   // storage
   array::Scalar m_mass_flux;
   array::Scalar m_temperature;

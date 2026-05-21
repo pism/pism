@@ -45,14 +45,11 @@ public:
 
   void restart(const File &input_file, int record);
 
-  void update(double t, double dt,
-              const array::Array3D &u,
-              const array::Array3D &v,
-              const array::Scalar &ice_thickness,
-              const array::Scalar &top_surface_mass_balance,
+  void update(double t, double dt, const array::Array3D &u, const array::Array3D &v,
+              const array::Scalar &ice_thickness, const array::Scalar &top_surface_mass_balance,
               const array::Scalar &bottom_surface_mass_balance);
 
-  const array::Array3D& layer_thicknesses() const;
+  const array::Array3D &layer_thicknesses() const;
 
 private:
   MaxTimestep max_timestep_impl(double t) const;

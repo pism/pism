@@ -51,7 +51,7 @@ struct Run {
  * Helper class wrapping a C-style 2D array using the row-major storage order. It is used
  * to implement the interface required by connected_components::details::label().
  */
-template<typename T>
+template <typename T>
 class CArray {
 public:
   CArray(T *array, int nrows, int ncols) : m_array(array), m_nrows(nrows), m_ncols(ncols) {
@@ -85,8 +85,7 @@ private:
  */
 class PISMArray {
 public:
-  PISMArray(pism::array::Scalar &array)
-    : m_array(array) {
+  PISMArray(pism::array::Scalar &array) : m_array(array) {
 
     auto grid = array.grid();
 
@@ -111,8 +110,8 @@ public:
     return m_array(m_c0 + c, m_r0 + r);
   }
 
-  std::array<int,2> shape() const {
-    return {m_nrows, m_ncols};
+  std::array<int, 2> shape() const {
+    return { m_nrows, m_ncols };
   }
 
 private:
@@ -131,7 +130,7 @@ public:
     // empty
   }
 
-  std::array<int,2> shape() const {
+  std::array<int, 2> shape() const {
     return m_data.shape();
   }
 
@@ -196,9 +195,9 @@ bool label(const mask &input, bool identify_isolated_patched, int min_label,
   // iteration limits:
   const int col_min = 0;
   const int row_min = 0;
-  auto shape = input.shape();
-  const int nrows = shape[0];
-  const int ncols = shape[1];
+  auto shape        = input.shape();
+  const int nrows   = shape[0];
+  const int ncols   = shape[1];
   // Labels: the "attached" label should be the smallest one.
   const int background            = 0;
   const int attached_label        = 1;
@@ -209,8 +208,8 @@ bool label(const mask &input, bool identify_isolated_patched, int min_label,
   // labels[labels[k]], etc. The smallest label from a set of
   // equivalent ones is used as a "representative" label for the set.
   // By design labels[k] <= k.
-  std::vector<int> labels = {background, attached_label};
-  int provisional_label = min_provisional_label;
+  std::vector<int> labels = { background, attached_label };
+  int provisional_label   = min_provisional_label;
 
   std::vector<Run> runs;
 
@@ -224,10 +223,10 @@ bool label(const mask &input, bool identify_isolated_patched, int min_label,
       if (input.is_foreground(r, c)) {
         // we're looking at a foreground pixel that must be the
         // beginning of a run
-        int L = provisional_label;
+        int L       = provisional_label;
         int c_start = c;
 
-        runs.push_back({ r /* row */, c_start /* column */, 0 /* length */, L /* label */});
+        runs.push_back({ r /* row */, c_start /* column */, 0 /* length */, L /* label */ });
         Run &current_run = runs.back();
 
         // Iterate over all the pixels in this run
@@ -267,7 +266,7 @@ bool label(const mask &input, bool identify_isolated_patched, int min_label,
 
         // Done with a run: record the length and the label.
         current_run.length = c - c_start;
-        current_run.label = L;
+        current_run.label  = L;
 
         // Record pixel labels in the row above.
         for (int n = 0; n < current_run.length; ++n) {
@@ -337,7 +336,7 @@ bool label(const mask &input, bool identify_isolated_patched, int min_label,
   // iterate over runs).
   for (int k = 0; k < (int)runs.size(); ++k) {
     auto &r = runs[k];
-    int L = labels[r.label];
+    int L   = labels[r.label];
     for (int n = 0; n < r.length; ++n) {
       output(r.row, r.col + n) = L;
     }

@@ -21,8 +21,8 @@
 #define PISM_PROFILING_HH
 
 #include <map>
-#include <string>
 #include <petsclog.h>
+#include <string>
 
 namespace pism {
 
@@ -35,6 +35,7 @@ public:
   void end(const char *name) const;
   void stage_begin(const char *name) const;
   void stage_end(const char *name) const;
+
 private:
   PetscClassId m_classid;
   mutable std::map<std::string, PetscLogEvent> m_events;

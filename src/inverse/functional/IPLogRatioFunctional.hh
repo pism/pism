@@ -41,9 +41,12 @@ namespace inverse {
 class IPLogRatioFunctional : public IPFunctional<array::Vector> {
 public:
   IPLogRatioFunctional(std::shared_ptr<const Grid> grid, array::Vector &u_observed, double eps,
-                       array::Scalar *weights=NULL) :
-    IPFunctional<array::Vector>(grid), m_u_observed(u_observed), m_weights(weights),
-    m_normalization(1.), m_eps(eps) {};
+                       array::Scalar *weights = NULL)
+      : IPFunctional<array::Vector>(grid),
+        m_u_observed(u_observed),
+        m_weights(weights),
+        m_normalization(1.),
+        m_eps(eps) {};
   virtual ~IPLogRatioFunctional() {};
 
   virtual void normalize(double scale);
@@ -56,7 +59,6 @@ protected:
   array::Scalar *m_weights;
   double m_normalization;
   double m_eps;
-
 };
 
 } // end of namespace inverse

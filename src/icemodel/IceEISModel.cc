@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <gsl/gsl_math.h>       // M_PI
+#include <gsl/gsl_math.h> // M_PI
 
 #include "pism/icemodel/IceEISModel.hh"
 
@@ -36,10 +36,8 @@
 
 namespace pism {
 
-IceEISModel::IceEISModel(std::shared_ptr<Grid> g,
-                         std::shared_ptr<Context> context,
-                         char experiment)
-  : IceModel(g, context), m_experiment(experiment) {
+IceEISModel::IceEISModel(std::shared_ptr<Grid> g, std::shared_ptr<Context> context, char experiment)
+    : IceModel(g, context), m_experiment(experiment) {
 }
 
 void IceEISModel::allocate_couplers() {
@@ -70,23 +68,22 @@ void generate_trough_topography(array::Scalar &result) {
 
   auto grid = result.grid();
 
-  const double
-    b0    = 1000.0,  // plateau elevation
-    L     = 750.0e3, // half-width of computational domain
-    w     = 200.0e3, // trough width
-    slope = b0 / L,
-    dx61  = (2.0 * L) / 60; // = 25.0e3
+  const double b0   = 1000.0,  // plateau elevation
+      L             = 750.0e3, // half-width of computational domain
+      w             = 200.0e3, // trough width
+      slope         = b0 / L,
+               dx61 = (2.0 * L) / 60; // = 25.0e3
 
   array::AccessScope list(result);
   for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     const double nsd = i * grid->dx(), ewd = j * grid->dy();
-    if ((nsd >= (27 - 1) * dx61) && (nsd <= (35 - 1) * dx61) &&
-        (ewd >= (31 - 1) * dx61) && (ewd <= (61 - 1) * dx61)) {
-      result(i,j) = 1000.0 - std::max(0.0, slope * (ewd - L) * cos(M_PI * (nsd - L) / w));
+    if ((nsd >= (27 - 1) * dx61) && (nsd <= (35 - 1) * dx61) && (ewd >= (31 - 1) * dx61) &&
+        (ewd <= (61 - 1) * dx61)) {
+      result(i, j) = 1000.0 - std::max(0.0, slope * (ewd - L) * cos(M_PI * (nsd - L) / w));
     } else {
-      result(i,j) = 1000.0;
+      result(i, j) = 1000.0;
     }
   }
 }
@@ -105,14 +102,13 @@ void generate_mound_topography(array::Scalar &result) {
     const int i = p.i(), j = p.j();
 
     const double nsd = i * grid->dx(), ewd = j * grid->dy();
-    result(i,j) = fabs(slope * sin(M_PI * ewd / w) + slope * cos(M_PI * nsd / w));
+    result(i, j) = fabs(slope * sin(M_PI * ewd / w) + slope * cos(M_PI * nsd / w));
   }
 }
 
 void IceEISModel::initialize_2d() {
 
-  m_log->message(2,
-                 "initializing variables from EISMINT II experiment %c formulas... \n",
+  m_log->message(2, "initializing variables from EISMINT II experiment %c formulas... \n",
                  m_experiment);
 
   // set bed topography
@@ -144,7 +140,7 @@ void IceEISModel::initialize_2d() {
 }
 
 void IceEISModel::bootstrap_2d(const File &input_file) {
-  (void) input_file;
+  (void)input_file;
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                 "EISMINT II mode does not support bootstrapping");
 }

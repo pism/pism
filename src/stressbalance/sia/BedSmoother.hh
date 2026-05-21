@@ -21,8 +21,8 @@
 
 #include <petsc.h>
 
-#include "pism/util/array/Scalar.hh"
 #include "pism/util/Config.hh"
+#include "pism/util/array/Scalar.hh"
 
 namespace pism {
 
@@ -89,14 +89,13 @@ public:
 
   void preprocess_bed(const array::Scalar &topg);
 
-  void smoothed_thk(const array::Scalar &usurf,
-                    const array::Scalar &thk,
-                    const array::CellType2 &mask,
-                    array::Scalar &thksmooth) const;
+  void smoothed_thk(const array::Scalar &usurf, const array::Scalar &thk,
+                    const array::CellType2 &mask, array::Scalar &thksmooth) const;
 
   void theta(const array::Scalar &usurf, array::Scalar &result) const;
 
-  const array::Scalar& smoothed_bed() const;
+  const array::Scalar &smoothed_bed() const;
+
 protected:
   std::shared_ptr<const Grid> m_grid;
   std::shared_ptr<const Config> m_config;
@@ -120,8 +119,7 @@ protected:
   //! maximum elevation at (i,j) of local topography (nearby patch)
   std::shared_ptr<petsc::Vec> m_maxtlp0, m_C2p0, m_C3p0, m_C4p0;
 
-  void preprocess_bed(const array::Scalar &topg,
-                      unsigned int Nx_in, unsigned int Ny_in);
+  void preprocess_bed(const array::Scalar &topg, unsigned int Nx_in, unsigned int Ny_in);
 
   void smooth_the_bed_on_proc0();
   void compute_coefficients_on_proc0();
@@ -130,5 +128,4 @@ protected:
 } // end of namespace stressbalance
 } // end of namespace pism
 
-#endif  // __BedSmoother_hh
-
+#endif // __BedSmoother_hh

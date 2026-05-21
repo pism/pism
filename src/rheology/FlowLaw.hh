@@ -29,7 +29,7 @@ namespace pism {
 namespace array {
 class Scalar;
 class Array3D;
-}
+} // namespace array
 class Config;
 
 /*!
@@ -43,13 +43,9 @@ class Config;
  * @f$).
  */
 static inline double secondInvariant_2D(const Vector2d &U_x, const Vector2d &U_y) {
-  const double
-    u_x = U_x.u,
-    u_y = U_y.u,
-    v_x = U_x.v,
-    v_y = U_y.v,
-    w_z = -(u_x + v_y);         // w_z is computed assuming incompressibility of ice
-  return 0.5 * (u_x * u_x + v_y * v_y + w_z * w_z + 0.5*(u_y + v_x)*(u_y + v_x));
+  const double u_x = U_x.u, u_y = U_y.u, v_x = U_x.v, v_y = U_y.v,
+               w_z = -(u_x + v_y); // w_z is computed assuming incompressibility of ice
+  return 0.5 * (u_x * u_x + v_y * v_y + w_z * w_z + 0.5 * (u_y + v_x) * (u_y + v_x));
 }
 
 //! Ice flow laws.
@@ -76,15 +72,13 @@ namespace rheology {
 */
 class FlowLaw {
 public:
-  FlowLaw(double exponent, const Config &config,
-          std::shared_ptr<EnthalpyConverter> EC);
+  FlowLaw(double exponent, const Config &config, std::shared_ptr<EnthalpyConverter> EC);
   virtual ~FlowLaw() = default;
 
-  void effective_viscosity(double hardness, double gamma,
-                           double *nu, double *dnu) const;
+  void effective_viscosity(double hardness, double gamma, double *nu, double *dnu) const;
 
-  void effective_viscosity(double hardness, double gamma, double eps,
-                           double *nu, double *dnu) const;
+  void effective_viscosity(double hardness, double gamma, double eps, double *nu,
+                           double *dnu) const;
 
   std::string name() const;
   double exponent() const;
@@ -92,25 +86,22 @@ public:
   std::shared_ptr<EnthalpyConverter> EC() const;
 
   double hardness(double E, double p) const;
-  void hardness_n(const double *enthalpy, const double *pressure,
-                  unsigned int n, double *result) const;
+  void hardness_n(const double *enthalpy, const double *pressure, unsigned int n,
+                  double *result) const;
 
   double softness(double E, double p) const;
 
   double flow(double stress, double enthalpy, double pressure, double grain_size) const;
-  void flow_n(const double *stress, const double *E,
-              const double *pressure, const double *grainsize,
-              unsigned int n, double *result) const;
+  void flow_n(const double *stress, const double *E, const double *pressure,
+              const double *grainsize, unsigned int n, double *result) const;
 
 protected:
-  virtual double flow_impl(double stress, double E,
-                           double pressure, double grainsize) const;
-  virtual void flow_n_impl(const double *stress, const double *E,
-                           const double *pressure, const double *grainsize,
-                           unsigned int n, double *result) const;
+  virtual double flow_impl(double stress, double E, double pressure, double grainsize) const;
+  virtual void flow_n_impl(const double *stress, const double *E, const double *pressure,
+                           const double *grainsize, unsigned int n, double *result) const;
   virtual double hardness_impl(double E, double p) const;
-  virtual void hardness_n_impl(const double *enthalpy, const double *pressure,
-                               unsigned int n, double *result) const;
+  virtual void hardness_n_impl(const double *enthalpy, const double *pressure, unsigned int n,
+                               double *result) const;
   virtual double softness_impl(double E, double p) const = 0;
 
 protected:
@@ -150,16 +141,11 @@ protected:
   double m_n;
 };
 
-double averaged_hardness(const FlowLaw &ice,
-                         double ice_thickness,
-                         unsigned int kbelowH,
-                         const double *zlevels,
-                         const double *enthalpy);
+double averaged_hardness(const FlowLaw &ice, double ice_thickness, unsigned int kbelowH,
+                         const double *zlevels, const double *enthalpy);
 
-void averaged_hardness_vec(const FlowLaw &ice,
-                           const array::Scalar &ice_thickness,
-                           const array::Array3D  &enthalpy,
-                           array::Scalar &result);
+void averaged_hardness_vec(const FlowLaw &ice, const array::Scalar &ice_thickness,
+                           const array::Array3D &enthalpy, array::Scalar &result);
 
 bool FlowLawUsesGrainSize(const FlowLaw &flow_law);
 

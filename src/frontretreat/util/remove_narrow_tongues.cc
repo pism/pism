@@ -19,8 +19,8 @@
 
 #include "pism/frontretreat/util/remove_narrow_tongues.hh"
 
-#include "pism/util/Grid.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/Grid.hh"
 
 namespace pism {
 
@@ -64,8 +64,7 @@ stencils::Box<OUT> apply(const stencils::Box<IN> &input, OUT (*f)(IN)) {
  *
  * @return 0 on success
  */
-void remove_narrow_tongues(const Geometry &geometry,
-                           array::Scalar &ice_thickness) {
+void remove_narrow_tongues(const Geometry &geometry, array::Scalar &ice_thickness) {
 
   const auto &mask      = geometry.cell_type;
   const auto &bed       = geometry.bed_elevation;
@@ -73,12 +72,11 @@ void remove_narrow_tongues(const Geometry &geometry,
 
   auto grid = mask.grid();
 
-  array::AccessScope list{&mask, &bed, &sea_level, &ice_thickness};
+  array::AccessScope list{ &mask, &bed, &sea_level, &ice_thickness };
 
   for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
-    if (mask.ice_free(i, j) or
-        (mask.grounded_ice(i, j) and bed(i, j) >= sea_level(i, j))) {
+    if (mask.ice_free(i, j) or (mask.grounded_ice(i, j) and bed(i, j) >= sea_level(i, j))) {
       continue;
     }
 
@@ -93,29 +91,13 @@ void remove_narrow_tongues(const Geometry &geometry,
     auto ice_free =
         apply(mask.box_int(i, j), mask.grounded_ice(i, j) ? mask::ice_free_ocean : mask::ice_free);
 
-    if ((not ice_free.w and
-         ice_free.nw    and
-         ice_free.sw    and
-         ice_free.n     and
-         ice_free.s     and
-         ice_free.e)    or
-        (not ice_free.n and
-         ice_free.nw    and
-         ice_free.ne    and
-         ice_free.w     and
-         ice_free.e     and
-         ice_free.s)    or
-        (not ice_free.e and
-         ice_free.ne    and
-         ice_free.se    and
-         ice_free.w     and
-         ice_free.s     and
-         ice_free.n)    or
-        (not ice_free.s and
-         ice_free.sw    and
-         ice_free.se    and
-         ice_free.w     and
-         ice_free.e     and
+    if ((not ice_free.w and ice_free.nw and ice_free.sw and ice_free.n and ice_free.s and
+         ice_free.e) or
+        (not ice_free.n and ice_free.nw and ice_free.ne and ice_free.w and ice_free.e and
+         ice_free.s) or
+        (not ice_free.e and ice_free.ne and ice_free.se and ice_free.w and ice_free.s and
+         ice_free.n) or
+        (not ice_free.s and ice_free.sw and ice_free.se and ice_free.w and ice_free.e and
          ice_free.n)) {
       ice_thickness(i, j) = 0.0;
     }

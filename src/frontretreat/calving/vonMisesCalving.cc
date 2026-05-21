@@ -17,20 +17,20 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <cmath>                // std::pow, std::sqrt
-#include <algorithm>            // std::max
+#include <algorithm> // std::max
+#include <cmath>     // std::pow, std::sqrt
 
 #include "pism/frontretreat/calving/vonMisesCalving.hh"
 
+#include "pism/rheology/FlowLaw.hh"
+#include "pism/rheology/FlowLawFactory.hh"
+#include "pism/stressbalance/StressBalance.hh"
+#include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/error_handling.hh"
+#include "pism/util/Logger.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/array/Vector.hh"
-#include "pism/stressbalance/StressBalance.hh"
-#include "pism/rheology/FlowLawFactory.hh"
-#include "pism/rheology/FlowLaw.hh"
-#include "pism/util/Context.hh"
-#include "pism/util/Logger.hh"
+#include "pism/util/error_handling.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
@@ -38,10 +38,9 @@ namespace calving {
 
 vonMisesCalving::vonMisesCalving(std::shared_ptr<const Grid> grid,
                                  std::shared_ptr<const rheology::FlowLaw> flow_law)
-  : StressCalving(grid, 2),
-    m_calving_threshold(m_grid, "vonmises_calving_threshold"),
-    m_flow_law(flow_law)
-{
+    : StressCalving(grid, 2),
+      m_calving_threshold(m_grid, "vonmises_calving_threshold"),
+      m_flow_law(flow_law) {
 
   if (m_config->get_flag("calving.vonmises_calving.use_custom_flow_law")) {
     rheology::FlowLawFactory factory(m_config, grid->ctx()->enthalpy_converter());
@@ -63,33 +62,31 @@ vonMisesCalving::vonMisesCalving(std::shared_ptr<const Grid> grid,
 
 void vonMisesCalving::init() {
 
-  m_log->message(2,
-                 "* Initializing the 'von Mises calving' mechanism...\n");
+  m_log->message(2, "* Initializing the 'von Mises calving' mechanism...\n");
 
   std::string threshold_file = m_config->get_string("calving.vonmises_calving.threshold_file");
-  double sigma_max = m_config->get_number("calving.vonmises_calving.sigma_max");
+  double sigma_max           = m_config->get_number("calving.vonmises_calving.sigma_max");
 
   m_calving_threshold.set(sigma_max);
 
   if (not threshold_file.empty()) {
-    m_log->message(2,
-                   "  Reading von Mises calving threshold from file '%s'...\n",
+    m_log->message(2, "  Reading von Mises calving threshold from file '%s'...\n",
                    threshold_file.c_str());
 
     m_calving_threshold.regrid(threshold_file, io::Default::Nil());
   } else {
-    m_log->message(2,
-                   "  von Mises calving threshold: %3.3f Pa.\n", sigma_max);
+    m_log->message(2, "  von Mises calving threshold: %3.3f Pa.\n", sigma_max);
   }
 
   // grid "squareness" criterion
   const double eps = 1e-2;
   if (fabs(m_grid->dx() - m_grid->dy()) / std::min(m_grid->dx(), m_grid->dy()) > eps) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "-calving vonmises_calving using a non-square grid cell is not implemented (yet);\n"
-                                  "dx = %f, dy = %f, relative difference = %f",
-                                  m_grid->dx(), m_grid->dy(),
-                                  fabs(m_grid->dx() - m_grid->dy()) / std::max(m_grid->dx(), m_grid->dy()));
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION,
+        "-calving vonmises_calving using a non-square grid cell is not implemented (yet);\n"
+        "dx = %f, dy = %f, relative difference = %f",
+        m_grid->dx(), m_grid->dy(),
+        fabs(m_grid->dx() - m_grid->dy()) / std::max(m_grid->dx(), m_grid->dy()));
   }
 
   m_strain_rates.set(0.0);
@@ -99,14 +96,13 @@ void vonMisesCalving::init() {
 /*!
   See equation (4) in [@ref Morlighem2016].
 */
-void vonMisesCalving::update(const array::CellType1 &cell_type,
-                             const array::Scalar &ice_thickness,
+void vonMisesCalving::update(const array::CellType1 &cell_type, const array::Scalar &ice_thickness,
                              const array::Vector1 &ice_velocity,
                              const array::Array3D &ice_enthalpy) {
 
   using std::max;
-  using std::sqrt;
   using std::pow;
+  using std::sqrt;
 
   // Distance (grid cells) from calving front where strain rate is evaluated
   int offset = m_stencil_width;
@@ -114,12 +110,11 @@ void vonMisesCalving::update(const array::CellType1 &cell_type,
   // make a copy with a wider stencil
   m_cell_type.copy_from(cell_type);
 
-  stressbalance::compute_2D_principal_strain_rates(ice_velocity, m_cell_type,
-                                                   m_strain_rates);
+  stressbalance::compute_2D_principal_strain_rates(ice_velocity, m_cell_type, m_strain_rates);
   m_strain_rates.update_ghosts();
 
-  array::AccessScope list{&ice_enthalpy, &ice_thickness, &m_cell_type, &ice_velocity,
-                               &m_strain_rates, &m_calving_rate, &m_calving_threshold};
+  array::AccessScope list{ &ice_enthalpy,   &ice_thickness,  &m_cell_type,        &ice_velocity,
+                           &m_strain_rates, &m_calving_rate, &m_calving_threshold };
 
   const double *z = ice_enthalpy.levels().data();
 
@@ -132,13 +127,9 @@ void vonMisesCalving::update(const array::CellType1 &cell_type,
     // have floating ice neighbors after the mass continuity step
     if (m_cell_type.ice_free_ocean(i, j) and m_cell_type.next_to_ice(i, j)) {
 
-      double
-        velocity_magnitude = 0.0,
-        hardness           = 0.0;
+      double velocity_magnitude = 0.0, hardness = 0.0;
       // Average of strain-rate eigenvalues in adjacent floating grid cells.
-      double
-        eigen1             = 0.0,
-        eigen2             = 0.0;
+      double eigen1 = 0.0, eigen2 = 0.0;
       {
         int N = 0;
         for (int p = -1; p < 2; p += 2) {
@@ -147,7 +138,7 @@ void vonMisesCalving::update(const array::CellType1 &cell_type,
             velocity_magnitude += ice_velocity(I, j).magnitude();
             {
               double H = ice_thickness(I, j);
-              auto k = m_grid->kBelowHeight(H);
+              auto k   = m_grid->kBelowHeight(H);
               hardness += averaged_hardness(*m_flow_law, H, k, z, ice_enthalpy.get_column(I, j));
             }
             eigen1 += m_strain_rates(I, j).eigen1;
@@ -162,7 +153,7 @@ void vonMisesCalving::update(const array::CellType1 &cell_type,
             velocity_magnitude += ice_velocity(i, J).magnitude();
             {
               double H = ice_thickness(i, J);
-              auto k = m_grid->kBelowHeight(H);
+              auto k   = m_grid->kBelowHeight(H);
               hardness += averaged_hardness(*m_flow_law, H, k, z, ice_enthalpy.get_column(i, J));
             }
             eigen1 += m_strain_rates(i, J).eigen1;
@@ -172,19 +163,19 @@ void vonMisesCalving::update(const array::CellType1 &cell_type,
         }
 
         if (N > 0) {
-          eigen1             /= N;
-          eigen2             /= N;
-          hardness           /= N;
+          eigen1 /= N;
+          eigen2 /= N;
+          hardness /= N;
           velocity_magnitude /= N;
         }
       }
 
       // [\ref Morlighem2016] equation 6
-      const double effective_tensile_strain_rate = sqrt(0.5 * (pow(max(0.0, eigen1), 2) +
-                                                               pow(max(0.0, eigen2), 2)));
+      const double effective_tensile_strain_rate =
+          sqrt(0.5 * (pow(max(0.0, eigen1), 2) + pow(max(0.0, eigen2), 2)));
       // [\ref Morlighem2016] equation 7
-      const double sigma_tilde = sqrt(3.0) * hardness * pow(effective_tensile_strain_rate,
-                                                            1.0 / glen_exponent);
+      const double sigma_tilde =
+          sqrt(3.0) * hardness * pow(effective_tensile_strain_rate, 1.0 / glen_exponent);
 
       // Calving law [\ref Morlighem2016] equation 4
       m_calving_rate(i, j) = velocity_magnitude * sigma_tilde / m_calving_threshold(i, j);
@@ -192,16 +183,16 @@ void vonMisesCalving::update(const array::CellType1 &cell_type,
     } else { // end of "if (ice_free_ocean and next_to_floating)"
       m_calving_rate(i, j) = 0.0;
     }
-  }   // end of loop over grid points
+  } // end of loop over grid points
 }
 
-const array::Scalar& vonMisesCalving::threshold() const {
+const array::Scalar &vonMisesCalving::threshold() const {
   return m_calving_threshold;
 }
 
 DiagnosticList vonMisesCalving::spatial_diagnostics_impl() const {
-  return {{"vonmises_calving_rate", Diagnostic::wrap(m_calving_rate)},
-          {"vonmises_calving_threshold", Diagnostic::wrap(m_calving_threshold)}};
+  return { { "vonmises_calving_rate", Diagnostic::wrap(m_calving_rate) },
+           { "vonmises_calving_threshold", Diagnostic::wrap(m_calving_threshold) } };
 }
 
 } // end of namespace calving

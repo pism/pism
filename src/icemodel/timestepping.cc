@@ -16,22 +16,22 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <algorithm>            // std::sort
-#include <cmath>                // std::floor
+#include <algorithm> // std::sort
 #include <cassert>
+#include <cmath> // std::floor
 
 #include "pism/icemodel/IceModel.hh"
-#include "pism/util/Grid.hh"
-#include "pism/util/Config.hh"
-#include "pism/util/Time.hh"
-#include "pism/util/MaxTimestep.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/Component.hh" // ...->max_timestep()
+#include "pism/util/Config.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/Time.hh"
 
+#include "pism/frontretreat/FrontRetreat.hh"
 #include "pism/frontretreat/calving/EigenCalving.hh"
 #include "pism/frontretreat/calving/HayhurstCalving.hh"
 #include "pism/frontretreat/calving/vonMisesCalving.hh"
-#include "pism/frontretreat/FrontRetreat.hh"
 
 #include "pism/coupler/FrontalMelt.hh"
 
@@ -53,7 +53,8 @@ MaxTimestep IceModel::max_timestep_diffusivity() {
   double dx = m_grid->dx(), dy = m_grid->dy(),
          adaptive_timestepping_ratio = m_config->get_number("time_stepping.adaptive_ratio");
 
-  auto dt_diffusivity = ::pism::max_timestep_diffusivity(D_max, dx, dy, adaptive_timestepping_ratio);
+  auto dt_diffusivity =
+      ::pism::max_timestep_diffusivity(D_max, dx, dy, adaptive_timestepping_ratio);
 
   MaxTimestep dt_max(m_config->get_number("time_stepping.maximum_time_step", "seconds"),
                      "max time step");
@@ -177,12 +178,12 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
   // note that restrictions has at least 2 elements
   // the first element is the max time step we can take
   assert(restrictions.size() >= 2);
-  auto dt_max = restrictions[0];
+  auto dt_max   = restrictions[0];
   auto dt_other = restrictions[1];
 
   TimesteppingInfo result;
-  result.dt = dt_max.value();
-  result.reason = (dt_max.description() + " (overrides " + dt_other.description() + ")");
+  result.dt           = dt_max.value();
+  result.reason       = (dt_max.description() + " (overrides " + dt_other.description() + ")");
   result.skip_counter = 0;
 
   double resolution = m_config->get_number("time_stepping.resolution", "seconds");
@@ -191,22 +192,21 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
   {
     int year_increment = static_cast<int>(m_config->get_number("time_stepping.hit_multiples"));
     if (year_increment > 0) {
-      auto next_time = m_time->increment_date(m_timestep_hit_multiples_last_time,
-                                              year_increment);
+      auto next_time = m_time->increment_date(m_timestep_hit_multiples_last_time, year_increment);
 
       if (std::fabs(current_time - next_time) < resolution) {
         // the current time is a multiple of year_increment
         m_timestep_hit_multiples_last_time = current_time;
-        next_time = m_time->increment_date(current_time, year_increment);
+        next_time                          = m_time->increment_date(current_time, year_increment);
       }
 
       auto dt = next_time - current_time;
       assert(dt > resolution);
 
       if (dt < result.dt) {
-        result.dt = dt;
-        result.reason = pism::printf("hit multiples of %d years (overrides %s)",
-                                     year_increment, dt_max.description().c_str());
+        result.dt     = dt;
+        result.reason = pism::printf("hit multiples of %d years (overrides %s)", year_increment,
+                                     dt_max.description().c_str());
       }
     }
   }
@@ -222,7 +222,7 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
     // "max" and "end of the run" limit the "big" time-step (in
     // the context of the "skipping" mechanism), so we might need to
     // reset the skip_counter_result to 1.
-    if (set_member(dt_max.description(), {max, end}) and counter > 1) {
+    if (set_member(dt_max.description(), { max, end }) and counter > 1) {
       result.skip_counter = 1;
     }
   }

@@ -19,26 +19,25 @@
 #include <memory>
 #include <petsc.h>
 
-static char help[] =
-  "Tests BedThermalUnit using Test K, without IceModel.\n\n";
+static char help[] = "Tests BedThermalUnit using Test K, without IceModel.\n\n";
 
-#include "pism/util/pism_options.hh"
-#include "pism/util/Grid.hh"
-#include "pism/verification/BTU_Verification.hh"
 #include "pism/energy/BTU_Minimal.hh"
-#include "pism/util/Time.hh"
 #include "pism/util/Config.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/Time.hh"
+#include "pism/util/pism_options.hh"
+#include "pism/verification/BTU_Verification.hh"
 
 #include "pism/verification/tests/exactTestK.h"
 
-#include "pism/util/petscwrappers/PetscInitializer.hh"
-#include "pism/util/error_handling.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/EnthalpyConverter.hh"
-#include "pism/util/MaxTimestep.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/error_handling.hh"
 #include "pism/util/io/SynchronousOutputWriter.hh"
 #include "pism/util/io/io_helpers.hh"
+#include "pism/util/petscwrappers/PetscInitializer.hh"
 
 //! Allocate the verification context. Uses ColdEnthalpyConverter.
 std::shared_ptr<pism::Context> btutest_context(MPI_Comm com, const std::string &prefix) {
@@ -54,7 +53,7 @@ std::shared_ptr<pism::Context> btutest_context(MPI_Comm com, const std::string &
 
   logger->set_threshold(static_cast<int>(config->get_number("output.runtime.verbosity")));
 
-  int Mx = 3;
+  int Mx    = 3;
   double Lx = 1500;
   // default horizontal grid parameters
   config->set_number("grid.Mx", Mx);
@@ -93,26 +92,25 @@ int main(int argc, char *argv[]) {
 
   try {
     std::shared_ptr<Context> ctx = btutest_context(com, "pism_btutest");
-    auto log = ctx->log();
+    auto log                     = ctx->log();
 
     std::string usage =
-      "  pism_btutest -Mbz NN -Lbz 1000.0 [-o OUT.nc -ys A -ye B -dt C -Mz D -Lz E]\n"
-      "where these are required because they are used in BedThermalUnit:\n"
-      "  -Mbz           number of bedrock thermal layer levels to use\n"
-      "  -Lbz 1000.0    depth of bedrock thermal layer (required; Lbz=1000.0 m in Test K)\n"
-      "and these are allowed:\n"
-      "  -o             output file name; NetCDF format\n"
-      "  -ys            start year in using Test K\n"
-      "  -ye            end year in using Test K\n"
-      "  -dt            time step B (= positive float) in years\n";
+        "  pism_btutest -Mbz NN -Lbz 1000.0 [-o OUT.nc -ys A -ye B -dt C -Mz D -Lz E]\n"
+        "where these are required because they are used in BedThermalUnit:\n"
+        "  -Mbz           number of bedrock thermal layer levels to use\n"
+        "  -Lbz 1000.0    depth of bedrock thermal layer (required; Lbz=1000.0 m in Test K)\n"
+        "and these are allowed:\n"
+        "  -o             output file name; NetCDF format\n"
+        "  -ys            start year in using Test K\n"
+        "  -ye            end year in using Test K\n"
+        "  -dt            time step B (= positive float) in years\n";
 
     bool done = maybe_show_usage(*log, "BTUTEST %s (test program for BedThermalUnit)", usage);
     if (done) {
       return 0;
     }
 
-    log->message(2,
-                 "  initializing Grid from options ...\n");
+    log->message(2, "  initializing Grid from options ...\n");
 
     auto config = ctx->config();
 
@@ -126,8 +124,7 @@ int main(int argc, char *argv[]) {
 
     auto outname = config->get_string("output.file");
 
-    options::Real dt_years(ctx->unit_system(),
-                           "-dt", "Time-step, in years", "years", 1.0);
+    options::Real dt_years(ctx->unit_system(), "-dt", "Time-step, in years", "years", 1.0);
 
     // allocate tools and Arrays
     array::Scalar bedtoptemp(grid, "bedtoptemp");
@@ -156,19 +153,19 @@ int main(int argc, char *argv[]) {
     double dt_seconds = units::convert(ctx->unit_system(), dt_years, "years", "seconds");
 
     // worry about time step
-    int  N = (int)ceil((ctx->time()->end() - ctx->time()->start()) / dt_seconds);
+    int N      = (int)ceil((ctx->time()->end() - ctx->time()->start()) / dt_seconds);
     dt_seconds = (ctx->time()->end() - ctx->time()->start()) / (double)N;
     log->message(2,
                  "  user set timestep of %.4f years ...\n"
                  "  reset to %.4f years to get integer number of steps ... \n",
-                 dt_years.value(), units::convert(ctx->unit_system(), dt_seconds, "seconds", "years"));
+                 dt_years.value(),
+                 units::convert(ctx->unit_system(), dt_seconds, "seconds", "years"));
     MaxTimestep max_dt = btu->max_timestep(0.0);
-    log->message(2,
-                 "  BedThermalUnit reports max timestep of %.4f years ...\n",
+    log->message(2, "  BedThermalUnit reports max timestep of %.4f years ...\n",
                  units::convert(ctx->unit_system(), max_dt.value(), "seconds", "years"));
 
     // actually do the time-stepping
-    log->message(2,"  running ...\n");
+    log->message(2, "  running ...\n");
     for (int n = 0; n < N; n++) {
       // time at start of time-step
       const double time = ctx->time()->start() + dt_seconds * (double)n;
@@ -179,14 +176,14 @@ int main(int argc, char *argv[]) {
         for (auto p : grid->points()) {
           const int i = p.i(), j = p.j();
 
-          bedtoptemp(i,j) = exactK(time, 0.0, 0).T;
+          bedtoptemp(i, j) = exactK(time, 0.0, 0).T;
         }
       }
       // no need to update ghost values
 
       // update the temperature inside the thermal layer using bedtoptemp
       btu->update(bedtoptemp, time, dt_seconds);
-      log->message(2,".");
+      log->message(2, ".");
     }
 
     log->message(2, "\n  done ...\n");
@@ -198,9 +195,9 @@ int main(int argc, char *argv[]) {
 
     // get, and tell stdout, the correct answer from Test K
     const double FF = exactK(time->end(), 0.0, 0).F;
-    log->message(2,
-                 "  exact Test K reports upward heat flux at z=0, at end time %s, as G_0 = %.7f W m-2;\n",
-                 time->date(time->end()).c_str(), FF);
+    log->message(
+        2, "  exact Test K reports upward heat flux at z=0, at end time %s, as G_0 = %.7f W m-2;\n",
+        time->date(time->end()).c_str(), FF);
 
     // compute numerical error
     heat_flux_at_ice_base.shift(-FF);
@@ -208,15 +205,11 @@ int main(int argc, char *argv[]) {
     double avg_error = heat_flux_at_ice_base.norm(NORM_1)[0];
     heat_flux_at_ice_base.shift(+FF); // shift it back for writing
     avg_error /= (grid->Mx() * grid->My());
-    log->message(2,
-                 "case dt = %.5f:\n", dt_years.value());
-    log->message(1,
-                 "NUMERICAL ERRORS in upward heat flux at z=0 relative to exact solution:\n");
-    log->message(1,
-                 "bheatflx0  :       max    prcntmax          av\n");
-    log->message(1,
-                 "           %11.7f  %11.7f  %11.7f\n",
-                 max_error, 100.0*max_error/FF, avg_error);
+    log->message(2, "case dt = %.5f:\n", dt_years.value());
+    log->message(1, "NUMERICAL ERRORS in upward heat flux at z=0 relative to exact solution:\n");
+    log->message(1, "bheatflx0  :       max    prcntmax          av\n");
+    log->message(1, "           %11.7f  %11.7f  %11.7f\n", max_error, 100.0 * max_error / FF,
+                 avg_error);
     log->message(1, "NUM ERRORS DONE\n");
 
     auto writer = std::make_shared<SynchronousOutputWriter>(grid->com, *config);
@@ -240,8 +233,7 @@ int main(int argc, char *argv[]) {
     heat_flux_at_ice_base.write(file);
 
     log->message(2, "done.\n");
-  }
-  catch (...) {
+  } catch (...) {
     handle_fatal_errors(com);
     return 1;
   }

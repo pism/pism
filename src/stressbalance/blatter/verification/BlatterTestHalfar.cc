@@ -26,9 +26,9 @@
 namespace pism {
 namespace stressbalance {
 
-BlatterTestHalfar::BlatterTestHalfar(std::shared_ptr<const Grid> grid,
-                                     int Mz, int coarsening_factor)
-  : Blatter(grid, Mz, coarsening_factor) {
+BlatterTestHalfar::BlatterTestHalfar(std::shared_ptr<const Grid> grid, int Mz,
+                                     int coarsening_factor)
+    : Blatter(grid, Mz, coarsening_factor) {
 
   // use the isothermal Glen flow law
   double n = m_config->get_number("stress_balance.blatter.Glen_exponent");
@@ -51,17 +51,17 @@ BlatterTestHalfar::BlatterTestHalfar(std::shared_ptr<const Grid> grid,
 
   m_rho = m_config->get_number("constants.ice.density");
 
-  m_g   = m_config->get_number("constants.standard_gravity");
+  m_g = m_config->get_number("constants.standard_gravity");
 }
 
 bool BlatterTestHalfar::dirichlet_node(const DMDALocalInfo &info,
-                                       const fem::Element3::GlobalIndex& I) {
+                                       const fem::Element3::GlobalIndex &I) {
   // use Dirichlet BC at x == 0 and the "cliff" near the right boundary
   return I.i == 0 or I.i == info.mx - 1;
 }
 
 Vector2d BlatterTestHalfar::u_bc(double x, double y, double z) const {
-  (void) y;
+  (void)y;
 
   return blatter_xz_halfar_exact(x, z, m_H0, m_R0, m_rho, m_g, m_B);
 }
@@ -77,22 +77,16 @@ double BlatterTestHalfar::u_exact(double x, double z) const {
   return u_bc(x, 0.0, z).u;
 }
 
-void BlatterTestHalfar::residual_source_term(const fem::Q1Element3 &element,
-                                             const double *surface,
-                                             const double *bed,
-                                             Vector2d *residual) {
+void BlatterTestHalfar::residual_source_term(const fem::Q1Element3 &element, const double *surface,
+                                             const double *bed, Vector2d *residual) {
 
-  (void) surface;
-  (void) bed;
+  (void)surface;
+  (void)bed;
 
   // compute x and z coordinates of quadrature points
-  double
-    *x = m_work[0],
-    *z = m_work[1];
+  double *x = m_work[0], *z = m_work[1];
   {
-    double
-      *x_nodal = m_work[2],
-      *z_nodal = m_work[3];
+    double *x_nodal = m_work[2], *z_nodal = m_work[3];
 
     for (int n = 0; n < fem::q13d::n_chi; ++n) {
       x_nodal[n] = element.x(n);
@@ -120,20 +114,15 @@ void BlatterTestHalfar::residual_source_term(const fem::Q1Element3 &element,
 
 void BlatterTestHalfar::residual_lateral(const fem::Q1Element3 &element,
                                          const fem::Q1Element3Face &face,
-                                         const double *surface_nodal,
-                                         const double *z_nodal,
-                                         const double *sl_nodal,
-                                         Vector2d *residual) {
-  (void) surface_nodal;
-  (void) sl_nodal;
+                                         const double *surface_nodal, const double *z_nodal,
+                                         const double *sl_nodal, Vector2d *residual) {
+  (void)surface_nodal;
+  (void)sl_nodal;
 
   // compute x and z coordinates of quadrature points
-  double
-    *x = m_work[0],
-    *z = m_work[1];
+  double *x = m_work[0], *z = m_work[1];
   {
-    double
-      *x_nodal = m_work[2];
+    double *x_nodal = m_work[2];
 
     for (int n = 0; n < element.n_chi(); ++n) {
       x_nodal[n] = element.x(n);
@@ -145,9 +134,9 @@ void BlatterTestHalfar::residual_lateral(const fem::Q1Element3 &element,
 
   // loop over all quadrature points
   for (unsigned int q = 0; q < face.n_pts(); ++q) {
-    auto W = face.weight(q) / m_scaling;
-    auto N3 = face.normal(q);
-    Vector2d N = {N3.x, N3.y};
+    auto W     = face.weight(q) / m_scaling;
+    auto N3    = face.normal(q);
+    Vector2d N = { N3.x, N3.y };
 
     double F = 0.0;
     if (x[q] > 0.0) {
@@ -168,12 +157,10 @@ void BlatterTestHalfar::residual_lateral(const fem::Q1Element3 &element,
  * Top surface contribution to the residual.
  */
 void BlatterTestHalfar::residual_surface(const fem::Q1Element3 &element,
-                                         const fem::Q1Element3Face &face,
-                                         Vector2d *residual) {
+                                         const fem::Q1Element3Face &face, Vector2d *residual) {
 
   // compute x coordinates of quadrature points
-  double
-    *x = m_work[0];
+  double *x = m_work[0];
   {
     double *x_nodal = m_work[1];
 
@@ -193,7 +180,7 @@ void BlatterTestHalfar::residual_surface(const fem::Q1Element3 &element,
     for (int t = 0; t < element.n_chi(); ++t) {
       auto psi = face.chi(q, t);
 
-      residual[t] += - W * psi * F;
+      residual[t] += -W * psi * F;
     }
   }
 }
@@ -202,14 +189,12 @@ void BlatterTestHalfar::residual_surface(const fem::Q1Element3 &element,
  * Basal contribution to the residual.
  */
 void BlatterTestHalfar::residual_basal(const fem::Q1Element3 &element,
-                                       const fem::Q1Element3Face &face,
-                                       const double *tauc_nodal,
-                                       const double *f_nodal,
-                                       const Vector2d *u_nodal,
+                                       const fem::Q1Element3Face &face, const double *tauc_nodal,
+                                       const double *f_nodal, const Vector2d *u_nodal,
                                        Vector2d *residual) {
-  (void) tauc_nodal;
-  (void) f_nodal;
-  (void) u_nodal;
+  (void)tauc_nodal;
+  (void)f_nodal;
+  (void)u_nodal;
 
   // compute x coordinates of quadrature points
   double *x = m_work[0];
@@ -232,21 +217,19 @@ void BlatterTestHalfar::residual_basal(const fem::Q1Element3 &element,
     for (int t = 0; t < element.n_chi(); ++t) {
       auto psi = face.chi(q, t);
 
-      residual[t] += - W * psi * F;
+      residual[t] += -W * psi * F;
     }
   }
 }
 
-void BlatterTestHalfar::jacobian_basal(const fem::Q1Element3Face &face,
-                                       const double *tauc_nodal,
-                                       const double *f_nodal,
-                                       const Vector2d *u_nodal,
+void BlatterTestHalfar::jacobian_basal(const fem::Q1Element3Face &face, const double *tauc_nodal,
+                                       const double *f_nodal, const Vector2d *u_nodal,
                                        double K[2 * fem::q13d::n_chi][2 * fem::q13d::n_chi]) {
-  (void) face;
-  (void) tauc_nodal;
-  (void) f_nodal;
-  (void) u_nodal;
-  (void) K;
+  (void)face;
+  (void)tauc_nodal;
+  (void)f_nodal;
+  (void)u_nodal;
+  (void)K;
   // empty: residual contribution from the basal boundary does not depend on ice velocity
 }
 

@@ -32,7 +32,8 @@ DM::DM() {
 
 DM::~DM() {
   if (m_value != NULL) {
-    PetscErrorCode ierr = DMDestroy(&m_value); CHKERRCONTINUE(ierr);
+    PetscErrorCode ierr = DMDestroy(&m_value);
+    CHKERRCONTINUE(ierr);
   }
 }
 } // end of namespace petsc

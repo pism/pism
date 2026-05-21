@@ -42,7 +42,7 @@ public:
 
   void update(const Geometry &geometry, double t, double dt);
 
-  const array::Scalar& elevation() const;
+  const array::Scalar &elevation() const;
 
 protected:
   virtual void init_impl(const Geometry &geometry);

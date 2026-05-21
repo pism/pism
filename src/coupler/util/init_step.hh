@@ -18,8 +18,8 @@
  */
 #include <cassert>
 
-#include "pism/util/Time.hh"
 #include "pism/util/MaxTimestep.hh"
+#include "pism/util/Time.hh"
 
 namespace pism {
 
@@ -29,11 +29,9 @@ namespace pism {
  *
  * This is sometimes necessary during initialization, but should be avoided if possible.
  */
-template<class M, class In>
-void init_step(M *model, const In &inputs, const Time& time) {
-  const double
-    now               = time.current(),
-    one_year_from_now = time.increment_date(now, 1.0);
+template <class M, class In>
+void init_step(M *model, const In &inputs, const Time &time) {
+  const double now = time.current(), one_year_from_now = time.increment_date(now, 1.0);
 
   // Take a one year long step if we can.
   MaxTimestep max_dt(one_year_from_now - now);

@@ -17,22 +17,22 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/coupler/surface/ElevationChange.hh"
-#include "pism/coupler/util/options.hh"
 #include "pism/coupler/util/lapse_rates.hh"
+#include "pism/coupler/util/options.hh"
 #include "pism/geometry/Geometry.hh"
-#include "pism/util/array/Forcing.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/array/Forcing.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace surface {
 
 ElevationChange::ElevationChange(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> in)
-  : SurfaceModel(g, in) {
+    : SurfaceModel(g, in) {
 
   {
-    m_smb_lapse_rate = m_config->get_number("surface.elevation_change.smb.lapse_rate",
-                                            "(m / s) / m");
+    m_smb_lapse_rate =
+        m_config->get_number("surface.elevation_change.smb.lapse_rate", "(m / s) / m");
     // convert from [m s-1 / m] to [kg m-2 s-1 / m]
     m_smb_lapse_rate *= m_config->get_number("constants.ice.density");
 
@@ -40,12 +40,12 @@ ElevationChange::ElevationChange(std::shared_ptr<const Grid> g, std::shared_ptr<
   }
 
   {
-    auto method = m_config->get_string("surface.elevation_change.smb.method");
+    auto method  = m_config->get_string("surface.elevation_change.smb.method");
     m_smb_method = method == "scale" ? SCALE : SHIFT;
   }
 
-  m_temp_lapse_rate = m_config->get_number("surface.elevation_change.temperature_lapse_rate",
-                                           "K / m");
+  m_temp_lapse_rate =
+      m_config->get_number("surface.elevation_change.temperature_lapse_rate", "K / m");
 
   {
     ForcingOptions opt(*m_grid->ctx(), "surface.elevation_change");
@@ -75,21 +75,18 @@ void ElevationChange::init_impl(const Geometry &geometry) {
 
   m_input_model->init(geometry);
 
-  m_log->message(2,
-                 "  [using temperature and mass balance lapse corrections]\n");
+  m_log->message(2, "  [using temperature and mass balance lapse corrections]\n");
 
-  m_log->message(2,
-                 "   ice upper-surface temperature lapse rate: %3.3f K per km\n",
+  m_log->message(2, "   ice upper-surface temperature lapse rate: %3.3f K per km\n",
                  convert(m_sys, m_temp_lapse_rate, "K / m", "K / km"));
 
   if (m_smb_method == SHIFT) {
     double ice_density = m_config->get_number("constants.ice.density");
-    m_log->message(2,
-                   "   ice-equivalent surface mass balance lapse rate: %3.3f m year-1 per km\n",
-                   convert(m_sys, m_smb_lapse_rate, "kg / (m2 second)", "kg / (m2 year)") / ice_density);
+    m_log->message(2, "   ice-equivalent surface mass balance lapse rate: %3.3f m year-1 per km\n",
+                   convert(m_sys, m_smb_lapse_rate, "kg / (m2 second)", "kg / (m2 year)") /
+                       ice_density);
   } else {
-    m_log->message(2,
-                   "   surface mass balance scaling factor with temperature: %3.3f kelvin^-1\n",
+    m_log->message(2, "   surface mass balance scaling factor with temperature: %3.3f kelvin^-1\n",
                    m_smb_exp_factor);
   }
 
@@ -102,37 +99,31 @@ void ElevationChange::update_impl(const Geometry &geometry, double t, double dt)
   m_input_model->update(geometry, t, dt);
 
   m_reference_surface->update(t, dt);
-  m_reference_surface->interp(t + 0.5*dt);
+  m_reference_surface->interp(t + 0.5 * dt);
 
   const array::Scalar &surface = geometry.ice_surface_elevation;
 
   m_temperature->copy_from(m_input_model->temperature());
-  lapse_rate_correction(surface, *m_reference_surface,
-                        m_temp_lapse_rate, *m_temperature);
+  lapse_rate_correction(surface, *m_reference_surface, m_temp_lapse_rate, *m_temperature);
 
   m_mass_flux->copy_from(m_input_model->mass_flux());
 
   switch (m_smb_method) {
-  case SCALE:
-    {
-      array::AccessScope list{&surface, m_reference_surface.get(), m_mass_flux.get()};
+  case SCALE: {
+    array::AccessScope list{ &surface, m_reference_surface.get(), m_mass_flux.get() };
 
-      for (auto p : m_grid->points()) {
-        const int i = p.i(), j = p.j();
+    for (auto p : m_grid->points()) {
+      const int i = p.i(), j = p.j();
 
-        double dT = -m_temp_lapse_rate * (surface(i, j) - (*m_reference_surface)(i, j));
+      double dT = -m_temp_lapse_rate * (surface(i, j) - (*m_reference_surface)(i, j));
 
-        (*m_mass_flux)(i, j) *= exp(m_smb_exp_factor * dT);
-      }
+      (*m_mass_flux)(i, j) *= exp(m_smb_exp_factor * dT);
     }
-    break;
+  } break;
   default:
-  case SHIFT:
-    {
-      lapse_rate_correction(surface, *m_reference_surface,
-                            m_smb_lapse_rate, *m_mass_flux);
-    }
-    break;
+  case SHIFT: {
+    lapse_rate_correction(surface, *m_reference_surface, m_smb_lapse_rate, *m_mass_flux);
+  } break;
   }
 
   // This modifier changes m_mass_flux, so we need to compute accumulation, melt, and
@@ -140,7 +131,6 @@ void ElevationChange::update_impl(const Geometry &geometry, double t, double dt)
   dummy_accumulation(*m_mass_flux, *m_accumulation);
   dummy_melt(*m_mass_flux, *m_melt);
   dummy_runoff(*m_mass_flux, *m_runoff);
-
 }
 
 const array::Scalar &ElevationChange::mass_flux_impl() const {

@@ -24,8 +24,7 @@
 namespace pism {
 namespace bed {
 
-Null::Null(std::shared_ptr<const Grid> g)
-  : BedDef(g, "dummy (no-op)") {
+Null::Null(std::shared_ptr<const Grid> g) : BedDef(g, "dummy (no-op)") {
   // empty
 }
 
@@ -35,14 +34,13 @@ void Null::init_impl(const InputOptions & /*opts*/, const array::Scalar & /*ice_
 }
 
 void Null::bootstrap_impl(const array::Scalar & /*bed_elevation*/,
-                           const array::Scalar & /*bed_uplift*/,
-                           const array::Scalar & /*ice_thickness*/,
-                           const array::Scalar & /*sea_level_elevation*/) {
+                          const array::Scalar & /*bed_uplift*/,
+                          const array::Scalar & /*ice_thickness*/,
+                          const array::Scalar & /*sea_level_elevation*/) {
   // empty
 }
 
-void Null::update_impl(const array::Scalar &/*load*/,
-                       double /*t*/, double /*dt*/) {
+void Null::update_impl(const array::Scalar & /*load*/, double /*t*/, double /*dt*/) {
   // This model does not update bed topography
 }
 

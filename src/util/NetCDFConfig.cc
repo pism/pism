@@ -18,19 +18,18 @@
  */
 #include <vector>
 
-#include "pism/util/NetCDFConfig.hh"
 #include "VariableMetadata.hh"
-#include "pism/util/io/IO_Flags.hh"
+#include "pism/util/NetCDFConfig.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
+#include "pism/util/io/IO_Flags.hh"
 #include "pism/util/io/OutputWriter.hh"
 #include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 
 NetCDFConfig::NetCDFConfig(const std::string &name, units::System::Ptr system)
-  : Config(system),
-    m_data(name, system) {
+    : Config(system), m_data(name, system) {
 }
 
 NetCDFConfig::~NetCDFConfig() {
@@ -56,7 +55,7 @@ double NetCDFConfig::get_number_impl(const std::string &name) const {
 }
 
 std::vector<double> NetCDFConfig::get_numbers_impl(const std::string &name) const {
-  const auto& doubles = m_data.all_doubles();
+  const auto &doubles = m_data.all_doubles();
   if (doubles.find(name) != doubles.end()) {
     return m_data.get_numbers(name);
   }
@@ -65,13 +64,13 @@ std::vector<double> NetCDFConfig::get_numbers_impl(const std::string &name) cons
                                 "numeric parameter '%s' was not set. (Parameters read from '%s'.)",
                                 name.c_str(), m_config_filename.c_str());
 
-  return {};                    // can't happen
+  return {}; // can't happen
 }
 
 Config::Doubles NetCDFConfig::all_doubles_impl() const {
   Doubles result;
 
-  for (const auto& d : m_data.all_doubles()) {
+  for (const auto &d : m_data.all_doubles()) {
     result[d.first] = d.second;
   }
   return result;
@@ -82,32 +81,31 @@ void NetCDFConfig::set_number_impl(const std::string &name, double value) {
   m_data.set_number(name, value);
 }
 
-void NetCDFConfig::set_numbers_impl(const std::string &name,
-                                    const std::vector<double> &values) {
+void NetCDFConfig::set_numbers_impl(const std::string &name, const std::vector<double> &values) {
   m_data.set_numbers(name, values);
 }
 
 // strings
 
 std::string NetCDFConfig::get_string_impl(const std::string &name) const {
-  const auto& strings = m_data.all_strings();
+  const auto &strings = m_data.all_strings();
   if (strings.find(name) != strings.end()) {
     return m_data[name];
   }
 
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                "string parameter '%s' was not set. (Read from '%s'.)\n", name.c_str(),
-                                m_config_filename.c_str());
+                                "string parameter '%s' was not set. (Read from '%s'.)\n",
+                                name.c_str(), m_config_filename.c_str());
 
-  return std::string();         // will never happen
+  return std::string(); // will never happen
 }
 
 Config::Strings NetCDFConfig::all_strings_impl() const {
   auto strings = m_data.all_strings();
   Strings result;
 
-  for (const auto& s : strings) {
-    std::string name = s.first;
+  for (const auto &s : strings) {
+    std::string name  = s.first;
     std::string value = s.second;
 
     auto k = strings.find(name + "_type");
@@ -137,7 +135,7 @@ static bool string_is_true(const std::string &value) {
 
 bool NetCDFConfig::get_flag_impl(const std::string &name) const {
   const auto &strings = m_data.all_strings();
-  auto j = strings.find(name);
+  auto j              = strings.find(name);
   if (j != strings.end()) {
 
     const std::string &value = j->second;
@@ -150,22 +148,25 @@ bool NetCDFConfig::get_flag_impl(const std::string &name) const {
       return true;
     }
 
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Parameter '%s' (%s) cannot be interpreted as a flag.\n"
-                                  "Please make sure that it is set to one of 'true', 'yes', 'on', 'false', 'no', 'off'.",
-                                  name.c_str(), value.c_str());
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION,
+        "Parameter '%s' (%s) cannot be interpreted as a flag.\n"
+        "Please make sure that it is set to one of 'true', 'yes', 'on', 'false', 'no', 'off'.",
+        name.c_str(), value.c_str());
   }
 
-  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Parameter '%s' was not set. (Read from '%s'.)",
-                                name.c_str(), m_config_filename.c_str());
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                "Parameter '%s' was not set. (Read from '%s'.)", name.c_str(),
+                                m_config_filename.c_str());
 
-  return true;                  // will never happen
+  return true; // will never happen
 }
 
 Config::Flags NetCDFConfig::all_flags_impl() const {
   Flags result;
 
-  for (const auto& b : m_data.all_strings()) {
-    std::string name = b.first;
+  for (const auto &b : m_data.all_strings()) {
+    std::string name  = b.first;
     std::string value = b.second;
 
     if (string_is_true(value)) {

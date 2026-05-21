@@ -26,7 +26,7 @@
 namespace pism {
 namespace stressbalance {
 
-enum ISMIPHOMTest {HOM_A, HOM_B, HOM_C, HOM_D};
+enum ISMIPHOMTest { HOM_A, HOM_B, HOM_C, HOM_D };
 
 /*!
  * This class implements periodic geometry experiments from the ISMIP-HOM
@@ -38,14 +38,8 @@ public:
                   ISMIPHOMTest test);
 
 protected:
-  void nodal_parameter_values(const fem::Q1Element3 &element,
-                              Parameters **P,
-                              int i,
-                              int j,
-                              int *node_type,
-                              double *bottom,
-                              double *thickness,
-                              double *surface,
+  void nodal_parameter_values(const fem::Q1Element3 &element, Parameters **P, int i, int j,
+                              int *node_type, double *bottom, double *thickness, double *surface,
                               double *sea_level) const;
   ISMIPHOMTest m_test;
 

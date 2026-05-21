@@ -20,9 +20,9 @@
 #ifndef PISM_UTILITIES_H
 #define PISM_UTILITIES_H
 
-#include <cstdint>              // uint32_t
+#include <cstdint> // uint32_t
 
-#include <algorithm>            // std::min, std::max
+#include <algorithm> // std::min, std::max
 #include <set>
 #include <string>
 #include <vector>
@@ -34,22 +34,20 @@ namespace pism {
 /*!
  * Compute vertically-integrated water column pressure.
  */
-double average_water_column_pressure(double ice_thickness, double bed,
-                                     double floatation_level,
+double average_water_column_pressure(double ice_thickness, double bed, double floatation_level,
                                      double rho_ice, double rho_water, double g);
 
 // Utilities that do not expose PETSc's or PISM's API.
 
 #ifndef __GNUC__
-#  define  __attribute__(x)  /* nothing */
+#define __attribute__(x) /* nothing */
 #endif
 
 double get_time(MPI_Comm comm);
 std::string timestamp(MPI_Comm com);
 std::string username_prefix(MPI_Comm com);
 std::string args_string();
-std::string filename_add_suffix(const std::string &filename,
-                                const std::string &separator,
+std::string filename_add_suffix(const std::string &filename, const std::string &separator,
                                 const std::string &suffix);
 
 double wall_clock_hours(MPI_Comm com, double start_time);
@@ -72,14 +70,14 @@ std::vector<std::string> split(const std::string &input, char separator);
 
 std::set<std::string> set_split(const std::string &input, char separator);
 
-std::string set_join(const std::set<std::string> &input, const std::string& separator);
+std::string set_join(const std::set<std::string> &input, const std::string &separator);
 
 std::string replace_character(const std::string &input, char from, char to);
 
 // set
 bool set_member(const std::string &string, const std::set<std::string> &set);
 
-template<typename T, typename S>
+template <typename T, typename S>
 std::set<T> set_union(std::initializer_list<S> sets) {
   std::set<T> result{};
   for (const auto &set : sets) {
@@ -104,8 +102,8 @@ std::set<T> set_union(std::initializer_list<S> sets) {
  * This is similar to a set union, but it is not symmetric. (I would expect set_union(a, b) to be
  * the same as set_union(b, a)).
  */
-template<typename T>
-T combine(const T &a, const T&b) {
+template <typename T>
+T combine(const T &a, const T &b) {
   T result = a;
   for (const auto &element : b) {
     result.insert(element);
@@ -113,7 +111,7 @@ T combine(const T &a, const T&b) {
   return result;
 }
 
-template<typename T>
+template <typename T>
 inline T clip(T x, T a, T b) {
   return std::min(std::max(a, x), b);
 }
@@ -160,17 +158,11 @@ void validate_format_string(const std::string &format);
 
 uint64_t fletcher64(const uint32_t *data, size_t len);
 
-void print_checksum(MPI_Comm com,
-                    const std::vector<double> &data,
-                    const char *label);
+void print_checksum(MPI_Comm com, const std::vector<double> &data, const char *label);
 
-void print_vector(MPI_Comm com,
-                  const std::vector<double> &data,
-                  const char *label);
+void print_vector(MPI_Comm com, const std::vector<double> &data, const char *label);
 
-void print_vector(MPI_Comm com,
-                  const std::vector<int> &data,
-                  const char *label);
+void print_vector(MPI_Comm com, const std::vector<int> &data, const char *label);
 
 double parse_number(const std::string &input);
 

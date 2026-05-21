@@ -19,56 +19,56 @@
 //This file contains various initialization routines. See the IceModel::init()
 //documentation comment in iceModel.cc for the order in which they are called.
 
-#include "pism/icemodel/IceModel.hh"
+#include "pism/coupler/ocean/Initialization.hh"
+#include "pism/age/AgeModel.hh"
+#include "pism/age/Isochrones.hh"
 #include "pism/basalstrength/ConstantYieldStress.hh"
 #include "pism/basalstrength/MohrCoulombYieldStress.hh"
 #include "pism/basalstrength/OptTillphiYieldStress.hh"
-#include "pism/frontretreat/util/IcebergRemover.hh"
-#include "pism/frontretreat/util/IcebergRemoverFEM.hh"
-#include "pism/frontretreat/calving/CalvingAtThickness.hh"
-#include "pism/frontretreat/calving/EigenCalving.hh"
-#include "pism/frontretreat/calving/FloatKill.hh"
-#include "pism/frontretreat/calving/HayhurstCalving.hh"
-#include "pism/frontretreat/calving/vonMisesCalving.hh"
-#include "pism/energy/BedThermalUnit.hh"
-#include "pism/hydrology/NullTransport.hh"
-#include "pism/hydrology/Routing.hh"
-#include "pism/hydrology/SteadyState.hh"
-#include "pism/hydrology/Distributed.hh"
-#include "pism/stressbalance/StressBalance.hh"
-#include "pism/util/Config.hh"
-#include "pism/util/Time.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/util/io/File.hh"
 #include "pism/coupler/OceanModel.hh"
 #include "pism/coupler/SurfaceModel.hh"
 #include "pism/coupler/atmosphere/Factory.hh"
+#include "pism/coupler/frontalmelt/Factory.hh"
 #include "pism/coupler/ocean/Factory.hh"
-#include "pism/coupler/ocean/Initialization.hh"
 #include "pism/coupler/ocean/sea_level/Factory.hh"
 #include "pism/coupler/ocean/sea_level/Initialization.hh"
 #include "pism/coupler/surface/Factory.hh"
 #include "pism/coupler/surface/Initialization.hh"
-#include "pism/earth/LingleClark.hh"
+#include "pism/coupler/util/options.hh" // ForcingOptions
 #include "pism/earth/BedDef.hh"
 #include "pism/earth/Given.hh"
-#include "pism/util/Vars.hh"
-#include "pism/util/projection.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/age/AgeModel.hh"
-#include "pism/age/Isochrones.hh"
+#include "pism/earth/LingleClark.hh"
+#include "pism/energy/BedThermalUnit.hh"
 #include "pism/energy/EnthalpyModel.hh"
 #include "pism/energy/TemperatureModel.hh"
 #include "pism/fracturedensity/FractureDensity.hh"
 #include "pism/frontretreat/FrontRetreat.hh"
 #include "pism/frontretreat/PrescribedRetreat.hh"
-#include "pism/coupler/frontalmelt/Factory.hh"
-#include "pism/coupler/util/options.hh" // ForcingOptions
-#include "pism/util/ScalarForcing.hh"
+#include "pism/frontretreat/calving/CalvingAtThickness.hh"
+#include "pism/frontretreat/calving/EigenCalving.hh"
+#include "pism/frontretreat/calving/FloatKill.hh"
+#include "pism/frontretreat/calving/HayhurstCalving.hh"
+#include "pism/frontretreat/calving/vonMisesCalving.hh"
+#include "pism/frontretreat/util/IcebergRemover.hh"
+#include "pism/frontretreat/util/IcebergRemoverFEM.hh"
+#include "pism/hydrology/Distributed.hh"
+#include "pism/hydrology/NullTransport.hh"
+#include "pism/hydrology/Routing.hh"
+#include "pism/hydrology/SteadyState.hh"
+#include "pism/icemodel/IceModel.hh"
 #include "pism/stressbalance/ShallowStressBalance.hh"
+#include "pism/stressbalance/StressBalance.hh"
+#include "pism/util/Config.hh"
+#include "pism/util/ScalarForcing.hh"
+#include "pism/util/Time.hh"
+#include "pism/util/Vars.hh"
 #include "pism/util/array/Forcing.hh"
-#include <memory>
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/util/projection.hh"
+#include <memory>
 
 namespace pism {
 
@@ -150,7 +150,9 @@ void IceModel::model_state_setup(InputOptions input_options) {
 
   // By now ice geometry is set (including regridding) and so we can initialize the ocean model,
   // which may need ice thickness, bed topography, and the cell type mask.
-  { m_ocean->init(m_geometry); }
+  {
+    m_ocean->init(m_geometry);
+  }
 
   // Now surface elevation is initialized, so we can initialize surface models (some use
   // elevation-based parameterizations of surface temperature and/or mass balance).
@@ -938,8 +940,7 @@ std::set<std::string> IceModel::output_variables(const std::string &keyword) {
 
   std::string variables;
 
-  if (keyword == "none" or
-      keyword == "small") {
+  if (keyword == "none" or keyword == "small") {
     variables = "";
   } else if (keyword == "medium") {
     variables = m_config->get_string("output.sizes.medium");
@@ -964,7 +965,7 @@ void IceModel::compute_lat_lon() {
   if (m_config->get_flag(compute_lon_lat) and not projection.empty()) {
     m_log->message(2, "* Computing longitude and latitude using projection parameters...\n");
 
-#if (Pism_USE_PROJ==1)
+#if (Pism_USE_PROJ == 1)
     compute_longitude(projection, m_geometry.longitude);
     compute_latitude(projection, m_geometry.latitude);
 #else
@@ -978,7 +979,7 @@ void IceModel::compute_lat_lon() {
     // IceModel::bootstrap_2d() uses these attributes to determine if it needs to regrid
     // longitude and latitude.
     m_geometry.longitude.metadata()["initialized"] = "true";
-    m_geometry.latitude.metadata()["initialized"] = "true";
+    m_geometry.latitude.metadata()["initialized"]  = "true";
   }
 }
 

@@ -16,45 +16,40 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <petsc.h>
-#include <cassert>
-#include <cmath>                // std::floor
 #include <array>
+#include <cassert>
+#include <cmath> // std::floor
+#include <petsc.h>
 
+#include "pism/util/Config.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/Time.hh"
 #include "pism/util/array/Forcing.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/Time.hh"
-#include "pism/util/Grid.hh"
-#include "pism/util/Config.hh"
 
-#include "pism/util/error_handling.hh"
-#include "pism/util/io/io_helpers.hh"
-#include "pism/util/Logger.hh"
-#include "pism/util/Interpolation1D.hh"
 #include "pism/util/Context.hh"
-#include "pism/util/array/Array_impl.hh"
-#include "pism/util/VariableMetadata.hh"
-#include "pism/util/io/IO_Flags.hh"
 #include "pism/util/InputInterpolation.hh"
+#include "pism/util/Interpolation1D.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/VariableMetadata.hh"
+#include "pism/util/array/Array_impl.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/IO_Flags.hh"
+#include "pism/util/io/io_helpers.hh"
 #include "pism/util/petscwrappers/DM.hh"
 
 namespace pism {
 namespace array {
 
 struct Forcing::Data {
-  Data()
-    : array(nullptr),
-      first(-1),
-      n_records(0),
-      period(0.0),
-      period_start(0.0) {
+  Data() : array(nullptr), first(-1), n_records(0), period(0.0), period_start(0.0) {
     // empty
   }
   //! all the times available in filename
   std::vector<double> time;
 
   //! the range of times covered by data in `filename`
-  std::array<double,2> time_range;
+  std::array<double, 2> time_range;
 
   //! name of the file to read (regrid) from
   std::string filename;
@@ -110,18 +105,12 @@ struct Forcing::Data {
  * @param[in] periodic true if this forcing field should be interpreted as periodic
  * @param[in] interpolation_type type of temporal interpolation (LINEAR or PIECEWISE_CONSTANT)
  */
-Forcing::Forcing(std::shared_ptr<const Grid> grid,
-                 const File &file,
-                 const std::string &short_name,
-                 const std::string &standard_name,
-                 unsigned int max_buffer_size,
-                 bool periodic,
+Forcing::Forcing(std::shared_ptr<const Grid> grid, const File &file, const std::string &short_name,
+                 const std::string &standard_name, unsigned int max_buffer_size, bool periodic,
                  InterpolationType interpolation_type)
-  : array::Scalar(grid, short_name, 0),
-    m_data(new Data()) {
+    : array::Scalar(grid, short_name, 0), m_data(new Data()) {
 
-  unsigned int n_records = file.nrecords(short_name, standard_name,
-                                         grid->ctx()->unit_system());
+  unsigned int n_records = file.nrecords(short_name, standard_name, grid->ctx()->unit_system());
 
   unsigned int buffer_size = 0;
   if (periodic) {
@@ -146,33 +135,29 @@ Forcing::Forcing(std::shared_ptr<const Grid> grid,
 }
 
 std::shared_ptr<Forcing> Forcing::Constant(std::shared_ptr<const Grid> grid,
-                                           const std::string &short_name,
-                                           double value) {
+                                           const std::string &short_name, double value) {
   // note: cannot use std::make_shared because of a private constructor
-  std::shared_ptr<Forcing> result(new Forcing(grid, short_name, 1,
-                                              PIECEWISE_CONSTANT));
+  std::shared_ptr<Forcing> result(new Forcing(grid, short_name, 1, PIECEWISE_CONSTANT));
 
   // set constant value everywhere
   result->set(value);
   result->set_record(0);
 
   // set the time to zero
-  result->m_data->time = {0.0};
+  result->m_data->time      = { 0.0 };
   result->m_data->n_records = 1;
-  result->m_data->first = 0;
+  result->m_data->first     = 0;
 
   // set fake time bounds:
-  double eps = 0.5 * result->m_data->dt_min;
-  result->m_data->time_range = {-eps, eps};
+  double eps                 = 0.5 * result->m_data->dt_min;
+  result->m_data->time_range = { -eps, eps };
 
   return result;
 }
 
 Forcing::Forcing(std::shared_ptr<const Grid> grid, const std::string &short_name,
-                 unsigned int buffer_size,
-                 InterpolationType interpolation_type)
-  : array::Scalar(grid, short_name, 0),
-    m_data(new Data()) {
+                 unsigned int buffer_size, InterpolationType interpolation_type)
+    : array::Scalar(grid, short_name, 0), m_data(new Data()) {
   allocate(buffer_size, interpolation_type);
 }
 
@@ -189,8 +174,7 @@ void Forcing::allocate(unsigned int buffer_size, InterpolationType interpolation
 
   m_data->dt_min = config->get_number("time_stepping.resolution");
 
-  if (not (m_data->interp_type == PIECEWISE_CONSTANT or
-           m_data->interp_type == LINEAR)) {
+  if (not(m_data->interp_type == PIECEWISE_CONSTANT or m_data->interp_type == LINEAR)) {
     throw RuntimeError(PISM_ERROR_LOCATION, "unsupported interpolation type");
   }
 
@@ -210,7 +194,7 @@ unsigned int Forcing::buffer_size() const {
   return m_data->buffer_size;
 }
 
-double*** Forcing::array3() {
+double ***Forcing::array3() {
   return m_data->array;
 }
 
@@ -237,14 +221,14 @@ void Forcing::end_access() const {
 
 void Forcing::init(const std::string &filename, bool periodic) {
   try {
-    auto ctx = m_impl->grid->ctx();
+    auto ctx  = m_impl->grid->ctx();
     auto time = ctx->time();
 
     m_data->filename = filename;
 
     File file(m_impl->grid->com, m_data->filename, io::PISM_GUESS, io::PISM_READONLY);
-    auto var = file.find_variable(m_impl->metadata[0].get_name(),
-                                  m_impl->metadata[0]["standard_name"]);
+    auto var =
+        file.find_variable(m_impl->metadata[0].get_name(), m_impl->metadata[0]["standard_name"]);
     if (not var.exists) {
       throw RuntimeError(PISM_ERROR_LOCATION, "variable not found");
     }
@@ -261,22 +245,22 @@ void Forcing::init(const std::string &filename, bool periodic) {
 
       if (periodic) {
         m_data->period_start = bounds.front();
-        m_data->period = bounds.back() - bounds.front();
+        m_data->period       = bounds.back() - bounds.front();
       }
 
       if (m_data->interp_type == PIECEWISE_CONSTANT) {
         // Time bounds data overrides the time variable: we make t[j] be the
         // left end-point of the j-th interval
         for (unsigned int k = 0; k < times.size(); ++k) {
-          times[k] = bounds[2*k + 0];
+          times[k] = bounds[2 * k + 0];
         }
       }
 
       m_data->time       = times;
-      m_data->time_range = {bounds.front(), bounds.back()};
+      m_data->time_range = { bounds.front(), bounds.back() };
 
       bool extrapolate = ctx->config()->get_flag("input.forcing.time_extrapolation");
-      if (not (extrapolate or periodic)) {
+      if (not(extrapolate or periodic)) {
         check_forcing_duration(*time, bounds.front(), bounds.back());
       }
 
@@ -285,11 +269,11 @@ void Forcing::init(const std::string &filename, bool periodic) {
       // that the user wants to use constant-in-time forcing for the whole simulation
 
       // this value does not matter
-      m_data->time = {0.0};
+      m_data->time = { 0.0 };
 
       // set fake time bounds:
-      double eps = 0.5 * m_data->dt_min;
-      m_data->time_range = {-eps, eps};
+      double eps         = 0.5 * m_data->dt_min;
+      m_data->time_range = { -eps, eps };
 
       // note that in this case all data is periodic and constant in time
       m_data->period       = 0.0;
@@ -303,8 +287,7 @@ void Forcing::init(const std::string &filename, bool periodic) {
   } catch (RuntimeError &e) {
     e.add_context("reading '%s' (%s) from '%s'",
                   m_impl->metadata[0].get_string("long_name").c_str(),
-                  m_impl->metadata[0].get_name().c_str(),
-                  m_data->filename.c_str());
+                  m_impl->metadata[0].get_name().c_str(), m_data->filename.c_str());
     throw;
   }
 }
@@ -317,15 +300,13 @@ void Forcing::init_periodic_data(const File &file) {
 
   auto ctx = grid()->ctx();
 
-  auto name = get_name();
-  auto n_records = file.nrecords(name, metadata()["standard_name"],
-                                 ctx->unit_system());
+  auto name      = get_name();
+  auto n_records = file.nrecords(name, metadata()["standard_name"], ctx->unit_system());
 
   auto buffer_required = n_records + 2 * static_cast<int>(m_data->interp_type == LINEAR);
 
   if (buffer_size() < buffer_required) {
-    throw RuntimeError(PISM_ERROR_LOCATION,
-                       "the buffer is too small to contain periodic data");
+    throw RuntimeError(PISM_ERROR_LOCATION, "the buffer is too small to contain periodic data");
   }
 
   int offset = m_data->interp_type == LINEAR ? 1 : 0;
@@ -333,9 +314,9 @@ void Forcing::init_periodic_data(const File &file) {
   // Read all the records and store them. The index offset leaves room for an extra record
   // needed to simplify interpolation
   auto variable = m_impl->metadata[0];
-  auto V = file.find_variable(variable.get_name(), variable["standard_name"]);
+  auto V        = file.find_variable(variable.get_name(), variable["standard_name"]);
 
-  auto interp = grid()->get_interpolation({0.0}, file, V.name, m_impl->interpolation_type);
+  auto interp = grid()->get_interpolation({ 0.0 }, file, V.name, m_impl->interpolation_type);
 
   for (unsigned int j = 0; j < n_records; ++j) {
 
@@ -531,7 +512,7 @@ void Forcing::update(unsigned int start) {
   try {
     auto V = file.find_variable(variable.get_name(), variable["standard_name"]);
 
-    auto interp = grid()->get_interpolation({0.0}, file, V.name, m_impl->interpolation_type);
+    auto interp = grid()->get_interpolation({ 0.0 }, file, V.name, m_impl->interpolation_type);
 
     for (unsigned int j = 0; j < missing; ++j) {
       interp->regrid(variable, file, (int)(start + j), *grid(), vec());
@@ -556,7 +537,7 @@ void Forcing::discard(int number) {
 
   m_data->n_records -= number;
 
-  array::AccessScope l{this};
+  array::AccessScope l{ this };
 
   double ***a3 = array3();
   for (auto p : grid()->points()) {
@@ -571,9 +552,9 @@ void Forcing::discard(int number) {
 //! Sets the record number n to the contents of the (internal) Vec v.
 void Forcing::set_record(int n) {
 
-  array::AccessScope l{this};
+  array::AccessScope l{ this };
 
-  double  **a2 = array();
+  double **a2  = array();
   double ***a3 = array3();
   for (auto p : grid()->points()) {
     const int i = p.i(), j = p.j();
@@ -628,18 +609,18 @@ MaxTimestep Forcing::max_timestep(double t) const {
  */
 void Forcing::interp(double t) {
 
-  init_interpolation({t});
+  init_interpolation({ t });
 
   // There is only one point to interpolate at ("t" above). Here we get interpolation
   // indexes and the corresponding weight. Here L == R for the piecewise-constant
   // interpolation.
-  int L = m_data->interp->left(0);
-  int R = m_data->interp->right(0);
+  int L        = m_data->interp->left(0);
+  int R        = m_data->interp->right(0);
   double alpha = m_data->interp->alpha(0);
 
-  array::AccessScope l{this};
+  array::AccessScope l{ this };
   double ***a3 = array3();
-  double  **a2 = array();
+  double **a2  = array();
 
   for (auto p : m_impl->grid->points()) {
     const int i = p.i(), j = p.j();
@@ -660,24 +641,22 @@ void Forcing::interp(double t) {
 void Forcing::average(double t, double dt) {
 
   // if only one record, nothing to do
-  if (m_data->time.size() == 1 or
-      m_data->n_records == 1 or
-      dt == 0.0) {
+  if (m_data->time.size() == 1 or m_data->n_records == 1 or dt == 0.0) {
     interp(t);
     return;
   }
 
   const double *data = &m_data->time[m_data->first];
-  size_t data_size = m_data->n_records;
-  auto type = m_data->interp_type;
+  size_t data_size   = m_data->n_records;
+  auto type          = m_data->interp_type;
 
   std::map<size_t, double> weights{};
 
   if (m_data->period > 0.0) {
-    double a = t;
-    double b = t + dt;
+    double a  = t;
+    double b  = t + dt;
     double t0 = m_data->period_start;
-    double P = m_data->period;
+    double P  = m_data->period;
 
     // N_periods is the number of complete periods in the *middle* of the integration
     // interval
@@ -685,15 +664,15 @@ void Forcing::average(double t, double dt) {
     // Note that the total number of complete periods is equal to (N_periods + 1) *if*
     // delta == 0.0.
     double N_periods = 0.0;
-    double delta = 0.0;
-    double gamma = 0.0;
+    double delta     = 0.0;
+    double gamma     = 0.0;
     {
       double N = std::floor((a - t0) / P);
       double M = std::floor((b - t0) / P);
 
       N_periods = M - (N + 1);
-      delta = (a - t0) - P * N;
-      gamma = (b - t0) - P * M;
+      delta     = (a - t0) - P * N;
+      gamma     = (b - t0) - P * M;
     }
 
     if (N_periods >= 0.0) {
@@ -734,8 +713,8 @@ void Forcing::average(double t, double dt) {
     weights = integration_weights(data, data_size, type, t, t + dt);
   }
 
-  array::AccessScope l{this};
-  double **a2 = array();
+  array::AccessScope l{ this };
+  double **a2  = array();
   double ***a3 = array3();
 
   for (auto p : m_impl->grid->points()) {
@@ -779,11 +758,9 @@ void Forcing::init_interpolation(const std::vector<double> &ts) {
     times_requested = ts;
   }
 
-  m_data->interp.reset(new Interpolation1D(m_data->interp_type,
-                                         &m_data->time[m_data->first],
-                                         m_data->n_records,
-                                         times_requested.data(),
-                                         times_requested.size()));
+  m_data->interp.reset(new Interpolation1D(m_data->interp_type, &m_data->time[m_data->first],
+                                           m_data->n_records, times_requested.data(),
+                                           times_requested.size()));
 }
 
 /**

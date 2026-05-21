@@ -60,8 +60,7 @@ MassEnergyBudget::MassEnergyBudget(std::shared_ptr<const pism::Grid> grid,
 
   // ----------- Mass advection, with accompanying enthalpy change
   // Postive means mass/enthalpy is flowing INTO the ice sheet.
-  calving.set_attrs("Mass/Enthalpy gain from calving.  Should be negative.",
-                    "m-2 s-1");
+  calving.set_attrs("Mass/Enthalpy gain from calving.  Should be negative.", "m-2 s-1");
   add_massenth(calving, DELTA, "calving.mass", "calving.enth");
 
   // SMB as seen by PISM in iMgeometry.cc massContExplicitSte().

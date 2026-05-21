@@ -43,18 +43,16 @@ namespace calving {
  * This class uses a serial connected component labeling algorithm to
  * remove "icebergs".
  */
-class IcebergRemover : public Component
-{
+class IcebergRemover : public Component {
 public:
   IcebergRemover(std::shared_ptr<const Grid> g);
   virtual ~IcebergRemover() = default;
 
-  void update(const array::Scalar &bc_mask,
-              array::CellType1 &cell_type,
+  void update(const array::Scalar &bc_mask, array::CellType1 &cell_type,
               array::Scalar &ice_thickness);
+
 protected:
-  virtual void update_impl(const array::Scalar &bc_mask,
-                           array::CellType1 &cell_type,
+  virtual void update_impl(const array::Scalar &bc_mask, array::CellType1 &cell_type,
                            array::Scalar &ice_thickness);
 
 

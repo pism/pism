@@ -19,17 +19,15 @@
 
 #include "pism/earth/matlablike.hh"
 
-double dblquad_cubature(integrand f, double ax, double bx, double ay, double by,
-                        double reqRelError, void *fdata) {
+double dblquad_cubature(integrand f, double ax, double bx, double ay, double by, double reqRelError,
+                        void *fdata) {
 
-  double   xmin[2] = {ax, ay};
-  double   xmax[2] = {bx, by};
+  double xmin[2]   = { ax, ay };
+  double xmax[2]   = { bx, by };
   unsigned maxEval = 5000;
-  double   result = 0.0, estimated_error = 0.0;
+  double result = 0.0, estimated_error = 0.0;
 
   /* see cubature.h: */
-  adapt_integrate(f, fdata, 2, xmin, xmax, 
-                  maxEval, 0.0, reqRelError, &result, &estimated_error);
+  adapt_integrate(f, fdata, 2, xmin, xmax, maxEval, 0.0, reqRelError, &result, &estimated_error);
   return result;
 }
-

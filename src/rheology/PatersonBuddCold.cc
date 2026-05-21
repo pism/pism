@@ -25,15 +25,14 @@
 namespace pism {
 namespace rheology {
 
-PatersonBuddCold::PatersonBuddCold(double exponent,
-                                   const Config &config,
+PatersonBuddCold::PatersonBuddCold(double exponent, const Config &config,
                                    std::shared_ptr<EnthalpyConverter> ec)
-  : PatersonBudd(exponent, config, ec) {
+    : PatersonBudd(exponent, config, ec) {
   m_name = "Paterson-Budd (cold case)";
 }
 
 double PatersonBuddCold::tempFromSoftness(double A) const {
-  return - m_Q_cold / (m_ideal_gas_constant * (log(A) - log(m_A_cold)));
+  return -m_Q_cold / (m_ideal_gas_constant * (log(A) - log(m_A_cold)));
 }
 
 // takes care of hardness...
@@ -42,9 +41,8 @@ double PatersonBuddCold::softness_from_temp(double T_pa) const {
 }
 
 // ignores pressure and uses non-pressure-adjusted temperature
-double PatersonBuddCold::flow_from_temp(double stress, double temp,
-                                        double , double) const {
-  return softness_from_temp(temp) * pow(stress,m_n-1);
+double PatersonBuddCold::flow_from_temp(double stress, double temp, double, double) const {
+  return softness_from_temp(temp) * pow(stress, m_n - 1);
 }
 
 
@@ -61,10 +59,10 @@ bool FlowLawIsPatersonBuddCold(const FlowLaw &flow_law, const Config &config,
   double n = config.get_number("stress_balance.sia.Glen_exponent");
   PatersonBuddCold cpb(n, config, EC); // This is unmodified cold Paterson-Budd
 
-  for (int i=0; i<4; i++) {
+  for (int i = 0; i < 4; i++) {
     const double left  = flow_law.flow(v[i].s, v[i].E, v[i].p, v[i].gs),
-      right =  cpb.flow(v[i].s, v[i].E, v[i].p, v[i].gs);
-    if (fabs((left - right)/left)>1.0e-15) {
+                 right = cpb.flow(v[i].s, v[i].E, v[i].p, v[i].gs);
+    if (fabs((left - right) / left) > 1.0e-15) {
       return false;
     }
   }

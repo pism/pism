@@ -31,6 +31,7 @@ public:
   virtual ~MohrCoulombYieldStress() = default;
 
   void set_till_friction_angle(const array::Scalar &input);
+
 protected:
   void restart_impl(const File &input_file, int record);
   void bootstrap_impl(const File &input_file, const YieldStressInputs &inputs);
@@ -49,14 +50,13 @@ protected:
   array::Scalar m_till_phi;
 
   std::shared_ptr<array::Forcing> m_delta;
+
 private:
-  void till_friction_angle(const array::Scalar &bed_topography,
-                           array::Scalar &result);
+  void till_friction_angle(const array::Scalar &bed_topography, array::Scalar &result);
 
   void till_friction_angle(const array::Scalar &basal_yield_stress,
                            const array::Scalar &till_water_thickness,
-                           const array::Scalar &ice_thickness,
-                           const array::CellType &cell_type,
+                           const array::Scalar &ice_thickness, const array::CellType &cell_type,
                            array::Scalar &result);
 };
 

@@ -28,9 +28,9 @@
 
 #include "pism/geometry/part_grid_threshold_thickness.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/Interpolation1D.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/Profiling.hh"
-#include "pism/util/Interpolation1D.hh"
 #include "pism/util/pism_utilities.hh"
 
 #include "pism/geometry/flux_limiter.hh"
@@ -588,8 +588,8 @@ void GeometryEvolution::compute_interface_fluxes(const array::CellType1 &cell_ty
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j(), M = cell_type.as_int(i, j);
 
-      const double H   = ice_thickness(i, j);
-      const Vector2d& V = velocity(i, j);
+      const double H    = ice_thickness(i, j);
+      const Vector2d &V = velocity(i, j);
 
       for (int n = 0; n < 2; ++n) {
         const int oi = 1 - n,  // offset in the i direction
@@ -602,7 +602,7 @@ void GeometryEvolution::compute_interface_fluxes(const array::CellType1 &cell_ty
         // advective velocity at the current interface
         double v = 0.0;
         {
-          const Vector2d& V_n = velocity(i_n, j_n);
+          const Vector2d &V_n = velocity(i_n, j_n);
           int W = static_cast<int>(icy(M)), W_n = static_cast<int>(icy(M_n));
 
           auto v_staggered = (W * V + W_n * V_n) / std::max(W + W_n, 1);
@@ -1020,8 +1020,8 @@ void GeometryEvolution::compute_surface_and_basal_mass_balance(
     const array::Scalar &basal_melt_rate, array::Scalar &effective_SMB,
     array::Scalar &effective_BMB) {
 
-  array::AccessScope list{ &ice_thickness,     &surface_mass_flux,      &basal_melt_rate, &cell_type,
-                           &thickness_bc_mask, &effective_SMB, &effective_BMB };
+  array::AccessScope list{ &ice_thickness,     &surface_mass_flux, &basal_melt_rate, &cell_type,
+                           &thickness_bc_mask, &effective_SMB,     &effective_BMB };
 
   ParallelSection loop(m_grid->com);
   try {
@@ -1124,16 +1124,15 @@ void RegionalGeometryEvolution::set_no_model_mask_impl(const array::Scalar &mask
  * Disable ice flow in "no model" areas.
  */
 void RegionalGeometryEvolution::compute_interface_fluxes(const array::CellType1 &cell_type,
-                                                         const array::Scalar        &ice_thickness,
-                                                         const array::Vector        &velocity,
-                                                         const array::Staggered     &diffusive_flux,
-                                                         array::Staggered           &output) {
+                                                         const array::Scalar &ice_thickness,
+                                                         const array::Vector &velocity,
+                                                         const array::Staggered &diffusive_flux,
+                                                         array::Staggered &output) {
 
-  GeometryEvolution::compute_interface_fluxes(cell_type, ice_thickness,
-                                              velocity, diffusive_flux,
+  GeometryEvolution::compute_interface_fluxes(cell_type, ice_thickness, velocity, diffusive_flux,
                                               output);
 
-  array::AccessScope list{&m_no_model_mask, &output};
+  array::AccessScope list{ &m_no_model_mask, &output };
 
   ParallelSection loop(m_grid->com);
   try {
@@ -1142,16 +1141,15 @@ void RegionalGeometryEvolution::compute_interface_fluxes(const array::CellType1 
 
       const int M = m_no_model_mask.as_int(i, j);
 
-      for (int n : {0, 1}) {
-        const int
-          oi  = 1 - n,               // offset in the i direction
-          oj  = n,                   // offset in the j direction
-          i_n = i + oi,              // i index of a neighbor
-          j_n = j + oj;              // j index of a neighbor
+      for (int n : { 0, 1 }) {
+        const int oi = 1 - n,  // offset in the i direction
+            oj       = n,      // offset in the j direction
+            i_n      = i + oi, // i index of a neighbor
+            j_n      = j + oj; // j index of a neighbor
 
         const int M_n = m_no_model_mask.as_int(i_n, j_n);
 
-        if (not (M == 0 and M_n == 0)) {
+        if (not(M == 0 and M_n == 0)) {
           output(i, j, n) = 0.0;
         }
       }
@@ -1165,24 +1163,16 @@ void RegionalGeometryEvolution::compute_interface_fluxes(const array::CellType1 
 /*!
  * Set surface and basal mass balance to zero in "no model" areas.
  */
-void RegionalGeometryEvolution::compute_surface_and_basal_mass_balance(double dt,
-                                                                       const array::Scalar      &thickness_bc_mask,
-                                                                       const array::Scalar        &ice_thickness,
-                                                                       const array::CellType &cell_type,
-                                                                       const array::Scalar        &surface_mass_flux,
-                                                                       const array::Scalar        &basal_melt_rate,
-                                                                       array::Scalar              &effective_SMB,
-                                                                       array::Scalar              &effective_BMB) {
-  GeometryEvolution::compute_surface_and_basal_mass_balance(dt,
-                                                            thickness_bc_mask,
-                                                            ice_thickness,
-                                                            cell_type,
-                                                            surface_mass_flux,
-                                                            basal_melt_rate,
-                                                            effective_SMB,
-                                                            effective_BMB);
+void RegionalGeometryEvolution::compute_surface_and_basal_mass_balance(
+    double dt, const array::Scalar &thickness_bc_mask, const array::Scalar &ice_thickness,
+    const array::CellType &cell_type, const array::Scalar &surface_mass_flux,
+    const array::Scalar &basal_melt_rate, array::Scalar &effective_SMB,
+    array::Scalar &effective_BMB) {
+  GeometryEvolution::compute_surface_and_basal_mass_balance(
+      dt, thickness_bc_mask, ice_thickness, cell_type, surface_mass_flux, basal_melt_rate,
+      effective_SMB, effective_BMB);
 
-  array::AccessScope list{&m_no_model_mask, &effective_SMB, &effective_BMB};
+  array::AccessScope list{ &m_no_model_mask, &effective_SMB, &effective_BMB };
 
   ParallelSection loop(m_grid->com);
   try {
@@ -1205,7 +1195,7 @@ void GeometryEvolution::set_no_model_mask(const array::Scalar &mask) {
 }
 
 void GeometryEvolution::set_no_model_mask_impl(const array::Scalar &mask) {
-  (void) mask;
+  (void)mask;
   // the default implementation is a no-op
 }
 /*!
@@ -1299,14 +1289,12 @@ void ice_flow_rate_across_grounding_line(const array::CellType1 &cell_type,
   loop.check();
 }
 
-double total_grounding_line_flux(const array::CellType1 &cell_type,
-                                 const array::Staggered1 &flux,
+double total_grounding_line_flux(const array::CellType1 &cell_type, const array::Staggered1 &flux,
                                  double dt) {
   auto grid = cell_type.grid();
 
-  const double
-    dx = grid->dx(),            // units: m
-    dy = grid->dy();            // units: m
+  const double dx = grid->dx(), // units: m
+      dy          = grid->dy(); // units: m
 
   auto ice_density = grid->ctx()->config()->get_number("constants.ice.density"); // units: kg / m^3
 
@@ -1314,7 +1302,7 @@ double total_grounding_line_flux(const array::CellType1 &cell_type,
 
   double total_flux = 0.0;
 
-  array::AccessScope list{&cell_type, &flux};
+  array::AccessScope list{ &cell_type, &flux };
 
   ParallelSection loop(grid->com);
   try {

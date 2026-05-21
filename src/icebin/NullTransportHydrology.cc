@@ -16,10 +16,10 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "pism/util/array/CellType.hh"
-#include "pism/util/error_handling.hh"
 #include "pism/icebin/NullTransportHydrology.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/array/CellType.hh"
+#include "pism/util/error_handling.hh"
 namespace pism {
 namespace icebin {
 
@@ -46,9 +46,8 @@ not conserve water.
 
 There is no tranportable water thickness variable and no interaction with it.
  */
-void NullTransportHydrology::update_impl(double t, double dt,
-                                         const hydrology::Inputs &inputs) {
-  (void) t;
+void NullTransportHydrology::update_impl(double t, double dt, const hydrology::Inputs &inputs) {
+  (void)t;
   const double tillwat_max = m_config->get_number("hydrology.tillwat_max"),
                C           = m_config->get_number("hydrology.tillwat_decay_rate");
 
@@ -69,7 +68,7 @@ void NullTransportHydrology::update_impl(double t, double dt,
       m_Wtill(i, j) = 0.0;
     } else {
       m_Wtill(i, j) += dt * (m_surface_input_rate(i, j) - C);
-      auto Wtil0 = m_Wtill(i, j); // ICEBIN ADDITION
+      auto Wtil0    = m_Wtill(i, j); // ICEBIN ADDITION
       m_Wtill(i, j) = std::min(std::max(0.0, m_Wtill(i, j)), tillwat_max);
       basal_runoff_sum(i, j) += Wtil0 - m_Wtill(i, j); // ICEBIN ADDITION
     }

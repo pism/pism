@@ -19,8 +19,8 @@
 #ifndef _PFMFACTORY_H_
 #define _PFMFACTORY_H_
 
-#include "pism/coupler/util/PCFactory.hh"
 #include "pism/coupler/FrontalMelt.hh"
+#include "pism/coupler/util/PCFactory.hh"
 
 namespace pism {
 namespace frontalmelt {

@@ -19,8 +19,8 @@
 #ifndef PISM_SCALARFORCING_H
 #define PISM_SCALARFORCING_H
 
-#include <memory>               // std::unique_ptr
-#include <vector>               // std::vector
+#include <memory> // std::unique_ptr
+#include <vector> // std::vector
 
 namespace pism {
 
@@ -37,20 +37,13 @@ class Logger;
  */
 class ScalarForcing {
 public:
-  ScalarForcing(const Context &ctx,
-                const std::string &option_prefix,
-                const std::string &variable_name,
-                const std::string &units,
-                const std::string &output_units,
-                const std::string &long_name);
+  ScalarForcing(const Context &ctx, const std::string &option_prefix,
+                const std::string &variable_name, const std::string &units,
+                const std::string &output_units, const std::string &long_name);
 
-  ScalarForcing(const Context &ctx,
-                const std::string &filename,
-                const std::string &variable_name,
-                const std::string &units,
-                const std::string &output_units,
-                const std::string &long_name,
-                bool periodic);
+  ScalarForcing(const Context &ctx, const std::string &filename, const std::string &variable_name,
+                const std::string &units, const std::string &output_units,
+                const std::string &long_name, bool periodic);
 
   ~ScalarForcing();
 
@@ -61,15 +54,11 @@ public:
 private:
   // disable copy constructor and the assignment operator:
   ScalarForcing(const ScalarForcing &other);
-  ScalarForcing& operator=(const ScalarForcing&);
+  ScalarForcing &operator=(const ScalarForcing &);
 
-  void initialize(const Context &ctx,
-                  const std::string &filename,
-                  const std::string &variable_name,
-                  const std::string &units,
-                  const std::string &output_units,
-                  const std::string &long_name,
-                  bool periodic);
+  void initialize(const Context &ctx, const std::string &filename, const std::string &variable_name,
+                  const std::string &units, const std::string &output_units,
+                  const std::string &long_name, bool periodic);
 
   double integral(double a, double b) const;
 

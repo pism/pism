@@ -19,14 +19,14 @@
 #include "pism/coupler/surface/ForceThickness.hh"
 #include "pism/util/Grid.hh"
 
-#include "pism/util/Config.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/util/array/CellType.hh"
-#include "pism/util/MaxTimestep.hh"
-#include "pism/util/io/File.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Interpolation1D.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/array/CellType.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/pism_utilities.hh"
 
@@ -35,17 +35,16 @@ namespace surface {
 
 ///// "Force-to-thickness" mechanism
 ForceThickness::ForceThickness(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> input)
-  : SurfaceModel(g, input),
-    m_target_thickness(m_grid, "thk"),
-    m_ftt_mask(m_grid, "ftt_mask")
-{
+    : SurfaceModel(g, input), m_target_thickness(m_grid, "thk"), m_ftt_mask(m_grid, "ftt_mask") {
 
   m_ftt_mask.set_interpolation_type(NEAREST);
 
-  m_alpha                        = m_config->get_number("surface.force_to_thickness.alpha", "s-1");
-  m_alpha_ice_free_factor        = m_config->get_number("surface.force_to_thickness.ice_free_alpha_factor");
-  m_ice_free_thickness_threshold = m_config->get_number("surface.force_to_thickness.ice_free_thickness_threshold");
-  m_start_time                   = m_config->get_number("surface.force_to_thickness.start_time", "seconds");
+  m_alpha = m_config->get_number("surface.force_to_thickness.alpha", "s-1");
+  m_alpha_ice_free_factor =
+      m_config->get_number("surface.force_to_thickness.ice_free_alpha_factor");
+  m_ice_free_thickness_threshold =
+      m_config->get_number("surface.force_to_thickness.ice_free_thickness_threshold");
+  m_start_time = m_config->get_number("surface.force_to_thickness.start_time", "seconds");
 
   m_ftt_mask.metadata(0)
       .long_name("mask specifying where to apply the force-to-thickness mechanism")
@@ -104,8 +103,7 @@ void ForceThickness::init_impl(const Geometry &geometry) {
   }
 
   {
-    m_log->message(2,
-                   "    reading force-to-thickness mask 'ftt_mask' from %s ...\n",
+    m_log->message(2, "    reading force-to-thickness mask 'ftt_mask' from %s ...\n",
                    input_file.c_str());
     m_ftt_mask.regrid(input_file, io::Default::Nil());
   }
@@ -219,8 +217,7 @@ $PISM_DO $cmd
 The script also has a run with no forcing, one with forcing at a lower alpha value,
 a factor of five smaller than the default, and one with a forcing at a higher alpha value, a factor of five higher.
  */
-void ForceThickness::adjust_mass_flux(double time,
-                                      const array::Scalar &ice_thickness,
+void ForceThickness::adjust_mass_flux(double time, const array::Scalar &ice_thickness,
                                       const array::CellType &cell_type,
                                       array::Scalar &result) const {
 
@@ -228,22 +225,21 @@ void ForceThickness::adjust_mass_flux(double time,
     return;
   }
 
-  m_log->message(5,
-                 "    updating surface mass balance using -force_to_thickness mechanism ...");
+  m_log->message(5, "    updating surface mass balance using -force_to_thickness mechanism ...");
 
   double ice_density = m_config->get_number("constants.ice.density");
 
-  array::AccessScope list{&cell_type, &ice_thickness,
-      &m_target_thickness, &m_ftt_mask, &result};
+  array::AccessScope list{ &cell_type, &ice_thickness, &m_target_thickness, &m_ftt_mask, &result };
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
-    if (m_ftt_mask(i,j) > 0.5 and cell_type.grounded(i, j)) {
-      if (m_target_thickness(i,j) >= m_ice_free_thickness_threshold) {
-        result(i,j) += ice_density * m_alpha * (m_target_thickness(i,j) - ice_thickness(i,j));
+    if (m_ftt_mask(i, j) > 0.5 and cell_type.grounded(i, j)) {
+      if (m_target_thickness(i, j) >= m_ice_free_thickness_threshold) {
+        result(i, j) += ice_density * m_alpha * (m_target_thickness(i, j) - ice_thickness(i, j));
       } else {
-        result(i,j) += ice_density * m_alpha * m_alpha_ice_free_factor * (m_target_thickness(i,j) - ice_thickness(i,j));
+        result(i, j) += ice_density * m_alpha * m_alpha_ice_free_factor *
+                        (m_target_thickness(i, j) - ice_thickness(i, j));
       }
     }
   }
@@ -255,11 +251,8 @@ void ForceThickness::update_impl(const Geometry &geometry, double t, double dt) 
 
   m_mass_flux->copy_from(m_input_model->mass_flux());
 
-  adjust_mass_flux(t,
-                   geometry.ice_thickness,
-                   geometry.cell_type,
-                   *m_mass_flux);
-  
+  adjust_mass_flux(t, geometry.ice_thickness, geometry.cell_type, *m_mass_flux);
+
   dummy_accumulation(*m_mass_flux, *m_accumulation);
   dummy_melt(*m_mass_flux, *m_melt);
   dummy_runoff(*m_mass_flux, *m_runoff);
@@ -293,14 +286,14 @@ Therefore we set here
    \f[\Delta t = \frac{2}{\alpha}.\f]
  */
 MaxTimestep ForceThickness::max_timestep_impl(double my_t) const {
-  double max_dt = 2.0 / m_alpha;
+  double max_dt            = 2.0 / m_alpha;
   MaxTimestep input_max_dt = m_input_model->max_timestep(my_t);
 
   return std::min(input_max_dt, MaxTimestep(max_dt, "surface forcing"));
 }
 
 std::set<VariableMetadata> ForceThickness::state_impl() const {
-  auto variables = array::metadata({&m_ftt_mask, &m_target_thickness});
+  auto variables = array::metadata({ &m_ftt_mask, &m_target_thickness });
 
   if (m_input_model != nullptr) {
     return pism::combine(m_input_model->state(), variables);

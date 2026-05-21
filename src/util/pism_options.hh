@@ -45,52 +45,40 @@ bool maybe_show_usage(const Logger &log, const std::string &execname, const std:
 //! Utilities for processing command-line options.
 namespace options {
 
-typedef enum {ALLOW_EMPTY, DONT_ALLOW_EMPTY} ArgumentFlag;
+typedef enum { ALLOW_EMPTY, DONT_ALLOW_EMPTY } ArgumentFlag;
 
 class String : public Option<std::string> {
 public:
   // there is no reasonable default; if the option is set, it has to
   // have a non-empty argument
-  String(const std::string& option,
-         const std::string& description);
+  String(const std::string &option, const std::string &description);
   // there is a reasonable default
-  String(const std::string& option,
-         const std::string& description,
-         const std::string& default_value,
-         ArgumentFlag flag = DONT_ALLOW_EMPTY);
+  String(const std::string &option, const std::string &description,
+         const std::string &default_value, ArgumentFlag flag = DONT_ALLOW_EMPTY);
+
 private:
-  int process(const std::string& option,
-              const std::string& description,
-              const std::string& default_value,
-              ArgumentFlag flag);
+  int process(const std::string &option, const std::string &description,
+              const std::string &default_value, ArgumentFlag flag);
 };
 
 class Keyword : public Option<std::string> {
 public:
-  Keyword(const std::string& option,
-          const std::string& description,
-          const std::string& choices,
-          const std::string& default_value);
+  Keyword(const std::string &option, const std::string &description, const std::string &choices,
+          const std::string &default_value);
 };
 
 class Integer : public Option<int> {
 public:
-  Integer(const std::string& option,
-          const std::string& description,
-          int default_value);
+  Integer(const std::string &option, const std::string &description, int default_value);
 };
 
 class Real : public Option<double> {
 public:
-  Real(std::shared_ptr<units::System> system,
-       const std::string& option,
-       const std::string& description,
-       const std::string& units,
-       double default_value);
+  Real(std::shared_ptr<units::System> system, const std::string &option,
+       const std::string &description, const std::string &units, double default_value);
 };
 
-bool Bool(const std::string& option,
-          const std::string& description);
+bool Bool(const std::string &option, const std::string &description);
 
 void deprecated(const std::string &old_name, const std::string &new_name);
 void ignored(const Logger &log, const std::string &name);

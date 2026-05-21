@@ -17,29 +17,29 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include <gsl/gsl_math.h>       // GSL_NAN
+#include <gsl/gsl_math.h> // GSL_NAN
 #include <memory>
 
 #include "pism/coupler/AtmosphereModel.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/MaxTimestep.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/MaxTimestep.hh"
-#include "pism/util/Context.hh"
 
 namespace pism {
 namespace atmosphere {
 
-std::shared_ptr<array::Scalar> AtmosphereModel::allocate_temperature(std::shared_ptr<const Grid> grid) {
+std::shared_ptr<array::Scalar>
+AtmosphereModel::allocate_temperature(std::shared_ptr<const Grid> grid) {
   auto result = std::make_shared<array::Scalar>(grid, "air_temp");
 
-  result->metadata(0)
-      .long_name("mean annual near-surface air temperature")
-      .units("kelvin");
+  result->metadata(0).long_name("mean annual near-surface air temperature").units("kelvin");
 
   return result;
 }
 
-std::shared_ptr<array::Scalar> AtmosphereModel::allocate_precipitation(std::shared_ptr<const Grid> grid) {
+std::shared_ptr<array::Scalar>
+AtmosphereModel::allocate_precipitation(std::shared_ptr<const Grid> grid) {
   auto result = std::make_shared<array::Scalar>(grid, "precipitation");
 
   result->metadata(0)
@@ -51,14 +51,13 @@ std::shared_ptr<array::Scalar> AtmosphereModel::allocate_precipitation(std::shar
   return result;
 }
 
-AtmosphereModel::AtmosphereModel(std::shared_ptr<const Grid> g)
-  : Component(g) {
+AtmosphereModel::AtmosphereModel(std::shared_ptr<const Grid> g) : Component(g) {
   // empty
 }
 
 AtmosphereModel::AtmosphereModel(std::shared_ptr<const Grid> g,
                                  std::shared_ptr<AtmosphereModel> input)
-  :Component(g), m_input_model(input) {
+    : Component(g), m_input_model(input) {
   // empty
 }
 
@@ -70,11 +69,11 @@ void AtmosphereModel::update(const Geometry &geometry, double t, double dt) {
   this->update_impl(geometry, t, dt);
 }
 
-const array::Scalar& AtmosphereModel::precipitation() const {
+const array::Scalar &AtmosphereModel::precipitation() const {
   return this->precipitation_impl();
 }
 
-const array::Scalar& AtmosphereModel::air_temperature() const {
+const array::Scalar &AtmosphereModel::air_temperature() const {
   return this->air_temperature_impl();
 }
 
@@ -202,9 +201,9 @@ DiagnosticList AtmosphereModel::spatial_diagnostics_impl() const {
   using namespace diagnostics;
 
   DiagnosticList result = {
-    {"air_temp_snapshot",       Diagnostic::Ptr(new AirTemperatureSnapshot(this))},
-    {"effective_air_temp",      Diagnostic::Ptr(new AirTemperature(this))},
-    {"effective_precipitation", Diagnostic::Ptr(new Precipitation(this))},
+    { "air_temp_snapshot", Diagnostic::Ptr(new AirTemperatureSnapshot(this)) },
+    { "effective_air_temp", Diagnostic::Ptr(new AirTemperature(this)) },
+    { "effective_precipitation", Diagnostic::Ptr(new Precipitation(this)) },
   };
 
   if (m_input_model) {
@@ -235,14 +234,14 @@ void AtmosphereModel::write_state_impl(const OutputFile &output) const {
   }
 }
 
-const array::Scalar& AtmosphereModel::precipitation_impl() const {
+const array::Scalar &AtmosphereModel::precipitation_impl() const {
   if (m_input_model) {
     return m_input_model->precipitation();
   }
   throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
 }
 
-const array::Scalar& AtmosphereModel::air_temperature_impl() const {
+const array::Scalar &AtmosphereModel::air_temperature_impl() const {
   if (m_input_model) {
     return m_input_model->air_temperature();
   }

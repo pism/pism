@@ -16,58 +16,58 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#include <cmath>                // std::pow(), std::sqrt()
-#include <algorithm>            // std::min
+#include <algorithm> // std::min
+#include <cmath>     // std::pow(), std::sqrt()
 
 #include "pism/coupler/surface/EISMINTII.hh"
 #include "pism/util/Config.hh"
-#include "pism/util/pism_options.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/MaxTimestep.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/pism_options.hh"
 
 namespace pism {
 namespace surface {
 
 EISMINTII::EISMINTII(std::shared_ptr<const Grid> g, int experiment)
-  : PSFormulas(g), m_experiment(experiment) {
+    : PSFormulas(g), m_experiment(experiment) {
   // empty
 }
 
 void EISMINTII::init_impl(const Geometry &geometry) {
-  (void) geometry;
+  (void)geometry;
 
   using units::convert;
 
   m_log->message(2,
-             "setting parameters for surface mass balance"
-             " and temperature in EISMINT II experiment %c ... \n",
-             m_experiment);
+                 "setting parameters for surface mass balance"
+                 " and temperature in EISMINT II experiment %c ... \n",
+                 m_experiment);
 
   // EISMINT II specified values for parameters
   m_S_b = convert(m_sys, 1.0e-2 * 1e-3, "year-1", "second-1"); // Grad of accum rate change
-  m_S_T = 1.67e-2 * 1e-3;       // K/m  Temp gradient
+  m_S_T = 1.67e-2 * 1e-3;                                      // K/m  Temp gradient
 
   // these are for A,E,G,H,I,K:
   m_M_max = convert(m_sys, 0.5, "m year-1", "m second-1"); // Max accumulation
-  m_R_el  = 450.0e3;            // Distance to equil line (SMB=0)
+  m_R_el  = 450.0e3;                                       // Distance to equil line (SMB=0)
   m_T_min = 238.15;
 
   switch (m_experiment) {
-  case 'B':                     // supposed to start from end of experiment A and:
+  case 'B': // supposed to start from end of experiment A and:
     m_T_min = 243.15;
     break;
   case 'C':
   case 'J':
-  case 'L':                     // supposed to start from end of experiment A (for C;
+  case 'L': // supposed to start from end of experiment A (for C;
     //   resp I and K for J and L) and:
     m_M_max = convert(m_sys, 0.25, "m year-1", "m second-1");
     m_R_el  = 425.0e3;
     break;
-  case 'D':                     // supposed to start from end of experiment A and:
-    m_R_el  = 425.0e3;
+  case 'D': // supposed to start from end of experiment A and:
+    m_R_el = 425.0e3;
     break;
-  case 'F':                     // start with zero ice and:
+  case 'F': // start with zero ice and:
     m_T_min = 223.15;
     break;
   }
@@ -75,29 +75,25 @@ void EISMINTII::init_impl(const Geometry &geometry) {
   // if user specifies Tmin, Tmax, Mmax, Sb, ST, Rel, then use that (override above)
   m_T_min = options::Real(m_sys, "-Tmin", "T min, kelvin", "kelvin", m_T_min);
 
-  options::Real Mmax(m_sys, "-Mmax", "Maximum accumulation, m year-1",
-                     "m year-1",
+  options::Real Mmax(m_sys, "-Mmax", "Maximum accumulation, m year-1", "m year-1",
                      convert(m_sys, m_M_max, "m second-1", "m year-1"));
   if (Mmax.is_set()) {
     m_M_max = convert(m_sys, Mmax, "m year-1", "m second-1");
   }
 
   options::Real Sb(m_sys, "-Sb", "radial gradient of accumulation rate, (m year-1)/km",
-                   "m year-1/km",
-                   convert(m_sys, m_S_b,   "m second-1/m", "m year-1/km"));
+                   "m year-1/km", convert(m_sys, m_S_b, "m second-1/m", "m year-1/km"));
   if (Sb.is_set()) {
     m_S_b = convert(m_sys, Sb, "m year-1/km", "m second-1/m");
   }
 
-  options::Real ST(m_sys, "-ST", "radial gradient of surface temperature, K/km",
-                   "K/km",
+  options::Real ST(m_sys, "-ST", "radial gradient of surface temperature, K/km", "K/km",
                    convert(m_sys, m_S_T, "K/m", "K/km"));
   if (ST.is_set()) {
     m_S_T = convert(m_sys, ST, "K/km", "K/m");
   }
 
-  options::Real Rel(m_sys, "-Rel", "radial distance to equilibrium line, km",
-                    "km",
+  options::Real Rel(m_sys, "-Rel", "radial distance to equilibrium line, km", "km",
                     convert(m_sys, m_R_el, "m", "km"));
   if (Rel.is_set()) {
     m_R_el = convert(m_sys, Rel, "km", "m");
@@ -107,7 +103,7 @@ void EISMINTII::init_impl(const Geometry &geometry) {
 }
 
 MaxTimestep EISMINTII::max_timestep_impl(double t) const {
-  (void) t;
+  (void)t;
   return MaxTimestep("surface EISMINT-II");
 }
 
@@ -122,7 +118,7 @@ void EISMINTII::initialize_using_formulas() {
     cy += 100.0e3;
   }
 
-  array::AccessScope list{m_temperature.get(), m_mass_flux.get()};
+  array::AccessScope list{ m_temperature.get(), m_mass_flux.get() };
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
@@ -130,10 +126,10 @@ void EISMINTII::initialize_using_formulas() {
     const double r = sqrt(pow(m_grid->x(i) - cx, 2) + pow(m_grid->y(j) - cy, 2));
 
     // accumulation (formula (7) in [Payne et al 2000])
-    (*m_mass_flux)(i,j) = std::min(m_M_max, m_S_b * (m_R_el-r));
+    (*m_mass_flux)(i, j) = std::min(m_M_max, m_S_b * (m_R_el - r));
 
     // surface temperature (formula (8) in [Payne et al 2000])
-    (*m_temperature)(i,j) = m_T_min + m_S_T * r;
+    (*m_temperature)(i, j) = m_T_min + m_S_T * r;
   }
 
   // convert from "m second-1" to "kg m-2 s-1"
@@ -141,14 +137,13 @@ void EISMINTII::initialize_using_formulas() {
 }
 
 void EISMINTII::update_impl(const Geometry &geometry, double t, double dt) {
-  (void) t;
-  (void) dt;
-  (void) geometry;
+  (void)t;
+  (void)dt;
+  (void)geometry;
 
   dummy_accumulation(*m_mass_flux, *m_accumulation);
   dummy_melt(*m_mass_flux, *m_melt);
   dummy_runoff(*m_mass_flux, *m_runoff);
-
 }
 
 } // end of namespace surface

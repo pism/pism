@@ -34,7 +34,7 @@ namespace petsc {
  *
  * The destructor call DMDestroy().
  */
-class DM : public Wrapper< ::DM > {
+class DM : public Wrapper< ::DM> {
 public:
   DM(::DM dm);
   DM();

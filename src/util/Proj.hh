@@ -66,9 +66,10 @@ public:
       m_pj = nullptr;
     }
   }
-  operator PJ*() {
+  operator PJ *() {
     return m_pj;
   }
+
 private:
   PJ *m_pj;
 };

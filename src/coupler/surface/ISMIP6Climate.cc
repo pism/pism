@@ -18,23 +18,22 @@
 
 #include "pism/coupler/surface/ISMIP6Climate.hh"
 
-#include "pism/util/Grid.hh"
 #include "pism/coupler/util/options.hh"
 #include "pism/geometry/Geometry.hh"
-#include "pism/util/array/Forcing.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/array/Forcing.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace surface {
 
 ISMIP6::ISMIP6(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::AtmosphereModel> input)
-  : SurfaceModel(grid),
-    m_mass_flux_reference(m_grid, "climatic_mass_balance"),
-    m_temperature_reference(m_grid, "ice_surface_temp"),
-    m_surface_reference(m_grid, "usurf")
-{
-  (void) input;
+    : SurfaceModel(grid),
+      m_mass_flux_reference(m_grid, "climatic_mass_balance"),
+      m_temperature_reference(m_grid, "ice_surface_temp"),
+      m_surface_reference(m_grid, "usurf") {
+  (void)input;
 
   // allocate model outputs
   m_temperature = allocate_temperature(m_grid);
@@ -125,7 +124,7 @@ ISMIP6::ISMIP6(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
 }
 
 void ISMIP6::init_impl(const Geometry &geometry) {
-  (void) geometry;
+  (void)geometry;
 
   m_log->message(2, "* Initializing the ISMIP6 surface model...\n");
 

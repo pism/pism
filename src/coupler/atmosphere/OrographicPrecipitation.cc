@@ -36,20 +36,16 @@ OrographicPrecipitation::OrographicPrecipitation(std::shared_ptr<const Grid> gri
 
   m_work0 = m_precipitation->allocate_proc0_copy();
 
-  const int
-    Mx = m_grid->Mx(),
-    My = m_grid->My(),
-    Z  = m_config->get_number("atmosphere.orographic_precipitation.grid_size_factor"),
-    Nx = m_grid->periodicity() & grid::X_PERIODIC ? Mx : Z * (Mx - 1) + 1,
-    Ny = m_grid->periodicity() & grid::Y_PERIODIC ? My : Z * (My - 1) + 1;
+  const int Mx = m_grid->Mx(), My = m_grid->My(),
+            Z  = m_config->get_number("atmosphere.orographic_precipitation.grid_size_factor"),
+            Nx = m_grid->periodicity() & grid::X_PERIODIC ? Mx : Z * (Mx - 1) + 1,
+            Ny = m_grid->periodicity() & grid::Y_PERIODIC ? My : Z * (My - 1) + 1;
 
   ParallelSection rank0(m_grid->com);
   try {
     if (m_grid->rank() == 0) {
-      m_serial_model.reset(new OrographicPrecipitationSerial(*m_config,
-                                                             Mx, My,
-                                                             m_grid->dx(), m_grid->dy(),
-                                                             Nx, Ny));
+      m_serial_model.reset(
+          new OrographicPrecipitationSerial(*m_config, Mx, My, m_grid->dx(), m_grid->dy(), Nx, Ny));
     }
   } catch (...) {
     rank0.failed();
@@ -70,8 +66,9 @@ void OrographicPrecipitation::init_impl(const Geometry &geometry) {
 
   m_input_model->init(geometry);
 
-  m_log->message(2, "* Initializing the atmosphere model computing precipitation using the\n"
-                    "  Linear Theory of Orographic Precipitation model with scalar wind speeds...\n");
+  m_log->message(2,
+                 "* Initializing the atmosphere model computing precipitation using the\n"
+                 "  Linear Theory of Orographic Precipitation model with scalar wind speeds...\n");
 
   m_reference = "R. B. Smith and I. Barstad, 2004.\n"
                 "A Linear Theory of Orographic Precipitation. J. Atmos. Sci. 61, 1377-1391.";

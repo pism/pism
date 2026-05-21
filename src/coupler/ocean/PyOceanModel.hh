@@ -78,7 +78,8 @@ public:
  */
 class PyOceanModelAdapter : public CompleteOceanModel {
 public:
-  PyOceanModelAdapter(std::shared_ptr<const Grid> grid, std::shared_ptr<PyOceanModel> implementation);
+  PyOceanModelAdapter(std::shared_ptr<const Grid> grid,
+                      std::shared_ptr<PyOceanModel> implementation);
   virtual ~PyOceanModelAdapter() = default;
 
 private:

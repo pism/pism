@@ -28,11 +28,11 @@ class ErrorLocation;
 namespace io {
 
 //! \brief PISM's PnetCDF I/O wrapper.
-class PNCFile : public NCFile
-{
+class PNCFile : public NCFile {
 public:
   PNCFile(MPI_Comm com);
   virtual ~PNCFile();
+
 protected:
   // implementations:
   // open/create/close
@@ -60,17 +60,15 @@ protected:
 
   // var
   void def_var_impl(const std::string &name, io::Type nctype,
-              const std::vector<std::string> &dims) const;
+                    const std::vector<std::string> &dims) const;
 
   void get_vara_double_impl(const std::string &variable_name,
-                      const std::vector<unsigned int> &start,
-                      const std::vector<unsigned int> &count,
-                      double *ip) const;
+                            const std::vector<unsigned int> &start,
+                            const std::vector<unsigned int> &count, double *ip) const;
 
   void put_vara_double_impl(const std::string &variable_name,
-                      const std::vector<unsigned int> &start,
-                      const std::vector<unsigned int> &count,
-                      const double *op) const;
+                            const std::vector<unsigned int> &start,
+                            const std::vector<unsigned int> &count, const double *op) const;
 
   void put_vara_text_impl(const std::string &variable_name, const std::vector<unsigned int> &start,
                           const std::vector<unsigned int> &count, const char *data) const;
@@ -89,22 +87,22 @@ protected:
 
   // att
   void get_att_double_impl(const std::string &variable_name, const std::string &att_name,
-                     std::vector<double> &result) const;
+                           std::vector<double> &result) const;
 
   void get_att_text_impl(const std::string &variable_name, const std::string &att_name,
-                   std::string &result) const;
+                         std::string &result) const;
 
   void put_att_double_impl(const std::string &variable_name, const std::string &att_name,
-                     io::Type xtype, const std::vector<double> &data) const;
+                           io::Type xtype, const std::vector<double> &data) const;
 
   void put_att_text_impl(const std::string &variable_name, const std::string &att_name,
-                   const std::string &value) const;
+                         const std::string &value) const;
 
   void inq_attname_impl(const std::string &variable_name, unsigned int n,
-                  std::string &result) const;
+                        std::string &result) const;
 
   void inq_atttype_impl(const std::string &variable_name, const std::string &att_name,
-                  io::Type &result) const;
+                        io::Type &result) const;
 
   // misc
   void set_fill_impl(int fillmode, int &old_modep) const;
@@ -121,7 +119,7 @@ private:
 
   int get_varid(const std::string &variable_name) const;
 
-  MPI_Info m_mpi_info;            // MPI hints
+  MPI_Info m_mpi_info; // MPI hints
 };
 
 } // end of namespace io

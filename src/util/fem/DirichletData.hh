@@ -19,9 +19,9 @@
 #ifndef PISM_DIRICHLETDATA_H
 #define PISM_DIRICHLETDATA_H
 
+#include "pism/util/Vector2d.hh"
 #include "pism/util/fem/FEM.hh"
 #include <petscmat.h>
-#include "pism/util/Vector2d.hh"
 
 namespace pism {
 
@@ -29,7 +29,7 @@ namespace array {
 class Array;
 class Scalar;
 class Vector;
-}
+} // namespace array
 
 
 namespace fem {
@@ -43,6 +43,7 @@ public:
   operator bool() {
     return m_indices != NULL;
   }
+
 protected:
   DirichletData();
   ~DirichletData();
@@ -61,26 +62,27 @@ public:
                        double weight = 1.0);
   ~DirichletData_Scalar();
 
-  void enforce(const Element2 &element, double* x_e);
-  void enforce_homogeneous(const Element2 &element, double* x_e);
-  void fix_residual(double const *const * x_global, double **r_global);
+  void enforce(const Element2 &element, double *x_e);
+  void enforce_homogeneous(const Element2 &element, double *x_e);
+  void fix_residual(double const *const *x_global, double **r_global);
   void fix_residual_homogeneous(double **r_global);
   void fix_jacobian(Mat J);
+
 protected:
   const array::Scalar *m_values;
 };
 
 class DirichletData_Vector : public DirichletData {
 public:
-  DirichletData_Vector(const array::Scalar *indices, const array::Vector *values,
-                       double weight);
+  DirichletData_Vector(const array::Scalar *indices, const array::Vector *values, double weight);
   ~DirichletData_Vector();
 
-  void enforce(const Element2 &element, Vector2d* x_e);
-  void enforce_homogeneous(const Element2 &element, Vector2d* x_e);
-  void fix_residual(Vector2d const *const * x_global, Vector2d **r_global);
+  void enforce(const Element2 &element, Vector2d *x_e);
+  void enforce_homogeneous(const Element2 &element, Vector2d *x_e);
+  void fix_residual(Vector2d const *const *x_global, Vector2d **r_global);
   void fix_residual_homogeneous(Vector2d **r);
   void fix_jacobian(Mat J);
+
 protected:
   const array::Vector *m_values;
 };

@@ -19,7 +19,7 @@
 #ifndef _PS_DELTA_T_H_
 #define _PS_DELTA_T_H_
 
-#include <memory>               // std::unique_ptr
+#include <memory> // std::unique_ptr
 
 #include "pism/coupler/SurfaceModel.hh"
 
@@ -34,16 +34,16 @@ namespace surface {
  *
  * Other fields are passed through without change.
  */
-class Delta_T : public SurfaceModel
-{
+class Delta_T : public SurfaceModel {
 public:
   Delta_T(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> in);
   virtual ~Delta_T();
+
 protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  virtual const array::Scalar& temperature_impl() const;
+  virtual const array::Scalar &temperature_impl() const;
 
   std::unique_ptr<ScalarForcing> m_forcing;
 

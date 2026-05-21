@@ -18,30 +18,28 @@
 */
 #include "pism/energy/BTU_Full.hh"
 
-#include "pism/util/io/File.hh"
-#include "pism/util/error_handling.hh"
+#include "pism/energy/BedrockColumn.hh"
+#include "pism/util/Logger.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/array/Array3D.hh"
-#include "pism/energy/BedrockColumn.hh"
-#include <memory>
-#include "pism/util/Logger.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include <memory>
 
 namespace pism {
 namespace energy {
 
 
 BTU_Full::BTU_Full(std::shared_ptr<const Grid> g, const BTUGrid &grid)
-  : BedThermalUnit(g),
-    m_bootstrapping_needed(false) {
+    : BedThermalUnit(g), m_bootstrapping_needed(false) {
 
   m_k = m_config->get_number("energy.bedrock_thermal.conductivity");
 
-  const double
-    rho = m_config->get_number("energy.bedrock_thermal.density"),
-    c   = m_config->get_number("energy.bedrock_thermal.specific_heat_capacity");
+  const double rho = m_config->get_number("energy.bedrock_thermal.density"),
+               c   = m_config->get_number("energy.bedrock_thermal.specific_heat_capacity");
   // build constant diffusivity for heat equation
-  m_D   = m_k / (rho * c);
+  m_D = m_k / (rho * c);
 
   // validate Lbz
   if (grid.Lbz <= 0.0) {
@@ -51,8 +49,8 @@ BTU_Full::BTU_Full(std::shared_ptr<const Grid> g, const BTUGrid &grid)
 
   // validate Mbz
   if (grid.Mbz < 2) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Invalid number of layers of the bedrock thermal layer: %d",
-                                  grid.Mbz);
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION, "Invalid number of layers of the bedrock thermal layer: %d", grid.Mbz);
   }
 
   {
@@ -75,10 +73,8 @@ BTU_Full::BTU_Full(std::shared_ptr<const Grid> g, const BTUGrid &grid)
       z_dim["positive"] = "up";
     }
 
-    m_temp->metadata(0)
-        .long_name("lithosphere (bedrock) temperature, in BTU_Full")
-        .units("kelvin");
-    m_temp->metadata(0)["valid_min"] = {0.0};
+    m_temp->metadata(0).long_name("lithosphere (bedrock) temperature, in BTU_Full").units("kelvin");
+    m_temp->metadata(0)["valid_min"] = { 0.0 };
   }
 
   m_column = std::make_shared<BedrockColumn>("bedrock_column", *m_config, vertical_spacing(), Mz());
@@ -146,7 +142,7 @@ void BTU_Full::write_state_impl(const OutputFile &output) const {
 }
 
 MaxTimestep BTU_Full::max_timestep_impl(double t) const {
-  (void) t;
+  (void)t;
   // No time step restriction: we are using an unconditionally stable method.
   return MaxTimestep("bedrock thermal layer");
 }
@@ -154,9 +150,8 @@ MaxTimestep BTU_Full::max_timestep_impl(double t) const {
 
 /** Perform a step of the bedrock thermal model.
 */
-void BTU_Full::update_impl(const array::Scalar &bedrock_top_temperature,
-                           double t, double dt) {
-  (void) t;
+void BTU_Full::update_impl(const array::Scalar &bedrock_top_temperature, double t, double dt) {
+  (void)t;
 
   if (m_bootstrapping_needed) {
     bootstrap(bedrock_top_temperature);
@@ -167,7 +162,7 @@ void BTU_Full::update_impl(const array::Scalar &bedrock_top_temperature,
     throw RuntimeError(PISM_ERROR_LOCATION, "dt < 0 is not allowed");
   }
 
-  array::AccessScope list{m_temp.get(), &m_bottom_surface_flux, &bedrock_top_temperature};
+  array::AccessScope list{ m_temp.get(), &m_bottom_surface_flux, &bedrock_top_temperature };
 
   ParallelSection loop(m_grid->com);
   try {
@@ -184,8 +179,8 @@ void BTU_Full::update_impl(const array::Scalar &bedrock_top_temperature,
       for (unsigned int k = 0; k < m_Mbz; ++k) {
         if (T[k] <= 0.0) {
           throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                        "invalid bedrock temperature: %f kelvin at %d,%d,%d",
-                                        T[k], i, j, k);
+                                        "invalid bedrock temperature: %f kelvin at %d,%d,%d", T[k],
+                                        i, j, k);
         }
       }
     }
@@ -215,18 +210,18 @@ void BTU_Full::update_flux_through_top_surface() {
     return;
   }
 
-  double dz = this->vertical_spacing();
-  const int k0  = m_Mbz - 1;  // Tb[k0] = ice/bed interface temp, at z=0
+  double dz    = this->vertical_spacing();
+  const int k0 = m_Mbz - 1; // Tb[k0] = ice/bed interface temp, at z=0
 
-  array::AccessScope list{m_temp.get(), &m_top_surface_flux};
+  array::AccessScope list{ m_temp.get(), &m_top_surface_flux };
 
   if (m_Mbz >= 3) {
 
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
-      const double *Tb = m_temp->get_column(i, j);
-      m_top_surface_flux(i, j) = - m_k * (3 * Tb[k0] - 4 * Tb[k0-1] + Tb[k0-2]) / (2 * dz);
+      const double *Tb         = m_temp->get_column(i, j);
+      m_top_surface_flux(i, j) = -m_k * (3 * Tb[k0] - 4 * Tb[k0 - 1] + Tb[k0 - 2]) / (2 * dz);
     }
 
   } else {
@@ -234,16 +229,16 @@ void BTU_Full::update_flux_through_top_surface() {
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
-      const double *Tb = m_temp->get_column(i, j);
-      m_top_surface_flux(i, j) = - m_k * (Tb[k0] - Tb[k0-1]) / dz;
+      const double *Tb         = m_temp->get_column(i, j);
+      m_top_surface_flux(i, j) = -m_k * (Tb[k0] - Tb[k0 - 1]) / dz;
     }
-
   }
 }
 
-const array::Array3D& BTU_Full::temperature() const {
+const array::Array3D &BTU_Full::temperature() const {
   if (m_bootstrapping_needed) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "bedrock temperature is not available (bootstrapping is needed)");
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "bedrock temperature is not available (bootstrapping is needed)");
   }
 
   return *m_temp;
@@ -252,26 +247,26 @@ const array::Array3D& BTU_Full::temperature() const {
 void BTU_Full::bootstrap(const array::Scalar &bedrock_top_temperature) {
 
   m_log->message(2,
-                "  bootstrapping to fill lithosphere temperatures in the bedrock thermal layer\n"
-                "  using temperature at the top bedrock surface and geothermal flux\n"
-                "  (bedrock temperature is linear in depth)...\n");
+                 "  bootstrapping to fill lithosphere temperatures in the bedrock thermal layer\n"
+                 "  using temperature at the top bedrock surface and geothermal flux\n"
+                 "  (bedrock temperature is linear in depth)...\n");
 
-  double dz = this->vertical_spacing();
+  double dz    = this->vertical_spacing();
   const int k0 = m_Mbz - 1; // Tb[k0] = ice/bedrock interface temp
 
-  array::AccessScope list{&bedrock_top_temperature, &m_bottom_surface_flux, m_temp.get()};
+  array::AccessScope list{ &bedrock_top_temperature, &m_bottom_surface_flux, m_temp.get() };
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double *Tb = m_temp->get_column(i, j); // Tb points into temp memory
 
     Tb[k0] = bedrock_top_temperature(i, j);
-    for (int k = k0-1; k >= 0; k--) {
-      Tb[k] = Tb[k+1] + dz * m_bottom_surface_flux(i, j) / m_k;
+    for (int k = k0 - 1; k >= 0; k--) {
+      Tb[k] = Tb[k + 1] + dz * m_bottom_surface_flux(i, j) / m_k;
     }
   }
 
-  m_temp->inc_state_counter();     // mark as modified
+  m_temp->inc_state_counter(); // mark as modified
 }
 
 } // end of namespace energy

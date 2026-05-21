@@ -20,9 +20,9 @@
 #define PISM_VARIABLEMETADATA_H
 
 #include <map>
-#include <vector>
-#include <string>
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "pism/util/GridInfo.hh"
 
@@ -84,18 +84,19 @@ class VariableMetadata;
 class ConstAttribute {
 public:
   friend class VariableMetadata;
-  ConstAttribute(const ConstAttribute&) = delete;
-  ConstAttribute& operator=(const ConstAttribute&) = delete;
+  ConstAttribute(const ConstAttribute &)            = delete;
+  ConstAttribute &operator=(const ConstAttribute &) = delete;
 
   operator std::string() const;
   operator double() const;
-  operator std::vector<double> () const;
+  operator std::vector<double>() const;
+
 protected:
   ConstAttribute(const VariableMetadata *var, const std::string &name);
-  ConstAttribute(ConstAttribute&& a) noexcept;
+  ConstAttribute(ConstAttribute &&a) noexcept;
 
   std::string m_name;
-  VariableMetadata* m_var;
+  VariableMetadata *m_var;
 };
 
 /*!
@@ -110,6 +111,7 @@ public:
   void operator=(const std::string &value);
   void operator=(const std::initializer_list<double> &value);
   void operator=(const std::vector<double> &value);
+
 private:
   using ConstAttribute::ConstAttribute;
 };
@@ -201,13 +203,13 @@ public:
    */
   const grid::DistributedGridInfo *grid_info() const;
 
-  const std::vector<double>& levels() const;
+  const std::vector<double> &levels() const;
 
   std::vector<DimensionMetadata> dimensions() const;
   std::vector<std::string> dimension_names() const;
 
-  DimensionMetadata& dimension(const std::string &name);
-  const DimensionMetadata& dimension(const std::string &name) const;
+  DimensionMetadata &dimension(const std::string &name);
+  const DimensionMetadata &dimension(const std::string &name) const;
 
   bool has_attribute(const std::string &name) const;
   bool has_attributes() const;
@@ -238,16 +240,17 @@ private:
   std::string m_name;
 
   bool m_time_dependent;
-  
+
   io::Type m_output_type;
 };
 
 class DimensionMetadata : public VariableMetadata {
 public:
-  DimensionMetadata(const std::string &name, std::shared_ptr<units::System> system,
-                    int length, bool coordinate_variable = false);
+  DimensionMetadata(const std::string &name, std::shared_ptr<units::System> system, int length,
+                    bool coordinate_variable = false);
   int length() const;
   bool coordinate_variable() const;
+
 private:
   std::vector<DimensionMetadata> dimensions_impl() const;
 
@@ -263,4 +266,4 @@ inline bool operator<(const VariableMetadata &a, const VariableMetadata &b) {
 
 } // end of namespace pism
 
-#endif  // PISM_VARIABLEMETADATA_H
+#endif // PISM_VARIABLEMETADATA_H

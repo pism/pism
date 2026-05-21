@@ -19,15 +19,15 @@
 
 #include "pism/stressbalance/blatter/ismip-hom/BlatterISMIPHOM.hh"
 
-#include "pism/util/node_types.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/node_types.hh"
 
 namespace pism {
 namespace stressbalance {
 
 static double A_surface(double x, double y, double L) {
-  (void) y;
-  (void) L;
+  (void)y;
+  (void)L;
   double alpha = 0.5 * (M_PI / 180.0); // 0.5 degrees
   return -x * tan(alpha);
 }
@@ -38,14 +38,14 @@ static double A_bed(double x, double y, double L) {
 }
 
 static double B_bed(double x, double y, double L) {
-  (void) y;
+  (void)y;
   double omega = 2 * M_PI / L;
   return A_surface(x, y, L) - 1000.0 + 500.0 * sin(omega * x);
 }
 
 static double C_surface(double x, double y, double L) {
-  (void) y;
-  (void) L;
+  (void)y;
+  (void)L;
   double alpha = 0.1 * (M_PI / 180.0); // 0.1 degrees
   return -x * tan(alpha);
 }
@@ -54,17 +54,12 @@ static double C_bed(double x, double y, double L) {
   return C_surface(x, y, L) - 1000.0;
 }
 
-BlatterISMIPHOM::BlatterISMIPHOM(std::shared_ptr<const Grid> grid,
-                                 int Mz,
-                                 int coarsening_factor,
+BlatterISMIPHOM::BlatterISMIPHOM(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor,
                                  ISMIPHOMTest test)
-  : Blatter(grid, Mz, coarsening_factor),
-    m_test(test),
-    m_L(2.0 * grid->Lx()) {
+    : Blatter(grid, Mz, coarsening_factor), m_test(test), m_L(2.0 * grid->Lx()) {
 
   char testname[] = "ABCD";
-  m_log->message(2, "Running ISMIP-HOM Experiment %c (L = %d km)...\n",
-                 testname[m_test],
+  m_log->message(2, "Running ISMIP-HOM Experiment %c (L = %d km)...\n", testname[m_test],
                  (int)(m_L * 1e-3));
 
   switch (m_test) {
@@ -90,32 +85,22 @@ BlatterISMIPHOM::BlatterISMIPHOM(std::shared_ptr<const Grid> grid,
   }
 }
 
-void BlatterISMIPHOM::nodal_parameter_values(const fem::Q1Element3 &element,
-                                             Parameters **P,
-                                             int i,
-                                             int j,
-                                             int *node_type,
-                                             double *bottom_elevation,
-                                             double *ice_thickness,
-                                             double *surface_elevation,
+void BlatterISMIPHOM::nodal_parameter_values(const fem::Q1Element3 &element, Parameters **P, int i,
+                                             int j, int *node_type, double *bottom_elevation,
+                                             double *ice_thickness, double *surface_elevation,
                                              double *sea_level) const {
-  (void) P;
+  (void)P;
 
   // This method is called before we get a chance to "reset" the current element, so the
   // element argument does not yet know about its physical coordinates. This is why we
   // have to compute x and y "by hand".
-  double
-    x_min = m_grid->x0() - m_grid->Lx(),
-    y_min = m_grid->y0() - m_grid->Ly(),
-    dx    = m_grid->dx(),
-    dy    = m_grid->dy();
+  double x_min = m_grid->x0() - m_grid->Lx(), y_min = m_grid->y0() - m_grid->Ly(),
+         dx = m_grid->dx(), dy = m_grid->dy();
 
   for (int n = 0; n < fem::q13d::n_chi; ++n) {
     auto I = element.local_to_global(i, j, 0, n);
 
-    double
-      x = x_min + I.i * dx,
-      y = y_min + I.j * dy;
+    double x = x_min + I.i * dx, y = y_min + I.j * dy;
 
     node_type[n]        = NODE_INTERIOR;
     bottom_elevation[n] = m_b(x, y, m_L);

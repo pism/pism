@@ -40,8 +40,8 @@
 #include "pism/util/io/File.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/io/io_helpers.hh"
-#include "pism/util/petscwrappers/VecScatter.hh"
 #include "pism/util/petscwrappers/DM.hh"
+#include "pism/util/petscwrappers/VecScatter.hh"
 #include "pism/util/petscwrappers/Viewer.hh"
 #include "pism/util/pism_utilities.hh"
 
@@ -503,7 +503,7 @@ void Array::write_impl(const OutputFile &file) const {
   };
 
   // 3D arrays have one or more levels, collections of fields have 0 levels.
-  size_t n_levels = levels().empty() ? 1 : levels().size();
+  size_t n_levels         = levels().empty() ? 1 : levels().size();
   size_t local_array_size = grid()->xm() * grid()->ym() * n_levels;
 
   // Scalar 2D and 3D arrays:
@@ -550,7 +550,7 @@ void Array::write_impl(const OutputFile &file) const {
 
 //! Dumps a variable to a file, overwriting this file's contents (for debugging).
 void Array::dump(const char filename[]) const {
-  auto ctx = grid()->ctx();
+  auto ctx    = grid()->ctx();
   auto writer = std::make_shared<SynchronousOutputWriter>(ctx->com(), *ctx->config());
   writer->initialize({}, true);
 
@@ -570,14 +570,15 @@ void Array::dump(const char filename[]) const {
 }
 
 //! Checks if two Arrays have compatible sizes, dimensions and numbers of degrees of freedom.
-void Array::checkCompatibility(const char* func, const Array &other) const {
+void Array::checkCompatibility(const char *func, const Array &other) const {
   PetscErrorCode ierr;
   // We have to use PetscInt because of VecGetSizes below.
   PetscInt X_size, Y_size;
 
   if (m_impl->dof != other.m_impl->dof) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Array::%s(...): operands have different numbers of degrees of freedom",
-                                  func);
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION,
+        "Array::%s(...): operands have different numbers of degrees of freedom", func);
   }
 
   ierr = VecGetSize(vec(), &X_size);
@@ -587,13 +588,14 @@ void Array::checkCompatibility(const char* func, const Array &other) const {
   PISM_CHK(ierr, "VecGetSize");
 
   if (X_size != Y_size) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Array::%s(...): incompatible Vec sizes (called as %s.%s(%s))",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Array::%s(...): incompatible Vec sizes (called as %s.%s(%s))",
                                   func, m_impl->name.c_str(), func, other.m_impl->name.c_str());
   }
 }
 
 //! Checks if an Array is allocated and calls DAVecGetArray.
-void  Array::begin_access() const {
+void Array::begin_access() const {
 
   if (m_impl->access_counter < 0) {
     throw RuntimeError(PISM_ERROR_LOCATION, "Array::begin_access(): m_access_counter < 0");
@@ -614,7 +616,7 @@ void  Array::begin_access() const {
 }
 
 //! Checks if an Array is allocated and calls DAVecRestoreArray.
-void  Array::end_access() const {
+void Array::end_access() const {
   PetscErrorCode ierr;
 
   if (m_array == NULL) {
@@ -640,7 +642,7 @@ void  Array::end_access() const {
 }
 
 //! Updates ghost points.
-void  Array::update_ghosts() {
+void Array::update_ghosts() {
   PetscErrorCode ierr;
   if (not m_impl->ghosted) {
     return;
@@ -654,11 +656,11 @@ void  Array::update_ghosts() {
 }
 
 //! Result: v[j] <- c for all j.
-void  Array::set(const double c) {
-  PetscErrorCode ierr = VecSet(vec(),c);
+void Array::set(const double c) {
+  PetscErrorCode ierr = VecSet(vec(), c);
   PISM_CHK(ierr, "VecSet");
 
-  inc_state_counter();          // mark as modified
+  inc_state_counter(); // mark as modified
 }
 
 void Array::check_array_indices(int i, int j, unsigned int k) const {
@@ -673,10 +675,9 @@ void Array::check_array_indices(int i, int j, unsigned int k) const {
   unsigned int N = std::max((size_t)ndof(), levels().size());
 
   bool out_of_range = (i < m_impl->grid->xs() - ghost_width) ||
-    (i > m_impl->grid->xs() + m_impl->grid->xm() + ghost_width) ||
-    (j < m_impl->grid->ys() - ghost_width) ||
-    (j > m_impl->grid->ys() + m_impl->grid->ym() + ghost_width) ||
-    (k >= N);
+                      (i > m_impl->grid->xs() + m_impl->grid->xm() + ghost_width) ||
+                      (j < m_impl->grid->ys() - ghost_width) ||
+                      (j > m_impl->grid->ys() + m_impl->grid->ym() + ghost_width) || (k >= N);
 
   if (out_of_range) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s(%d, %d, %d) is out of bounds",
@@ -758,11 +759,8 @@ void Array::regrid(const std::string &filename, io::Default default_value) {
   this->regrid(file, default_value);
 }
 
-static void check_range(petsc::Vec &v,
-                        const VariableMetadata &metadata,
-                        const std::string &filename,
-                        const Logger &log,
-                        bool report_range) {
+static void check_range(petsc::Vec &v, const VariableMetadata &metadata,
+                        const std::string &filename, const Logger &log, bool report_range) {
   PetscErrorCode ierr = 0;
 
   double min = 0.0;
@@ -815,7 +813,7 @@ void Array::regrid(const File &file, io::Default default_value) {
   m_impl->grid->ctx()->profiling().begin("io.regridding");
   try {
     this->regrid_impl(file, default_value);
-    inc_state_counter();          // mark as modified
+    inc_state_counter(); // mark as modified
 
     if (ndims() == 2) {
       for (unsigned k = 0; k < ndof(); ++k) {
@@ -833,14 +831,11 @@ void Array::regrid(const File &file, io::Default default_value) {
 
 
   } catch (RuntimeError &e) {
-    e.add_context("regridding '%s' from '%s'",
-                  this->get_name().c_str(), file.name().c_str());
+    e.add_context("regridding '%s' from '%s'", this->get_name().c_str(), file.name().c_str());
     throw;
   }
   m_impl->grid->ctx()->profiling().end("io.regridding");
-  double
-    end_time   = get_time(m_impl->grid->com),
-    time_spent = end_time - start_time;
+  double end_time = get_time(m_impl->grid->com), time_spent = end_time - start_time;
 
   if (time_spent > 1.0) {
     log->message(3, "  done in %f seconds.\n", time_spent);
@@ -851,36 +846,32 @@ void Array::regrid(const File &file, io::Default default_value) {
 
 void Array::read(const File &file, const unsigned int time) {
   this->read_impl(file, time);
-  inc_state_counter();          // mark as modified
+  inc_state_counter(); // mark as modified
 }
 
 void Array::write(const OutputFile &file) const {
 
-  MPI_Comm com = m_impl->grid->com;
+  MPI_Comm com      = m_impl->grid->com;
   double start_time = get_time(com);
   write_impl(file);
   double end_time = get_time(com);
 
-  const double
-    minute     = 60.0,          // one minute in seconds
-    time_spent = end_time - start_time,
-    megabyte   = pow(2, 20),
-    N          = static_cast<double>(size()),
-    mb_double  = static_cast<double>(sizeof(double)) * N / megabyte,
-    mb_float   = static_cast<double>(sizeof(float)) * N / megabyte;
+  const double minute = 60.0, // one minute in seconds
+      time_spent = end_time - start_time, megabyte = pow(2, 20), N = static_cast<double>(size()),
+               mb_double = static_cast<double>(sizeof(double)) * N / megabyte,
+               mb_float  = static_cast<double>(sizeof(float)) * N / megabyte;
 
   std::string timestamp = pism::timestamp(com);
   std::string spacer(timestamp.size(), ' ');
   if (time_spent > 1) {
-    m_impl->grid->ctx()->log()->message(3,
-                                  "\n"
-                                  "  [%s] Done writing %s (%f Mb double, %f Mb float)\n"
-                                  "   %s  in %f seconds (%f minutes).\n"
-                                  "   %s  Effective throughput: double: %f Mb/s, float: %f Mb/s.\n",
-                                  timestamp.c_str(), m_impl->name.c_str(), mb_double, mb_float,
-                                  spacer.c_str(), time_spent, time_spent / minute,
-                                  spacer.c_str(),
-                                  mb_double / time_spent, mb_float / time_spent);
+    m_impl->grid->ctx()->log()->message(
+        3,
+        "\n"
+        "  [%s] Done writing %s (%f Mb double, %f Mb float)\n"
+        "   %s  in %f seconds (%f minutes).\n"
+        "   %s  Effective throughput: double: %f Mb/s, float: %f Mb/s.\n",
+        timestamp.c_str(), m_impl->name.c_str(), mb_double, mb_float, spacer.c_str(), time_spent,
+        time_spent / minute, spacer.c_str(), mb_double / time_spent, mb_float / time_spent);
   } else {
     m_impl->grid->ctx()->log()->message(3, " done.\n");
   }
@@ -917,7 +908,7 @@ void AccessScope::add(const PetscAccessible &vec) {
   m_vecs.push_back(&vec);
 }
 
-void AccessScope::add(const std::vector<const PetscAccessible*> &vecs) {
+void AccessScope::add(const std::vector<const PetscAccessible *> &vecs) {
   for (const auto *v : vecs) {
     assert(v != nullptr);
     add(*v);
@@ -931,11 +922,8 @@ size_t Array::size() const {
   // scalar) and levels().size() corresponds to dof of the underlying PETSc
   // DM object.
 
-  size_t
-    Mx = grid()->Mx(),
-    My = grid()->My(),
-    Mz = levels().empty() ? 1 : levels().size(),
-    dof = m_impl->dof;
+  size_t Mx = grid()->Mx(), My = grid()->My(), Mz = levels().empty() ? 1 : levels().size(),
+         dof = m_impl->dof;
 
   return Mx * My * Mz * dof;
 }
@@ -945,11 +933,10 @@ size_t Array::size() const {
 std::shared_ptr<petsc::Vec> Array::allocate_proc0_copy() const {
   PetscErrorCode ierr;
   Vec v_proc0 = NULL;
-  Vec result = NULL;
+  Vec result  = NULL;
 
-  ierr = PetscObjectQuery((PetscObject)dm()->get(), "v_proc0", (PetscObject*)&v_proc0);
-  PISM_CHK(ierr, "PetscObjectQuery")
-                                                                                          ;
+  ierr = PetscObjectQuery((PetscObject)dm()->get(), "v_proc0", (PetscObject *)&v_proc0);
+  PISM_CHK(ierr, "PetscObjectQuery");
   if (v_proc0 == NULL) {
 
     // natural_work will be destroyed at the end of scope, but it will
@@ -971,8 +958,7 @@ std::shared_ptr<petsc::Vec> Array::allocate_proc0_copy() const {
     petsc::VecScatter scatter_to_zero;
 
     // initialize the scatter to processor 0 and create storage on processor 0
-    ierr = VecScatterCreateToZero(natural_work, scatter_to_zero.rawptr(),
-                                  &v_proc0);
+    ierr = VecScatterCreateToZero(natural_work, scatter_to_zero.rawptr(), &v_proc0);
     PISM_CHK(ierr, "VecScatterCreateToZero");
 
     // this increments the reference counter of scatter_to_zero
@@ -981,8 +967,7 @@ std::shared_ptr<petsc::Vec> Array::allocate_proc0_copy() const {
     PISM_CHK(ierr, "PetscObjectCompose");
 
     // this increments the reference counter of v_proc0
-    ierr = PetscObjectCompose((PetscObject)dm()->get(), "v_proc0",
-                              (PetscObject)v_proc0);
+    ierr = PetscObjectCompose((PetscObject)dm()->get(), "v_proc0", (PetscObject)v_proc0);
     PISM_CHK(ierr, "PetscObjectCompose");
 
     // We DO NOT call VecDestroy(v_proc0): the petsc::Vec wrapper will
@@ -998,20 +983,20 @@ std::shared_ptr<petsc::Vec> Array::allocate_proc0_copy() const {
 }
 
 void Array::put_on_proc0(petsc::Vec &parallel, petsc::Vec &onp0) const {
-  PetscErrorCode ierr = 0;
+  PetscErrorCode ierr        = 0;
   VecScatter scatter_to_zero = NULL;
-  Vec natural_work = NULL;
+  Vec natural_work           = NULL;
 
   ierr = PetscObjectQuery((PetscObject)dm()->get(), "scatter_to_zero",
-                          (PetscObject*)&scatter_to_zero);
+                          (PetscObject *)&scatter_to_zero);
   PISM_CHK(ierr, "PetscObjectQuery");
 
-  ierr = PetscObjectQuery((PetscObject)dm()->get(), "natural_work",
-                          (PetscObject*)&natural_work);
+  ierr = PetscObjectQuery((PetscObject)dm()->get(), "natural_work", (PetscObject *)&natural_work);
   PISM_CHK(ierr, "PetscObjectQuery");
 
   if (natural_work == NULL || scatter_to_zero == NULL) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "call allocate_proc0_copy() before calling put_on_proc0");
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "call allocate_proc0_copy() before calling put_on_proc0");
   }
 
   ierr = DMDAGlobalToNaturalBegin(*dm(), parallel, INSERT_VALUES, natural_work);
@@ -1020,12 +1005,10 @@ void Array::put_on_proc0(petsc::Vec &parallel, petsc::Vec &onp0) const {
   ierr = DMDAGlobalToNaturalEnd(*dm(), parallel, INSERT_VALUES, natural_work);
   PISM_CHK(ierr, "DMDAGlobalToNaturalEnd");
 
-  ierr = VecScatterBegin(scatter_to_zero, natural_work, onp0,
-                         INSERT_VALUES, SCATTER_FORWARD);
+  ierr = VecScatterBegin(scatter_to_zero, natural_work, onp0, INSERT_VALUES, SCATTER_FORWARD);
   PISM_CHK(ierr, "VecScatterBegin");
 
-  ierr = VecScatterEnd(scatter_to_zero, natural_work, onp0,
-                       INSERT_VALUES, SCATTER_FORWARD);
+  ierr = VecScatterEnd(scatter_to_zero, natural_work, onp0, INSERT_VALUES, SCATTER_FORWARD);
   PISM_CHK(ierr, "VecScatterEnd");
 }
 
@@ -1045,25 +1028,23 @@ void Array::get_from_proc0(petsc::Vec &onp0, petsc::Vec &parallel) const {
   PetscErrorCode ierr;
 
   VecScatter scatter_to_zero = NULL;
-  Vec natural_work = NULL;
-  ierr = PetscObjectQuery((PetscObject)dm()->get(), "scatter_to_zero",
-                          (PetscObject*)&scatter_to_zero);
+  Vec natural_work           = NULL;
+  ierr                       = PetscObjectQuery((PetscObject)dm()->get(), "scatter_to_zero",
+                                                (PetscObject *)&scatter_to_zero);
   PISM_CHK(ierr, "PetscObjectQuery");
 
-  ierr = PetscObjectQuery((PetscObject)dm()->get(), "natural_work",
-                          (PetscObject*)&natural_work);
+  ierr = PetscObjectQuery((PetscObject)dm()->get(), "natural_work", (PetscObject *)&natural_work);
   PISM_CHK(ierr, "PetscObjectQuery");
 
   if (natural_work == NULL || scatter_to_zero == NULL) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "call allocate_proc0_copy() before calling get_from_proc0");
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "call allocate_proc0_copy() before calling get_from_proc0");
   }
 
-  ierr = VecScatterBegin(scatter_to_zero, onp0, natural_work,
-                         INSERT_VALUES, SCATTER_REVERSE);
+  ierr = VecScatterBegin(scatter_to_zero, onp0, natural_work, INSERT_VALUES, SCATTER_REVERSE);
   PISM_CHK(ierr, "VecScatterBegin");
 
-  ierr = VecScatterEnd(scatter_to_zero, onp0, natural_work,
-                       INSERT_VALUES, SCATTER_REVERSE);
+  ierr = VecScatterEnd(scatter_to_zero, onp0, natural_work, INSERT_VALUES, SCATTER_REVERSE);
   PISM_CHK(ierr, "VecScatterEnd");
 
   ierr = DMDANaturalToGlobalBegin(*dm(), natural_work, INSERT_VALUES, parallel);
@@ -1082,7 +1063,7 @@ void Array::get_from_proc0(petsc::Vec &onp0) {
   } else {
     get_from_proc0(onp0, vec());
   }
-  inc_state_counter();          // mark as modified
+  inc_state_counter(); // mark as modified
 }
 
 /*!
@@ -1105,11 +1086,11 @@ uint64_t Array::fletcher64_serial() const {
   if (rank == 0) {
     petsc::VecArray array(*v);
 
-    PetscInt size = 0;
+    PetscInt size       = 0;
     PetscErrorCode ierr = VecGetLocalSize(*v, &size);
     PISM_CHK(ierr, "VecGetLocalSize");
 
-    result = pism::fletcher64((uint32_t*)array.get(), static_cast<size_t>(size) * 2);
+    result = pism::fletcher64((uint32_t *)array.get(), static_cast<size_t>(size) * 2);
   }
   MPI_Bcast(&result, 1, MPI_UINT64_T, 0, com);
 
@@ -1139,12 +1120,13 @@ uint64_t Array::fletcher64() const {
   MPI_Comm_size(com, &comm_size);
 
   PetscInt local_size = 0;
-  PetscErrorCode ierr = VecGetLocalSize(vec(), &local_size); PISM_CHK(ierr, "VecGetLocalSize");
+  PetscErrorCode ierr = VecGetLocalSize(vec(), &local_size);
+  PISM_CHK(ierr, "VecGetLocalSize");
   uint64_t sum = 0;
   {
     petsc::VecArray v(vec());
     // compute checksums for local patches on all ranks
-    sum = pism::fletcher64((uint32_t*)v.get(), static_cast<size_t>(local_size) * 2);
+    sum = pism::fletcher64((uint32_t *)v.get(), static_cast<size_t>(local_size) * 2);
   }
 
   if (rank == 0) {
@@ -1157,7 +1139,7 @@ uint64_t Array::fletcher64() const {
     }
 
     // compute the checksum of checksums
-    sum = pism::fletcher64((uint32_t*)sums.data(), static_cast<size_t>(comm_size) * 2);
+    sum = pism::fletcher64((uint32_t *)sums.data(), static_cast<size_t>(comm_size) * 2);
   } else {
     MPI_Send(&sum, 1, MPI_UINT64_T, 0, checksum_tag, com);
   }
@@ -1170,7 +1152,7 @@ uint64_t Array::fletcher64() const {
 
 std::string Array::checksum(bool serial) const {
   if (serial) {
-  // unsigned long long is supposed to be at least 64 bit long
+    // unsigned long long is supposed to be at least 64 bit long
     return pism::printf("%016llx", (unsigned long long int)this->fletcher64_serial());
   }
   // unsigned long long is supposed to be at least 64 bit long
@@ -1188,8 +1170,7 @@ void Array::view(std::vector<std::shared_ptr<petsc::Viewer> > viewers) const {
   PetscErrorCode ierr;
 
   if (ndims() == 3) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "cannot 'view' a 3D field '%s'",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "cannot 'view' a 3D field '%s'",
                                   get_name().c_str());
   }
 
@@ -1200,18 +1181,14 @@ void Array::view(std::vector<std::shared_ptr<petsc::Viewer> > viewers) const {
   petsc::TemporaryGlobalVec tmp(da2);
 
   for (unsigned int i = 0; i < ndof(); ++i) {
-    std::string
-      long_name           = m_impl->metadata[i]["long_name"],
-      units               = m_impl->metadata[i]["units"],
-      output_units = m_impl->metadata[i]["output_units"],
-      title               = pism::printf("%s (%s)",
-                                         long_name.c_str(),
-                                         output_units.c_str());
+    std::string long_name = m_impl->metadata[i]["long_name"], units = m_impl->metadata[i]["units"],
+                output_units = m_impl->metadata[i]["output_units"],
+                title        = pism::printf("%s (%s)", long_name.c_str(), output_units.c_str());
 
     PetscViewer v = *viewers[i].get();
 
     PetscDraw draw = NULL;
-    ierr = PetscViewerDrawGetDraw(v, 0, &draw);
+    ierr           = PetscViewerDrawGetDraw(v, 0, &draw);
     PISM_CHK(ierr, "PetscViewerDrawGetDraw");
 
     ierr = PetscDrawSetTitle(draw, title.c_str());
@@ -1219,16 +1196,17 @@ void Array::view(std::vector<std::shared_ptr<petsc::Viewer> > viewers) const {
 
     get_dof(da2, tmp, i);
 
-    convert_vec(tmp, m_impl->metadata[i].unit_system(),
-                units, output_units);
+    convert_vec(tmp, m_impl->metadata[i].unit_system(), units, output_units);
 
-    double bounds[2] = {0.0, 0.0};
-    ierr = VecMin(tmp, NULL, &bounds[0]); PISM_CHK(ierr, "VecMin");
-    ierr = VecMax(tmp, NULL, &bounds[1]); PISM_CHK(ierr, "VecMax");
+    double bounds[2] = { 0.0, 0.0 };
+    ierr             = VecMin(tmp, NULL, &bounds[0]);
+    PISM_CHK(ierr, "VecMin");
+    ierr = VecMax(tmp, NULL, &bounds[1]);
+    PISM_CHK(ierr, "VecMax");
 
     if (bounds[0] == bounds[1]) {
       bounds[0] = -1.0;
-      bounds[1] =  1.0;
+      bounds[1] = 1.0;
     }
 
     ierr = PetscViewerDrawSetBounds(v, 1, bounds);
@@ -1251,12 +1229,12 @@ std::set<VariableMetadata> metadata(std::initializer_list<const Array *> vecs) {
 
 } // end of namespace array
 
-void convert_vec(petsc::Vec &v, units::System::Ptr system,
-                 const std::string &spec1, const std::string &spec2) {
+void convert_vec(petsc::Vec &v, units::System::Ptr system, const std::string &spec1,
+                 const std::string &spec2) {
   units::Converter c(system, spec1, spec2);
 
   // has to be a PetscInt because of the VecGetLocalSize() call
-  PetscInt data_size = 0;
+  PetscInt data_size  = 0;
   PetscErrorCode ierr = VecGetLocalSize(v, &data_size);
   PISM_CHK(ierr, "VecGetLocalSize");
 

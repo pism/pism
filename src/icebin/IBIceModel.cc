@@ -7,9 +7,9 @@
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/io/io_helpers.hh"
 
+#include "pism/energy/EnergyModel.hh"
 #include "pism/icebin/IBIceModel.hh"
 #include "pism/icebin/IBSurfaceModel.hh"
-#include "pism/energy/EnergyModel.hh"
 
 namespace pism {
 namespace icebin {
@@ -56,7 +56,7 @@ void IBIceModel::allocate_couplers() {
   super::allocate_couplers();
 
   m_log->message(2, "# Allocating the icebin surface model...\n");
-  m_surface = std::make_shared<IBSurfaceModel>(m_grid);
+  m_surface                            = std::make_shared<IBSurfaceModel>(m_grid);
   m_submodels["surface process model"] = m_surface.get();
 }
 
@@ -105,7 +105,9 @@ void IBIceModel::energy_step(double t, double dt) {
   // --------- Upward Geothermal Flux
   // Use actual geothermal flux, not the long-term average..
   // See: file:///Users/rpfische/git/pism/build/doc/browser/html/classPISMBedThermalUnit.html#details
-  { cur.upward_geothermal_flux.add(my_dt, m_btu->flux_through_top_surface()); }
+  {
+    cur.upward_geothermal_flux.add(my_dt, m_btu->flux_through_top_surface());
+  }
 
   // ----------- Geothermal Flux
   cur.geothermal_flux.add(my_dt, m_btu->flux_through_bottom_surface());
@@ -280,8 +282,8 @@ void IBIceModel::prepare_outputs(double time_s) {
 
   // --------- ice_surface_enth from m_ice_enthalpy
   const auto &ice_surface_elevation = m_geometry.ice_surface_elevation;
-  const auto &cell_type = m_geometry.cell_type;
-  const auto &ice_enthalpy = m_energy_model->enthalpy();
+  const auto &cell_type             = m_geometry.cell_type;
+  const auto &ice_enthalpy          = m_energy_model->enthalpy();
   const auto &ice_thickness         = m_geometry.ice_thickness;
 
   array::AccessScope access{ &ice_enthalpy,          &ice_thickness, // INPUTS
@@ -364,7 +366,7 @@ void IBIceModel::compute_enth2(pism::array::Scalar &enth2, pism::array::Scalar &
   //   getInternalColumn() is allocated already
   double ice_density = m_config->get_number("constants.ice.density", "kg m-3");
 
-  const auto &ice_enthalpy = m_energy_model->enthalpy();
+  const auto &ice_enthalpy  = m_energy_model->enthalpy();
   const auto &ice_thickness = m_geometry.ice_thickness;
 
 
@@ -379,7 +381,7 @@ void IBIceModel::compute_enth2(pism::array::Scalar &enth2, pism::array::Scalar &
     // count all ice, including cells that have so little they
     // are considered "ice-free"
     if (ice_thickness(i, j) > 0) {
-      int ks = (int)m_grid->kBelowHeight(ice_thickness(i, j));
+      int ks           = (int)m_grid->kBelowHeight(ice_thickness(i, j));
       const auto *Enth = ice_enthalpy.get_column(i, j);
 
       for (int k = 0; k < ks; ++k) {
@@ -411,15 +413,16 @@ in the vector provided.
 void IBIceModel::construct_surface_temp(
     pism::array::Scalar &deltah, // IN: Input from Icebin
     double default_val,
-    double timestep_s,                 // Length of this coupling interval [s]
-    pism::array::Scalar &surface_temp) // OUT: Temperature @ top of ice sheet (to use for Dirichlet B.C.)
+    double timestep_s, // Length of this coupling interval [s]
+    pism::array::Scalar
+        &surface_temp) // OUT: Temperature @ top of ice sheet (to use for Dirichlet B.C.)
 
 {
   printf("BEGIN IBIceModel::merge_surface_temp default_val=%g\n", default_val);
   auto EC = ctx()->enthalpy_converter();
 
-  double ice_density = m_config->get_number("constants.ice.density");
-  const auto &ice_enthalpy = m_energy_model->enthalpy();
+  double ice_density        = m_config->get_number("constants.ice.density");
+  const auto &ice_enthalpy  = m_energy_model->enthalpy();
   const auto &ice_thickness = m_geometry.ice_thickness;
 
   {

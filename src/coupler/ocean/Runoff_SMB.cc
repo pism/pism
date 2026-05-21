@@ -19,27 +19,24 @@
 #include <cmath>
 
 #include "pism/coupler/ocean/Runoff_SMB.hh"
-#include "pism/util/ScalarForcing.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/ScalarForcing.hh"
 
 namespace pism {
 namespace ocean {
 
 Runoff_SMB::Runoff_SMB(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in)
-  : OceanModel(g, in) {
+    : OceanModel(g, in) {
 
-  m_forcing.reset(new ScalarForcing(*g->ctx(),
-                                    "ocean.runoff_to_ocean_melt",
-                                    "delta_T",
-                                    "kelvin",
-                                    "kelvin",
-                                    "air temperature offsets"));
+  m_forcing.reset(new ScalarForcing(*g->ctx(), "ocean.runoff_to_ocean_melt", "delta_T", "kelvin",
+                                    "kelvin", "air temperature offsets"));
 
   m_temp_to_runoff_a       = m_config->get_number("surface.temp_to_runoff_a");
   m_runoff_to_ocean_melt_b = m_config->get_number("ocean.runoff_to_ocean_melt.b");
 
-  m_runoff_to_ocean_melt_power_alpha = m_config->get_number("ocean.runoff_to_ocean_melt.power_alpha");
-  m_runoff_to_ocean_melt_power_beta  = m_config->get_number("ocean.runoff_to_ocean_melt.power_beta");
+  m_runoff_to_ocean_melt_power_alpha =
+      m_config->get_number("ocean.runoff_to_ocean_melt.power_alpha");
+  m_runoff_to_ocean_melt_power_beta = m_config->get_number("ocean.runoff_to_ocean_melt.power_beta");
 
   m_shelf_base_mass_flux = allocate_shelf_base_mass_flux(g);
 }
@@ -52,9 +49,8 @@ void Runoff_SMB::init_impl(const Geometry &geometry) {
 
   m_input_model->init(geometry);
 
-  m_log->message(2,
-                 "* Initializing ice shelf base mass flux forcing using scalar multiplier...\n"
-                 "*   derived from delta_T air temperature modifier\n");
+  m_log->message(2, "* Initializing ice shelf base mass flux forcing using scalar multiplier...\n"
+                    "*   derived from delta_T air temperature modifier\n");
 }
 
 void Runoff_SMB::update_impl(const Inputs &inputs, double t, double dt) {
@@ -66,12 +62,9 @@ void Runoff_SMB::update_impl(const Inputs &inputs, double t, double dt) {
 void Runoff_SMB::mass_flux(double delta_T, array::Scalar &result) const {
 
   // short-cuts, just to make the formula below easier to read
-  double
-    a            = m_temp_to_runoff_a,
-    B            = m_runoff_to_ocean_melt_b,
-    alpha        = m_runoff_to_ocean_melt_power_alpha,
-    beta         = m_runoff_to_ocean_melt_power_beta,
-    scale_factor = 1.0;
+  double a = m_temp_to_runoff_a, B = m_runoff_to_ocean_melt_b,
+         alpha = m_runoff_to_ocean_melt_power_alpha, beta = m_runoff_to_ocean_melt_power_beta,
+         scale_factor = 1.0;
 
   /*
     This parameterization only works if delta_T > 0 because

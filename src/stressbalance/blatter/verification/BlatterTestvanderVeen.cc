@@ -27,9 +27,9 @@
 namespace pism {
 namespace stressbalance {
 
-BlatterTestvanderVeen::BlatterTestvanderVeen(std::shared_ptr<const Grid> grid,
-                                             int Mz, int coarsening_factor)
-  : Blatter(grid, Mz, coarsening_factor) {
+BlatterTestvanderVeen::BlatterTestvanderVeen(std::shared_ptr<const Grid> grid, int Mz,
+                                             int coarsening_factor)
+    : Blatter(grid, Mz, coarsening_factor) {
 
   // use the isothermal Glen flow law
   double n = m_config->get_number("stress_balance.blatter.Glen_exponent");
@@ -54,25 +54,23 @@ BlatterTestvanderVeen::BlatterTestvanderVeen(std::shared_ptr<const Grid> grid,
 
   // s = alpha * H, where s is surface elevation and H ice thickness
   double rho_w = m_config->get_number("constants.sea_water.density");
-  m_alpha = 1.0 - m_rho_ice / rho_w;
+  m_alpha      = 1.0 - m_rho_ice / rho_w;
 
   m_g = m_config->get_number("constants.standard_gravity");
 }
 
 bool BlatterTestvanderVeen::dirichlet_node(const DMDALocalInfo &info,
-                                           const fem::Element3::GlobalIndex& I) {
-  (void) info;
+                                           const fem::Element3::GlobalIndex &I) {
+  (void)info;
   // use Dirichlet BC at x == 0
   return I.i == 0;
 }
 
-bool BlatterTestvanderVeen::marine_boundary(int face,
-                                            const int *node_type,
-                                            const double *ice_bottom,
-                                            const double *sea_level) {
+bool BlatterTestvanderVeen::marine_boundary(int face, const int *node_type,
+                                            const double *ice_bottom, const double *sea_level) {
   // Ignore sea level and ice bottom elevation:
-  (void) ice_bottom;
-  (void) sea_level;
+  (void)ice_bottom;
+  (void)sea_level;
 
   const auto *nodes = fem::q13d::incident_nodes[face];
 
@@ -81,7 +79,7 @@ bool BlatterTestvanderVeen::marine_boundary(int face,
 
   // exclude faces that contain at least one node that is not a part of the boundary
   for (int n = 0; n < N; ++n) {
-    if (not (node_type[nodes[n]] == NODE_BOUNDARY)) {
+    if (not(node_type[nodes[n]] == NODE_BOUNDARY)) {
       return false;
     }
   }
@@ -90,8 +88,8 @@ bool BlatterTestvanderVeen::marine_boundary(int face,
 }
 
 Vector2d BlatterTestvanderVeen::u_bc(double x, double y, double z) const {
-  (void) y;
-  (void) z;
+  (void)y;
+  (void)z;
 
   return u_exact(x);
 }
@@ -117,13 +115,11 @@ double BlatterTestvanderVeen::beta_exact(double x) const {
 
 void BlatterTestvanderVeen::residual_lateral(const fem::Q1Element3 &element,
                                              const fem::Q1Element3Face &face,
-                                             const double *surface_nodal,
-                                             const double *z_nodal,
-                                             const double *sl_nodal,
-                                             Vector2d *residual) {
-  (void) surface_nodal;
-  (void) sl_nodal;
-  (void) z_nodal;
+                                             const double *surface_nodal, const double *z_nodal,
+                                             const double *sl_nodal, Vector2d *residual) {
+  (void)surface_nodal;
+  (void)sl_nodal;
+  (void)z_nodal;
 
   double Q0 = m_H0 * m_V0;
 
@@ -144,14 +140,13 @@ void BlatterTestvanderVeen::residual_lateral(const fem::Q1Element3 &element,
     auto W = face.weight(q) / m_scaling;
 
     // the normal direction (1, 0, 0) is hard-wired here
-    auto F = blatter_xz_vanderveen_source_lateral(x[q], m_alpha, m_H0, Q0,
-                                                  m_rho_ice, m_g, m_B);
+    auto F = blatter_xz_vanderveen_source_lateral(x[q], m_alpha, m_H0, Q0, m_rho_ice, m_g, m_B);
 
     // loop over all test functions
     for (int t = 0; t < element.n_chi(); ++t) {
       auto psi = face.chi(q, t);
 
-      residual[t] += - W * psi * F;
+      residual[t] += -W * psi * F;
     }
   }
 }
@@ -160,13 +155,11 @@ void BlatterTestvanderVeen::residual_lateral(const fem::Q1Element3 &element,
  * Top surface contribution to the residual.
  */
 void BlatterTestvanderVeen::residual_surface(const fem::Q1Element3 &element,
-                                             const fem::Q1Element3Face &face,
-                                             Vector2d *residual) {
+                                             const fem::Q1Element3Face &face, Vector2d *residual) {
   double Q0 = m_H0 * m_V0;
 
   // compute x coordinates of quadrature points
-  double
-    *x = m_work[0];
+  double *x = m_work[0];
   {
     double *x_nodal = m_work[1];
 
@@ -180,14 +173,13 @@ void BlatterTestvanderVeen::residual_surface(const fem::Q1Element3 &element,
   for (unsigned int q = 0; q < face.n_pts(); ++q) {
     auto W = face.weight(q) / m_scaling;
 
-    auto F = blatter_xz_vanderveen_source_surface(x[q], m_alpha, m_H0, Q0,
-                                                  m_rho_ice, m_g, m_B);
+    auto F = blatter_xz_vanderveen_source_surface(x[q], m_alpha, m_H0, Q0, m_rho_ice, m_g, m_B);
 
     // loop over all test functions
     for (int t = 0; t < element.n_chi(); ++t) {
       auto psi = face.chi(q, t);
 
-      residual[t] += - W * psi * F;
+      residual[t] += -W * psi * F;
     }
   }
 }

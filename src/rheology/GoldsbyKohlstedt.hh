@@ -20,10 +20,12 @@
 #ifndef _GOLDSBYKOHLSTEDT_H_
 #define _GOLDSBYKOHLSTEDT_H_
 
-#include <string>                          // for string
-#include "pism/rheology/FlowLaw.hh"                      // for FlowLaw
-#include "pism/util/EnthalpyConverter.hh"  // for EnthalpyConverter, Enthalp...
-namespace pism { class Config; }
+#include "pism/rheology/FlowLaw.hh"       // for FlowLaw
+#include "pism/util/EnthalpyConverter.hh" // for EnthalpyConverter, Enthalp...
+#include <string>                         // for string
+namespace pism {
+class Config;
+}
 
 namespace pism {
 namespace rheology {
@@ -44,30 +46,27 @@ struct GKparts {
 */
 class GoldsbyKohlstedt : public FlowLaw {
 public:
-  GoldsbyKohlstedt(double exponent,
-                   const Config &config,
-                   std::shared_ptr<EnthalpyConverter> EC);
+  GoldsbyKohlstedt(double exponent, const Config &config, std::shared_ptr<EnthalpyConverter> EC);
+
 protected:
-  virtual double flow_impl(double stress, double E,
-                           double pressure, double grainsize) const;
+  virtual double flow_impl(double stress, double E, double pressure, double grainsize) const;
 
   // NB! not virtual
   double softness_impl(double E, double p) const __attribute__((noreturn));
   double hardness_impl(double E, double p) const;
-  virtual double flow_from_temp(double stress, double temp,
-                                double pressure, double gs) const;
+  virtual double flow_from_temp(double stress, double temp, double pressure, double gs) const;
   GKparts flowParts(double stress, double temp, double pressure) const;
 
-  double  m_V_act_vol,  m_d_grain_size,
-  //--- diffusional flow ---
-    m_diff_crit_temp, m_diff_V_m, m_diff_D_0v, m_diff_Q_v, m_diff_D_0b, m_diff_Q_b, m_diff_delta,
-  //--- dislocation creep ---
-    m_disl_crit_temp, m_disl_A_cold, m_disl_A_warm, m_disl_n, m_disl_Q_cold, m_disl_Q_warm,
-  //--- easy slip (basal) ---
-    m_basal_A, m_basal_n, m_basal_Q,
-  //--- grain boundary sliding ---
-    m_gbs_crit_temp, m_gbs_A_cold, m_gbs_A_warm, m_gbs_n, m_gbs_Q_cold,
-    m_p_grain_sz_exp, m_gbs_Q_warm;
+  double m_V_act_vol, m_d_grain_size,
+      //--- diffusional flow ---
+      m_diff_crit_temp, m_diff_V_m, m_diff_D_0v, m_diff_Q_v, m_diff_D_0b, m_diff_Q_b, m_diff_delta,
+      //--- dislocation creep ---
+      m_disl_crit_temp, m_disl_A_cold, m_disl_A_warm, m_disl_n, m_disl_Q_cold, m_disl_Q_warm,
+      //--- easy slip (basal) ---
+      m_basal_A, m_basal_n, m_basal_Q,
+      //--- grain boundary sliding ---
+      m_gbs_crit_temp, m_gbs_A_cold, m_gbs_A_warm, m_gbs_n, m_gbs_Q_cold, m_p_grain_sz_exp,
+      m_gbs_Q_warm;
 };
 
 //! Derived class of GoldsbyKohlstedt for testing purposes only.
@@ -77,12 +76,11 @@ protected:
 */
 class GoldsbyKohlstedtStripped : public GoldsbyKohlstedt {
 public:
-  GoldsbyKohlstedtStripped(double exponent,
-                           const Config &config, std::shared_ptr<EnthalpyConverter> EC);
+  GoldsbyKohlstedtStripped(double exponent, const Config &config,
+                           std::shared_ptr<EnthalpyConverter> EC);
 
 protected:
-  virtual double flow_from_temp(double stress, double temp,
-                                double pressure, double gs) const;
+  virtual double flow_from_temp(double stress, double temp, double pressure, double gs) const;
 
   double m_d_grain_size_stripped;
 };

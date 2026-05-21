@@ -75,8 +75,8 @@ public:
                        InterpolationType type);
 
 private:
-  double regrid_impl(const VariableMetadata &metadata, const pism::File &file,
-                     int record_index, const Grid &grid, petsc::Vec &output) const;
+  double regrid_impl(const VariableMetadata &metadata, const pism::File &file, int record_index,
+                     const Grid &grid, petsc::Vec &output) const;
 
   std::shared_ptr<LocalInterpCtx> m_interp_context;
 };

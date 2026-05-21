@@ -23,11 +23,10 @@
    stress.
 */
 
-static char help[] =
-  "\nSSA_TEST_PLUG\n"
-  "  Testing program for the finite element implementation of the SSA.\n"
-  "  Does a time-independent calculation.  Does not run IceModel or a derived\n"
-  "  class thereof.\n\n";
+static char help[] = "\nSSA_TEST_PLUG\n"
+                     "  Testing program for the finite element implementation of the SSA.\n"
+                     "  Does a time-independent calculation.  Does not run IceModel or a derived\n"
+                     "  class thereof.\n\n";
 
 #include <cmath>
 
@@ -48,8 +47,7 @@ std::shared_ptr<Grid> ssa_test_plug_grid(std::shared_ptr<Context> ctx, int Mx, i
 
 class SSATestCasePlug : public SSATestCase {
 public:
-  SSATestCasePlug(std::shared_ptr<SSA> ssa)
-    : SSATestCase(ssa) {
+  SSATestCasePlug(std::shared_ptr<SSA> ssa) : SSATestCase(ssa) {
   }
 
   static const double H0;    // Thickness, meters
@@ -137,7 +135,7 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
     std::shared_ptr<Context> ctx = context_from_options(com, "ssa_test_plug");
-    auto config           = ctx->config();
+    auto config                  = ctx->config();
 
     std::string usage = "\n"
                         "usage of SSA_TEST_PLUG:\n"

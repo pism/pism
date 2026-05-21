@@ -19,8 +19,8 @@
 #include "pism/icemodel/IceModel.hh"
 
 #include "pism/energy/EnergyModel.hh"
-#include "pism/stressbalance/ShallowStressBalance.hh"
 #include "pism/fracturedensity/FractureDensity.hh"
+#include "pism/stressbalance/ShallowStressBalance.hh"
 
 namespace pism {
 
@@ -32,12 +32,12 @@ void IceModel::update_fracture_density(double dt) {
   // fracture_density.include_grounded_ice is not set.
   auto &bc_mask = *m_work2d[0];
   {
-    bool do_fracground = m_config->get_flag("fracture_density.include_grounded_ice");
+    bool do_fracground      = m_config->get_flag("fracture_density.include_grounded_ice");
     const bool dirichlet_bc = m_config->get_flag("stress_balance.ssa.dirichlet_bc");
 
     bc_mask.set(0.0);
 
-    array::AccessScope list{&bc_mask, &m_geometry.cell_type};
+    array::AccessScope list{ &bc_mask, &m_geometry.cell_type };
 
     if (dirichlet_bc) {
       list.add(m_velocity_bc_mask);
@@ -53,8 +53,7 @@ void IceModel::update_fracture_density(double dt) {
 
       if (dirichlet_bc) {
         if (m_velocity_bc_mask(i, j) > 0.5 and
-            (m_velocity_bc_values(i, j).u != 0.0 or
-             m_velocity_bc_values(i, j).v != 0.0)) {
+            (m_velocity_bc_values(i, j).u != 0.0 or m_velocity_bc_values(i, j).v != 0.0)) {
           bc_mask(i, j) = 1.0;
         }
       }
@@ -65,16 +64,12 @@ void IceModel::update_fracture_density(double dt) {
   auto &hardness = *m_work2d[1];
   {
     rheology::averaged_hardness_vec(*m_stress_balance->shallow()->flow_law(),
-                                    m_geometry.ice_thickness,
-                                    m_energy_model->enthalpy(),
-                                    hardness);
+                                    m_geometry.ice_thickness, m_energy_model->enthalpy(), hardness);
   }
 
   // This model has the same time-step restriction as the mass transport code so we don't
   // check if this time step is short enough.
-  m_fracture->update(dt, m_geometry,
-                     m_stress_balance->shallow()->velocity(),
-                     hardness, bc_mask);
+  m_fracture->update(dt, m_geometry, m_stress_balance->shallow()->velocity(), hardness, bc_mask);
 }
 
 } // end of namespace pism

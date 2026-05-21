@@ -18,20 +18,20 @@
  */
 
 #include "pism/util/InputInterpolation.hh"
-#include "pism/util/Interpolation1D.hh"
-#include "pism/util/io/LocalInterpCtx.hh"
 #include "pism/pism_config.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
+#include "pism/util/Interpolation1D.hh"
+#include "pism/util/Logger.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/io/LocalInterpCtx.hh"
 #include "pism/util/io/io_helpers.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/projection.hh"
-#include "pism/util/Logger.hh"
-#include "pism/util/Config.hh"
 #include <string>
 #include <vector>
 
@@ -47,7 +47,7 @@ double InputInterpolation::regrid(const VariableMetadata &metadata, const pism::
                                   int record_index, const Grid &grid, petsc::Vec &output) const {
   if (record_index == -1) {
     auto nrecords =
-      file.nrecords(metadata.get_name(), metadata["standard_name"], metadata.unit_system());
+        file.nrecords(metadata.get_name(), metadata["standard_name"], metadata.unit_system());
 
     record_index = (int)nrecords - 1;
   }
@@ -67,10 +67,10 @@ InputInterpolation3D::InputInterpolation3D(const Grid &target_grid,
   auto log         = target_grid.ctx()->log();
   auto unit_system = target_grid.ctx()->unit_system();
 
-  auto name = grid_name(input_file, variable_name, unit_system,
-                        type == PIECEWISE_CONSTANT);
+  auto name = grid_name(input_file, variable_name, unit_system, type == PIECEWISE_CONSTANT);
 
-  log->message(2, "* Initializing bi- or tri-linear interpolation from '%s' to the internal grid...\n",
+  log->message(2,
+               "* Initializing bi- or tri-linear interpolation from '%s' to the internal grid...\n",
                name.c_str());
 
   grid::InputGridInfo input_grid(input_file, variable_name, unit_system,
@@ -85,10 +85,8 @@ InputInterpolation3D::InputInterpolation3D(const Grid &target_grid,
 }
 
 
-double InputInterpolation3D::regrid_impl(const VariableMetadata &metadata,
-                                         const pism::File &file,
-                                         int record_index,
-                                         const Grid &target_grid,
+double InputInterpolation3D::regrid_impl(const VariableMetadata &metadata, const pism::File &file,
+                                         int record_index, const Grid &target_grid,
                                          petsc::Vec &output) const {
 
   petsc::VecArray output_array(output);
@@ -96,10 +94,9 @@ double InputInterpolation3D::regrid_impl(const VariableMetadata &metadata,
   double start = get_time(target_grid.com);
   {
     LocalInterpCtx context = *m_interp_context;
-    context.start[T_AXIS] = record_index;
+    context.start[T_AXIS]  = record_index;
 
-    io::regrid_spatial_variable(metadata, target_grid, context, file,
-                                *target_grid.ctx()->log(),
+    io::regrid_spatial_variable(metadata, target_grid, context, file, *target_grid.ctx()->log(),
                                 output_array.get());
   }
   double end = get_time(target_grid.com);
@@ -108,10 +105,11 @@ double InputInterpolation3D::regrid_impl(const VariableMetadata &metadata,
 }
 
 
-std::shared_ptr<InputInterpolation>
-InputInterpolation::create(const Grid &target_grid,
-                           const std::vector<double> &levels, const File &input_file,
-                           const std::string &variable_name, InterpolationType type) {
+std::shared_ptr<InputInterpolation> InputInterpolation::create(const Grid &target_grid,
+                                                               const std::vector<double> &levels,
+                                                               const File &input_file,
+                                                               const std::string &variable_name,
+                                                               InterpolationType type) {
 
 #if (Pism_USE_YAC == 1)
   {

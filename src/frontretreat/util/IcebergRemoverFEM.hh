@@ -34,9 +34,9 @@ namespace calving {
 class IcebergRemoverFEM : public IcebergRemover {
 public:
   IcebergRemoverFEM(std::shared_ptr<const Grid> g);
+
 private:
-  void update_impl(const array::Scalar &bc_mask,
-                   array::CellType1 &cell_type,
+  void update_impl(const array::Scalar &bc_mask, array::CellType1 &cell_type,
                    array::Scalar &ice_thickness);
   array::Scalar m_mask;
 };

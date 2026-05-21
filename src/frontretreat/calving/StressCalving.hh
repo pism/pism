@@ -20,11 +20,11 @@
 #ifndef STRESSCALVING_H
 #define STRESSCALVING_H
 
+#include "pism/stressbalance/StressBalance.hh" // struct PrincipalStrainRates
 #include "pism/util/Component.hh"
-#include "pism/util/array/Scalar.hh"
 #include "pism/util/array/Array2D.hh"
 #include "pism/util/array/CellType.hh"
-#include "pism/stressbalance/StressBalance.hh" // struct PrincipalStrainRates
+#include "pism/util/array/Scalar.hh"
 
 namespace pism {
 

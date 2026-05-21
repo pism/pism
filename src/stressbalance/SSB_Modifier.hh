@@ -19,9 +19,9 @@
 #ifndef _SSB_MODIFIER_H_
 #define _SSB_MODIFIER_H_
 
-#include "pism/util/array/Staggered.hh"
 #include "pism/util/Component.hh"
 #include "pism/util/EnthalpyConverter.hh"
+#include "pism/util/array/Staggered.hh"
 
 namespace pism {
 
@@ -43,19 +43,18 @@ public:
 
   virtual void init();
 
-  virtual void update(const array::Vector &sliding_velocity,
-                      const Inputs &inputs,
+  virtual void update(const array::Vector &sliding_velocity, const Inputs &inputs,
                       bool full_update) = 0;
 
   //! \brief Get the diffusive (SIA) vertically-averaged flux on the staggered grid.
-  const array::Staggered& diffusive_flux();
+  const array::Staggered &diffusive_flux();
 
   //! \brief Get the max diffusivity (for the adaptive time-stepping).
   double max_diffusivity() const;
 
-  const array::Array3D& velocity_u() const;
+  const array::Array3D &velocity_u() const;
 
-  const array::Array3D& velocity_v() const;
+  const array::Array3D &velocity_v() const;
 
   virtual std::string stdout_report() const;
 
@@ -78,8 +77,7 @@ public:
 
   virtual void init();
 
-  virtual void update(const array::Vector &sliding_velocity,
-                      const Inputs &inputs,
+  virtual void update(const array::Vector &sliding_velocity, const Inputs &inputs,
                       bool full_update);
 };
 

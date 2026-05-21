@@ -22,8 +22,7 @@
 #define __exactTestsABCD_h 1
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /*
@@ -57,5 +56,4 @@ struct TestABCDParameters exactD(const double t, const double r);
 #endif
 
 
-#endif  /* __exactTestsABCD_h */
-
+#endif /* __exactTestsABCD_h */

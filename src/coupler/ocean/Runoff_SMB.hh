@@ -50,8 +50,7 @@ namespace ocean {
  * negligible and a change in air temperature is directly translated
  * into a change in ocean temperature.
  */
-class Runoff_SMB : public OceanModel
-{
+class Runoff_SMB : public OceanModel {
 public:
   Runoff_SMB(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in);
   virtual ~Runoff_SMB();

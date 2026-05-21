@@ -35,7 +35,8 @@ public:
     DR3 = config.get_number("energy.drainage_maximum_rate"); // 0.05 year-1
     DR2 = 0.1 * DR3;
   }
-  virtual ~DrainageCalculator() {}
+  virtual ~DrainageCalculator() {
+  }
 
   //! Return D(omega), as in figure in [\ref AschwandenBuelerKhroulevBlatter].
   virtual double get_drainage_rate(double omega) {
@@ -63,4 +64,3 @@ private:
 } // end of namespace pism
 
 #endif // __DrainageCalculator_hh
-

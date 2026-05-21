@@ -16,12 +16,12 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#include <algorithm>            // std::max()
+#include <algorithm> // std::max()
 
-#include "pism/stressbalance/ssa/SSAFD_SNES.hh"
 #include "pism/stressbalance/StressBalance.hh" // Inputs
-#include "pism/util/petscwrappers/Vec.hh"
+#include "pism/stressbalance/ssa/SSAFD_SNES.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -31,9 +31,10 @@ PetscErrorCode SSAFDSNESConvergenceTest(SNES snes, PetscInt it, PetscReal xnorm,
   PetscErrorCode ierr;
 
   SSAFD_SNES *solver = reinterpret_cast<SSAFD_SNES *>(ctx);
-  double tolerance = solver->tolerance();
+  double tolerance   = solver->tolerance();
 
-  ierr = SNESConvergedDefault(snes, it, xnorm, gnorm, f, reason, ctx); CHKERRQ(ierr);
+  ierr = SNESConvergedDefault(snes, it, xnorm, gnorm, f, reason, ctx);
+  CHKERRQ(ierr);
   if (*reason >= 0 and tolerance > 0) {
     // converged or iterating
     Vec residual;
@@ -61,8 +62,8 @@ SSAFD_SNES::SSAFD_SNES(std::shared_ptr<const Grid> grid, bool regional_mode)
 
   PetscErrorCode ierr;
 
-  int stencil_width=2;
-  m_DA = m_grid->get_dm(2, stencil_width);
+  int stencil_width = 2;
+  m_DA              = m_grid->get_dm(2, stencil_width);
 
   // ierr = DMCreateGlobalVector(*m_DA, m_X.rawptr());
   // PISM_CHK(ierr, "DMCreateGlobalVector");
@@ -71,24 +72,24 @@ SSAFD_SNES::SSAFD_SNES(std::shared_ptr<const Grid> grid, bool regional_mode)
   PISM_CHK(ierr, "SNESCreate");
 
   // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
-  m_callback_data.da = *m_DA;
+  m_callback_data.da     = *m_DA;
   m_callback_data.solver = this;
   m_callback_data.inputs = nullptr;
 
   ierr = DMDASNESSetFunctionLocal(*m_DA, INSERT_VALUES,
-#if PETSC_VERSION_LT(3,21,0)
+#if PETSC_VERSION_LT(3, 21, 0)
                                   (DMDASNESFunction)SSAFD_SNES::function_callback,
 #else
-                                  (DMDASNESFunctionFn*)SSAFD_SNES::function_callback,
+                                  (DMDASNESFunctionFn *)SSAFD_SNES::function_callback,
 #endif
                                   &m_callback_data);
   PISM_CHK(ierr, "DMDASNESSetFunctionLocal");
 
   ierr = DMDASNESSetJacobianLocal(*m_DA,
-#if PETSC_VERSION_LT(3,21,0)
+#if PETSC_VERSION_LT(3, 21, 0)
                                   (DMDASNESJacobian)SSAFD_SNES::jacobian_callback,
 #else
-                                  (DMDASNESJacobianFn*)SSAFD_SNES::jacobian_callback,
+                                  (DMDASNESJacobianFn *)SSAFD_SNES::jacobian_callback,
 #endif
                                   &m_callback_data);
   PISM_CHK(ierr, "DMDASNESSetJacobianLocal");
@@ -137,11 +138,11 @@ void SSAFD_SNES::solve(const Inputs &inputs) {
     }
 
     PetscInt snes_iterations = 0;
-    ierr = SNESGetIterationNumber(m_snes, &snes_iterations);
+    ierr                     = SNESGetIterationNumber(m_snes, &snes_iterations);
     PISM_CHK(ierr, "SNESGetIterationNumber");
 
     PetscInt ksp_iterations = 0;
-    ierr = SNESGetLinearSolveIterations(m_snes, &ksp_iterations);
+    ierr                    = SNESGetLinearSolveIterations(m_snes, &ksp_iterations);
     PISM_CHK(ierr, "SNESGetLinearSolveIterations");
 
     m_log->message(1, "SSA: %d*%d its, %s\n", (int)snes_iterations,
@@ -211,7 +212,7 @@ public:
 
 protected:
   virtual std::shared_ptr<array::Array> compute_impl() const {
-    auto result = allocate<array::Scalar>("ssa_residual_mag");
+    auto result         = allocate<array::Scalar>("ssa_residual_mag");
     result->metadata(0) = m_vars[0];
 
     compute_magnitude(model->residual(), *result);
@@ -223,7 +224,7 @@ protected:
 DiagnosticList SSAFD_SNES::spatial_diagnostics_impl() const {
   DiagnosticList result = SSAFDBase::spatial_diagnostics_impl();
 
-  result["ssa_residual"] = Diagnostic::wrap(m_residual);
+  result["ssa_residual"]     = Diagnostic::wrap(m_residual);
   result["ssa_residual_mag"] = Diagnostic::Ptr(new SSAFD_residual_mag(this));
 
   return result;

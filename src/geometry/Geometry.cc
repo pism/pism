@@ -21,32 +21,32 @@
 
 #include "pism/geometry/Geometry.hh"
 
-#include "pism/util/array/CellType.hh"
-#include "pism/util/Mask.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/geometry/grounded_cell_fraction.hh"
 #include "pism/util/Context.hh"
-#include "pism/util/VariableMetadata.hh"
-#include "pism/util/io/File.hh"
-#include "pism/util/io/io_helpers.hh"
-#include "pism/util/io/IO_Flags.hh"
+#include "pism/util/Mask.hh"
 #include "pism/util/Time.hh"
+#include "pism/util/VariableMetadata.hh"
+#include "pism/util/array/CellType.hh"
+#include "pism/util/io/File.hh"
+#include "pism/util/io/IO_Flags.hh"
 #include "pism/util/io/SynchronousOutputWriter.hh"
+#include "pism/util/io/io_helpers.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
 Geometry::Geometry(const std::shared_ptr<const Grid> &grid)
-  // FIXME: ideally these fields should be "global", i.e. without ghosts.
-  // (However this may increase communication costs...)
-  : latitude(grid, "lat"),
-    longitude(grid, "lon"),
-    bed_elevation(grid, "topg"),
-    sea_level_elevation(grid, "sea_level"),
-    ice_thickness(grid, "thk"),
-    ice_area_specific_volume(grid, "ice_area_specific_volume"),
-    cell_type(grid, "mask"),
-    cell_grounded_fraction(grid, "cell_grounded_fraction"),
-    ice_surface_elevation(grid, "usurf") {
+    // FIXME: ideally these fields should be "global", i.e. without ghosts.
+    // (However this may increase communication costs...)
+    : latitude(grid, "lat"),
+      longitude(grid, "lon"),
+      bed_elevation(grid, "topg"),
+      sea_level_elevation(grid, "sea_level"),
+      ice_thickness(grid, "thk"),
+      ice_area_specific_volume(grid, "ice_area_specific_volume"),
+      cell_type(grid, "mask"),
+      cell_grounded_fraction(grid, "cell_grounded_fraction"),
+      ice_surface_elevation(grid, "usurf") {
 
   latitude.metadata(0)
       .long_name("latitude")
@@ -114,12 +114,11 @@ Geometry::Geometry(const std::shared_ptr<const Grid> &grid)
 }
 
 void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
-  auto grid = ice_thickness.grid();
+  auto grid   = ice_thickness.grid();
   auto config = grid->ctx()->config();
 
-  array::AccessScope list{&sea_level_elevation, &bed_elevation,
-      &ice_thickness, &ice_area_specific_volume,
-      &cell_type, &ice_surface_elevation};
+  array::AccessScope list{ &sea_level_elevation,      &bed_elevation, &ice_thickness,
+                           &ice_area_specific_volume, &cell_type,     &ice_surface_elevation };
 
   // first ensure that ice_area_specific_volume is 0 if ice_thickness > 0.
   {
@@ -156,8 +155,8 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
         const int i = p.i(), j = p.j();
 
         int mask = 0;
-        gc.compute(sea_level_elevation(i, j), bed_elevation(i, j), ice_thickness(i, j),
-                   &mask, &ice_surface_elevation(i, j));
+        gc.compute(sea_level_elevation(i, j), bed_elevation(i, j), ice_thickness(i, j), &mask,
+                   &ice_surface_elevation(i, j));
         cell_type(i, j) = mask;
       }
     } catch (...) {
@@ -171,23 +170,17 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
   cell_type.update_ghosts();
   ice_surface_elevation.update_ghosts();
 
-  const double
-    ice_density = config->get_number("constants.ice.density"),
-    ocean_density = config->get_number("constants.sea_water.density");
+  const double ice_density   = config->get_number("constants.ice.density"),
+               ocean_density = config->get_number("constants.sea_water.density");
 
   try {
-    compute_grounded_cell_fraction(ice_density,
-                                   ocean_density,
-                                   sea_level_elevation,
-                                   ice_thickness,
-                                   bed_elevation,
-                                   cell_grounded_fraction);
+    compute_grounded_cell_fraction(ice_density, ocean_density, sea_level_elevation, ice_thickness,
+                                   bed_elevation, cell_grounded_fraction);
   } catch (RuntimeError &e) {
     e.add_context("computing the grounded cell fraction");
 
     std::string output_file = config->get_string("output.file");
-    std::string o_file = filename_add_suffix(output_file,
-                                             "_grounded_cell_fraction_failed", "");
+    std::string o_file = filename_add_suffix(output_file, "_grounded_cell_fraction_failed", "");
     // save geometry to a file for debugging
     dump(o_file.c_str());
     throw;
@@ -195,7 +188,7 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
 }
 
 void Geometry::dump(const char *filename) const {
-  auto grid = ice_thickness.grid();
+  auto grid   = ice_thickness.grid();
   auto ctx    = grid->ctx();
   auto config = ctx->config();
 
@@ -240,28 +233,26 @@ void Geometry::dump(const char *filename) const {
  */
 void ice_bottom_surface(const Geometry &geometry, array::Scalar &result) {
 
-  auto grid = result.grid();
+  auto grid   = result.grid();
   auto config = grid->ctx()->config();
 
-  double
-    ice_density   = config->get_number("constants.ice.density"),
-    water_density = config->get_number("constants.sea_water.density"),
-    alpha         = ice_density / water_density;
+  double ice_density   = config->get_number("constants.ice.density"),
+         water_density = config->get_number("constants.sea_water.density"),
+         alpha         = ice_density / water_density;
 
   const array::Scalar &ice_thickness = geometry.ice_thickness;
   const array::Scalar &bed_elevation = geometry.bed_elevation;
   const array::Scalar &sea_level     = geometry.sea_level_elevation;
 
-  array::AccessScope list{&ice_thickness, &bed_elevation, &sea_level, &result};
+  array::AccessScope list{ &ice_thickness, &bed_elevation, &sea_level, &result };
 
   ParallelSection loop(grid->com);
   try {
     for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
-      double
-        b_grounded = bed_elevation(i, j),
-        b_floating = sea_level(i, j) - alpha * ice_thickness(i, j);
+      double b_grounded = bed_elevation(i, j),
+             b_floating = sea_level(i, j) - alpha * ice_thickness(i, j);
 
       result(i, j) = std::max(b_grounded, b_floating);
     }
@@ -275,10 +266,10 @@ void ice_bottom_surface(const Geometry &geometry, array::Scalar &result) {
 
 //! Computes the ice volume, in m^3.
 double ice_volume(const Geometry &geometry, double thickness_threshold) {
-  auto grid = geometry.ice_thickness.grid();
+  auto grid   = geometry.ice_thickness.grid();
   auto config = grid->ctx()->config();
 
-  array::AccessScope list{&geometry.ice_thickness};
+  array::AccessScope list{ &geometry.ice_thickness };
 
   double volume = 0.0;
 
@@ -288,8 +279,8 @@ double ice_volume(const Geometry &geometry, double thickness_threshold) {
     for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
-      if (geometry.ice_thickness(i,j) >= thickness_threshold) {
-        volume += geometry.ice_thickness(i,j) * cell_area;
+      if (geometry.ice_thickness(i, j) >= thickness_threshold) {
+        volume += geometry.ice_thickness(i, j) * cell_area;
       }
     }
   }
@@ -300,35 +291,31 @@ double ice_volume(const Geometry &geometry, double thickness_threshold) {
     for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
-      volume += geometry.ice_area_specific_volume(i,j) * cell_area;
+      volume += geometry.ice_area_specific_volume(i, j) * cell_area;
     }
   }
 
   return GlobalSum(grid->com, volume);
 }
 
-double ice_volume_not_displacing_seawater(const Geometry &geometry,
-                                          double thickness_threshold) {
-  auto grid = geometry.ice_thickness.grid();
+double ice_volume_not_displacing_seawater(const Geometry &geometry, double thickness_threshold) {
+  auto grid   = geometry.ice_thickness.grid();
   auto config = grid->ctx()->config();
 
-  const double
-    sea_water_density = config->get_number("constants.sea_water.density"),
-    ice_density       = config->get_number("constants.ice.density"),
-    cell_area         = grid->cell_area();
+  const double sea_water_density = config->get_number("constants.sea_water.density"),
+               ice_density       = config->get_number("constants.ice.density"),
+               cell_area         = grid->cell_area();
 
-  array::AccessScope list{&geometry.cell_type, &geometry.ice_thickness,
-      &geometry.bed_elevation, &geometry.sea_level_elevation};
+  array::AccessScope list{ &geometry.cell_type, &geometry.ice_thickness, &geometry.bed_elevation,
+                           &geometry.sea_level_elevation };
 
   double volume = 0.0;
 
   for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
-    const double
-      bed       = geometry.bed_elevation(i, j),
-      thickness = geometry.ice_thickness(i, j),
-      sea_level = geometry.sea_level_elevation(i, j);
+    const double bed = geometry.bed_elevation(i, j), thickness = geometry.ice_thickness(i, j),
+                 sea_level = geometry.sea_level_elevation(i, j);
 
     if (geometry.cell_type.grounded(i, j) and thickness > thickness_threshold) {
       double max_floating_thickness =
@@ -342,7 +329,7 @@ double ice_volume_not_displacing_seawater(const Geometry &geometry,
 
 static double compute_area(const Grid &grid, std::function<bool(int, int)> condition) {
   double cell_area = grid.cell_area();
-  double area = 0.0;
+  double area      = 0.0;
 
   for (auto p : grid.points()) {
     const int i = p.i(), j = p.j();
@@ -385,16 +372,13 @@ double ice_area_floating(const Geometry &geometry, double thickness_threshold) {
 double sea_level_rise_potential(const Geometry &geometry, double thickness_threshold) {
   auto config = geometry.ice_thickness.grid()->ctx()->config();
 
-  const double
-    water_density = config->get_number("constants.fresh_water.density"),
-    ice_density   = config->get_number("constants.ice.density"),
-    ocean_area    = config->get_number("constants.global_ocean_area");
+  const double water_density = config->get_number("constants.fresh_water.density"),
+               ice_density   = config->get_number("constants.ice.density"),
+               ocean_area    = config->get_number("constants.global_ocean_area");
 
-  const double
-    volume                  = ice_volume_not_displacing_seawater(geometry,
-                                                                 thickness_threshold),
-    additional_water_volume = (ice_density / water_density) * volume,
-    sea_level_change        = additional_water_volume / ocean_area;
+  const double volume = ice_volume_not_displacing_seawater(geometry, thickness_threshold),
+               additional_water_volume = (ice_density / water_density) * volume,
+               sea_level_change        = additional_water_volume / ocean_area;
 
   return sea_level_change;
 }

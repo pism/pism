@@ -38,27 +38,27 @@ class Staggered : public Array {
 public:
   Staggered(std::shared_ptr<const Grid> grid, const std::string &name);
 
-  inline double& operator() (int i, int j, int k);
-  inline const double& operator() (int i, int j, int k) const;
+  inline double &operator()(int i, int j, int k);
+  inline const double &operator()(int i, int j, int k) const;
 
   void copy_from(const array::Staggered &input);
+
 protected:
-  Staggered(std::shared_ptr<const Grid> grid, const std::string &name,
-            unsigned int stencil_width);
+  Staggered(std::shared_ptr<const Grid> grid, const std::string &name, unsigned int stencil_width);
 };
 
-inline double& array::Staggered::operator() (int i, int j, int k) {
-#if (Pism_DEBUG==1)
+inline double &array::Staggered::operator()(int i, int j, int k) {
+#if (Pism_DEBUG == 1)
   check_array_indices(i, j, k);
 #endif
-  return static_cast<double***>(m_array)[j][i][k];
+  return static_cast<double ***>(m_array)[j][i][k];
 }
 
-inline const double& array::Staggered::operator() (int i, int j, int k) const {
-#if (Pism_DEBUG==1)
+inline const double &array::Staggered::operator()(int i, int j, int k) const {
+#if (Pism_DEBUG == 1)
   check_array_indices(i, j, k);
 #endif
-  return static_cast<double***>(m_array)[j][i][k];
+  return static_cast<double ***>(m_array)[j][i][k];
 }
 
 class Staggered1 : public Staggered {
@@ -77,11 +77,11 @@ inline stencils::Star<double> Staggered1::star(int i, int j) const {
 
   stencils::Star<double> result;
 
-  result.c = 0.0;               // has no meaning in this context
+  result.c = 0.0; // has no meaning in this context
   result.e = self(i, j, 0);
-  result.w = self(i-1, j, 0);
+  result.w = self(i - 1, j, 0);
   result.n = self(i, j, 1);
-  result.s = self(i, j-1, 1);
+  result.s = self(i, j - 1, 1);
 
   return result;
 }
@@ -89,7 +89,7 @@ inline stencils::Star<double> Staggered1::star(int i, int j) const {
 /*!
  * Computes maximums of absolute values of both components.
  */
-std::array<double,2> absmax(const array::Staggered &input);
+std::array<double, 2> absmax(const array::Staggered &input);
 
 /*!
  * Average a scalar field from the staggered grid onto the regular grid by considering
@@ -98,10 +98,8 @@ std::array<double,2> absmax(const array::Staggered &input);
  * If `include_floating_ice` is true, include floating ice, otherwise consider grounded
  * icy cells only.
  */
-void staggered_to_regular(const array::CellType1 &cell_type,
-                          const array::Staggered1 &input,
-                          bool include_floating_ice,
-                          array::Scalar &result);
+void staggered_to_regular(const array::CellType1 &cell_type, const array::Staggered1 &input,
+                          bool include_floating_ice, array::Scalar &result);
 
 /*!
  * Average a vector field from the staggered grid onto the regular grid by considering
@@ -110,10 +108,8 @@ void staggered_to_regular(const array::CellType1 &cell_type,
  * If `include_floating_ice` is true, include floating ice, otherwise consider grounded
  * icy cells only.
  */
-void staggered_to_regular(const array::CellType1 &cell_type,
-                          const array::Staggered1 &input,
-                          bool include_floating_ice,
-                          array::Vector &result);
+void staggered_to_regular(const array::CellType1 &cell_type, const array::Staggered1 &input,
+                          bool include_floating_ice, array::Vector &result);
 
 } // end of namespace array
 

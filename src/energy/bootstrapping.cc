@@ -17,27 +17,22 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <algorithm>                       // for min
-#include <cmath>                           // for sqrt, erf, M_PI
-#include <memory>                          // for __shared_ptr_access
-#include "pism/energy/bootstrapping.hh"    // for ice_temperature_guess, ice...
-#include "pism/util/EnthalpyConverter.hh"  // for EnthalpyConverter, Enthalp...
+#include "pism/energy/bootstrapping.hh"   // for ice_temperature_guess, ice...
+#include "pism/util/EnthalpyConverter.hh" // for EnthalpyConverter, Enthalp...
+#include <algorithm>                      // for min
+#include <cmath>                          // for sqrt, erf, M_PI
+#include <memory>                         // for __shared_ptr_access
 
 namespace pism {
 namespace energy {
 
-double ice_temperature_guess(EnthalpyConverter &EC,
-                             double H, double z, double T_surface,
-                             double G, double ice_k) {
+double ice_temperature_guess(EnthalpyConverter &EC, double H, double z, double T_surface, double G,
+                             double ice_k) {
 
-  const double
-    depth = H - z,
-    d2    = depth * depth,
-    Tpmp  = EC.melting_temperature(EC.pressure(depth));
+  const double depth = H - z, d2 = depth * depth, Tpmp = EC.melting_temperature(EC.pressure(depth));
 
-  const double
-    beta = (4.0/21.0) * (G / (2.0 * ice_k * H * H * H)),
-    alpha = (G / (2.0 * H * ice_k)) - 2.0 * H * H * beta;
+  const double beta  = (4.0 / 21.0) * (G / (2.0 * ice_k * H * H * H)),
+               alpha = (G / (2.0 * H * ice_k)) - 2.0 * H * H * beta;
 
   return std::min(Tpmp, T_surface + alpha * d2 + beta * d2 * d2);
 }

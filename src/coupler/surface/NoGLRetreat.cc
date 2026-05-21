@@ -21,17 +21,16 @@
 
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Diagnostic.hh"
-#include "pism/util/pism_utilities.hh" // combine()
 #include "pism/util/Logger.hh"
+#include "pism/util/pism_utilities.hh" // combine()
 
 namespace pism {
 namespace surface {
 
-NoGLRetreat::NoGLRetreat(std::shared_ptr<const Grid> grid,
-                         std::shared_ptr<SurfaceModel> input)
-  : SurfaceModel(grid, input),
-    m_smb_adjustment(grid, "smb_adjustment"),
-    m_min_ice_thickness(grid, "minimum_ice_thickness") {
+NoGLRetreat::NoGLRetreat(std::shared_ptr<const Grid> grid, std::shared_ptr<SurfaceModel> input)
+    : SurfaceModel(grid, input),
+      m_smb_adjustment(grid, "smb_adjustment"),
+      m_min_ice_thickness(grid, "minimum_ice_thickness") {
 
   m_smb_adjustment.metadata()["units"] = "kg m^-2 s^-1";
 
@@ -44,8 +43,7 @@ NoGLRetreat::NoGLRetreat(std::shared_ptr<const Grid> grid,
 void NoGLRetreat::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);
 
-  m_log->message(2,
-                 "* Initializing a SMB adjustment preventing grounding line retreat...\n");
+  m_log->message(2, "* Initializing a SMB adjustment preventing grounding line retreat...\n");
 
   const auto &ice_thickness = geometry.ice_thickness;
   const auto &sea_level     = geometry.sea_level_elevation;
@@ -53,10 +51,9 @@ void NoGLRetreat::init_impl(const Geometry &geometry) {
 
   double rho_i = m_config->get_number("constants.ice.density");
   double rho_w = m_config->get_number("constants.sea_water.density");
-  double eps = m_config->get_number("geometry.ice_free_thickness_standard");
+  double eps   = m_config->get_number("geometry.ice_free_thickness_standard");
 
-  array::AccessScope list{&sea_level, &bed, &ice_thickness,
-                               &m_min_ice_thickness};
+  array::AccessScope list{ &sea_level, &bed, &ice_thickness, &m_min_ice_thickness };
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
@@ -74,7 +71,6 @@ void NoGLRetreat::init_impl(const Geometry &geometry) {
     }
 
     m_min_ice_thickness(i, j) = H_min;
-
   }
 }
 
@@ -87,11 +83,8 @@ void NoGLRetreat::update_impl(const Geometry &geometry, double t, double dt) {
 
   double rho_i = m_config->get_number("constants.ice.density");
 
-  array::AccessScope list{&mass_flux,
-                               &ice_thickness,
-                               m_mass_flux.get(),
-                               &m_smb_adjustment,
-                               &m_min_ice_thickness};
+  array::AccessScope list{ &mass_flux, &ice_thickness, m_mass_flux.get(), &m_smb_adjustment,
+                           &m_min_ice_thickness };
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
@@ -109,7 +102,7 @@ void NoGLRetreat::update_impl(const Geometry &geometry, double t, double dt) {
       SMB_new = (H_min - H) * (rho_i / dt);
     }
 
-    (*m_mass_flux)(i, j) = SMB_new;
+    (*m_mass_flux)(i, j)   = SMB_new;
     m_smb_adjustment(i, j) = SMB_new - SMB_old;
   }
 
@@ -118,36 +111,32 @@ void NoGLRetreat::update_impl(const Geometry &geometry, double t, double dt) {
   dummy_runoff(*m_mass_flux, *m_runoff);
 }
 
-const array::Scalar& NoGLRetreat::mass_flux_impl() const {
+const array::Scalar &NoGLRetreat::mass_flux_impl() const {
   return *m_mass_flux;
 }
 
-const array::Scalar& NoGLRetreat::accumulation_impl() const {
+const array::Scalar &NoGLRetreat::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const array::Scalar& NoGLRetreat::melt_impl() const {
+const array::Scalar &NoGLRetreat::melt_impl() const {
   return *m_melt;
 }
 
-const array::Scalar& NoGLRetreat::runoff_impl() const {
+const array::Scalar &NoGLRetreat::runoff_impl() const {
   return *m_runoff;
 }
 
-const array::Scalar& NoGLRetreat::smb_adjustment() const {
+const array::Scalar &NoGLRetreat::smb_adjustment() const {
   return m_smb_adjustment;
 }
 
 namespace diagnostics {
 
-class SMBAdjustment : public DiagAverageRate<NoGLRetreat>
-{
+class SMBAdjustment : public DiagAverageRate<NoGLRetreat> {
 public:
   SMBAdjustment(const NoGLRetreat *m)
-    : DiagAverageRate<NoGLRetreat>(m,
-                                   "no_gl_retreat_smb_adjustment",
-                                   RATE)
-  {
+      : DiagAverageRate<NoGLRetreat>(m, "no_gl_retreat_smb_adjustment", RATE) {
     m_accumulator.metadata()["units"] = "kg m^-2";
 
     m_vars = { { m_sys, "no_gl_retreat_smb_adjustment", *m_grid } };
@@ -156,11 +145,11 @@ public:
         .units("kg m^-2 s^-1")
         .output_units("kg m^-2 year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+    m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
   }
 
 protected:
-  const array::Scalar& model_input() {
+  const array::Scalar &model_input() {
     return model->smb_adjustment();
   }
 };
@@ -168,9 +157,9 @@ protected:
 } // end of namespace diagnostics
 
 DiagnosticList NoGLRetreat::spatial_diagnostics_impl() const {
-  return combine({{"no_gl_retreat_smb_adjustment",
-          Diagnostic::Ptr(new diagnostics::SMBAdjustment(this))}},
-    m_input_model->spatial_diagnostics());
+  return combine(
+      { { "no_gl_retreat_smb_adjustment", Diagnostic::Ptr(new diagnostics::SMBAdjustment(this)) } },
+      m_input_model->spatial_diagnostics());
 }
 
 } // end of namespace surface

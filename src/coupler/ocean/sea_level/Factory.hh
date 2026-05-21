@@ -19,8 +19,8 @@
 #ifndef _SEA_LEVEL_FACTORY_
 #define _SEA_LEVEL_FACTORY_
 
-#include "pism/coupler/util/PCFactory.hh"
 #include "pism/coupler/SeaLevel.hh"
+#include "pism/coupler/util/PCFactory.hh"
 
 namespace pism {
 namespace ocean {

@@ -48,7 +48,7 @@ static pism::io::Type nc_type_to_pism_type(int input) {
   case NC_BYTE:
     return io::PISM_BYTE;
   case NC_CHAR:
-  case NC_STRING:               // treat NC_CHAR and NC_STRING as equivalent
+  case NC_STRING: // treat NC_CHAR and NC_STRING as equivalent
     return io::PISM_CHAR;
   case NC_SHORT:
     return io::PISM_SHORT;

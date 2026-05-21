@@ -33,8 +33,7 @@ void sigint_handler(int sig);
 extern bool gSIGINT_is_fatal;
 
 //! Installs a signal handler on construction; deinstalls on destruction.
-class SigInstaller
-{
+class SigInstaller {
 public:
   //! Installs handle \a new_handler for signal \a sig.
   SigInstaller(int sig, void (*new_handler)(int));
@@ -42,6 +41,7 @@ public:
   void release();
 
   ~SigInstaller();
+
 private:
   void (*m_old_handler)(int);
   int m_sig;

@@ -18,21 +18,19 @@
  */
 
 #include "pism/energy/BTU_Minimal.hh"
-#include "pism/util/MaxTimestep.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace energy {
 
-BTU_Minimal::BTU_Minimal(std::shared_ptr<const Grid> g)
-  : BedThermalUnit(g) {
+BTU_Minimal::BTU_Minimal(std::shared_ptr<const Grid> g) : BedThermalUnit(g) {
   // empty
 }
 
 void BTU_Minimal::init_impl(const InputOptions &opts) {
-  m_log->message(2,
-                 "* Initializing the minimal model for lithosphere:\n"
-                 "  stored time-independent geothermal flux applied to ice base...\n");
+  m_log->message(2, "* Initializing the minimal model for lithosphere:\n"
+                    "  stored time-independent geothermal flux applied to ice base...\n");
 
   BedThermalUnit::init_impl(opts);
 
@@ -53,15 +51,15 @@ unsigned int BTU_Minimal::Mz_impl() const {
 }
 
 MaxTimestep BTU_Minimal::max_timestep_impl(double t) const {
-  (void) t;
+  (void)t;
   // no time step restriction
   return MaxTimestep("minimal thermal bedrock layer");
 }
 
 void BTU_Minimal::update_impl(const array::Scalar &bedrock_top_temperature, double t, double dt) {
-  (void) bedrock_top_temperature;
-  (void) t;
-  (void) dt;
+  (void)bedrock_top_temperature;
+  (void)t;
+  (void)dt;
   // empty
 }
 

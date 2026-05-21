@@ -25,12 +25,9 @@
 namespace pism {
 namespace energy {
 
-class BTU_Verification : public BTU_Full
-{
+class BTU_Verification : public BTU_Full {
 public:
-  BTU_Verification(std::shared_ptr<const Grid> g,
-                   const BTUGrid &vertical_grid,
-                   int test, bool bii);
+  BTU_Verification(std::shared_ptr<const Grid> g, const BTUGrid &vertical_grid, int test, bool bii);
   virtual ~BTU_Verification() = default;
 
 protected:

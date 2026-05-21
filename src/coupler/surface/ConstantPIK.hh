@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #ifndef _PSCONSTANTPIK_H_
-#define _PSCONSTANTPIK_H_
+#define PSCONSTANTPIK_H_
 
 #include "pism/coupler/SurfaceModel.hh"
 
@@ -34,23 +34,24 @@ namespace surface {
 class PIK : public SurfaceModel {
 public:
   PIK(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere::AtmosphereModel> atmosphere);
+
 protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const array::Scalar& mass_flux_impl() const;
-  const array::Scalar& temperature_impl() const;
+  const array::Scalar &mass_flux_impl() const;
+  const array::Scalar &temperature_impl() const;
 
-  const array::Scalar& accumulation_impl() const;
-  const array::Scalar& melt_impl() const;
-  const array::Scalar& runoff_impl() const;
+  const array::Scalar &accumulation_impl() const;
+  const array::Scalar &melt_impl() const;
+  const array::Scalar &runoff_impl() const;
 
   virtual std::set<VariableMetadata> state_impl() const;
   void write_state_impl(const OutputFile &output) const;
 
   MaxTimestep max_timestep_impl(double t) const;
 
-protected:
+
   std::shared_ptr<array::Scalar> m_mass_flux;
   std::shared_ptr<array::Scalar> m_temperature;
 };

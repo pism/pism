@@ -22,25 +22,23 @@
 
 #include "pism/coupler/util/options.hh"
 #include "pism/geometry/Geometry.hh"
-#include "pism/util/array/Forcing.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/array/Forcing.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace frontalmelt {
 
-Given::Given(std::shared_ptr<const Grid> grid)
-  : FrontalMelt(grid, std::shared_ptr<FrontalMelt>()) {
+Given::Given(std::shared_ptr<const Grid> grid) : FrontalMelt(grid, std::shared_ptr<FrontalMelt>()) {
 
   m_frontal_melt_rate = array::Forcing::Constant(grid, "frontal_melt_rate", 0.0);
 }
 
 void Given::init_impl(const Geometry &geometry) {
-  (void) geometry;
+  (void)geometry;
 
-  m_log->message(2,
-                 "* Initializing the frontal melt model reading melt rates\n"
-                 "  from a file...\n");
+  m_log->message(2, "* Initializing the frontal melt model reading melt rates\n"
+                    "  from a file...\n");
 
   ForcingOptions opt(*m_grid->ctx(), "frontal_melt.given");
 
@@ -93,13 +91,13 @@ MaxTimestep Given::max_timestep_impl(double t) const {
   auto dt = m_frontal_melt_rate->max_timestep(t);
 
   if (dt.finite()) {
-    return {dt.value(), "frontal_melt given"};
+    return { dt.value(), "frontal_melt given" };
   }
-  return {"frontal_melt given"};
+  return { "frontal_melt given" };
 }
 
 
-const array::Scalar& Given::frontal_melt_rate_impl() const {
+const array::Scalar &Given::frontal_melt_rate_impl() const {
   return *m_frontal_melt_rate;
 }
 

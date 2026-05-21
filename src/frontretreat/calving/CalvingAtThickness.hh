@@ -29,19 +29,15 @@ namespace calving {
 
 /*! \brief Calving mechanism removing the ice at the shelf front that
   has thickness below a given threshold. */
-class CalvingAtThickness : public Component
-{
+class CalvingAtThickness : public Component {
 public:
   CalvingAtThickness(std::shared_ptr<const Grid> g);
   virtual ~CalvingAtThickness() = default;
 
   void init();
-  void update(double t,
-              double dt,
-              array::Scalar &cell_type,
-              array::Scalar &ice_thickness);
+  void update(double t, double dt, array::Scalar &cell_type, array::Scalar &ice_thickness);
 
-  const array::Scalar& threshold() const;
+  const array::Scalar &threshold() const;
 
 protected:
   DiagnosticList spatial_diagnostics_impl() const;

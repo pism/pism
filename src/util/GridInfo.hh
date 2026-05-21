@@ -26,9 +26,9 @@
 namespace pism {
 namespace grid {
 
-typedef enum {NOT_PERIODIC = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3} Periodicity;
+typedef enum { NOT_PERIODIC = 0, X_PERIODIC = 1, Y_PERIODIC = 2, XY_PERIODIC = 3 } Periodicity;
 
-typedef enum {CELL_CENTER, CELL_CORNER} Registration;
+typedef enum { CELL_CENTER, CELL_CORNER } Registration;
 
 Registration string_to_registration(const std::string &keyword);
 std::string registration_to_string(Registration registration);

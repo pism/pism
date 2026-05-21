@@ -41,7 +41,8 @@ public:
 
   const array::Vector &driving_stress() const;
 
-  void compute_residual(const Inputs &inputs, const array::Vector2 &velocity, array::Vector &result);
+  void compute_residual(const Inputs &inputs, const array::Vector2 &velocity,
+                        array::Vector &result);
 
 protected:
   DiagnosticList spatial_diagnostics_impl() const;
@@ -57,11 +58,9 @@ protected:
                               const array::Staggered &hardness, double nuH_regularization,
                               array::Staggered &result);
 
-  void compute_nuH_cfbc(const array::Scalar1 &ice_thickness,
-                        const array::CellType2 &cell_type,
-                        const pism::Vector2d* const* velocity,
-                        const array::Staggered &hardness, double nuH_regularization,
-                        array::Staggered &result);
+  void compute_nuH_cfbc(const array::Scalar1 &ice_thickness, const array::CellType2 &cell_type,
+                        const pism::Vector2d *const *velocity, const array::Staggered &hardness,
+                        double nuH_regularization, array::Staggered &result);
 
   void compute_driving_stress(const array::Scalar &ice_thickness,
                               const array::Scalar1 &surface_elevation,
@@ -75,10 +74,12 @@ protected:
                              array::Vector &driving_stress) const;
 
   void compute_average_ice_hardness(const array::Scalar1 &thickness, const array::Array3D &enthalpy,
-                                    const array::CellType1 &cell_type, array::Staggered &result) const;
+                                    const array::CellType1 &cell_type,
+                                    array::Staggered &result) const;
 
   void assemble_rhs(const Inputs &inputs, const array::CellType1 &cell_type,
-                    const array::Vector &driving_stress, double bc_scaling, array::Vector &result) const;
+                    const array::Vector &driving_stress, double bc_scaling,
+                    array::Vector &result) const;
 
   void fd_operator(const Geometry &geometry, const array::Scalar *bc_mask, double bc_scaling,
                    const array::Scalar &basal_yield_stress,
@@ -86,8 +87,7 @@ protected:
                    const pism::Vector2d *const *velocity, const array::Staggered1 &nuH,
                    const array::CellType1 &cell_type, Mat *A, Vector2d **Ax) const;
 
-  void fracture_induced_softening(const array::Scalar1 &fracture_density,
-                                  double n_glen,
+  void fracture_induced_softening(const array::Scalar1 &fracture_density, double n_glen,
                                   array::Staggered &ice_hardness);
 
   void compute_residual(const Inputs &inputs, const pism::Vector2d *const *velocity,
@@ -134,7 +134,7 @@ protected:
   const bool m_regional_mode;
 };
 
-}
+} // namespace stressbalance
 } // namespace pism
 
 #endif /* PISM_SSAFDBASE_H */

@@ -129,8 +129,8 @@ void initialize(const char *help) {
 }
 
 void initialize_options(const std::vector<std::string> &args) {
-  int argc = (int) args.size();
-  std::vector<const char*> argv(argc + 1);
+  int argc = (int)args.size();
+  std::vector<const char *> argv(argc + 1);
 
   for (int i = 0; i < argc; ++i) {
     argv[i] = args[i].c_str();
@@ -138,7 +138,7 @@ void initialize_options(const std::vector<std::string> &args) {
   argv[argc] = nullptr;
 
   // Note: this const_cast is needed for compatibility with earlier PETSc versions.
-  PetscOptionsInsertArgs(NULL, argc, const_cast<char**>(argv.data()));
+  PetscOptionsInsertArgs(NULL, argc, const_cast<char **>(argv.data()));
 }
 
 
@@ -179,4 +179,4 @@ void finalize() {
   }
 }
 
-}
+} // namespace pism

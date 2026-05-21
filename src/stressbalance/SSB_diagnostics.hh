@@ -28,48 +28,48 @@ class Vars;
 
 namespace stressbalance {
 
-class SSB_beta : public Diag<ShallowStressBalance>
-{
+class SSB_beta : public Diag<ShallowStressBalance> {
 public:
   SSB_beta(const ShallowStressBalance *m);
+
 protected:
   virtual std::shared_ptr<array::Array> compute_impl() const;
 };
 
 //! \brief Computes the gravitational driving stress (diagnostically).
-class SSB_taud : public Diag<ShallowStressBalance>
-{
+class SSB_taud : public Diag<ShallowStressBalance> {
 public:
   SSB_taud(const ShallowStressBalance *m);
+
 protected:
   virtual std::shared_ptr<array::Array> compute_impl() const;
 };
 
 //! \brief Computes the magnitude of the gravitational driving stress
 //! (diagnostically).
-class SSB_taud_mag : public Diag<ShallowStressBalance>
-{
+class SSB_taud_mag : public Diag<ShallowStressBalance> {
 public:
   SSB_taud_mag(const ShallowStressBalance *m);
+
 protected:
   virtual std::shared_ptr<array::Array> compute_impl() const;
 };
 
 //! @brief Computes the basal shear stress @f$ \tau_b @f$.
-class SSB_taub : public Diag<ShallowStressBalance>
-{
+class SSB_taub : public Diag<ShallowStressBalance> {
 public:
   SSB_taub(const ShallowStressBalance *m);
+
 protected:
   virtual std::shared_ptr<array::Array> compute_impl() const;
 };
 
 //! \brief Computes the magnitude of the basal shear stress
 //! (diagnostically).
-class SSB_taub_mag : public Diag<ShallowStressBalance>
-{
+class SSB_taub_mag : public Diag<ShallowStressBalance> {
 public:
   SSB_taub_mag(const ShallowStressBalance *m);
+
 protected:
   virtual std::shared_ptr<array::Array> compute_impl() const;
 };

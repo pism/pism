@@ -19,8 +19,8 @@
 
 // Utilities for serial models using FFTW and extended computational grids.
 
-#include <vector>
 #include <complex>
+#include <vector>
 
 #include <fftw3.h>
 
@@ -69,22 +69,14 @@ void copy_fftw_array(fftw_complex *source, fftw_complex *destination, int Nx, in
 /*!
  * Sets the imaginary part to zero.
  */
-void set_real_part(petsc::Vec &input,
-                   double normalization,
-                   int Mx, int My,
-                   int Nx, int Ny,
-                   int i0, int j0,
-                   fftw_complex *output);
+void set_real_part(petsc::Vec &input, double normalization, int Mx, int My, int Nx, int Ny, int i0,
+                   int j0, fftw_complex *output);
 
 //! \brief Get the real part of input and put it in output.
 /*!
  * See set_real_part for details.
  */
-void get_real_part(fftw_complex *input,
-                   double normalization,
-                   int Mx, int My,
-                   int Nx, int Ny,
-                   int i0, int j0,
-                   petsc::Vec &output);
+void get_real_part(fftw_complex *input, double normalization, int Mx, int My, int Nx, int Ny,
+                   int i0, int j0, petsc::Vec &output);
 
 } // end of namespace pism

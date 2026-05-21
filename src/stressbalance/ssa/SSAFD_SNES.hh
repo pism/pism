@@ -22,8 +22,8 @@
 
 #include "pism/stressbalance/ssa/SSAFDBase.hh"
 
-#include "pism/util/petscwrappers/SNES.hh"
 #include "pism/util/petscwrappers/DM.hh"
+#include "pism/util/petscwrappers/SNES.hh"
 // #include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
@@ -38,6 +38,7 @@ public:
   double tolerance() const;
 
   const array::Vector &residual() const;
+
 private:
   DiagnosticList spatial_diagnostics_impl() const;
 
@@ -55,16 +56,12 @@ private:
 
   CallbackData m_callback_data;
 
-  void compute_jacobian(const Inputs &inputs, Vector2d const *const * velocity, Mat J);
+  void compute_jacobian(const Inputs &inputs, Vector2d const *const *velocity, Mat J);
 
-  static PetscErrorCode function_callback(DMDALocalInfo *info,
-                                          Vector2d const *const * velocity,
-                                          Vector2d **result,
-                                          CallbackData *);
-  static PetscErrorCode jacobian_callback(DMDALocalInfo *info,
-                                          Vector2d const *const * velocity,
-                                          Mat A, Mat J,
-                                          CallbackData *data);
+  static PetscErrorCode function_callback(DMDALocalInfo *info, Vector2d const *const *velocity,
+                                          Vector2d **result, CallbackData *);
+  static PetscErrorCode jacobian_callback(DMDALocalInfo *info, Vector2d const *const *velocity,
+                                          Mat A, Mat J, CallbackData *data);
 };
 
 } // namespace stressbalance

@@ -17,18 +17,18 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <cassert>
-#include <cmath>                // sqrt
+#include <cmath> // sqrt
 #include <fftw3.h>
-#include <gsl/gsl_math.h>       // M_PI
+#include <gsl/gsl_math.h> // M_PI
 
-#include "pism/earth/matlablike.hh"
-#include "pism/earth/greens.hh"
 #include "pism/earth/LingleClarkSerial.hh"
+#include "pism/earth/greens.hh"
+#include "pism/earth/matlablike.hh"
 
 #include "pism/util/Config.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/fftw_utilities.hh"
+#include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 namespace bed {
@@ -43,14 +43,11 @@ namespace bed {
  * @param[in] Nx extended grid size in the X direction
  * @param[in] Ny extended grid size in the Y direction
  */
-LingleClarkSerial::LingleClarkSerial(std::shared_ptr<const Logger> log,
-                                     const Config &config,
-                                     bool include_elastic,
-                                     int Mx, int My,
-                                     double dx, double dy,
+LingleClarkSerial::LingleClarkSerial(std::shared_ptr<const Logger> log, const Config &config,
+                                     bool include_elastic, int Mx, int My, double dx, double dy,
                                      int Nx, int Ny)
-  : m_t_infty(1e16),            // around 317 million years
-    m_log(log) {
+    : m_t_infty(1e16), // around 317 million years
+      m_log(log) {
 
   // set parameters
   m_include_elastic = include_elastic;
@@ -92,11 +89,13 @@ LingleClarkSerial::LingleClarkSerial(std::shared_ptr<const Logger> log,
   PetscErrorCode ierr = 0;
 
   // total displacement
-  ierr = VecCreateSeq(PETSC_COMM_SELF, m_Mx * m_My, m_U.rawptr());;
+  ierr = VecCreateSeq(PETSC_COMM_SELF, m_Mx * m_My, m_U.rawptr());
+  ;
   PISM_CHK(ierr, "VecCreateSeq");
 
   // elastic displacement
-  ierr = VecCreateSeq(PETSC_COMM_SELF, m_Mx * m_My, m_Ue.rawptr());;
+  ierr = VecCreateSeq(PETSC_COMM_SELF, m_Mx * m_My, m_Ue.rawptr());
+  ;
   PISM_CHK(ierr, "VecCreateSeq");
 
   // viscous displacement
@@ -104,16 +103,16 @@ LingleClarkSerial::LingleClarkSerial(std::shared_ptr<const Logger> log,
   PISM_CHK(ierr, "VecCreateSeq");
 
   // setup fftw stuff: FFTW builds "plans" based on observed performance
-  m_fftw_input  = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
-  m_fftw_output = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
-  m_loadhat     = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
-  m_lrm_hat = (fftw_complex*) fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
+  m_fftw_input  = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
+  m_fftw_output = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
+  m_loadhat     = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
+  m_lrm_hat     = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
 
   clear_fftw_array(m_fftw_input, m_Nx, m_Ny);
-  m_dft_forward = fftw_plan_dft_2d(m_Nx, m_Ny, m_fftw_input, m_fftw_output,
-                                   FFTW_FORWARD, FFTW_ESTIMATE);
-  m_dft_inverse = fftw_plan_dft_2d(m_Nx, m_Ny, m_fftw_input, m_fftw_output,
-                                   FFTW_BACKWARD, FFTW_ESTIMATE);
+  m_dft_forward =
+      fftw_plan_dft_2d(m_Nx, m_Ny, m_fftw_input, m_fftw_output, FFTW_FORWARD, FFTW_ESTIMATE);
+  m_dft_inverse =
+      fftw_plan_dft_2d(m_Nx, m_Ny, m_fftw_input, m_fftw_output, FFTW_BACKWARD, FFTW_ESTIMATE);
 
   // Note: FFTW is weird. If a malloc() call fails it will just call
   // abort() on you without giving you a chance to recover or tell the
@@ -137,21 +136,21 @@ LingleClarkSerial::~LingleClarkSerial() {
 /*!
  * Return total displacement.
  */
-const petsc::Vec& LingleClarkSerial::total_displacement() const {
+const petsc::Vec &LingleClarkSerial::total_displacement() const {
   return m_U;
 }
 
 /*!
  * Return viscous plate displacement.
  */
-const petsc::Vec& LingleClarkSerial::viscous_displacement() const {
+const petsc::Vec &LingleClarkSerial::viscous_displacement() const {
   return m_Uv;
 }
 
 /*!
  * Return elastic plate displacement.
  */
-const petsc::Vec& LingleClarkSerial::elastic_displacement() const {
+const petsc::Vec &LingleClarkSerial::elastic_displacement() const {
   return m_Ue;
 }
 
@@ -160,7 +159,7 @@ void LingleClarkSerial::compute_load_response_matrix(fftw_complex *output) {
   FFTWArray LRM(output, m_Nx, m_Ny);
 
   greens_elastic G;
-  ge_data ge_data {m_dx, m_dy, 0, 0, &G};
+  ge_data ge_data{ m_dx, m_dy, 0, 0, &G };
 
   int Nx2 = m_Nx / 2;
   int Ny2 = m_Ny / 2;
@@ -172,10 +171,8 @@ void LingleClarkSerial::compute_load_response_matrix(fftw_complex *output) {
       ge_data.p = Nx2 - i;
       ge_data.q = Ny2 - j;
 
-      LRM(i, j) = dblquad_cubature(ge_integrand,
-                                   -m_dx / 2, m_dx / 2,
-                                   -m_dy / 2, m_dy / 2,
-                                   1.0e-8, &ge_data);
+      LRM(i, j) = dblquad_cubature(ge_integrand, -m_dx / 2, m_dx / 2, -m_dy / 2, m_dy / 2, 1.0e-8,
+                                   &ge_data);
     }
 
     // Top right quarter
@@ -201,9 +198,9 @@ void LingleClarkSerial::compute_load_response_matrix(fftw_complex *output) {
     }
   } // End of the loop over the top half
 
-    // Bottom half
-    //
-    // See the comment above the "top right quarter" loop.
+  // Bottom half
+  //
+  // See the comment above the "top right quarter" loop.
   for (int j = Ny2 + 1; j < m_Ny; ++j) {
     for (int i = 0; i < m_Nx; ++i) {
       assert(2 * Ny2 - j >= 0);
@@ -249,16 +246,14 @@ void LingleClarkSerial::precompute_coefficients() {
  * @f$ \diff{u}{t} @f$ itself.
  *
  */
-void LingleClarkSerial::uplift_problem(petsc::Vec &load_thickness,
-                                       petsc::Vec &bed_uplift,
+void LingleClarkSerial::uplift_problem(petsc::Vec &load_thickness, petsc::Vec &bed_uplift,
                                        petsc::Vec &output) {
 
   // Compute fft2(-load_density * g * load_thickness)
   {
     clear_fftw_array(m_fftw_input, m_Nx, m_Ny);
-    set_real_part(load_thickness, - m_load_density * m_standard_gravity,
-                  m_Mx, m_My, m_Nx, m_Ny, m_i0_offset, m_j0_offset,
-                  m_fftw_input);
+    set_real_part(load_thickness, -m_load_density * m_standard_gravity, m_Mx, m_My, m_Nx, m_Ny,
+                  m_i0_offset, m_j0_offset, m_fftw_input);
     fftw_execute(m_dft_forward);
     // Save fft2(-load_density * g * load_thickness) in loadhat.
     copy_fftw_array(m_fftw_output, m_loadhat, m_Nx, m_Ny);
@@ -267,23 +262,18 @@ void LingleClarkSerial::uplift_problem(petsc::Vec &load_thickness,
   // fft2(uplift)
   {
     clear_fftw_array(m_fftw_input, m_Nx, m_Ny);
-    set_real_part(bed_uplift, 1.0, m_Mx, m_My, m_Nx, m_Ny, m_i0_offset, m_j0_offset,
-                  m_fftw_input);
+    set_real_part(bed_uplift, 1.0, m_Mx, m_My, m_Nx, m_Ny, m_i0_offset, m_j0_offset, m_fftw_input);
     fftw_execute(m_dft_forward);
   }
 
   {
-    FFTWArray
-      u0_hat(m_fftw_input, m_Nx, m_Ny),
-      load_hat(m_loadhat, m_Nx, m_Ny),
-      uplift_hat(m_fftw_output, m_Nx, m_Ny);
+    FFTWArray u0_hat(m_fftw_input, m_Nx, m_Ny), load_hat(m_loadhat, m_Nx, m_Ny),
+        uplift_hat(m_fftw_output, m_Nx, m_Ny);
 
     for (int i = 0; i < m_Nx; i++) {
       for (int j = 0; j < m_Ny; j++) {
-        const double
-          C = m_cx[i]*m_cx[i] + m_cy[j]*m_cy[j],
-          A = - 2.0 * m_eta * sqrt(C),
-          B = m_mantle_density * m_standard_gravity + m_D * C * C;
+        const double C = m_cx[i] * m_cx[i] + m_cy[j] * m_cy[j], A = -2.0 * m_eta * sqrt(C),
+                     B = m_mantle_density * m_standard_gravity + m_D * C * C;
 
         u0_hat(i, j) = (load_hat(i, j) + A * uplift_hat(i, j)) / B;
       }
@@ -323,7 +313,8 @@ void LingleClarkSerial::bootstrap(petsc::Vec &thickness, petsc::Vec &uplift) {
   if (m_include_elastic) {
     compute_elastic_response(thickness, m_Ue);
   } else {
-    PetscErrorCode ierr = VecSet(m_Ue, 0.0); PISM_CHK(ierr, "VecSet");
+    PetscErrorCode ierr = VecSet(m_Ue, 0.0);
+    PISM_CHK(ierr, "VecSet");
   }
 
   update_displacement(m_Uv, m_Ue, m_U);
@@ -337,16 +328,18 @@ void LingleClarkSerial::bootstrap(petsc::Vec &thickness, petsc::Vec &uplift) {
  *
  * Sets m_Uv, m_Ue, m_U.
  */
-void LingleClarkSerial::init(petsc::Vec &viscous_displacement,
-                             petsc::Vec &elastic_displacement) {
+void LingleClarkSerial::init(petsc::Vec &viscous_displacement, petsc::Vec &elastic_displacement) {
   PetscErrorCode ierr = 0;
 
-  ierr = VecCopy(viscous_displacement, m_Uv);  PISM_CHK(ierr, "VecCopy");
+  ierr = VecCopy(viscous_displacement, m_Uv);
+  PISM_CHK(ierr, "VecCopy");
 
   if (m_include_elastic) {
-    ierr = VecCopy(elastic_displacement, m_Ue);  PISM_CHK(ierr, "VecCopy");
+    ierr = VecCopy(elastic_displacement, m_Ue);
+    PISM_CHK(ierr, "VecCopy");
   } else {
-    ierr = VecSet(m_Ue, 0.0); PISM_CHK(ierr, "VecSet");
+    ierr = VecSet(m_Ue, 0.0);
+    PISM_CHK(ierr, "VecSet");
   }
 
   update_displacement(m_Uv, m_Ue, m_U);
@@ -375,10 +368,8 @@ void LingleClarkSerial::step(double dt, petsc::Vec &H) {
     // Compute fft2(-load_density * g * dt * H)
     {
       clear_fftw_array(m_fftw_input, m_Nx, m_Ny);
-      set_real_part(H,
-                    - m_load_density * m_standard_gravity * dt,
-                    m_Mx, m_My, m_Nx, m_Ny, m_i0_offset, m_j0_offset,
-                    m_fftw_input);
+      set_real_part(H, -m_load_density * m_standard_gravity * dt, m_Mx, m_My, m_Nx, m_Ny,
+                    m_i0_offset, m_j0_offset, m_fftw_input);
       fftw_execute(m_dft_forward);
 
       // Save fft2(-load_density * g * H * dt) in loadhat.
@@ -395,16 +386,13 @@ void LingleClarkSerial::step(double dt, petsc::Vec &H) {
     // frhs = right.*fft2(uun) + fft2(dt*sszz);
     // uun1 = real(ifft2(frhs./left));
     {
-      FFTWArray input(m_fftw_input, m_Nx, m_Ny),
-        u_hat(m_fftw_output, m_Nx, m_Ny), load_hat(m_loadhat, m_Nx, m_Ny);
+      FFTWArray input(m_fftw_input, m_Nx, m_Ny), u_hat(m_fftw_output, m_Nx, m_Ny),
+          load_hat(m_loadhat, m_Nx, m_Ny);
       for (int i = 0; i < m_Nx; i++) {
         for (int j = 0; j < m_Ny; j++) {
-          const double
-            C     = m_cx[i]*m_cx[i] + m_cy[j]*m_cy[j],
-            part1 = 2.0 * m_eta * sqrt(C),
-            part2 = (dt / 2.0) * (m_mantle_density * m_standard_gravity + m_D * C * C),
-            A = part1 - part2,
-            B = part1 + part2;
+          const double C = m_cx[i] * m_cx[i] + m_cy[j] * m_cy[j], part1 = 2.0 * m_eta * sqrt(C),
+                       part2 = (dt / 2.0) * (m_mantle_density * m_standard_gravity + m_D * C * C),
+                       A = part1 - part2, B = part1 + part2;
 
           input(i, j) = (load_hat(i, j) + A * u_hat(i, j)) / B;
         }
@@ -418,7 +406,8 @@ void LingleClarkSerial::step(double dt, petsc::Vec &H) {
     tweak(H, m_Uv, m_Nx, m_Ny);
   } else {
     // zero time step: viscous displacement is zero
-    PetscErrorCode ierr = VecSet(m_Uv, 0.0); PISM_CHK(ierr, "VecSet");
+    PetscErrorCode ierr = VecSet(m_Uv, 0.0);
+    PISM_CHK(ierr, "VecSet");
   }
 
   // now compute elastic response if desired
@@ -452,10 +441,8 @@ void LingleClarkSerial::compute_elastic_response(petsc::Vec &H, petsc::Vec &dE) 
   // Compute the product of Fourier transforms of the LRM and the load. This uses C++'s
   // native support for complex arithmetic.
   {
-    FFTWArray
-      input(m_fftw_input, m_Nx, m_Ny),
-      LRM_hat(m_lrm_hat, m_Nx, m_Ny),
-      load_hat(m_fftw_output, m_Nx, m_Ny);
+    FFTWArray input(m_fftw_input, m_Nx, m_Ny), LRM_hat(m_lrm_hat, m_Nx, m_Ny),
+        load_hat(m_fftw_output, m_Nx, m_Ny);
     for (int i = 0; i < m_Nx; i++) {
       for (int j = 0; j < m_Ny; j++) {
         input(i, j) = LRM_hat(i, j) * load_hat(i, j);
@@ -469,8 +456,7 @@ void LingleClarkSerial::compute_elastic_response(petsc::Vec &H, petsc::Vec &dE) 
   // i0 = m_Nx / 2,
   // j0 = m_Ny / 2.
   fftw_execute(m_dft_inverse);
-  get_real_part(m_fftw_output, 1.0 / (m_Nx * m_Ny), m_Mx, m_My, m_Nx, m_Ny,
-                m_Nx/2, m_Ny/2, dE);
+  get_real_part(m_fftw_output, 1.0 / (m_Nx * m_Ny), m_Mx, m_My, m_Nx, m_Ny, m_Nx / 2, m_Ny / 2, dE);
 }
 
 /*! Compute total displacement by combining viscous and elastic contributions.
@@ -481,12 +467,9 @@ void LingleClarkSerial::compute_elastic_response(petsc::Vec &H, petsc::Vec &dE) 
  */
 void LingleClarkSerial::update_displacement(petsc::Vec &Uv, petsc::Vec &Ue, petsc::Vec &U) {
   // PISM grid
-  petsc::VecArray2D
-    u(U, m_Mx, m_My),
-    u_elastic(Ue, m_Mx, m_My);
+  petsc::VecArray2D u(U, m_Mx, m_My), u_elastic(Ue, m_Mx, m_My);
   // extended grid
-  petsc::VecArray2D
-    u_viscous(Uv, m_Nx, m_Ny, m_i0_offset, m_j0_offset);
+  petsc::VecArray2D u_viscous(Uv, m_Nx, m_Ny, m_i0_offset, m_j0_offset);
 
   for (int i = 0; i < m_Mx; i++) {
     for (int j = 0; j < m_My; j++) {
@@ -523,7 +506,7 @@ void LingleClarkSerial::tweak(petsc::Vec &load_thickness, petsc::Vec &U, int Nx,
     average += u(0, j);
   }
 
-  average /= (double) (Nx + Ny);
+  average /= (double)(Nx + Ny);
 
   double shift = 0.0;
 
@@ -535,7 +518,8 @@ void LingleClarkSerial::tweak(petsc::Vec &load_thickness, petsc::Vec &U, int Nx,
     const double R         = L_average * (2.0 / 3.0);
 
     double H_sum = 0.0;
-    ierr = VecSum(load_thickness, &H_sum); PISM_CHK(ierr, "VecSum");
+    ierr         = VecSum(load_thickness, &H_sum);
+    PISM_CHK(ierr, "VecSum");
 
     // compute disc thickness by dividing its volume by the area
     const double H = (H_sum * m_dx * m_dy) / (M_PI * R * R);
@@ -550,7 +534,8 @@ void LingleClarkSerial::tweak(petsc::Vec &load_thickness, petsc::Vec &U, int Nx,
                      m_eta);                           // mantle viscosity
   }
 
-  ierr = VecShift(U, shift - average); PISM_CHK(ierr, "VecShift");
+  ierr = VecShift(U, shift - average);
+  PISM_CHK(ierr, "VecShift");
 }
 
 } // end of namespace bed

@@ -18,10 +18,10 @@
 
 #include "pism/hydrology/NullTransport.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/util/Logger.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace hydrology {
@@ -96,8 +96,8 @@ MaxTimestep NullTransport::max_timestep_impl(double t) const {
 
   There is no tranportable water thickness variable and no interaction with it.
 */
-void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
-  (void) t;
+void NullTransport::update_impl(double t, double dt, const Inputs &inputs) {
+  (void)t;
 
   bool add_surface_input = m_config->get_flag("hydrology.add_water_input_to_till_storage");
 
@@ -109,14 +109,12 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
     m_input_change.add(dt, m_surface_input_rate);
   }
 
-  const double
-    water_density = m_config->get_number("constants.fresh_water.density"),
-    kg_per_m      = m_grid->cell_area() * water_density; // kg m-1
+  const double water_density = m_config->get_number("constants.fresh_water.density"),
+               kg_per_m      = m_grid->cell_area() * water_density; // kg m-1
 
   const auto &cell_type = inputs.geometry->cell_type;
 
-  array::AccessScope list{&cell_type, &m_Wtill, &m_basal_melt_rate,
-      &m_conservation_error_change};
+  array::AccessScope list{ &cell_type, &m_Wtill, &m_basal_melt_rate, &m_conservation_error_change };
 
   if (add_surface_input) {
     list.add(m_surface_input_rate);
@@ -125,9 +123,7 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
-    double
-      W_old    = m_Wtill(i, j),
-      dW_input = dt * m_basal_melt_rate(i, j);
+    double W_old = m_Wtill(i, j), dW_input = dt * m_basal_melt_rate(i, j);
 
     if (add_surface_input) {
       dW_input += dt * m_surface_input_rate(i, j);
@@ -140,7 +136,7 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
     }
 
     // decay rate in areas under grounded ice
-    double dW_decay = dt * (- m_tillwat_decay_rate);
+    double dW_decay = dt * (-m_tillwat_decay_rate);
 
     if (not cell_type.grounded_ice(i, j)) {
       dW_decay = 0.0;
@@ -157,31 +153,21 @@ void NullTransport::update_impl(double t, double dt, const Inputs& inputs) {
   }
 
   // remove water in ice-free areas and account for changes
-  enforce_bounds(inputs.geometry->cell_type,
-                 inputs.no_model_mask,
+  enforce_bounds(inputs.geometry->cell_type, inputs.no_model_mask,
                  m_tillwat_max, // global maximum till water thickness
                  m_tillwat_max, // till water thickness under the ocean
-                 m_Wtill,
-                 m_grounded_margin_change,
-                 m_grounding_line_change,
-                 m_conservation_error_change,
-                 m_no_model_mask_change);
+                 m_Wtill, m_grounded_margin_change, m_grounding_line_change,
+                 m_conservation_error_change, m_no_model_mask_change);
 }
 
 void NullTransport::diffuse_till_water(double dt) {
   // note: this call updates ghosts of m_Wtill_old
   m_Wtill_old.copy_from(m_Wtill);
 
-  const double
-    dx = m_grid->dx(),
-    dy = m_grid->dy(),
-    L  = m_diffusion_distance,
-    T  = m_diffusion_time,
-    K  = L * L / (2.0 * T),
-    Rx = K * dt / (dx * dx),
-    Ry = K * dt / (dy * dy);
+  const double dx = m_grid->dx(), dy = m_grid->dy(), L = m_diffusion_distance, T = m_diffusion_time,
+               K = L * L / (2.0 * T), Rx = K * dt / (dx * dx), Ry = K * dt / (dy * dy);
 
-  array::AccessScope list{&m_Wtill, &m_Wtill_old, &m_flow_change};
+  array::AccessScope list{ &m_Wtill, &m_Wtill_old, &m_flow_change };
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 

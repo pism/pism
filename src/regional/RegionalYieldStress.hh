@@ -34,6 +34,7 @@ class RegionalYieldStress : public YieldStress {
 public:
   RegionalYieldStress(std::shared_ptr<YieldStress> input);
   virtual ~RegionalYieldStress() = default;
+
 private:
   void restart_impl(const File &input_file, int record);
 

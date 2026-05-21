@@ -34,14 +34,12 @@ public:
 protected:
   void restart_impl(const File &input_file, int record);
 
-  void bootstrap_impl(const File &input_file,
-                      const array::Scalar &ice_thickness,
+  void bootstrap_impl(const File &input_file, const array::Scalar &ice_thickness,
                       const array::Scalar &surface_temperature,
                       const array::Scalar &climatic_mass_balance,
                       const array::Scalar &basal_heat_flux);
 
-  void initialize_impl(const array::Scalar &basal_melt_rate,
-                       const array::Scalar &ice_thickness,
+  void initialize_impl(const array::Scalar &basal_melt_rate, const array::Scalar &ice_thickness,
                        const array::Scalar &surface_temperature,
                        const array::Scalar &climatic_mass_balance,
                        const array::Scalar &basal_heat_flux);
@@ -54,12 +52,9 @@ protected:
   DiagnosticList spatial_diagnostics_impl() const;
 };
 
-void cryo_hydrologic_warming_flux(double k,
-                                  double R,
-                                  const array::Scalar &ice_thickness,
+void cryo_hydrologic_warming_flux(double k, double R, const array::Scalar &ice_thickness,
                                   const array::Array3D &ice_enthalpy,
-                                  const array::Array3D &ch_enthalpy,
-                                  array::Array3D &result);
+                                  const array::Array3D &ch_enthalpy, array::Array3D &result);
 
 } // end of namespace energy
 } // end of namespace pism

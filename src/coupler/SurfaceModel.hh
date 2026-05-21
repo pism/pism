@@ -43,7 +43,8 @@ class SurfaceModel : public Component {
 public:
   SurfaceModel(std::shared_ptr<const Grid> g);
   SurfaceModel(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> input);
-  SurfaceModel(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere::AtmosphereModel> atmosphere);
+  SurfaceModel(std::shared_ptr<const Grid> g,
+               std::shared_ptr<atmosphere::AtmosphereModel> atmosphere);
 
   virtual ~SurfaceModel() = default;
 
@@ -52,25 +53,24 @@ public:
   // the interface:
   void update(const Geometry &geometry, double t, double dt);
 
-  const array::Scalar& accumulation() const;
-  const array::Scalar& layer_mass() const;
-  const array::Scalar& layer_thickness() const;
-  const array::Scalar& liquid_water_fraction() const;
-  const array::Scalar& mass_flux() const;
-  const array::Scalar& melt() const;
-  const array::Scalar& runoff() const;
-  const array::Scalar& temperature() const;
-  
-protected:
+  const array::Scalar &accumulation() const;
+  const array::Scalar &layer_mass() const;
+  const array::Scalar &layer_thickness() const;
+  const array::Scalar &liquid_water_fraction() const;
+  const array::Scalar &mass_flux() const;
+  const array::Scalar &melt() const;
+  const array::Scalar &runoff() const;
+  const array::Scalar &temperature() const;
 
-  virtual const array::Scalar& accumulation_impl() const;
-  virtual const array::Scalar& layer_mass_impl() const;
-  virtual const array::Scalar& layer_thickness_impl() const;
-  virtual const array::Scalar& liquid_water_fraction_impl() const;
-  virtual const array::Scalar& mass_flux_impl() const;
-  virtual const array::Scalar& melt_impl() const;
-  virtual const array::Scalar& runoff_impl() const;
-  virtual const array::Scalar& temperature_impl() const;
+protected:
+  virtual const array::Scalar &accumulation_impl() const;
+  virtual const array::Scalar &layer_mass_impl() const;
+  virtual const array::Scalar &layer_thickness_impl() const;
+  virtual const array::Scalar &liquid_water_fraction_impl() const;
+  virtual const array::Scalar &mass_flux_impl() const;
+  virtual const array::Scalar &melt_impl() const;
+  virtual const array::Scalar &runoff_impl() const;
+  virtual const array::Scalar &temperature_impl() const;
 
   virtual void init_impl(const Geometry &geometry);
   virtual void update_impl(const Geometry &geometry, double t, double dt);
@@ -83,13 +83,14 @@ protected:
   virtual DiagnosticList spatial_diagnostics_impl() const;
   virtual TSDiagnosticList scalar_diagnostics_impl() const;
 
-  void dummy_accumulation(const array::Scalar& smb, array::Scalar& result);
-  void dummy_melt(const array::Scalar& smb, array::Scalar& result);
-  void dummy_runoff(const array::Scalar& smb, array::Scalar& result);
+  void dummy_accumulation(const array::Scalar &smb, array::Scalar &result);
+  void dummy_melt(const array::Scalar &smb, array::Scalar &result);
+  void dummy_runoff(const array::Scalar &smb, array::Scalar &result);
 
   static std::shared_ptr<array::Scalar> allocate_layer_mass(std::shared_ptr<const Grid> grid);
   static std::shared_ptr<array::Scalar> allocate_layer_thickness(std::shared_ptr<const Grid> grid);
-  static std::shared_ptr<array::Scalar> allocate_liquid_water_fraction(std::shared_ptr<const Grid> grid);
+  static std::shared_ptr<array::Scalar>
+  allocate_liquid_water_fraction(std::shared_ptr<const Grid> grid);
   static std::shared_ptr<array::Scalar> allocate_mass_flux(std::shared_ptr<const Grid> grid);
   static std::shared_ptr<array::Scalar> allocate_temperature(std::shared_ptr<const Grid> grid);
   static std::shared_ptr<array::Scalar> allocate_accumulation(std::shared_ptr<const Grid> grid);
@@ -103,7 +104,7 @@ protected:
   std::shared_ptr<array::Scalar> m_accumulation;
   std::shared_ptr<array::Scalar> m_melt;
   std::shared_ptr<array::Scalar> m_runoff;
-  
+
   std::shared_ptr<SurfaceModel> m_input_model;
   std::shared_ptr<atmosphere::AtmosphereModel> m_atmosphere;
 };
@@ -111,4 +112,4 @@ protected:
 } // end of namespace surface
 } // end of namespace pism
 
-#endif  // __PISMSurfaceModel_hh
+#endif // __PISMSurfaceModel_hh

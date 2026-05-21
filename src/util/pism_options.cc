@@ -18,9 +18,9 @@
 
 #include <cstring>
 
+#include "pism/pism_config.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/pism_config.hh"
 
 #include "pism/util/Logger.hh"
 
@@ -29,27 +29,26 @@ namespace pism {
 //! \brief Print a usage message.
 void show_usage(const Logger &log, const std::string &execname, const std::string &usage) {
   log.message(1,
-             "%s is a PISM (http://www.pism.io) executable.\n"
-             "Options cheat-sheet:\n",
-             execname.c_str());
+              "%s is a PISM (http://www.pism.io) executable.\n"
+              "Options cheat-sheet:\n",
+              execname.c_str());
   log.message(1, usage);
   log.message(1,
-             "Parallel run using N processes (typical case):  mpiexec -n N %s ...\n"
-             "For more help with PISM:\n"
-             "  1. download PDF User's Manual or read the online version on the website:\n"
-             "       http://www.pism.io\n"
-             "  2. read browser for technical details:\n"
-             "       http://www.pism.io/doxygen\n"
-             "  3. view issues/bugs at source host: https://github.com/pism/pism/issues\n"
-             "  4. do '%s -help | grep foo' to see PISM and PETSc options with 'foo'.\n"
-             "  5. email for help:  uaf-pism@alaska.edu\n",
-             execname.c_str(), execname.c_str());
+              "Parallel run using N processes (typical case):  mpiexec -n N %s ...\n"
+              "For more help with PISM:\n"
+              "  1. download PDF User's Manual or read the online version on the website:\n"
+              "       http://www.pism.io\n"
+              "  2. read browser for technical details:\n"
+              "       http://www.pism.io/doxygen\n"
+              "  3. view issues/bugs at source host: https://github.com/pism/pism/issues\n"
+              "  4. do '%s -help | grep foo' to see PISM and PETSc options with 'foo'.\n"
+              "  5. email for help:  uaf-pism@alaska.edu\n",
+              execname.c_str(), execname.c_str());
 }
 
 //! @brief In a single call a driver program can provide a usage string to
 //! the user and check if required options are given, and if not, end.
-bool maybe_show_usage(const Logger &log, const std::string &execname,
-                      const std::string &usage) {
+bool maybe_show_usage(const Logger &log, const std::string &execname, const std::string &usage) {
   const bool keep_running = false;
   const bool terminate    = true;
 

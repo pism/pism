@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <cstring>
 #include <cstdlib>
+#include <cstring>
 
 #include <petscsys.h>
 
@@ -25,8 +25,8 @@
 
 #include "pism/stressbalance/StressBalance.hh"
 
-#include "pism/util/Grid.hh"
 #include "pism/util/Config.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Time.hh"
 
 #include "pism/util/pism_utilities.hh"
@@ -39,10 +39,8 @@ namespace pism {
 horizontal part of the 3D convection-diffusion problems solved by EnthalpyModel and
 TemperatureModel.
 */
-unsigned int count_CFL_violations(const array::Array3D &u3,
-                                  const array::Array3D &v3,
-                                  const array::Scalar &ice_thickness,
-                                  double dt) {
+unsigned int count_CFL_violations(const array::Array3D &u3, const array::Array3D &v3,
+                                  const array::Scalar &ice_thickness, double dt) {
 
   if (dt == 0.0) {
     return 0;
@@ -50,11 +48,9 @@ unsigned int count_CFL_violations(const array::Array3D &u3,
 
   std::shared_ptr<const Grid> grid = u3.grid();
 
-  const double
-    CFL_x = grid->dx() / dt,
-    CFL_y = grid->dy() / dt;
+  const double CFL_x = grid->dx() / dt, CFL_y = grid->dy() / dt;
 
-  array::AccessScope list{&ice_thickness, &u3, &v3};
+  array::AccessScope list{ &ice_thickness, &u3, &v3 };
 
   unsigned int CFL_violation_count = 0;
   ParallelSection loop(grid->com);
@@ -62,11 +58,9 @@ unsigned int count_CFL_violations(const array::Array3D &u3,
     for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
-      const int ks = grid->kBelowHeight(ice_thickness(i,j));
+      const int ks = grid->kBelowHeight(ice_thickness(i, j));
 
-      const double
-        *u = u3.get_column(i, j),
-        *v = v3.get_column(i, j);
+      const double *u = u3.get_column(i, j), *v = v3.get_column(i, j);
 
       // check horizontal CFL conditions at each point
       for (int k = 0; k <= ks; k++) {
@@ -88,22 +82,20 @@ unsigned int count_CFL_violations(const array::Array3D &u3,
 
 void IceModel::print_summary(bool tempAndAge, double dt) {
 
-  const array::Array3D
-    &u3 = m_stress_balance->velocity_u(),
-    &v3 = m_stress_balance->velocity_v();
+  const array::Array3D &u3 = m_stress_balance->velocity_u(), &v3 = m_stress_balance->velocity_v();
 
-  unsigned int n_CFL_violations = count_CFL_violations(u3, v3, m_geometry.ice_thickness,
-                                                       tempAndAge ? m_dt_TempAge : dt);
+  unsigned int n_CFL_violations =
+      count_CFL_violations(u3, v3, m_geometry.ice_thickness, tempAndAge ? m_dt_TempAge : dt);
 
   // report CFL violations
   if (n_CFL_violations > 0.0) {
-    const double CFLviolpercent = 100.0 * n_CFL_violations / (m_grid->Mx() * m_grid->My() * m_grid->Mz());
+    const double CFLviolpercent =
+        100.0 * n_CFL_violations / (m_grid->Mx() * m_grid->My() * m_grid->Mz());
     // at default verbosity level, only report CFL viols if above:
     const double CFLVIOL_REPORT_VERB2_PERCENT = 0.1;
-    if (CFLviolpercent > CFLVIOL_REPORT_VERB2_PERCENT ||
-        m_log->get_threshold() > 2) {
-      auto tempstr = pism::printf("  [!CFL#=%d (=%5.2f%% of 3D grid)] ",
-                                  n_CFL_violations, CFLviolpercent);
+    if (CFLviolpercent > CFLVIOL_REPORT_VERB2_PERCENT || m_log->get_threshold() > 2) {
+      auto tempstr =
+          pism::printf("  [!CFL#=%d (=%5.2f%% of 3D grid)] ", n_CFL_violations, CFLviolpercent);
       m_stdout_flags = tempstr + m_stdout_flags;
     }
   }
@@ -112,7 +104,7 @@ void IceModel::print_summary(bool tempAndAge, double dt) {
   double max_diffusivity = m_stress_balance->max_diffusivity();
   // get volumes in m^3 and areas in m^2
   double volume = ice_volume(m_geometry, 0.0);
-  double area = ice_area(m_geometry, 0.0);
+  double area   = ice_area(m_geometry, 0.0);
 
   double meltfrac = 0.0;
   if (tempAndAge or m_log->get_threshold() >= 3) {
@@ -120,8 +112,7 @@ void IceModel::print_summary(bool tempAndAge, double dt) {
   }
 
   // main report: 'S' line
-  print_summary_line(false, tempAndAge, dt,
-                   volume, area, meltfrac, max_diffusivity);
+  print_summary_line(false, tempAndAge, dt, volume, area, meltfrac, max_diffusivity);
 }
 
 
@@ -161,21 +152,21 @@ For more description and examples, see the PISM User's Manual.
 Derived classes of IceModel may redefine this method and print alternate
 information.
  */
-void IceModel::print_summary_line(bool printPrototype,  bool tempAndAge,
-                                double delta_t,
-                                double volume,  double area,
-                                double /* meltfrac */,  double max_diffusivity) {
-  const bool do_energy = set_member(m_config->get_string("energy.model"), {"cold", "enthalpy"});
-  const int log10scalevol  = static_cast<int>(m_config->get_number("output.runtime.volume_scale_factor_log10")),
-            log10scalearea = static_cast<int>(m_config->get_number("output.runtime.area_scale_factor_log10"));
+void IceModel::print_summary_line(bool printPrototype, bool tempAndAge, double delta_t,
+                                  double volume, double area, double /* meltfrac */,
+                                  double max_diffusivity) {
+  const bool do_energy = set_member(m_config->get_string("energy.model"), { "cold", "enthalpy" });
+  const int log10scalevol =
+                static_cast<int>(m_config->get_number("output.runtime.volume_scale_factor_log10")),
+            log10scalearea =
+                static_cast<int>(m_config->get_number("output.runtime.area_scale_factor_log10"));
   const std::string time_units = m_config->get_string("output.runtime.time_unit_name");
-  const bool use_calendar = m_config->get_flag("output.runtime.time_use_calendar");
+  const bool use_calendar      = m_config->get_flag("output.runtime.time_use_calendar");
 
-  const double scalevol  = pow(10.0, static_cast<double>(log10scalevol)),
-               scalearea = pow(10.0, static_cast<double>(log10scalearea));
-  std::string
-    volscalestr  = "     ",
-    areascalestr = "   "; // blank when 10^0 = 1 scaling
+  const double scalevol    = pow(10.0, static_cast<double>(log10scalevol)),
+               scalearea   = pow(10.0, static_cast<double>(log10scalearea));
+  std::string volscalestr  = "     ",
+              areascalestr = "   "; // blank when 10^0 = 1 scaling
   if (log10scalevol != 0) {
     volscalestr = pism::printf("10^%1d_", log10scalevol);
   }
@@ -184,13 +175,9 @@ void IceModel::print_summary_line(bool printPrototype,  bool tempAndAge,
   }
 
   if (printPrototype) {
-    m_log->message(2,
-               "P         time:       ivol      iarea  max_diffusivity  max_sliding_vel\n");
-    m_log->message(2,
-                   "U         %s   %skm^3  %skm^2         m^2 s^-1           m/%s\n",
-                   time_units.c_str(),
-                   volscalestr.c_str(),
-                   areascalestr.c_str(),
+    m_log->message(2, "P         time:       ivol      iarea  max_diffusivity  max_sliding_vel\n");
+    m_log->message(2, "U         %s   %skm^3  %skm^2         m^2 s^-1           m/%s\n",
+                   time_units.c_str(), volscalestr.c_str(), areascalestr.c_str(),
                    time_units.c_str());
     return;
   }
@@ -198,8 +185,8 @@ void IceModel::print_summary_line(bool printPrototype,  bool tempAndAge,
   // this version keeps track of what has been done so as to minimize stdout:
   // FIXME: turn these static variables into class members.
   static std::string stdout_flags_count0;
-  static int         mass_cont_sub_counter = 0;
-  static double      mass_cont_sub_dtsum   = 0.0;
+  static int mass_cont_sub_counter  = 0;
+  static double mass_cont_sub_dtsum = 0.0;
   if (mass_cont_sub_counter == 0) {
     stdout_flags_count0 = m_stdout_flags;
   }
@@ -215,8 +202,8 @@ void IceModel::print_summary_line(bool printPrototype,  bool tempAndAge,
     if (mass_cont_sub_counter <= 1) {
       tempstr = pism::printf(" (dt=%.5f)", major_dt);
     } else {
-      tempstr = pism::printf(" (dt=%.5f in %d substeps; av dt_sub_mass_cont=%.5f)",
-                             major_dt, mass_cont_sub_counter, major_dt / mass_cont_sub_counter);
+      tempstr = pism::printf(" (dt=%.5f in %d substeps; av dt_sub_mass_cont=%.5f)", major_dt,
+                             mass_cont_sub_counter, major_dt / mass_cont_sub_counter);
     }
     stdout_flags_count0 += tempstr;
 
@@ -232,19 +219,17 @@ void IceModel::print_summary_line(bool printPrototype,  bool tempAndAge,
       tempstr = pism::printf("%.3f", m_time->convert_time_interval(T, time_units));
     }
 
-    const CFLData cfl = m_stress_balance->max_timestep_cfl_2d();
+    const CFLData cfl          = m_stress_balance->max_timestep_cfl_2d();
     std::string velocity_units = "meters / (" + time_units + ")";
-    const double maxvel = units::convert(m_sys, std::max(cfl.u_max, cfl.v_max),
-                                         "m second^-1", velocity_units);
+    const double maxvel =
+        units::convert(m_sys, std::max(cfl.u_max, cfl.v_max), "m second^-1", velocity_units);
 
-    m_log->message(2,
-                   "S %s:   %8.5f  %9.5f     %12.5f     %12.5f\n",
-                   tempstr.c_str(),
-                   volume/(scalevol*1.0e9), area/(scalearea*1.0e6),
-                   max_diffusivity, maxvel);
+    m_log->message(2, "S %s:   %8.5f  %9.5f     %12.5f     %12.5f\n", tempstr.c_str(),
+                   volume / (scalevol * 1.0e9), area / (scalearea * 1.0e6), max_diffusivity,
+                   maxvel);
 
     mass_cont_sub_counter = 0;
-    mass_cont_sub_dtsum = 0.0;
+    mass_cont_sub_dtsum   = 0.0;
   }
 }
 

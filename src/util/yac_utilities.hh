@@ -20,8 +20,8 @@
 #ifndef PISM_YAC_UTILITIES_H
 #define PISM_YAC_UTILITIES_H
 
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace pism {
 
@@ -31,6 +31,6 @@ namespace pism {
 int define_yac_grid(const std::vector<double> &x, const std::vector<double> &y,
                     const std::string &grid_name, const std::string &projection);
 
-}
+} // namespace pism
 
 #endif /* PISM_YAC_UTILITIES_H */

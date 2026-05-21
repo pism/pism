@@ -17,8 +17,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/coupler/surface/Delta_T.hh"
-#include "pism/util/ScalarForcing.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/ScalarForcing.hh"
 
 namespace pism {
 namespace surface {
@@ -26,13 +26,9 @@ namespace surface {
 /// -surface ...,delta_T (scalar forcing of ice surface temperatures)
 
 Delta_T::Delta_T(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> in)
-  : SurfaceModel(g, in) {
+    : SurfaceModel(g, in) {
 
-  m_forcing.reset(new ScalarForcing(*g->ctx(),
-                                    "surface.delta_T",
-                                    "delta_T",
-                                    "kelvin",
-                                    "kelvin",
+  m_forcing.reset(new ScalarForcing(*g->ctx(), "surface.delta_T", "delta_T", "kelvin", "kelvin",
                                     "ice-surface temperature offsets"));
 
   m_temperature = allocate_temperature(g);
@@ -45,8 +41,7 @@ Delta_T::~Delta_T() {
 void Delta_T::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);
 
-  m_log->message(2,
-                 "* Initializing ice-surface temperature forcing using scalar offsets...\n");
+  m_log->message(2, "* Initializing ice-surface temperature forcing using scalar offsets...\n");
 }
 
 void Delta_T::update_impl(const Geometry &geometry, double t, double dt) {

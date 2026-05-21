@@ -16,17 +16,17 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <cstring>
 #include <cmath>
+#include <cstring>
 
 #include "pism/icemodel/IceModel.hh"
 
 #include "pism/util/Config.hh"
 #include "pism/util/Diagnostic.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/petscwrappers/Viewer.hh"
 #include "pism/util/Vars.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/petscwrappers/Viewer.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -34,8 +34,7 @@ void IceModel::view_field(const array::Array *field) {
   unsigned int viewer_size = (unsigned int)m_config->get_number("output.runtime.viewer.size");
 
   if (field->ndims() != 2) {
-    throw RuntimeError(PISM_ERROR_LOCATION,
-                       "map-plane views of 3D quantities are not supported.");
+    throw RuntimeError(PISM_ERROR_LOCATION, "map-plane views of 3D quantities are not supported.");
   }
 
   auto name = field->get_name();
@@ -60,7 +59,7 @@ void IceModel::update_viewers() {
   auto viewers = set_split(m_config->get_string("output.runtime.viewer.variables"), ',');
 
   // map-plane viewers
-  for (const auto& v : viewers) {
+  for (const auto &v : viewers) {
     if (m_grid->variables().is_available(v)) {
       this->view_field(m_grid->variables().get(v));
     } else {

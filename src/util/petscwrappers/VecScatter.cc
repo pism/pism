@@ -32,7 +32,8 @@ VecScatter::VecScatter(::VecScatter m) {
 
 VecScatter::~VecScatter() {
   if (m_value != NULL) {
-    PetscErrorCode ierr = VecScatterDestroy(&m_value); CHKERRCONTINUE(ierr);
+    PetscErrorCode ierr = VecScatterDestroy(&m_value);
+    CHKERRCONTINUE(ierr);
   }
 }
 

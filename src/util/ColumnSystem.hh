@@ -19,8 +19,8 @@
 #ifndef PISM_COLUMNSYSTEM_HH
 #define PISM_COLUMNSYSTEM_HH
 
-#include <string>
 #include <ostream>
+#include <string>
 #include <vector>
 
 namespace pism {
@@ -96,40 +96,36 @@ public:
   void solve(unsigned int system_size, std::vector<double> &result);
   void solve(unsigned int system_size, double *result);
 
-  void save_system_with_solution(const std::string &filename,
-                                 unsigned int system_size,
+  void save_system_with_solution(const std::string &filename, unsigned int system_size,
                                  const std::vector<double> &solution);
 
   //! Save the system to a stream using the ASCII MATLAB (Octave)
   //! format. Virtual to allow saving more info in derived classes.
-  void save_system(std::ostream &output,
-                   unsigned int system_size) const;
+  void save_system(std::ostream &output, unsigned int system_size) const;
 
-  void save_matrix(std::ostream &output,
-                   unsigned int system_size,
+  void save_matrix(std::ostream &output, unsigned int system_size,
                    const std::string &variable) const;
 
-  static void save_vector(std::ostream &output,
-                          const std::vector<double> &v,
-                          unsigned int system_size,
-                          const std::string &variable);
+  static void save_vector(std::ostream &output, const std::vector<double> &v,
+                          unsigned int system_size, const std::string &variable);
 
   std::string prefix() const;
 
-  double& L(size_t i) {
+  double &L(size_t i) {
     return m_L[i];
   }
-  double& D(size_t i) {
+  double &D(size_t i) {
     return m_D[i];
   }
-  double& U(size_t i) {
+  double &U(size_t i) {
     return m_U[i];
   }
-  double& RHS(size_t i) {
+  double &RHS(size_t i) {
     return m_rhs[i];
   }
+
 private:
-  unsigned int m_max_system_size;         // maximum system size
+  unsigned int m_max_system_size;                   // maximum system size
   std::vector<double> m_L, m_D, m_U, m_rhs, m_work; // vectors for tridiagonal system
 
   std::string m_prefix;
@@ -143,9 +139,9 @@ class ColumnInterpolation;
  */
 class columnSystemCtx {
 public:
-  columnSystemCtx(const std::vector<double>& storage_grid, const std::string &prefix,
-                  double dx, double dy, double dt,
-                  const array::Array3D &u3, const array::Array3D &v3, const array::Array3D &w3);
+  columnSystemCtx(const std::vector<double> &storage_grid, const std::string &prefix, double dx,
+                  double dy, double dt, const array::Array3D &u3, const array::Array3D &v3,
+                  const array::Array3D &w3);
   ~columnSystemCtx();
 
   void save_to_file(const std::vector<double> &x);
@@ -153,9 +149,9 @@ public:
 
   unsigned int ks() const;
   double dz() const;
-  const std::vector<double>& z() const;
-  void fine_to_coarse(const std::vector<double> &input, int i, int j,
-                      array::Array3D& output) const;
+  const std::vector<double> &z() const;
+  void fine_to_coarse(const std::vector<double> &input, int i, int j, array::Array3D &output) const;
+
 protected:
   TridiagonalSystem *m_solver;
 
@@ -184,11 +180,11 @@ protected:
 
   void reportColumnZeroPivotErrorMFile(unsigned int M);
 
-  void init_fine_grid(const std::vector<double>& storage_grid);
+  void init_fine_grid(const std::vector<double> &storage_grid);
 
-  void coarse_to_fine(const array::Array3D &input, int i, int j, double* output) const;
+  void coarse_to_fine(const array::Array3D &input, int i, int j, double *output) const;
 };
 
 } // end of namespace pism
 
-#endif  /* PISM_COLUMNSYSTEM_HH */
+#endif /* PISM_COLUMNSYSTEM_HH */

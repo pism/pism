@@ -67,22 +67,20 @@ System::System(const std::string &path) {
  *
  * Please avoid using in computationally-intensive code.
  */
-double convert(System::Ptr system, double input,
-               const std::string &spec1, const std::string &spec2) {
+double convert(System::Ptr system, double input, const std::string &spec1,
+               const std::string &spec2) {
   Converter c(Unit(system, spec1), Unit(system, spec2));
 
   return c(input);
 }
 
 struct Unit::Impl {
-  Impl(System::Ptr sys, const std::string &spec)
-    : system(sys), unit_string(spec) {
+  Impl(System::Ptr sys, const std::string &spec) : system(sys), unit_string(spec) {
     unit = ut_parse(sys->m_impl->system, spec.c_str(), UT_ASCII);
 
     if (unit == NULL) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "unit specification '%s' is unknown or invalid",
-                                    spec.c_str());
+                                    "unit specification '%s' is unknown or invalid", spec.c_str());
     }
   }
   Impl(const Unit::Impl &other) {
@@ -116,7 +114,7 @@ Unit::Unit(const Unit &other) {
   m_impl.reset(new Impl(*other.m_impl));
 }
 
-Unit& Unit::operator=(const Unit& other) {
+Unit &Unit::operator=(const Unit &other) {
   if (this == &other) {
     return *this;
   }
@@ -158,14 +156,12 @@ System::Ptr Unit::system() const {
 DateTime Unit::date(double T, const std::string &calendar) const {
   DateTime result;
 
-  int errcode = utCalendar2_cal(T, m_impl->unit,
-                                &result.year, &result.month, &result.day,
-                                &result.hour, &result.minute, &result.second,
-                                calendar.c_str());
+  int errcode = utCalendar2_cal(T, m_impl->unit, &result.year, &result.month, &result.day,
+                                &result.hour, &result.minute, &result.second, calendar.c_str());
   if (errcode != 0) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "cannot convert time %f to a date in calendar %s",
-                                  T, calendar.c_str());
+                                  "cannot convert time %f to a date in calendar %s", T,
+                                  calendar.c_str());
   }
   return result;
 }
@@ -173,17 +169,13 @@ DateTime Unit::date(double T, const std::string &calendar) const {
 double Unit::time(const DateTime &d, const std::string &calendar) const {
   double result;
 
-  int errcode = utInvCalendar2_cal(d.year, d.month, d.day,
-                                   d.hour, d.minute, d.second,
-                                   m_impl->unit,
-                                   &result,
-                                   calendar.c_str());
+  int errcode = utInvCalendar2_cal(d.year, d.month, d.day, d.hour, d.minute, d.second, m_impl->unit,
+                                   &result, calendar.c_str());
   if (errcode != 0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "cannot convert date and time %d-%d-%d %d:%d:%f to time in calendar %s",
-                                  d.year, d.month, d.day,
-                                  d.hour, d.minute, d.second,
-                                  calendar.c_str());
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION,
+        "cannot convert date and time %d-%d-%d %d:%d:%f to time in calendar %s", d.year, d.month,
+        d.day, d.hour, d.minute, d.second, calendar.c_str());
   }
   return result;
 }
@@ -197,18 +189,15 @@ struct Converter::Impl {
     Unit u1(sys, spec1), u2(sys, spec2);
 
     if (not u1.is_convertible(u2)) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "cannot convert '%s' to '%s'",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "cannot convert '%s' to '%s'",
                                     spec1.c_str(), spec2.c_str());
     }
 
     converter = ut_get_converter(u1.m_impl->unit, u2.m_impl->unit);
     if (converter == nullptr) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "cannot create a converter from %s to %s",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "cannot create a converter from %s to %s",
                                     spec1.c_str(), spec2.c_str());
     }
-
   }
   Impl(const Unit &u1, const Unit &u2) {
     if (not u1.is_convertible(u2)) {
@@ -222,7 +211,6 @@ struct Converter::Impl {
                                     "failed to create a converter from '%s' to '%s'",
                                     u1.string().c_str(), u2.string().c_str());
     }
-
   }
   ~Impl() {
     cv_free(converter);
@@ -235,8 +223,7 @@ Converter::Converter() {
   m_impl.reset(new Impl());
 }
 
-Converter::Converter(System::Ptr sys,
-                     const std::string &spec1, const std::string &spec2) {
+Converter::Converter(System::Ptr sys, const std::string &spec1, const std::string &spec2) {
   m_impl.reset(new Impl(sys, spec1, spec2));
 }
 

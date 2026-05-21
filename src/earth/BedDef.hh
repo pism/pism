@@ -27,8 +27,8 @@ namespace pism {
 //! and uplift) and (soon) bed erosion.
 namespace bed {
 
-double compute_load(double bed, double ice_thickness, double sea_level,
-                    double ice_density, double ocean_density);
+double compute_load(double bed, double ice_thickness, double sea_level, double ice_density,
+                    double ocean_density);
 
 void accumulate_load(const array::Scalar &bed_elevation, const array::Scalar &ice_thickness,
                      const array::Scalar &sea_level_elevation, double C, array::Scalar &result);
@@ -41,17 +41,14 @@ public:
 
   void init(const InputOptions &opts, const array::Scalar &ice_thickness,
             const array::Scalar &sea_level_elevation);
-  void bootstrap(const array::Scalar &bed_elevation,
-                 const array::Scalar &bed_uplift,
-                 const array::Scalar &ice_thickness,
-                 const array::Scalar &sea_level_elevation);
+  void bootstrap(const array::Scalar &bed_elevation, const array::Scalar &bed_uplift,
+                 const array::Scalar &ice_thickness, const array::Scalar &sea_level_elevation);
 
-  void update(const array::Scalar &ice_thickness,
-              const array::Scalar &sea_level_elevation,
+  void update(const array::Scalar &ice_thickness, const array::Scalar &sea_level_elevation,
               double t, double dt);
 
-  const array::Scalar& bed_elevation() const;
-  const array::Scalar& uplift() const;
+  const array::Scalar &bed_elevation() const;
+  const array::Scalar &uplift() const;
 
 protected:
   virtual MaxTimestep max_timestep_impl(double t) const;
@@ -61,14 +58,12 @@ protected:
 
   virtual DiagnosticList spatial_diagnostics_impl() const;
 
-  virtual void update_impl(const array::Scalar &load,
-                           double t, double dt) = 0;
+  virtual void update_impl(const array::Scalar &load, double t, double dt) = 0;
 
   virtual void init_impl(const InputOptions &opts, const array::Scalar &ice_thickness,
                          const array::Scalar &sea_level_elevation) = 0;
 
-  virtual void bootstrap_impl(const array::Scalar &bed_elevation,
-                              const array::Scalar &bed_uplift,
+  virtual void bootstrap_impl(const array::Scalar &bed_elevation, const array::Scalar &bed_uplift,
                               const array::Scalar &ice_thickness,
                               const array::Scalar &sea_level_elevation) = 0;
 
@@ -106,16 +101,15 @@ protected:
 class Null : public BedDef {
 public:
   Null(std::shared_ptr<const Grid> g);
+
 protected:
   void update_impl(const array::Scalar &load, double t, double dt);
 
   void init_impl(const InputOptions &opts, const array::Scalar &ice_thickness,
                  const array::Scalar &sea_level_elevation);
 
-  void bootstrap_impl(const array::Scalar &bed_elevation,
-                      const array::Scalar &bed_uplift,
-                      const array::Scalar &ice_thickness,
-                      const array::Scalar &sea_level_elevation);
+  void bootstrap_impl(const array::Scalar &bed_elevation, const array::Scalar &bed_uplift,
+                      const array::Scalar &ice_thickness, const array::Scalar &sea_level_elevation);
 
   MaxTimestep max_timestep_impl(double t) const;
 };
@@ -125,14 +119,13 @@ class PointwiseIsostasy : public BedDef {
 public:
   PointwiseIsostasy(std::shared_ptr<const Grid> g);
   virtual ~PointwiseIsostasy() = default;
+
 protected:
   void init_impl(const InputOptions &opts, const array::Scalar &ice_thickness,
                  const array::Scalar &sea_level_elevation);
 
-  void bootstrap_impl(const array::Scalar &bed_elevation,
-                      const array::Scalar &bed_uplift,
-                      const array::Scalar &ice_thickness,
-                      const array::Scalar &sea_level_elevation);
+  void bootstrap_impl(const array::Scalar &bed_elevation, const array::Scalar &bed_uplift,
+                      const array::Scalar &ice_thickness, const array::Scalar &sea_level_elevation);
 
   void update_impl(const array::Scalar &load, double t, double dt);
 
@@ -143,4 +136,4 @@ protected:
 } // end of namespace bed
 } // end of namespace pism
 
-#endif  // __BedDef_hh
+#endif // __BedDef_hh

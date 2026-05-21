@@ -21,8 +21,8 @@
 #define FRONTRETREAT_H
 
 #include "pism/util/Component.hh"
-#include "pism/util/array/CellType.hh"
 #include "pism/util/MaxTimestep.hh"
+#include "pism/util/array/CellType.hh"
 
 namespace pism {
 
@@ -38,20 +38,15 @@ public:
   FrontRetreat(std::shared_ptr<const Grid> g);
   ~FrontRetreat() = default;
 
-  void update_geometry(double dt,
-                       const Geometry &geometry,
-                       const array::Scalar1 &bc_mask,
-                       const array::Scalar &retreat_rate,
-                       array::Scalar &Href,
+  void update_geometry(double dt, const Geometry &geometry, const array::Scalar1 &bc_mask,
+                       const array::Scalar &retreat_rate, array::Scalar &Href,
                        array::Scalar1 &ice_thickness);
 
-  MaxTimestep max_timestep(const array::CellType1 &cell_type,
-                           const array::Scalar &bc_mask,
+  MaxTimestep max_timestep(const array::CellType1 &cell_type, const array::Scalar &bc_mask,
                            const array::Scalar &retreat_rate) const;
-private:
 
-  void compute_modified_mask(const array::CellType1 &input,
-                             array::CellType1 &output) const;
+private:
+  void compute_modified_mask(const array::CellType1 &input, array::CellType1 &output) const;
 
   // Ghosted cell type mask
   //

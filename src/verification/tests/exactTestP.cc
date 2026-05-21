@@ -19,13 +19,13 @@
 */
 
 #include "pism/verification/tests/exactTestP.hh"
-#include <gsl/gsl_errno.h>    // for GSL_SUCCESS
-#include <cmath>              // for pow, fabs
-#include <cstdlib>            // for NULL
+#include <cmath>           // for pow, fabs
+#include <cstdlib>         // for NULL
+#include <gsl/gsl_errno.h> // for GSL_SUCCESS
 
 #include <gsl/gsl_version.h>
-#if (defined GSL_MAJOR_VERSION) && (defined GSL_MINOR_VERSION) && \
-  ((GSL_MAJOR_VERSION >= 1 && GSL_MINOR_VERSION >= 15) || (GSL_MAJOR_VERSION >= 2))
+#if (defined GSL_MAJOR_VERSION) && (defined GSL_MINOR_VERSION) &&                                  \
+    ((GSL_MAJOR_VERSION >= 1 && GSL_MINOR_VERSION >= 15) || (GSL_MAJOR_VERSION >= 2))
 #define PISM_USE_ODEIV2 1
 #include <gsl/gsl_odeiv2.h>
 #endif
@@ -38,11 +38,12 @@ static const double rhoi  = 910.0;      // kg m-3
 static const double rhow  = 1000.0;     // kg m-3
 
 // major model parameters:
-static const double Aglen = 3.1689e-24;          // Pa-3 s-1
-static const double k     = (0.01 / (rhow * g)); // FIXME:  this is extremely low but it matches what we were using
-static const double Wr    = 1.0;                 // m
-static const double c1    = 0.500;               // m-1
-static const double c2    = 0.040;               // [pure]
+static const double Aglen = 3.1689e-24; // Pa-3 s-1
+static const double k =
+    (0.01 / (rhow * g));        // FIXME:  this is extremely low but it matches what we were using
+static const double Wr = 1.0;   // m
+static const double c1 = 0.500; // m-1
+static const double c2 = 0.040; // [pure]
 
 // specific to exact solution
 static const double m0 = ((0.20 / SperA) * rhow); // kg m-2 s-1; = 20 cm year-1
@@ -65,9 +66,7 @@ int getsb(double r, double *sb, double *dsbdr) {
 
 
 double criticalW(double r) {
-  double
-    h  = h0 * (1.0 - (r / TESTP_R0) * (r / TESTP_R0)),
-    Po = rhoi * g * h;
+  double h = h0 * (1.0 - (r / TESTP_R0) * (r / TESTP_R0)), Po = rhoi * g * h;
   double sb, dsb;
   getsb(r, &sb, &dsb);
 
@@ -189,12 +188,11 @@ int getW(const double *r, int N, double *W, double EPS_ABS, double EPS_REL, int 
 }
 
 #else
-int getW(const double *r, int N, double *W,
-         double EPS_ABS, double EPS_REL, int ode_method) {
-  (void) r;
-  (void) EPS_ABS;
-  (void) EPS_REL;
-  (void) ode_method;
+int getW(const double *r, int N, double *W, double EPS_ABS, double EPS_REL, int ode_method) {
+  (void)r;
+  (void)EPS_ABS;
+  (void)EPS_REL;
+  (void)ode_method;
 
   for (int j = 0; j < N; ++j) {
     W[j] = 0;
@@ -203,8 +201,8 @@ int getW(const double *r, int N, double *W,
 }
 #endif
 
-int exactP_list(const double *r, int N, double *h, double *magvb, double *Wcrit, double *W, double *P,
-                double EPS_ABS, double EPS_REL, int ode_method) {
+int exactP_list(const double *r, int N, double *h, double *magvb, double *Wcrit, double *W,
+                double *P, double EPS_ABS, double EPS_REL, int ode_method) {
 
   int i, M, status;
   /* check first: we have a list, r is decreasing, r is in range [0,L) */
@@ -257,17 +255,13 @@ int exactP_list(const double *r, int N, double *h, double *magvb, double *Wcrit,
   return 0;
 }
 
-TestPParameters exactP(const std::vector<double> &r,
-                       double EPS_ABS, double EPS_REL, int ode_method) {
+TestPParameters exactP(const std::vector<double> &r, double EPS_ABS, double EPS_REL,
+                       int ode_method) {
   TestPParameters result(r.size());
   result.r = r;
 
-  result.error_code = exactP_list(r.data(), r.size(),
-                                  (result.h).data(),
-                                  (result.magvb).data(),
-                                  (result.Wcrit).data(),
-                                  (result.W).data(),
-                                  (result.P).data(),
+  result.error_code = exactP_list(r.data(), r.size(), (result.h).data(), (result.magvb).data(),
+                                  (result.Wcrit).data(), (result.W).data(), (result.P).data(),
                                   EPS_ABS, EPS_REL, ode_method);
 
   switch (result.error_code) {

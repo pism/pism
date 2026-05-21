@@ -28,8 +28,8 @@
 #include <numeric>
 #include <petscsys.h>
 #include <string>
+#include <utility> // std::swap
 #include <vector>
-#include <utility>              // std::swap
 
 #include "pism/util/Config.hh"
 #include "pism/util/Context.hh"
@@ -84,7 +84,7 @@ struct Grid::Impl : public grid::DistributedGridInfo {
   //! GSL binary search accelerator used to speed up kBelowHeight().
   gsl_interp_accel *bsearch_accel;
 
-  std::map<std::string, std::shared_ptr<InputInterpolation>> regridding_2d;
+  std::map<std::string, std::shared_ptr<InputInterpolation> > regridding_2d;
 
   //! z coordinates within the ice
   std::vector<double> z;
@@ -210,8 +210,7 @@ static std::shared_ptr<Grid> Grid_FromFile(std::shared_ptr<const Context> ctx, c
 }
 
 //! Create a grid using one of variables in `var_names` in `file`.
-std::shared_ptr<Grid> Grid::FromFile(std::shared_ptr<const Context> ctx,
-                                     const File &file,
+std::shared_ptr<Grid> Grid::FromFile(std::shared_ptr<const Context> ctx, const File &file,
                                      const std::vector<std::string> &var_names,
                                      grid::Registration r) {
 
@@ -252,8 +251,7 @@ unsigned int Grid::kBelowHeight(double height) const {
                                   height, Lz());
   }
 
-  return gsl_interp_accel_find(m_impl->bsearch_accel, m_impl->z.data(), m_impl->z.size(),
-                               height);
+  return gsl_interp_accel_find(m_impl->bsearch_accel, m_impl->z.data(), m_impl->z.size(), height);
 }
 
 
@@ -505,13 +503,14 @@ std::shared_ptr<const Context> Grid::ctx() const {
   return m_impl->ctx;
 }
 
-const grid::DistributedGridInfo& Grid::info() const {
+const grid::DistributedGridInfo &Grid::info() const {
   return *m_impl;
 }
 
 //! @brief Create a DM with the given number of `dof` (degrees of freedom per grid point) and
 //! stencil width.
-std::shared_ptr<petsc::DM> Grid::Impl::create_dm(unsigned int da_dof, unsigned int stencil_width) const {
+std::shared_ptr<petsc::DM> Grid::Impl::create_dm(unsigned int da_dof,
+                                                 unsigned int stencil_width) const {
 
   ctx->log()->message(3, "* Creating a DM with dof=%d and stencil_width=%d...\n", da_dof,
                       stencil_width);
@@ -709,8 +708,8 @@ namespace grid {
     Thus a value of \f$\lambda\f$ = 4 makes the spacing about four times finer
     at the base than equal spacing would be.
  */
-std::vector<double> compute_vertical_levels(double Lz, size_t Mz,
-                                            grid::VerticalSpacing spacing, double lambda) {
+std::vector<double> compute_vertical_levels(double Lz, size_t Mz, grid::VerticalSpacing spacing,
+                                            double lambda) {
 
   if (Mz < 2) {
     throw RuntimeError(PISM_ERROR_LOCATION, "Mz must be at least 2");
@@ -879,8 +878,8 @@ void InputGridInfo::report(const Logger &log, int threshold, units::System::Ptr 
   if (z.size() > 1) {
     auto z_min = vector_min(z);
     auto z_max = vector_max(z);
-    log.message(threshold, "   z:  %5d points, [%10.3f, %10.3f] m\n", (int)this->z.size(),
-                z_min, z_max);
+    log.message(threshold, "   z:  %5d points, [%10.3f, %10.3f] m\n", (int)this->z.size(), z_min,
+                z_max);
   }
 
   log.message(threshold, "   t:  %5d records\n\n", this->t_len);
@@ -914,7 +913,7 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
       if (dimtype == X_AXIS or dimtype == Y_AXIS or dimtype == Z_AXIS) {
         // horizontal dimensions
         if (dimtype == X_AXIS or dimtype == Y_AXIS) {
-          auto std_name = file.read_text_attribute(dimension_name, "standard_name");
+          auto std_name     = file.read_text_attribute(dimension_name, "standard_name");
           std::string units = "meters";
           // Try to detect rotated pole grids
           {
@@ -927,11 +926,11 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
           }
           // Try to detect longitude-latitude grids
           {
-            if (std_name == "longitude" or set_member(dimension_name, {"lon", "longitude"})) {
+            if (std_name == "longitude" or set_member(dimension_name, { "lon", "longitude" })) {
               units              = "degree_east";
               longitude_latitude = true;
             }
-            if (std_name == "latitude" or set_member(dimension_name, {"lat", "latitude"})) {
+            if (std_name == "latitude" or set_member(dimension_name, { "lat", "latitude" })) {
               units              = "degree_north";
               longitude_latitude = true;
             }
@@ -995,7 +994,7 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
         break;
       }
       } // switch
-    }   // for loop
+    } // for loop
   } catch (RuntimeError &e) {
     e.add_context("getting grid information using variable '%s' in '%s'", variable.c_str(),
                   file.name().c_str());
@@ -1023,7 +1022,8 @@ std::string get_domain_variable(const File &file) {
                                 file.name().c_str());
 }
 
-Parameters Parameters::FromGridDefinition(const Config &config, std::shared_ptr<units::System> unit_system,
+Parameters Parameters::FromGridDefinition(const Config &config,
+                                          std::shared_ptr<units::System> unit_system,
                                           const File &file, const std::string &variable_name,
                                           Registration registration) {
   Parameters result(config);
@@ -1153,7 +1153,7 @@ Parameters::Parameters(const Config &config) {
 }
 
 Parameters::Parameters(const Config &config, unsigned Mx_, unsigned My_, double Lx_, double Ly_)
-  : Parameters(config) {
+    : Parameters(config) {
 
   Mx = Mx_;
   My = My_;
@@ -1225,9 +1225,9 @@ void Parameters::ownership_ranges_from_options(const Config &config, unsigned in
   procs_y = py;
 }
 
-Parameters::Parameters(const Config &config, std::shared_ptr<units::System> unit_system, const File &file,
-                       const std::string &variable, Registration r)
-  : Parameters(config) {
+Parameters::Parameters(const Config &config, std::shared_ptr<units::System> unit_system,
+                       const File &file, const std::string &variable, Registration r)
+    : Parameters(config) {
   InputGridInfo input_grid(file, variable, unit_system, r);
 
   Lx            = input_grid.Lx;
@@ -1386,7 +1386,7 @@ std::array<unsigned, 2> nprocs(unsigned int size, unsigned int Mx, unsigned int 
     std::swap(Nx, Ny);
   }
 
-  return {Nx, Ny};
+  return { Nx, Ny };
 }
 
 //! \brief Computes processor ownership ranges corresponding to equal area
@@ -1429,13 +1429,14 @@ std::shared_ptr<Grid> Grid::FromOptions(std::shared_ptr<const Context> ctx) {
 
   auto grid_file_name = config->get_string("grid.file");
   if (bootstrap and not grid_file_name.empty()) {
-    auto parts = split(grid_file_name, ':');
-    auto file_name = parts[0];
+    auto parts                = split(grid_file_name, ':');
+    auto file_name            = parts[0];
     std::string variable_name = parts.size() == 2 ? parts[1] : "";
 
     File grid_file(ctx->com(), file_name, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    auto P = grid::Parameters::FromGridDefinition(*config, unit_system, grid_file, variable_name, r);
+    auto P =
+        grid::Parameters::FromGridDefinition(*config, unit_system, grid_file, variable_name, r);
 
     // process configuration parameters controlling grid size and extent, overriding
     // values read from a file *if* configuration parameters are set to "valid" numbers
@@ -1568,12 +1569,13 @@ std::shared_ptr<InputInterpolation> Grid::get_interpolation(const std::vector<do
                                                             const std::string &variable_name,
                                                             InterpolationType type) const {
 
-  auto name = grid_name(input_file, variable_name, ctx()->unit_system(), type == PIECEWISE_CONSTANT);
+  auto name =
+      grid_name(input_file, variable_name, ctx()->unit_system(), type == PIECEWISE_CONSTANT);
 
   if (levels.size() < 2) {
     if (m_impl->regridding_2d[name] == nullptr) {
       m_impl->regridding_2d[name] =
-        InputInterpolation::create(*this, levels, input_file, variable_name, type);
+          InputInterpolation::create(*this, levels, input_file, variable_name, type);
     }
 
     return m_impl->regridding_2d[name];

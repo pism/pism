@@ -27,22 +27,18 @@
 namespace pism {
 namespace energy {
 
-tempSystemCtx::tempSystemCtx(const std::vector<double>& storage_grid,
-                             const std::string &prefix,
-                             double dx, double dy, double dt,
-                             const Config &config,
-                             const array::Array3D &T3,
-                             const array::Array3D &u3,
-                             const array::Array3D &v3,
-                             const array::Array3D &w3,
+tempSystemCtx::tempSystemCtx(const std::vector<double> &storage_grid, const std::string &prefix,
+                             double dx, double dy, double dt, const Config &config,
+                             const array::Array3D &T3, const array::Array3D &u3,
+                             const array::Array3D &v3, const array::Array3D &w3,
                              const array::Array3D &strain_heating3)
-  : columnSystemCtx(storage_grid, prefix, dx, dy, dt, u3, v3, w3),
-    m_T3(T3),
-    m_strain_heating3(strain_heating3) {
+    : columnSystemCtx(storage_grid, prefix, dx, dy, dt, u3, v3, w3),
+      m_T3(T3),
+      m_strain_heating3(strain_heating3) {
 
   // set flags to indicate nothing yet set
-  m_surfBCsValid      = false;
-  m_basalBCsValid     = false;
+  m_surfBCsValid  = false;
+  m_basalBCsValid = false;
 
   size_t Mz = m_z.size();
   m_T.resize(Mz);
@@ -59,17 +55,17 @@ tempSystemCtx::tempSystemCtx(const std::vector<double>& storage_grid,
   m_ice_k       = config.get_number("constants.ice.thermal_conductivity");
 
   // set derived constants
-  m_nu    = m_dt / m_dz;
+  m_nu      = m_dt / m_dz;
   m_rho_c_I = m_ice_density * m_ice_c;
   m_iceK    = m_ice_k / m_rho_c_I;
-  m_iceR    = m_iceK * m_dt / (m_dz*m_dz);
+  m_iceR    = m_iceK * m_dt / (m_dz * m_dz);
 }
 
 void tempSystemCtx::initThisColumn(int i, int j, bool is_marginal, MaskValue mask,
                                    double ice_thickness) {
 
   m_is_marginal = is_marginal;
-  m_mask = mask;
+  m_mask        = mask;
 
   init_column(i, j, ice_thickness);
 
@@ -83,10 +79,10 @@ void tempSystemCtx::initThisColumn(int i, int j, bool is_marginal, MaskValue mas
   coarse_to_fine(m_strain_heating3, m_i, m_j, m_strain_heating.data());
   coarse_to_fine(m_T3, m_i, m_j, m_T.data());
 
-  coarse_to_fine(m_T3, m_i, m_j+1, m_T_n.data());
-  coarse_to_fine(m_T3, m_i+1, m_j, m_T_e.data());
-  coarse_to_fine(m_T3, m_i, m_j-1, m_T_s.data());
-  coarse_to_fine(m_T3, m_i-1, m_j, m_T_w.data());
+  coarse_to_fine(m_T3, m_i, m_j + 1, m_T_n.data());
+  coarse_to_fine(m_T3, m_i + 1, m_j, m_T_e.data());
+  coarse_to_fine(m_T3, m_i, m_j - 1, m_T_s.data());
+  coarse_to_fine(m_T3, m_i - 1, m_j, m_T_w.data());
 
   m_lambda = compute_lambda();
 }
@@ -100,8 +96,8 @@ void tempSystemCtx::setSurfaceBoundaryValuesThisColumn(double my_Ts) {
 }
 
 
-void tempSystemCtx::setBasalBoundaryValuesThisColumn(double my_G0,
-                                                     double my_Tshelfbase, double my_Rb) {
+void tempSystemCtx::setBasalBoundaryValuesThisColumn(double my_G0, double my_Tshelfbase,
+                                                     double my_Rb) {
   // allow setting basal BCs only once:
   assert(not m_basalBCsValid);
 
@@ -112,12 +108,12 @@ void tempSystemCtx::setBasalBoundaryValuesThisColumn(double my_G0,
 }
 
 double tempSystemCtx::compute_lambda() {
-  double result = 1.0; // start with centered implicit for more accuracy
+  double result        = 1.0; // start with centered implicit for more accuracy
   const double epsilon = 1e-6 / 3.15569259747e7;
 
   for (unsigned int k = 0; k <= m_ks; k++) {
     const double denom = (fabs(m_w[k]) + epsilon) * m_ice_density * m_ice_c * m_dz;
-    result = std::min(result, 2.0 * m_ice_k / denom);
+    result             = std::min(result, 2.0 * m_ice_k / denom);
   }
   return result;
 }
@@ -146,8 +142,8 @@ void tempSystemCtx::solveThisColumn(std::vector<double> &x) {
     if (mask::ocean(m_mask)) {
       // just apply Dirichlet condition to base of column of ice in an ice shelf
       // note that L[0] is not used
-      S.D(0) = 1.0;
-      S.U(0) = 0.0;
+      S.D(0)   = 1.0;
+      S.U(0)   = 0.0;
       S.RHS(0) = m_Tshelfbase; // set by OceanCoupler
     } else {
       // there is *grounded* ice; from FV across interface
@@ -162,19 +158,17 @@ void tempSystemCtx::solveThisColumn(std::vector<double> &x) {
       double UpTu = 0.0;
       double UpTv = 0.0;
       if (not m_is_marginal) {
-        UpTu = (m_u[0] < 0 ?
-                m_u[0] * (m_T_e[0] -  m_T[0]) / m_dx :
-                m_u[0] * (m_T[0]  - m_T_w[0]) / m_dx);
-        UpTv = (m_v[0] < 0 ?
-                m_v[0] * (m_T_n[0] -  m_T[0]) / m_dy :
-                m_v[0] * (m_T[0]  - m_T_s[0]) / m_dy);
+        UpTu = (m_u[0] < 0 ? m_u[0] * (m_T_e[0] - m_T[0]) / m_dx :
+                             m_u[0] * (m_T[0] - m_T_w[0]) / m_dx);
+        UpTv = (m_v[0] < 0 ? m_v[0] * (m_T_n[0] - m_T[0]) / m_dy :
+                             m_v[0] * (m_T[0] - m_T_s[0]) / m_dy);
       }
-      S.RHS(0) -= m_dt  * (0.5 * (UpTu + UpTv));
+      S.RHS(0) -= m_dt * (0.5 * (UpTu + UpTv));
 
       // vertical upwinding
       // L[0] = 0.0;  (is not used)
       S.D(0) = 1.0 + 2.0 * m_iceR;
-      S.U(0) = - 2.0 * m_iceR;
+      S.U(0) = -2.0 * m_iceR;
       if (m_w[0] < 0.0) { // velocity downward: add velocity contribution
         const double AA = m_dt * m_w[0] / (2.0 * m_dz);
         S.D(0) -= AA;
@@ -188,14 +182,14 @@ void tempSystemCtx::solveThisColumn(std::vector<double> &x) {
   // generic ice segment; build 1:m_ks-1 eqns
   for (unsigned int k = 1; k < m_ks; k++) {
     const double AA = m_nu * m_w[k];
-    if (m_w[k] >= 0.0) {  // velocity upward
-      S.L(k) = - m_iceR - AA * (1.0 - m_lambda/2.0);
+    if (m_w[k] >= 0.0) { // velocity upward
+      S.L(k) = -m_iceR - AA * (1.0 - m_lambda / 2.0);
       S.D(k) = 1.0 + 2.0 * m_iceR + AA * (1.0 - m_lambda);
-      S.U(k) = - m_iceR + AA * (m_lambda/2.0);
-    } else {  // velocity downward
-      S.L(k) = - m_iceR - AA * (m_lambda/2.0);
+      S.U(k) = -m_iceR + AA * (m_lambda / 2.0);
+    } else { // velocity downward
+      S.L(k) = -m_iceR - AA * (m_lambda / 2.0);
       S.D(k) = 1.0 + 2.0 * m_iceR - AA * (1.0 - m_lambda);
-      S.U(k) = - m_iceR + AA * (1.0 - m_lambda/2.0);
+      S.U(k) = -m_iceR + AA * (1.0 - m_lambda / 2.0);
     }
     S.RHS(k) = m_T[k];
 
@@ -207,19 +201,17 @@ void tempSystemCtx::solveThisColumn(std::vector<double> &x) {
     double UpTu = 0.0;
     double UpTv = 0.0;
     if (not m_is_marginal) {
-      UpTu = (m_u[k] < 0 ?
-              m_u[k] * (m_T_e[k] -  m_T[k]) / m_dx :
-              m_u[k] * (m_T[k]  - m_T_w[k]) / m_dx);
-      UpTv = (m_v[k] < 0 ?
-              m_v[k] * (m_T_n[k] -  m_T[k]) / m_dy :
-              m_v[k] * (m_T[k]  - m_T_s[k]) / m_dy);
+      UpTu =
+          (m_u[k] < 0 ? m_u[k] * (m_T_e[k] - m_T[k]) / m_dx : m_u[k] * (m_T[k] - m_T_w[k]) / m_dx);
+      UpTv =
+          (m_v[k] < 0 ? m_v[k] * (m_T_n[k] - m_T[k]) / m_dy : m_v[k] * (m_T[k] - m_T_s[k]) / m_dy);
     }
 
     S.RHS(k) += m_dt * (Sigma / m_rho_c_I - UpTu - UpTv);
   }
 
   // surface b.c.
-  if (m_ks>0) {
+  if (m_ks > 0) {
     S.L(m_ks) = 0.0;
     S.D(m_ks) = 1.0;
     // ignore U[m_ks]
@@ -227,16 +219,16 @@ void tempSystemCtx::solveThisColumn(std::vector<double> &x) {
   }
 
   // mark column as done
-  m_surfBCsValid = false;
+  m_surfBCsValid  = false;
   m_basalBCsValid = false;
 
   // solve it; note melting not addressed yet
   try {
     S.solve(m_ks + 1, x);
-  }
-  catch (RuntimeError &e) {
+  } catch (RuntimeError &e) {
     e.add_context("solving the tri-diagonal system (tempSystemCtx) at (%d,%d)\n"
-                  "saving system to m-file... ", m_i, m_j);
+                  "saving system to m-file... ",
+                  m_i, m_j);
     reportColumnZeroPivotErrorMFile(m_ks + 1);
     throw;
   }

@@ -21,12 +21,12 @@
 namespace pism {
 namespace taoutil {
 
-TAOTerminationReason::TAOTerminationReason(TaoConvergedReason r)  {
+TAOTerminationReason::TAOTerminationReason(TaoConvergedReason r) {
   m_reason = r;
 }
 
 void TAOTerminationReason::get_description(std::ostream &desc, int indent_level) {
-  for (int i=0; i < indent_level; i++) {
+  for (int i = 0; i < indent_level; i++) {
     desc << sm_indent;
   }
   desc << TaoConvergedReasons[m_reason];

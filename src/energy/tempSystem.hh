@@ -48,21 +48,15 @@ namespace energy {
 */
 class tempSystemCtx : public columnSystemCtx {
 public:
-  tempSystemCtx(const std::vector<double>& storage_grid,
-                const std::string &prefix,
-                double dx, double dy, double dt,
-                const Config &config,
-                const array::Array3D &T3,
-                const array::Array3D &u3,
-                const array::Array3D &v3,
-                const array::Array3D &w3,
+  tempSystemCtx(const std::vector<double> &storage_grid, const std::string &prefix, double dx,
+                double dy, double dt, const Config &config, const array::Array3D &T3,
+                const array::Array3D &u3, const array::Array3D &v3, const array::Array3D &w3,
                 const array::Array3D &strain_heating3);
 
   void initThisColumn(int i, int j, bool is_marginal, MaskValue new_mask, double ice_thickness);
 
   void setSurfaceBoundaryValuesThisColumn(double my_Ts);
-  void setBasalBoundaryValuesThisColumn(double my_G0, double my_Tshelfbase,
-                                                  double my_Rb);
+  void setBasalBoundaryValuesThisColumn(double my_G0, double my_Tshelfbase, double my_Rb);
 
   void solveThisColumn(std::vector<double> &x);
 
@@ -73,24 +67,21 @@ public:
   double w(int k) {
     return m_w[k];
   }
+
 protected:
   double m_ice_density, m_ice_c, m_ice_k;
   const array::Array3D &m_T3, &m_strain_heating3;
 
-  std::vector<double>  m_T, m_strain_heating;
+  std::vector<double> m_T, m_strain_heating;
   std::vector<double> m_T_n, m_T_e, m_T_s, m_T_w;
 
   double m_lambda, m_Ts, m_G0, m_Tshelfbase, m_Rb;
-  MaskValue    m_mask;
-  bool        m_is_marginal;
-  double m_nu,
-    m_rho_c_I,
-    m_iceK,
-    m_iceR;
+  MaskValue m_mask;
+  bool m_is_marginal;
+  double m_nu, m_rho_c_I, m_iceK, m_iceR;
+
 private:
-  bool
-    m_surfBCsValid,
-    m_basalBCsValid;
+  bool m_surfBCsValid, m_basalBCsValid;
 
   double compute_lambda();
 };
@@ -98,5 +89,4 @@ private:
 } // end of namespace energy
 } // end of namespace pism
 
-#endif  /* __tempSystem_hh */
-
+#endif /* __tempSystem_hh */

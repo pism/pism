@@ -22,9 +22,9 @@
 #include "pism/util/Config.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
+#include "pism/util/Logger.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/Logger.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/io/io_helpers.hh"
 
@@ -33,16 +33,15 @@ namespace pism {
 namespace bed {
 
 BedDef::BedDef(std::shared_ptr<const Grid> grid, const std::string &model_name)
-  : Component(grid),
-    m_topg(m_grid, "topg"),
-    m_topg_last(m_grid, "topg"),
-    m_load(grid, "bed_def_load"),
-    m_load_accumulator(grid, "bed_def_load_accumulator"),
-    m_uplift(m_grid, "dbdt"),
-    m_t_last(time().current()),
-    m_time_name(time().variable_name() + "_bed_deformation"),
-    m_model_name(model_name)
-{
+    : Component(grid),
+      m_topg(m_grid, "topg"),
+      m_topg_last(m_grid, "topg"),
+      m_load(grid, "bed_def_load"),
+      m_load_accumulator(grid, "bed_def_load_accumulator"),
+      m_uplift(m_grid, "dbdt"),
+      m_t_last(time().current()),
+      m_time_name(time().variable_name() + "_bed_deformation"),
+      m_model_name(model_name) {
   m_update_interval = m_config->get_number("bed_deformation.update_interval", "seconds");
   m_t_eps           = m_config->get_number("time_stepping.resolution", "seconds");
 
@@ -56,14 +55,13 @@ BedDef::BedDef(std::shared_ptr<const Grid> grid, const std::string &model_name)
       .units("m")
       .standard_name("bedrock_altitude");
 
-  m_load.metadata(0)
-    .long_name("load on the bed expressed as ice-equivalent thickness")
-    .units("m");
+  m_load.metadata(0).long_name("load on the bed expressed as ice-equivalent thickness").units("m");
   m_load.set(0.0);
 
   m_load_accumulator.metadata(0)
-    .long_name("accumulated load on the bed expressed as the time integral of ice-equivalent thickness")
-    .units("m s");
+      .long_name(
+          "accumulated load on the bed expressed as the time integral of ice-equivalent thickness")
+      .units("m s");
 
   m_uplift.metadata(0)
       .long_name("bedrock uplift rate")
@@ -99,7 +97,7 @@ void BedDef::write_state_impl(const OutputFile &output) const {
   m_load_accumulator.write(output);
 
   auto t_length = output.time_dimension_length();
-  auto t_start = t_length > 0 ? t_length - 1 : 0;
+  auto t_start  = t_length > 0 ? t_length - 1 : 0;
 
   output.write_timeseries(m_time_name, { t_start }, { 1 }, { m_t_last });
 }
@@ -116,8 +114,7 @@ DiagnosticList BedDef::spatial_diagnostics_impl() const {
 void BedDef::init(const InputOptions &opts, const array::Scalar &ice_thickness,
                   const array::Scalar &sea_level_elevation) {
 
-  m_log->message(2, "* Initializing the %s bed deformation model...\n",
-                 m_model_name.c_str());
+  m_log->message(2, "* Initializing the %s bed deformation model...\n", m_model_name.c_str());
 
   m_t_last = time().current();
   if (opts.type == INIT_RESTART or opts.type == INIT_BOOTSTRAP) {
@@ -198,9 +195,9 @@ void BedDef::bootstrap(const array::Scalar &bed_elevation, const array::Scalar &
 }
 
 void BedDef::bootstrap_impl(const array::Scalar & /*bed_elevation*/,
-                           const array::Scalar & /*bed_uplift*/,
-                           const array::Scalar & /*ice_thickness*/,
-                           const array::Scalar & /*sea_level_elevation*/) {
+                            const array::Scalar & /*bed_uplift*/,
+                            const array::Scalar & /*ice_thickness*/,
+                            const array::Scalar & /*sea_level_elevation*/) {
   // empty
 }
 
@@ -247,8 +244,7 @@ void BedDef::update(const array::Scalar &ice_thickness, const array::Scalar &sea
 MaxTimestep BedDef::max_timestep_impl(double t) const {
 
   if (t < m_t_last) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "time %f is less than the previous time %f",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "time %f is less than the previous time %f",
                                   t, m_t_last);
   }
 
@@ -289,13 +285,11 @@ void BedDef::apply_topg_offset(const std::string &filename, array::Scalar &bed_t
   bed_topography.add(1.0, topg_delta);
 }
 
-double compute_load(double bed, double ice_thickness, double sea_level,
-                    double ice_density, double ocean_density) {
+double compute_load(double bed, double ice_thickness, double sea_level, double ice_density,
+                    double ocean_density) {
 
-  double
-    ice_load    = ice_thickness,
-    ocean_depth = std::max(sea_level - bed, 0.0),
-    ocean_load  = (ocean_density / ice_density) * ocean_depth;
+  double ice_load = ice_thickness, ocean_depth = std::max(sea_level - bed, 0.0),
+         ocean_load = (ocean_density / ice_density) * ocean_depth;
 
   // this excludes the load of ice shelves
   return ice_load > ocean_load ? ice_load : 0.0;
@@ -320,8 +314,8 @@ void accumulate_load(const array::Scalar &bed_elevation, const array::Scalar &ic
   for (auto p : result.grid()->points()) {
     const int i = p.i(), j = p.j();
 
-    result(i, j) += C * compute_load(bed_elevation(i, j), ice_thickness(i, j), sea_level_elevation(i, j),
-                                     ice_density, ocean_density);
+    result(i, j) += C * compute_load(bed_elevation(i, j), ice_thickness(i, j),
+                                     sea_level_elevation(i, j), ice_density, ocean_density);
   }
 }
 

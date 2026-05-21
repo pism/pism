@@ -24,40 +24,42 @@
 extern "C" {
 #endif
 
-#define CALCALCS_VERSION_NUMBER	1.0
+#define CALCALCS_VERSION_NUMBER 1.0
 
 struct cccalendar {
-	int	sig;
-	char	*name;
-	int	ndays_reg, ndays_leap;
+  int sig;
+  char *name;
+  int ndays_reg, ndays_leap;
 
-	int	(*c_isleap)	( int, int * );
-	int	(*c_date2jday) 	( int, int, int, int * );
-	int	(*c_jday2date) 	( int, int *, int *, int * );
-	int	(*c_dpm)   	( int, int, int * );
+  int (*c_isleap)(int, int *);
+  int (*c_date2jday)(int, int, int, int *);
+  int (*c_jday2date)(int, int *, int *, int *);
+  int (*c_dpm)(int, int, int *);
 
-	/* The following implement "mixed" calendars, for example, our standard
+  /* The following implement "mixed" calendars, for example, our standard
 	 * civil calendar, which converts from Julian to Gregorian, with the
 	 * last day of the Julian calendar being 4 Oct 1582 and the first day
 	 * of the Gregorian calendar being 15 Oct 1582
 	 */
-	int	mixed;
-	struct cccalendar *early_cal, *late_cal;
-	int	year_x, month_x, day_x;		/* These are the transition Y,M,D, i.e., the FIRST DATE the LATER CAL is used */
-	int	year_px, month_px, day_px;	/* These are the DAY BEFORE the transition Y,M,D, i.e., the last date the earlier cal is used */
-	int	jday_x;				/* Julian day of the transition date */
+  int mixed;
+  struct cccalendar *early_cal, *late_cal;
+  int year_x, month_x,
+      day_x; /* These are the transition Y,M,D, i.e., the FIRST DATE the LATER CAL is used */
+  int year_px, month_px,
+      day_px; /* These are the DAY BEFORE the transition Y,M,D, i.e., the last date the earlier cal is used */
+  int jday_x; /* Julian day of the transition date */
 };
 
 /* A "country code", which holds the 2-letter code (abbreviation) for the country or region,
  * its long name, and the Y/M/D date that it transitioned from the Julian to Gregorian calendar
  */
 struct ccs_ccode {
-	char	*code, *longname;
-	int	year, month, day;
+  char *code, *longname;
+  int year, month, day;
 };
 
 typedef struct cccalendar calcalcs_cal;
-typedef struct ccs_ccode  ccs_country_code;
+typedef struct ccs_ccode ccs_country_code;
 
 /* =====================================================================================
  * Here are all the services this library supplies 
@@ -73,12 +75,12 @@ typedef struct ccs_ccode  ccs_country_code;
  * can be set to be the value used by various countries, or set to any arbitrary
  * date, using routine "set_cal_xition_date", below.
  */
-calcalcs_cal *ccs_init_calendar( const char *calname );
+calcalcs_cal *ccs_init_calendar(const char *calname);
 
 /*------------------------------------------------------------------------------
  * Frees the storage previously allocated by ccs_init_calendar()
  */
-void ccs_free_calendar( calcalcs_cal *calendar );
+void ccs_free_calendar(calcalcs_cal *calendar);
 
 /*--------------------------------------------------------------------------
  * ccs_date2jday: turn a Y/M/D date into a (true) Julian day number.  Note that 
@@ -87,37 +89,37 @@ void ccs_free_calendar( calcalcs_cal *calendar );
  *            have been 1 Jan 4713 BC if the Julian calendar went back
  *	      to that time.
  */
-int ccs_date2jday( calcalcs_cal *calendar, int year, int month, int day, int *jday );
+int ccs_date2jday(calcalcs_cal *calendar, int year, int month, int day, int *jday);
 
 /*--------------------------------------------------------------------------
  * ccs_jday2date: turn a (true) Julian day number into a calendar date.
  */
-int ccs_jday2date( calcalcs_cal *calendar, int jday, int *year, int *month, int *day );
+int ccs_jday2date(calcalcs_cal *calendar, int jday, int *year, int *month, int *day);
 
 /*--------------------------------------------------------------------------
  * ccs_isleap: determine if the specified year is a leap year in 
  * 	the specified calendar
  */
-int ccs_isleap( calcalcs_cal *calendar, int year, int *leap );
+int ccs_isleap(calcalcs_cal *calendar, int year, int *leap);
 
 /*--------------------------------------------------------------------------
  * ccs_dpm: returns the days per month for the given year/month.
  * Note that during the month that transitions from a Julian to a 
  * Gregorian calendar, this might be a strange number of days.
  */
-int ccs_dpm( calcalcs_cal *calendar, int year, int month, int *dpm );
+int ccs_dpm(calcalcs_cal *calendar, int year, int month, int *dpm);
 
 /*--------------------------------------------------------------------------
  * ccs_date2doy: given a Y/M/D date, calculates the day number of the year, starting at 1 for
  *	January 1st.
  */
-int ccs_date2doy( calcalcs_cal *calendar, int year, int month, int day, int *doy );
+int ccs_date2doy(calcalcs_cal *calendar, int year, int month, int day, int *doy);
 
 /*--------------------------------------------------------------------------
  *  ccs_doy2date: given a year and a day number in that year (with counting starting at 1 for
  *	Jan 1st), this returns the month and day of the month that the doy refers to.
  */
-int ccs_doy2date( calcalcs_cal *calendar, int year, int doy, int *month, int *day );
+int ccs_doy2date(calcalcs_cal *calendar, int year, int doy, int *month, int *day);
 
 /*--------------------------------------------------------------------------
  *  ccs_dayssince: Given a Y/M/D date in a specified calendar, and the number of days since
@@ -126,8 +128,9 @@ int ccs_doy2date( calcalcs_cal *calendar, int year, int doy, int *month, int *da
  * Note that specifying "zero" days since, and giving different calendars as the original
  *      and new calendars, essentially converts dates between calendars.
  */
-int ccs_dayssince( calcalcs_cal *calendar_orig, int year_orig, int month_orig, int day_orig,
-                int ndays_since, calcalcs_cal *calendar_new, int *year_new, int *month_new, int *day_new );
+int ccs_dayssince(calcalcs_cal *calendar_orig, int year_orig, int month_orig, int day_orig,
+                  int ndays_since, calcalcs_cal *calendar_new, int *year_new, int *month_new,
+                  int *day_new);
 
 /*--------------------------------------------------------------------------
  * get/set_cal_xition_date: these routines set the transition date for a Standard
@@ -186,22 +189,22 @@ int ccs_dayssince( calcalcs_cal *calendar_orig, int year_orig, int month_orig, i
  * US (United States) 1752/9/14; SU (former Soviet Union) 1918/2/1; 
  * RU (Russia) 1918/2/1.
  */
-int ccs_set_xition_date( calcalcs_cal *calendar, int year, int month, int day );
-int ccs_get_xition_date( const char *country_code, int *year, int *month, int *day );
+int ccs_set_xition_date(calcalcs_cal *calendar, int year, int month, int day);
+int ccs_get_xition_date(const char *country_code, int *year, int *month, int *day);
 
 /*--------------------------------------------------------------------------
  * calcalcs_err_str: return a static char * to an error string, given the error number
  */
-char *ccs_err_str( int error_code );
+char *ccs_err_str(int error_code);
 
-#define CALCALCS_ERR_NO_YEAR_ZERO		-10
-#define CALCALCS_ERR_DATE_NOT_IN_CALENDAR	-11
-#define CALCALCS_ERR_INVALID_DAY_OF_YEAR	-12
-#define CALCALCS_ERR_NOT_A_MIXED_CALENDAR	-13
-#define CALCALCS_ERR_UNKNOWN_COUNTRY_CODE	-14
-#define CALCALCS_ERR_OUT_OF_RANGE		-15
-#define CALCALCS_ERR_NULL_CALENDAR		-16
-#define CALCALCS_ERR_INVALID_CALENDAR		-17
+#define CALCALCS_ERR_NO_YEAR_ZERO -10
+#define CALCALCS_ERR_DATE_NOT_IN_CALENDAR -11
+#define CALCALCS_ERR_INVALID_DAY_OF_YEAR -12
+#define CALCALCS_ERR_NOT_A_MIXED_CALENDAR -13
+#define CALCALCS_ERR_UNKNOWN_COUNTRY_CODE -14
+#define CALCALCS_ERR_OUT_OF_RANGE -15
+#define CALCALCS_ERR_NULL_CALENDAR -16
+#define CALCALCS_ERR_INVALID_CALENDAR -17
 
 #ifdef __cplusplus
 }

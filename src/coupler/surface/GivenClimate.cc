@@ -18,20 +18,19 @@
 
 #include "pism/coupler/surface/GivenClimate.hh"
 
-#include "pism/util/Time.hh"
-#include "pism/util/Grid.hh"
 #include "pism/coupler/util/options.hh"
-#include "pism/util/array/Forcing.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/Time.hh"
+#include "pism/util/array/Forcing.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace surface {
 
 Given::Given(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::AtmosphereModel> input)
-  : SurfaceModel(grid)
-{
-  (void) input;
+    : SurfaceModel(grid) {
+  (void)input;
 
   ForcingOptions opt(*m_grid->ctx(), "surface.given");
 
@@ -40,20 +39,13 @@ Given::Given(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atmos
 
     File file(m_grid->com, opt.filename, io::PISM_GUESS, io::PISM_READONLY);
 
-    m_temperature = std::make_shared<array::Forcing>(m_grid,
-                                                file,
-                                                "ice_surface_temp",
-                                                "", // no standard name
-                                                buffer_size,
-                                                opt.periodic,
-                                                LINEAR);
+    m_temperature = std::make_shared<array::Forcing>(m_grid, file, "ice_surface_temp",
+                                                     "", // no standard name
+                                                     buffer_size, opt.periodic, LINEAR);
 
-    m_mass_flux = std::make_shared<array::Forcing>(m_grid,
-                                              file,
-                                              "climatic_mass_balance",
-                                              "land_ice_surface_specific_mass_balance_flux",
-                                              buffer_size,
-                                              opt.periodic);
+    m_mass_flux = std::make_shared<array::Forcing>(m_grid, file, "climatic_mass_balance",
+                                                   "land_ice_surface_specific_mass_balance_flux",
+                                                   buffer_size, opt.periodic);
   }
 
   m_temperature->metadata(0)
@@ -69,14 +61,13 @@ Given::Given(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atmos
       .output_units("kg m^-2 year^-1")
       .standard_name("land_ice_surface_specific_mass_balance_flux");
 
-  m_mass_flux->metadata()["valid_range"] = {-smb_max, smb_max};
+  m_mass_flux->metadata()["valid_range"] = { -smb_max, smb_max };
 }
 
 void Given::init_impl(const Geometry &geometry) {
 
-  m_log->message(2,
-                 "* Initializing the surface model reading temperature at the top of the ice\n"
-                 "  and ice surface mass flux from a file...\n");
+  m_log->message(2, "* Initializing the surface model reading temperature at the top of the ice\n"
+                    "  and ice surface mass flux from a file...\n");
 
   ForcingOptions opt(*m_grid->ctx(), "surface.given");
 
@@ -90,7 +81,7 @@ void Given::init_impl(const Geometry &geometry) {
 }
 
 void Given::update_impl(const Geometry &geometry, double t, double dt) {
-  (void) geometry;
+  (void)geometry;
 
   m_mass_flux->update(t, dt);
   m_temperature->update(t, dt);
@@ -101,7 +92,6 @@ void Given::update_impl(const Geometry &geometry, double t, double dt) {
   dummy_accumulation(*m_mass_flux, *m_accumulation);
   dummy_melt(*m_mass_flux, *m_melt);
   dummy_runoff(*m_mass_flux, *m_runoff);
-
 }
 
 const array::Scalar &Given::mass_flux_impl() const {

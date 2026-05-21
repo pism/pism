@@ -36,8 +36,7 @@ private:
   void update_impl(const Inputs &inputs, double t, double dt);
   void init_impl(const Geometry &geometry);
 
-  void melting_point_temperature(const array::Scalar& depth,
-                                 array::Scalar &result) const;
+  void melting_point_temperature(const array::Scalar &depth, array::Scalar &result) const;
 };
 
 } // end of namespace ocean

@@ -40,10 +40,7 @@ public:
    *
    * returns basal yield stress in Pascal
    */
-  double yield_stress(double delta,
-                      double P_overburden,
-                      double water_thickness,
-                      double phi) const;
+  double yield_stress(double delta, double P_overburden, double water_thickness, double phi) const;
 
   /*!
    * Inverse of `yield_stress()`.
@@ -55,9 +52,7 @@ public:
    *
    * returns till friction angle in degrees
    */
-  double till_friction_angle(double delta,
-                             double P_overburden,
-                             double water_thickness,
+  double till_friction_angle(double delta, double P_overburden, double water_thickness,
                              double yield_stress) const;
 
   /*!
@@ -69,9 +64,8 @@ public:
    * @param[in] P_overburden overburden pressure (Pa)
    * @param[in] water_thickness till water thickness
    */
-  double effective_pressure(double delta,
-                            double P_overburden,
-                            double water_thickness) const;
+  double effective_pressure(double delta, double P_overburden, double water_thickness) const;
+
 private:
   //! Maximum till water thickness
   double m_W_till_max;

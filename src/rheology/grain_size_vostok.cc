@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <algorithm>            // std::min, std::max
+#include <algorithm> // std::min, std::max
 
 #include "pism/rheology/grain_size_vostok.hh"
 
@@ -25,22 +25,20 @@ namespace pism {
 namespace rheology {
 
 // age in thousands of years
-const double grain_size_vostok::m_age[grain_size_vostok::m_N] =
-  {0.0000e+00, 5.0000e+01, 1.0000e+02, 1.2500e+02, 1.5000e+02,
-   1.5800e+02, 1.6500e+02, 1.7000e+02, 1.8000e+02, 1.8800e+02,
-   2.0000e+02, 2.2500e+02, 2.4500e+02, 2.6000e+02, 3.0000e+02,
-   3.2000e+02, 3.5000e+02, 4.0000e+02, 5.0000e+02, 6.0000e+02,
-   8.0000e+02, 1.0000e+04};
+const double grain_size_vostok::m_age[grain_size_vostok::m_N] = {
+  0.0000e+00, 5.0000e+01, 1.0000e+02, 1.2500e+02, 1.5000e+02, 1.5800e+02, 1.6500e+02, 1.7000e+02,
+  1.8000e+02, 1.8800e+02, 2.0000e+02, 2.2500e+02, 2.4500e+02, 2.6000e+02, 3.0000e+02, 3.2000e+02,
+  3.5000e+02, 4.0000e+02, 5.0000e+02, 6.0000e+02, 8.0000e+02, 1.0000e+04
+};
 
 // grain size in meters
-const double grain_size_vostok::m_grain_size[grain_size_vostok::m_N] =
-  {1.8000e-03, 2.2000e-03, 3.0000e-03, 4.0000e-03, 4.3000e-03,
-   3.0000e-03, 3.0000e-03, 4.6000e-03, 3.4000e-03, 3.3000e-03,
-   5.9000e-03, 6.2000e-03, 5.4000e-03, 6.8000e-03, 3.5000e-03,
-   6.0000e-03, 8.0000e-03, 8.3000e-03, 3.6000e-03, 3.8000e-03,
-   9.5000e-03, 1.0000e-02};
+const double grain_size_vostok::m_grain_size[grain_size_vostok::m_N] = {
+  1.8000e-03, 2.2000e-03, 3.0000e-03, 4.0000e-03, 4.3000e-03, 3.0000e-03, 3.0000e-03, 4.6000e-03,
+  3.4000e-03, 3.3000e-03, 5.9000e-03, 6.2000e-03, 5.4000e-03, 6.8000e-03, 3.5000e-03, 6.0000e-03,
+  8.0000e-03, 8.3000e-03, 3.6000e-03, 3.8000e-03, 9.5000e-03, 1.0000e-02
+};
 grain_size_vostok::grain_size_vostok() {
-  m_acc = gsl_interp_accel_alloc();
+  m_acc    = gsl_interp_accel_alloc();
   m_spline = gsl_spline_alloc(gsl_interp_linear, m_N);
   gsl_spline_init(m_spline, m_age, m_grain_size, m_N);
 }

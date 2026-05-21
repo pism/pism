@@ -17,26 +17,26 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <cstdlib>              // strtol
-#include <cmath>                // std::pow, std::sqrt, std::fabs
+#include <cmath>   // std::pow, std::sqrt, std::fabs
+#include <cstdlib> // strtol
 #include <string>
-#include <vector>
 #include <tuple>
+#include <vector>
 
 #include "io/IO_Flags.hh"
-#include "pism/util/projection.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/VariableMetadata.hh"
+#include "pism/util/array/Array3D.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/io/io_helpers.hh"
-#include "pism/util/Grid.hh"
-#include "pism/util/array/Scalar.hh"
-#include "pism/util/array/Array3D.hh"
+#include "pism/util/projection.hh"
 
 #include "pism/pism_config.hh"
 #include "pism/util/pism_utilities.hh"
 
-#if (Pism_USE_PROJ==1)
+#if (Pism_USE_PROJ == 1)
 #include "pism/util/Proj.hh"
 #endif
 
@@ -70,8 +70,7 @@ int parse_epsg(const std::string &proj_string) {
     }
 
   } catch (RuntimeError &e) {
-    e.add_context("parsing the EPSG code in the PROJ string '%s'",
-                  proj_string.c_str());
+    e.add_context("parsing the EPSG code in the PROJ string '%s'", proj_string.c_str());
     throw;
   }
 }
@@ -85,54 +84,54 @@ VariableMetadata epsg_to_cf(units::System::Ptr system, const std::string &proj_s
 
   switch (epsg) {
   case 3413:
-    mapping["latitude_of_projection_origin"]         = {90.0};
-    mapping["scale_factor_at_projection_origin"]     = {1.0};
-    mapping["straight_vertical_longitude_from_pole"] = {-45.0};
-    mapping["standard_parallel"]                     = {70.0};
-    mapping["false_northing"]                        = {0.0};
+    mapping["latitude_of_projection_origin"]         = { 90.0 };
+    mapping["scale_factor_at_projection_origin"]     = { 1.0 };
+    mapping["straight_vertical_longitude_from_pole"] = { -45.0 };
+    mapping["standard_parallel"]                     = { 70.0 };
+    mapping["false_northing"]                        = { 0.0 };
     mapping["grid_mapping_name"]                     = "polar_stereographic";
-    mapping["false_easting"]                         = {0.0};
+    mapping["false_easting"]                         = { 0.0 };
     break;
   case 3031:
-    mapping["latitude_of_projection_origin"]         = {-90.0};
-    mapping["scale_factor_at_projection_origin"]     = {1.0};
-    mapping["straight_vertical_longitude_from_pole"] = {0.0};
-    mapping["standard_parallel"]                     = {-71.0};
-    mapping["false_northing"]                        = {0.0};
+    mapping["latitude_of_projection_origin"]         = { -90.0 };
+    mapping["scale_factor_at_projection_origin"]     = { 1.0 };
+    mapping["straight_vertical_longitude_from_pole"] = { 0.0 };
+    mapping["standard_parallel"]                     = { -71.0 };
+    mapping["false_northing"]                        = { 0.0 };
     mapping["grid_mapping_name"]                     = "polar_stereographic";
-    mapping["false_easting"]                         = {0.0};
+    mapping["false_easting"]                         = { 0.0 };
     break;
   case 3057:
-    mapping["grid_mapping_name"]                     = "lambert_conformal_conic" ;
-    mapping["longitude_of_central_meridian"]         = {-19.} ;
-    mapping["false_easting"]                         = {500000.} ;
-    mapping["false_northing"]                        = {500000.} ;
-    mapping["latitude_of_projection_origin"]         = {65.} ;
-    mapping["standard_parallel"]                     = {64.25, 65.75} ;
-    mapping["long_name"]                             = "CRS definition" ;
-    mapping["longitude_of_prime_meridian"]           = {0.} ;
-    mapping["semi_major_axis"]                       = {6378137.} ;
-    mapping["inverse_flattening"]                    = {298.257222101} ;
+    mapping["grid_mapping_name"]             = "lambert_conformal_conic";
+    mapping["longitude_of_central_meridian"] = { -19. };
+    mapping["false_easting"]                 = { 500000. };
+    mapping["false_northing"]                = { 500000. };
+    mapping["latitude_of_projection_origin"] = { 65. };
+    mapping["standard_parallel"]             = { 64.25, 65.75 };
+    mapping["long_name"]                     = "CRS definition";
+    mapping["longitude_of_prime_meridian"]   = { 0. };
+    mapping["semi_major_axis"]               = { 6378137. };
+    mapping["inverse_flattening"]            = { 298.257222101 };
     break;
   case 5936:
-    mapping["latitude_of_projection_origin"]         = {90.0};
-    mapping["scale_factor_at_projection_origin"]     = {1.0};
-    mapping["straight_vertical_longitude_from_pole"] = {-150.0};
-    mapping["standard_parallel"]                     = {90.0};
-    mapping["false_northing"]                        = {2000000.0};
+    mapping["latitude_of_projection_origin"]         = { 90.0 };
+    mapping["scale_factor_at_projection_origin"]     = { 1.0 };
+    mapping["straight_vertical_longitude_from_pole"] = { -150.0 };
+    mapping["standard_parallel"]                     = { 90.0 };
+    mapping["false_northing"]                        = { 2000000.0 };
     mapping["grid_mapping_name"]                     = "polar_stereographic";
-    mapping["false_easting"]                         = {2000000.0};
+    mapping["false_easting"]                         = { 2000000.0 };
     break;
   case 26710:
-    mapping["longitude_of_central_meridian"]         = {-123.0};
-    mapping["false_easting"]                         = {500000.0};
-    mapping["false_northing"]                        = {0.0};
-    mapping["grid_mapping_name"]                     = "transverse_mercator";
-    mapping["inverse_flattening"]                    = {294.978698213898};
-    mapping["latitude_of_projection_origin"]         = {0.0};
-    mapping["scale_factor_at_central_meridian"]      = {0.9996};
-    mapping["semi_major_axis"]                       = {6378206.4};
-    mapping["unit"]                                  = "metre";
+    mapping["longitude_of_central_meridian"]    = { -123.0 };
+    mapping["false_easting"]                    = { 500000.0 };
+    mapping["false_northing"]                   = { 0.0 };
+    mapping["grid_mapping_name"]                = "transverse_mercator";
+    mapping["inverse_flattening"]               = { 294.978698213898 };
+    mapping["latitude_of_projection_origin"]    = { 0.0 };
+    mapping["scale_factor_at_central_meridian"] = { 0.9996 };
+    mapping["semi_major_axis"]                  = { 6378206.4 };
+    mapping["unit"]                             = "metre";
     break;
   default:
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "unknown EPSG code '%d' in PROJ string '%s'",
@@ -266,7 +265,8 @@ static bool contains_epsg(const std::string &string) {
  * If failed to discover PROJ parameters, tries global attributes "proj" and "proj4", in
  * this order (PISM's old convention).
  */
-static std::string get_proj_parameters(const File &input_file, const std::string &mapping_variable_name) {
+static std::string get_proj_parameters(const File &input_file,
+                                       const std::string &mapping_variable_name) {
 
   std::string proj_string;
 
@@ -365,9 +365,9 @@ VariableMetadata mapping_info_from_file(const File &input_file, const std::strin
   return cf_mapping;
 }
 
-enum LonLat {LONGITUDE, LATITUDE};
+enum LonLat { LONGITUDE, LATITUDE };
 
-#if (Pism_USE_PROJ==1)
+#if (Pism_USE_PROJ == 1)
 
 //! Computes the area of a triangle using vector cross product.
 static double triangle_area(const double *A, const double *B, const double *C) {
@@ -378,9 +378,8 @@ static double triangle_area(const double *A, const double *B, const double *C) {
   }
   using std::pow;
   using std::sqrt;
-  return 0.5*sqrt(pow(V1[1]*V2[2] - V2[1]*V1[2], 2) +
-                  pow(V1[0]*V2[2] - V2[0]*V1[2], 2) +
-                  pow(V1[0]*V2[1] - V2[0]*V1[1], 2));
+  return 0.5 * sqrt(pow(V1[1] * V2[2] - V2[1] * V1[2], 2) + pow(V1[0] * V2[2] - V2[0] * V1[2], 2) +
+                    pow(V1[0] * V2[1] - V2[0] * V1[1], 2));
 }
 
 void compute_cell_areas(const std::string &projection, array::Scalar &result) {
@@ -388,16 +387,16 @@ void compute_cell_areas(const std::string &projection, array::Scalar &result) {
 
   Proj pism_to_geocent(projection, "+proj=geocent +datum=WGS84 +ellps=WGS84");
 
-// Cell layout:
-// (nw)        (ne)
-// +-----------+
-// |           |
-// |           |
-// |     o     |
-// |           |
-// |           |
-// +-----------+
-// (sw)        (se)
+  // Cell layout:
+  // (nw)        (ne)
+  // +-----------+
+  // |           |
+  // |           |
+  // |     o     |
+  // |           |
+  // |           |
+  // +-----------+
+  // (sw)        (se)
 
   double dx2 = 0.5 * grid->dx(), dy2 = 0.5 * grid->dy();
 
@@ -406,52 +405,46 @@ void compute_cell_areas(const std::string &projection, array::Scalar &result) {
   for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
-    const double
-      x = grid->x(i),
-      y = grid->y(j);
-    double
-      x_nw = x - dx2, y_nw = y + dy2,
-      x_ne = x + dx2, y_ne = y + dy2,
-      x_se = x + dx2, y_se = y - dy2,
-      x_sw = x - dx2, y_sw = y - dy2;
+    const double x = grid->x(i), y = grid->y(j);
+    double x_nw = x - dx2, y_nw = y + dy2, x_ne = x + dx2, y_ne = y + dy2, x_se = x + dx2,
+           y_se = y - dy2, x_sw = x - dx2, y_sw = y - dy2;
 
     PJ_COORD out;
 
-    out = proj_trans(pism_to_geocent, PJ_FWD, proj_coord(x_nw, y_nw, 0, 0));
-    double nw[3] = {out.xyz.x, out.xyz.y, out.xyz.z};
+    out          = proj_trans(pism_to_geocent, PJ_FWD, proj_coord(x_nw, y_nw, 0, 0));
+    double nw[3] = { out.xyz.x, out.xyz.y, out.xyz.z };
 
-    out = proj_trans(pism_to_geocent, PJ_FWD, proj_coord(x_ne, y_ne, 0, 0));
-    double ne[3] = {out.xyz.x, out.xyz.y, out.xyz.z};
+    out          = proj_trans(pism_to_geocent, PJ_FWD, proj_coord(x_ne, y_ne, 0, 0));
+    double ne[3] = { out.xyz.x, out.xyz.y, out.xyz.z };
 
-    out = proj_trans(pism_to_geocent, PJ_FWD, proj_coord(x_se, y_se, 0, 0));
-    double se[3] = {out.xyz.x, out.xyz.y, out.xyz.z};
+    out          = proj_trans(pism_to_geocent, PJ_FWD, proj_coord(x_se, y_se, 0, 0));
+    double se[3] = { out.xyz.x, out.xyz.y, out.xyz.z };
 
-    out = proj_trans(pism_to_geocent, PJ_FWD, proj_coord(x_sw, y_sw, 0, 0));
-    double sw[3] = {out.xyz.x, out.xyz.y, out.xyz.z};
+    out          = proj_trans(pism_to_geocent, PJ_FWD, proj_coord(x_sw, y_sw, 0, 0));
+    double sw[3] = { out.xyz.x, out.xyz.y, out.xyz.z };
 
     result(i, j) = triangle_area(sw, se, ne) + triangle_area(ne, nw, sw);
   }
 }
 
-static void compute_lon_lat(const std::string &projection,
-                            LonLat which, array::Scalar &result) {
+static void compute_lon_lat(const std::string &projection, LonLat which, array::Scalar &result) {
 
   Proj crs(projection, "EPSG:4326");
 
-// Cell layout:
-// (nw)        (ne)
-// +-----------+
-// |           |
-// |           |
-// |     o     |
-// |           |
-// |           |
-// +-----------+
-// (sw)        (se)
+  // Cell layout:
+  // (nw)        (ne)
+  // +-----------+
+  // |           |
+  // |           |
+  // |     o     |
+  // |           |
+  // |           |
+  // +-----------+
+  // (sw)        (se)
 
   auto grid = result.grid();
 
-  array::AccessScope list{&result};
+  array::AccessScope list{ &result };
 
   for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
@@ -468,8 +461,7 @@ static void compute_lon_lat(const std::string &projection,
   }
 }
 
-static void compute_lon_lat_bounds(const std::string &projection,
-                                   LonLat which,
+static void compute_lon_lat_bounds(const std::string &projection, LonLat which,
                                    array::Array3D &result) {
 
   Proj crs(projection, "EPSG:4326");
@@ -477,10 +469,10 @@ static void compute_lon_lat_bounds(const std::string &projection,
   auto grid = result.grid();
 
   double dx2 = 0.5 * grid->dx(), dy2 = 0.5 * grid->dy();
-  double x_offsets[] = {-dx2, dx2, dx2, -dx2};
-  double y_offsets[] = {-dy2, -dy2, dy2, dy2};
+  double x_offsets[] = { -dx2, dx2, dx2, -dx2 };
+  double y_offsets[] = { -dy2, -dy2, dy2, dy2 };
 
-  array::AccessScope list{&result};
+  array::AccessScope list{ &result };
 
   for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
@@ -510,31 +502,29 @@ static void compute_lon_lat_bounds(const std::string &projection,
 #else
 
 void compute_cell_areas(const std::string &projection, array::Scalar &result) {
-  (void) projection;
+  (void)projection;
 
   auto grid = result.grid();
   result.set(grid->dx() * grid->dy());
 }
 
-static void compute_lon_lat(const std::string &projection, LonLat which,
-                            array::Scalar &result) {
-  (void) projection;
-  (void) which;
-  (void) result;
+static void compute_lon_lat(const std::string &projection, LonLat which, array::Scalar &result) {
+  (void)projection;
+  (void)which;
+  (void)result;
 
   throw RuntimeError(PISM_ERROR_LOCATION, "Cannot compute longitude and latitude."
-                     " Please rebuild PISM with PROJ.");
+                                          " Please rebuild PISM with PROJ.");
 }
 
-static void compute_lon_lat_bounds(const std::string &projection,
-                                   LonLat which,
+static void compute_lon_lat_bounds(const std::string &projection, LonLat which,
                                    array::Array3D &result) {
-  (void) projection;
-  (void) which;
-  (void) result;
+  (void)projection;
+  (void)which;
+  (void)result;
 
   throw RuntimeError(PISM_ERROR_LOCATION, "Cannot compute longitude and latitude bounds."
-                     " Please rebuild PISM with PROJ.");
+                                          " Please rebuild PISM with PROJ.");
 }
 
 #endif
@@ -568,11 +558,8 @@ static std::string albers_conical_equal_area_to_proj(const VariableMetadata &map
   std::vector<double> standard_parallel = mapping["standard_parallel"];
 
   auto result = pism::printf("+proj=aea +type=crs +lon_0=%f +lat_0=%f +x_0=%f +y_0=%f +lat_1=%f",
-                             longitude_of_projection_origin,
-                             latitude_of_projection_origin,
-                             false_easting,
-                             false_northing,
-                             standard_parallel[0]);
+                             longitude_of_projection_origin, latitude_of_projection_origin,
+                             false_easting, false_northing, standard_parallel[0]);
   if (standard_parallel.size() == 2) {
     result += pism::printf(" +lat_2=%f", standard_parallel[1]);
   }
@@ -591,8 +578,8 @@ static std::string azimuthal_equidistant_to_proj(const VariableMetadata &mapping
   double false_easting                  = mapping["false_easting"];
   double false_northing                 = mapping["false_northing"];
   return pism::printf("+proj=aeqd +type=crs +lon_0=%f +lat_0=%f +x_0=%f +y_0=%f",
-                      longitude_of_projection_origin,
-                      latitude_of_projection_origin, false_easting, false_northing);
+                      longitude_of_projection_origin, latitude_of_projection_origin, false_easting,
+                      false_northing);
 }
 
 static std::string lambert_azimuthal_equal_area_to_proj(const VariableMetadata &mapping) {
@@ -605,8 +592,8 @@ static std::string lambert_azimuthal_equal_area_to_proj(const VariableMetadata &
   double false_easting                  = mapping["false_easting"];
   double false_northing                 = mapping["false_northing"];
   return pism::printf("+proj=laea +type=crs +lon_0=%f +lat_0=%f +x_0=%f +y_0=%f",
-                      longitude_of_projection_origin,
-                      latitude_of_projection_origin, false_easting, false_northing);
+                      longitude_of_projection_origin, latitude_of_projection_origin, false_easting,
+                      false_northing);
 }
 
 static std::string lambert_conformal_conic_to_proj(const VariableMetadata &mapping) {
@@ -622,11 +609,8 @@ static std::string lambert_conformal_conic_to_proj(const VariableMetadata &mappi
   std::vector<double> standard_parallel = mapping["standard_parallel"];
 
   auto result = pism::printf("+proj=lcc +type=crs +lon_0=%f +lat_0=%f +x_0=%f +y_0=%f +lat_1=%f",
-                             longitude_of_projection_origin,
-                             latitude_of_projection_origin,
-                             false_easting,
-                             false_northing,
-                             standard_parallel[0]);
+                             longitude_of_projection_origin, latitude_of_projection_origin,
+                             false_easting, false_northing, standard_parallel[0]);
   if (standard_parallel.size() == 2) {
     result += pism::printf(" +lat_2=%f", standard_parallel[1]);
   }
@@ -656,7 +640,7 @@ static std::string lambert_cylindrical_equal_area_to_proj(const VariableMetadata
   return result;
 }
 
-static std::string latitude_longitude_to_proj(const VariableMetadata &/* unused */) {
+static std::string latitude_longitude_to_proj(const VariableMetadata & /* unused */) {
   // No parameters
   return "+proj=lonlat +type=crs";
 }
@@ -673,8 +657,7 @@ static std::string mercator_to_proj(const VariableMetadata &mapping) {
   double false_northing                 = mapping["false_northing"];
 
   auto result = pism::printf("+proj=merc +type=crs +lon_0=%f +x_0=%f +y_0=%f",
-                             longitude_of_projection_origin,
-                             false_easting, false_northing);
+                             longitude_of_projection_origin, false_easting, false_northing);
 
   if (mapping.has_attribute("standard_parallel")) {
     result += pism::printf(" +lat_ts=%f", (double)mapping["standard_parallel"]);
@@ -720,10 +703,8 @@ static std::string polar_stereographic_to_proj(const VariableMetadata &mapping) 
   double false_northing                        = mapping["false_northing"];
 
   auto result = pism::printf("+proj=stere +type=crs +lat_0=%f +lon_0=%f +x_0=%f +y_0=%f",
-                             latitude_of_projection_origin,
-                             straight_vertical_longitude_from_pole,
-                             false_easting,
-                             false_northing);
+                             latitude_of_projection_origin, straight_vertical_longitude_from_pole,
+                             false_easting, false_northing);
 
   if (mapping.has_attribute("standard_parallel")) {
     result += pism::printf(" +lat_ts=%f", (double)mapping["standard_parallel"]);
@@ -761,8 +742,7 @@ static std::string rotated_latitude_longitude_to_proj(const VariableMetadata &ma
   }
 
   return pism::printf("+proj=ob_tran +type=crs +o_proj=longlat +o_lon_p=%f +o_lat_p=%f +lon_0=%f",
-                      north_pole_grid_longitude,
-                      grid_north_pole_latitude,
+                      north_pole_grid_longitude, grid_north_pole_latitude,
                       180.0 + grid_north_pole_longitude);
 }
 
@@ -799,11 +779,8 @@ static std::string transverse_mercator_to_proj(const VariableMetadata &mapping) 
   double false_northing                   = mapping["false_northing"];
 
   return pism::printf("+proj=tmerc +type=crs +lon_0=%f +lat_0=%f +k=%f +x_0=%f +y_0=%f",
-                      longitude_of_central_meridian,
-                      latitude_of_projection_origin,
-                      scale_factor_at_central_meridian,
-                      false_easting,
-                      false_northing);
+                      longitude_of_central_meridian, latitude_of_projection_origin,
+                      scale_factor_at_central_meridian, false_easting, false_northing);
 }
 
 static std::string vertical_perspective_to_proj(const VariableMetadata &mapping) {
@@ -821,7 +798,7 @@ static std::string vertical_perspective_to_proj(const VariableMetadata &mapping)
 
 static std::string common_flags(const VariableMetadata &mapping) {
 
-  auto flag = [&mapping](const char* name, const char* proj_name) {
+  auto flag = [&mapping](const char *name, const char *proj_name) {
     if (mapping.has_attribute(name)) {
       return pism::printf(" +%s=%f", proj_name, (double)mapping[name]);
     }
@@ -861,7 +838,7 @@ std::string cf_to_proj(const VariableMetadata &mapping) {
     return wkt;
   }
 
-  typedef std::string(*cf_to_proj_fn)(const VariableMetadata&);
+  typedef std::string (*cf_to_proj_fn)(const VariableMetadata &);
 
   std::map<std::string, cf_to_proj_fn> mappings = {
     { "albers_conical_equal_area", albers_conical_equal_area_to_proj },

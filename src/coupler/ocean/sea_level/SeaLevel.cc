@@ -21,8 +21,8 @@
 
 #include "pism/util/MaxTimestep.hh"
 
-#include "pism/util/pism_utilities.hh" // combine
 #include "pism/util/Logger.hh"
+#include "pism/util/pism_utilities.hh" // combine
 
 namespace pism {
 namespace ocean {
@@ -30,18 +30,13 @@ namespace sea_level {
 
 // "Modifier" constructor.
 SeaLevel::SeaLevel(std::shared_ptr<const Grid> grid, std::shared_ptr<SeaLevel> input)
-  : Component(grid),
-    m_input_model(input),
-    m_sea_level(grid, "sea_level") {
+    : Component(grid), m_input_model(input), m_sea_level(grid, "sea_level") {
 
-  m_sea_level.metadata(0)
-      .long_name("sea level elevation, relative to the geoid")
-      .units("meter");
+  m_sea_level.metadata(0).long_name("sea level elevation, relative to the geoid").units("meter");
 }
 
 // "Model" constructor (returns sea level is zero).
-SeaLevel::SeaLevel(std::shared_ptr<const Grid> g)
-  : SeaLevel(g, std::shared_ptr<SeaLevel>()) {
+SeaLevel::SeaLevel(std::shared_ptr<const Grid> g) : SeaLevel(g, std::shared_ptr<SeaLevel>()) {
   // empty
 }
 
@@ -72,7 +67,7 @@ void SeaLevel::update_impl(const Geometry &geometry, double t, double dt) {
   }
 }
 
-const array::Scalar& SeaLevel::elevation() const {
+const array::Scalar &SeaLevel::elevation() const {
   return m_sea_level;
 }
 
@@ -120,7 +115,7 @@ protected:
 
 DiagnosticList SeaLevel::spatial_diagnostics_impl() const {
   DiagnosticList result = {
-    {"sea_level", Diagnostic::Ptr(new diagnostics::SL(this))},
+    { "sea_level", Diagnostic::Ptr(new diagnostics::SL(this)) },
   };
 
   if (m_input_model) {

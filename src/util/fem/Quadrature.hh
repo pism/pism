@@ -62,8 +62,8 @@ namespace fem {
 */
 class Quadrature {
 public:
-  const std::vector<QuadPoint>& points() const;
-  const std::vector<double>& weights() const;
+  const std::vector<QuadPoint> &points() const;
+  const std::vector<double> &weights() const;
 
   QuadPoint point(int k) const {
     return m_points[k];
@@ -72,6 +72,7 @@ public:
   double weight(int k) const {
     return m_weights[k];
   }
+
 protected:
   std::vector<QuadPoint> m_points;
   std::vector<double> m_weights;

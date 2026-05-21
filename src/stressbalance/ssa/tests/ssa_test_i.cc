@@ -19,12 +19,11 @@
 #include <memory>
 #include <petsc.h>
 
-static char help[] =
-  "\nSSA_TESTI\n"
-  "  Testing program for the finite element implementation of the SSA.\n"
-  "  Does a time-independent calculation.  Does not run IceModel or a derived\n"
-  "  class thereof. Uses verification test I. Also may be used in a PISM\n"
-  "  software (regression) test.\n\n";
+static char help[] = "\nSSA_TESTI\n"
+                     "  Testing program for the finite element implementation of the SSA.\n"
+                     "  Does a time-independent calculation.  Does not run IceModel or a derived\n"
+                     "  class thereof. Uses verification test I. Also may be used in a PISM\n"
+                     "  software (regression) test.\n\n";
 
 #include "pism/stressbalance/ssa/tests/SSATestCase.hh"
 #include "pism/util/Context.hh"
@@ -36,13 +35,13 @@ static char help[] =
 namespace pism {
 namespace stressbalance {
 
-const double m_schoof = 10; // (pure number)
-const double L_schoof = 40e3; // meters
+const double m_schoof      = 10;   // (pure number)
+const double L_schoof      = 40e3; // meters
 const double aspect_schoof = 0.05; // (pure)
-const double H0_schoof = aspect_schoof * L_schoof;
-                                       // = 2000 m THICKNESS
+const double H0_schoof     = aspect_schoof * L_schoof;
+// = 2000 m THICKNESS
 const double B_schoof = 3.7e8; // Pa s^{1/3}; hardness
-                                     // given on p. 239 of Schoof; why so big?
+                               // given on p. 239 of Schoof; why so big?
 
 std::shared_ptr<Grid> ssa_test_i_grid(std::shared_ptr<Context> ctx, int Mx, int My) {
   return SSATestCase::grid(ctx, Mx, My,
@@ -50,7 +49,7 @@ std::shared_ptr<Grid> ssa_test_i_grid(std::shared_ptr<Context> ctx, int Mx, int 
                            3.0 * L_schoof, grid::CELL_CORNER, grid::NOT_PERIODIC);
 }
 
-class SSATestCaseI: public SSATestCase {
+class SSATestCaseI : public SSATestCase {
 public:
   SSATestCaseI(std::shared_ptr<SSA> ssa) : SSATestCase(ssa) {
     EnthalpyConverter EC(*m_config);
@@ -61,9 +60,7 @@ public:
 protected:
   virtual void initializeSSACoefficients();
 
-  virtual void exactSolution(int i, int j,
-    double x, double y, double *u, double *v);
-
+  virtual void exactSolution(int i, int j, double x, double y, double *u, double *v);
 };
 
 void SSATestCaseI::initializeSSACoefficients() {
@@ -71,7 +68,8 @@ void SSATestCaseI::initializeSSACoefficients() {
   m_bc_mask.set(0);
   m_geometry.ice_thickness.set(H0_schoof);
 
-  array::AccessScope list{&m_tauc, &m_bc_values, &m_bc_mask, &m_geometry.ice_surface_elevation, &m_geometry.bed_elevation};
+  array::AccessScope list{ &m_tauc, &m_bc_values, &m_bc_mask, &m_geometry.ice_surface_elevation,
+                           &m_geometry.bed_elevation };
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
@@ -82,7 +80,7 @@ void SSATestCaseI::initializeSSACoefficients() {
 
     m_geometry.bed_elevation(i, j) = I.bed;
 
-    m_tauc(i,j) = I.tauc;
+    m_tauc(i, j) = I.tauc;
 
     if (grid::domain_edge(*m_grid, i, j)) {
       m_bc_mask(i, j)   = 1;
@@ -98,12 +96,10 @@ void SSATestCaseI::initializeSSACoefficients() {
 }
 
 
-void SSATestCaseI::exactSolution(int /*i*/, int /*j*/,
-                                 double x, double y,
-                                 double *u, double *v) {
+void SSATestCaseI::exactSolution(int /*i*/, int /*j*/, double x, double y, double *u, double *v) {
   auto I = exactI(m_schoof, x, y);
-  *u = I.u;
-  *v = I.v;
+  *u     = I.u;
+  *v     = I.v;
 }
 
 } // end of namespace stressbalance
@@ -122,12 +118,12 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
     std::shared_ptr<Context> ctx = context_from_options(com, "ssa_testi");
-    auto config = ctx->config();
+    auto config                  = ctx->config();
 
     std::string usage = "\n"
-      "usage of SSA_TESTi:\n"
-      "  run ssa_testi -Mx <number> -My <number> -ssa_method <fd|fem>\n"
-      "\n";
+                        "usage of SSA_TESTi:\n"
+                        "  run ssa_testi -Mx <number> -My <number> -ssa_method <fd|fem>\n"
+                        "\n";
 
     bool stop = maybe_show_usage(*ctx->log(), "ssa_testi", usage);
 
@@ -139,7 +135,7 @@ int main(int argc, char *argv[]) {
     unsigned int Mx = config->get_number("grid.Mx");
     unsigned int My = config->get_number("grid.My");
 
-    auto method = config->get_string("stress_balance.ssa.method");
+    auto method      = config->get_string("stress_balance.ssa.method");
     auto output_file = config->get_string("output.file");
 
     bool write_output = config->get_string("output.size") != "none";
@@ -163,8 +159,7 @@ int main(int argc, char *argv[]) {
     if (write_output) {
       testcase.write(output_file);
     }
-  }
-  catch (...) {
+  } catch (...) {
     handle_fatal_errors(com);
     return 1;
   }

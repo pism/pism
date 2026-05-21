@@ -27,8 +27,9 @@ class IceCompModel : public IceModel {
 
 public:
   IceCompModel(std::shared_ptr<Grid> g, std::shared_ptr<Context> ctx, int mytest);
-  virtual ~IceCompModel() {}
-  
+  virtual ~IceCompModel() {
+  }
+
   // re-defined steps of init() sequence:
   virtual void allocate_storage();
   virtual void allocate_bedrock_thermal_unit();
@@ -50,9 +51,8 @@ protected:
   virtual void post_step_hook();
   // all tests except K
   void computeGeometryErrors(double &gvolexact, double &gareaexact, double &gdomeHexact,
-                                       double &volerr, double &areaerr,
-                                       double &gmaxHerr, double &gavHerr, double &gmaxetaerr,
-                                       double &centerHerr);
+                             double &volerr, double &areaerr, double &gmaxHerr, double &gavHerr,
+                             double &gmaxetaerr, double &centerHerr);
   virtual void print_summary(bool tempAndAge, double dt);
 
   // related to tests A B C D H
@@ -74,20 +74,21 @@ protected:
   // tests F and G
   void computeBasalTemperatureErrors(double &gmaxTerr, double &gavTerr, double &centerTerr);
   // tests F and G
-  void compute_strain_heating_errors(double &gmax_strain_heating_err, double &gav_strain_heating_err);
+  void compute_strain_heating_errors(double &gmax_strain_heating_err,
+                                     double &gav_strain_heating_err);
 
   // tests F and G
   void computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUerr,  // 2D vector errors
-                                              double &gmaxWerr, double &gavWerr); // scalar errors
-  
+                                    double &gmaxWerr, double &gavWerr); // scalar errors
+
   array::Array3D m_strain_heating3_comp;
 
   // related to tests K and O; see iCMthermo.cc
   void initTestsKO();
 
- // tests K and O only
-  void computeIceBedrockTemperatureErrors(double &gmaxTerr, double &gavTerr,
-                                                    double &gmaxTberr, double &gavTberr);
+  // tests K and O only
+  void computeIceBedrockTemperatureErrors(double &gmaxTerr, double &gavTerr, double &gmaxTberr,
+                                          double &gavTberr);
   // test O only
   void computeBasalMeltRateErrors(double &gmaxbmelterr, double &gminbmelterr);
 
@@ -95,14 +96,14 @@ protected:
   void test_V_init();
 
 private:
-  double m_f;       // ratio of ice density to bedrock density
+  double m_f; // ratio of ice density to bedrock density
   bool m_bedrock_is_ice_forK;
 
   // see iCMthermo.cc
-  static const double m_ST;      // K m^-1;  surface temperature gradient: T_s = ST * r + Tmin
-  static const double m_Tmin;    // K;       minimum temperature (at center)
-  static const double m_LforFG;  // m;  exact radius of tests F&G ice sheet
-  static const double m_ApforG;  // m;  magnitude A_p of annular perturbation for test G;
+  static const double m_ST;     // K m^-1;  surface temperature gradient: T_s = ST * r + Tmin
+  static const double m_Tmin;   // K;       minimum temperature (at center)
+  static const double m_LforFG; // m;  exact radius of tests F&G ice sheet
+  static const double m_ApforG; // m;  magnitude A_p of annular perturbation for test G;
   // period t_p is set internally to 2000 years
 };
 

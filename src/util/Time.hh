@@ -19,13 +19,13 @@
 #ifndef _PISMTIME_H_
 #define _PISMTIME_H_
 
-#include <vector>
 #include <memory>
+#include <vector>
 
 #include "VariableMetadata.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/Units.hh"
 #include "pism/util/Config.hh"
+#include "pism/util/Units.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -35,8 +35,8 @@ namespace pism {
 inline bool pism_is_valid_calendar_name(const std::string &name) {
   // Calendar names from the CF Conventions document (except the
   // 366_day (all_leap)):
-  return set_member(name, {"standard", "gregorian", "proleptic_gregorian",
-                           "noleap", "365_day", "julian", "360_day"});
+  return set_member(name, { "standard", "gregorian", "proleptic_gregorian", "noleap", "365_day",
+                            "julian", "360_day" });
 }
 
 //! \brief Time management class.
@@ -52,11 +52,9 @@ inline bool pism_is_valid_calendar_name(const std::string &name) {
  * to keep in mind that the year "1986" in this context is not the year of the
  * Chernobyl disaster but a year 1986 years since some date.
  */
-class Time
-{
+class Time {
 public:
-  Time(MPI_Comm com, std::shared_ptr<const Config> config,
-       const Logger &log,
+  Time(MPI_Comm com, std::shared_ptr<const Config> config, const Logger &log,
        units::System::Ptr unit_system);
   virtual ~Time() = default;
 
@@ -95,7 +93,7 @@ public:
 
   //! Metadata of the NetCDF variable containing time bounds
   VariableMetadata bounds_metadata() const;
-  
+
   /*!
    * Internal time units.
    */
@@ -122,23 +120,22 @@ public:
   //! @brief Convert time interval from seconds to given units. Handle
   //! 'years' using the year length corresponding to the calendar.
   double convert_time_interval(double T, const std::string &units) const;
-protected:
 
+protected:
   std::vector<double> parse_list(const std::string &spec) const;
   std::vector<double> parse_range(const std::string &spec) const;
 
   void compute_times_simple(double time_start, double delta, double time_end,
                             std::vector<double> &result) const;
 
-  enum IntervalType {YEARLY, MONTHLY, SIMPLE};
+  enum IntervalType { YEARLY, MONTHLY, SIMPLE };
 
   struct Interval {
     double dt;
     IntervalType type;
   };
 
-  void compute_times(double time_start, double time_end,
-                     const Interval &interval,
+  void compute_times(double time_start, double time_end, const Interval &interval,
                      std::vector<double> &result) const;
 
   Interval parse_interval_length(const std::string &spec) const;
@@ -157,7 +154,7 @@ protected:
   units::Unit m_time_units;
 
   std::string m_variable_name;
-  
+
   //! Time resolution, in seconds.
   double m_t_eps;
 
@@ -186,9 +183,7 @@ protected:
   void compute_times_yearly(std::vector<double> &result) const;
 };
 
-void check_forcing_duration(const Time &time,
-                            double forcing_start,
-                            double forcing_end);
+void check_forcing_duration(const Time &time, double forcing_start, double forcing_end);
 
 
 } // end of namespace pism

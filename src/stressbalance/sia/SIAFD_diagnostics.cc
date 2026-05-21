@@ -25,15 +25,14 @@ namespace pism {
 namespace stressbalance {
 
 DiagnosticList SIAFD::spatial_diagnostics_impl() const {
-  DiagnosticList result = {
-    {"diffusivity",           Diagnostic::Ptr(new SIAFD_diffusivity(this))},
-    {"diffusivity_staggered", Diagnostic::Ptr(new SIAFD_diffusivity_staggered(this))},
-    {"schoofs_theta",         Diagnostic::Ptr(new SIAFD_schoofs_theta(this))},
-    {"thksmooth",             Diagnostic::Ptr(new SIAFD_thksmooth(this))},
-    {"topgsmooth",            Diagnostic::Ptr(new SIAFD_topgsmooth(this))},
-    {"h_x",                   Diagnostic::Ptr(new SIAFD_h_x(this))},
-    {"h_y",                   Diagnostic::Ptr(new SIAFD_h_y(this))}
-  };
+  DiagnosticList result = { { "diffusivity", Diagnostic::Ptr(new SIAFD_diffusivity(this)) },
+                            { "diffusivity_staggered",
+                              Diagnostic::Ptr(new SIAFD_diffusivity_staggered(this)) },
+                            { "schoofs_theta", Diagnostic::Ptr(new SIAFD_schoofs_theta(this)) },
+                            { "thksmooth", Diagnostic::Ptr(new SIAFD_thksmooth(this)) },
+                            { "topgsmooth", Diagnostic::Ptr(new SIAFD_topgsmooth(this)) },
+                            { "h_x", Diagnostic::Ptr(new SIAFD_h_x(this)) },
+                            { "h_y", Diagnostic::Ptr(new SIAFD_h_y(this)) } };
   return result;
 }
 
@@ -71,8 +70,7 @@ std::shared_ptr<array::Array> SIAFD_topgsmooth::compute_impl() const {
   return result;
 }
 
-SIAFD_thksmooth::SIAFD_thksmooth(const SIAFD *m)
-  : Diag<SIAFD>(m) {
+SIAFD_thksmooth::SIAFD_thksmooth(const SIAFD *m) : Diag<SIAFD>(m) {
 
   m_vars = { { m_sys, "thksmooth", *m_grid } };
   m_vars[0]
@@ -94,15 +92,12 @@ std::shared_ptr<array::Array> SIAFD_thksmooth::compute_impl() const {
 
   auto result = allocate<array::Scalar>("thksmooth");
 
-  model->bed_smoother().smoothed_thk(surface, thickness, cell_type,
-                                     *result);
+  model->bed_smoother().smoothed_thk(surface, thickness, cell_type, *result);
   return result;
 }
 
 
-
-SIAFD_diffusivity::SIAFD_diffusivity(const SIAFD *m)
-  : Diag<SIAFD>(m) {
+SIAFD_diffusivity::SIAFD_diffusivity(const SIAFD *m) : Diag<SIAFD>(m) {
 
   m_vars = { { m_sys, "diffusivity", *m_grid } };
   m_vars[0].long_name("diffusivity of SIA mass continuity equation").units("m^2 s^-1");
@@ -112,7 +107,7 @@ std::shared_ptr<array::Array> SIAFD_diffusivity::compute_impl() const {
   auto result_ptr = allocate<array::Scalar>("diffusivity");
 
   const auto &D = model->diffusivity();
-  auto &result = *result_ptr;
+  auto &result  = *result_ptr;
 
   array::AccessScope list{ &D, &result };
 
@@ -125,8 +120,7 @@ std::shared_ptr<array::Array> SIAFD_diffusivity::compute_impl() const {
   return result_ptr;
 }
 
-SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(const SIAFD *m)
-  : Diag<SIAFD>(m) {
+SIAFD_diffusivity_staggered::SIAFD_diffusivity_staggered(const SIAFD *m) : Diag<SIAFD>(m) {
 
   m_vars = { { m_sys, "diffusivity_i", *m_grid }, { m_sys, "diffusivity_j", *m_grid } };
   m_vars[0]
@@ -158,8 +152,7 @@ std::shared_ptr<array::Array> SIAFD_diffusivity_staggered::compute_impl() const 
   return result;
 }
 
-SIAFD_h_x::SIAFD_h_x(const SIAFD *m)
-  : Diag<SIAFD>(m) {
+SIAFD_h_x::SIAFD_h_x(const SIAFD *m) : Diag<SIAFD>(m) {
 
   m_vars = { { m_sys, "h_x_i", *m_grid }, { m_sys, "h_x_j", *m_grid } };
   m_vars[0].long_name("the x-component of the surface gradient, i-offset").units("1");
@@ -174,8 +167,7 @@ std::shared_ptr<array::Array> SIAFD_h_x::compute_impl() const {
   return result;
 }
 
-SIAFD_h_y::SIAFD_h_y(const SIAFD *m)
-  : Diag<SIAFD>(m) {
+SIAFD_h_y::SIAFD_h_y(const SIAFD *m) : Diag<SIAFD>(m) {
 
   m_vars = { { m_sys, "h_y_i", *m_grid }, { m_sys, "h_y_j", *m_grid } };
   m_vars[0].long_name("the y-component of the surface gradient, i-offset").units("1");

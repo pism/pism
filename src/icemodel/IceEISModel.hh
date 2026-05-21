@@ -23,7 +23,7 @@
 
 namespace pism {
 
-//! Derived class for doing EISMINT II simplified geometry experiments.  
+//! Derived class for doing EISMINT II simplified geometry experiments.
 /*!
   These experiments use the thermomechanically-coupled, non-polythermal shallow
   ice approximation. See @ref EISMINT00 and Appendix B of @ref BBssasliding.
@@ -41,8 +41,8 @@ protected:
   char m_experiment;
 };
 
-void generate_trough_topography(array::Scalar &result);  // for experiments I,J
-void generate_mound_topography(array::Scalar &result);   // for experiments K,L
+void generate_trough_topography(array::Scalar &result); // for experiments I,J
+void generate_mound_topography(array::Scalar &result);  // for experiments K,L
 
 } // end of namespace pism
 

@@ -19,11 +19,11 @@
 
 #include "pism/util/io/SynchronousOutputWriter.hh"
 #include "pism/util/Config.hh"
+#include "pism/util/GridInfo.hh"
 #include "pism/util/VariableMetadata.hh"
+#include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/io/IO_Flags.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/util/GridInfo.hh"
 #include <cstddef>
 
 namespace pism {
@@ -48,7 +48,7 @@ void SynchronousOutputWriter::initialize_impl(
 SynchronousOutputWriter::SynchronousOutputWriter(MPI_Comm comm, const Config &config)
     : OutputWriter(comm, config) {
   m_compression_level = static_cast<int>(config.get_number("output.compression_level"));
-  m_backend = string_to_backend(config.get_string("output.format"));
+  m_backend           = string_to_backend(config.get_string("output.format"));
   set_is_async(false);
 }
 
@@ -225,7 +225,7 @@ void SynchronousOutputWriter::write_distributed_array_impl(const std::string &fi
     start.insert(start.cbegin(), 0);
     count.insert(count.cbegin(), 1);
   }
-  
+
   output_file.write_variable(variable_name, start, count, data);
 }
 

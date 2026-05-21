@@ -37,32 +37,35 @@ public:
   virtual ~IceBasalResistancePlasticLaw() = default;
   virtual void print_info(const Logger &log, int threshold, units::System::Ptr system) const;
   virtual double drag(double tauc, double vx, double vy) const;
-  virtual void drag_with_derivative(double tauc, double vx, double vy,
-                                    double *drag, double *ddrag) const;
+  virtual void drag_with_derivative(double tauc, double vx, double vy, double *drag,
+                                    double *ddrag) const;
+
 protected:
   double m_plastic_regularize;
 };
 
-class IceBasalResistancePseudoPlasticLaw : public IceBasalResistancePlasticLaw{
+class IceBasalResistancePseudoPlasticLaw : public IceBasalResistancePlasticLaw {
 public:
   IceBasalResistancePseudoPlasticLaw(const Config &config);
   virtual ~IceBasalResistancePseudoPlasticLaw() = default;
   virtual void print_info(const Logger &log, int threshold, units::System::Ptr system) const;
   virtual double drag(double tauc, double vx, double vy) const;
-  virtual void drag_with_derivative(double tauc, double vx, double vy,
-                                    double *drag, double *ddrag) const;
+  virtual void drag_with_derivative(double tauc, double vx, double vy, double *drag,
+                                    double *ddrag) const;
+
 protected:
   double m_q, m_u_threshold, m_sliding_scale_factor_reduces_tauc, m_u_threshold_factor;
 };
 
-class IceBasalResistanceRegularizedLaw : public IceBasalResistancePlasticLaw{
+class IceBasalResistanceRegularizedLaw : public IceBasalResistancePlasticLaw {
 public:
   IceBasalResistanceRegularizedLaw(const Config &config);
   virtual ~IceBasalResistanceRegularizedLaw() = default;
   virtual void print_info(const Logger &log, int threshold, units::System::Ptr system) const;
   virtual double drag(double tauc, double vx, double vy) const;
-  virtual void drag_with_derivative(double tauc, double vx, double vy,
-                                    double *drag, double *ddrag) const;
+  virtual void drag_with_derivative(double tauc, double vx, double vy, double *drag,
+                                    double *ddrag) const;
+
 protected:
   double m_q, m_u_threshold, m_sliding_scale_factor_reduces_tauc;
 };
@@ -70,4 +73,3 @@ protected:
 } // end of namespace pism
 
 #endif /* __basal_resistance_hh */
-

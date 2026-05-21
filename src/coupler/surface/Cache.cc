@@ -17,24 +17,24 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <cmath>                // fabs()
+#include <algorithm> // for std::min()
 #include <cassert>
-#include <algorithm>            // for std::min()
+#include <cmath> // fabs()
 
 #include "pism/coupler/surface/Cache.hh"
-#include "pism/util/Time.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/util/MaxTimestep.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/Time.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 namespace surface {
 
 Cache::Cache(std::shared_ptr<const Grid> grid, std::shared_ptr<SurfaceModel> in)
-  : SurfaceModel(grid, in) {
+    : SurfaceModel(grid, in) {
 
-  m_next_update_time = time().current();
+  m_next_update_time      = time().current();
   m_update_interval_years = m_config->get_number("surface.cache.update_interval", "seconds");
 
   // use the current year length (according to the selected calendar) to convert update
@@ -69,21 +69,18 @@ void Cache::init_impl(const Geometry &geometry) {
 void Cache::update_impl(const Geometry &geometry, double t, double dt) {
   // ignore dt and always use 1 year long time-steps when updating
   // the input model
-  (void) dt;
+  (void)dt;
 
   double time_resolution = m_config->get_number("time_stepping.resolution", "seconds");
   if (t >= m_next_update_time or fabs(t - m_next_update_time) < time_resolution) {
 
-    double
-      one_year_from_now = time().increment_date(t, 1.0),
-      update_dt         = one_year_from_now - t;
+    double one_year_from_now = time().increment_date(t, 1.0), update_dt = one_year_from_now - t;
 
     assert(update_dt > 0.0);
 
     m_input_model->update(geometry, t, update_dt);
 
-    m_next_update_time = time().increment_date(m_next_update_time,
-                                                               m_update_interval_years);
+    m_next_update_time = time().increment_date(m_next_update_time, m_update_interval_years);
 
     // store outputs of the input model
     m_mass_flux->copy_from(m_input_model->mass_flux());
@@ -105,8 +102,8 @@ MaxTimestep Cache::max_timestep_impl(double t) const {
   // if we got very close to the next update time, set time step
   // length to the interval between updates
   if (dt < time_resolution) {
-    double update_time_after_next = time().increment_date(m_next_update_time,
-                                                                          m_update_interval_years);
+    double update_time_after_next =
+        time().increment_date(m_next_update_time, m_update_interval_years);
 
     dt = update_time_after_next - m_next_update_time;
     assert(dt > 0.0);
@@ -144,15 +141,15 @@ const array::Scalar &Cache::layer_mass_impl() const {
   return *m_layer_mass;
 }
 
-const array::Scalar& Cache::accumulation_impl() const {
+const array::Scalar &Cache::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const array::Scalar& Cache::melt_impl() const {
+const array::Scalar &Cache::melt_impl() const {
   return *m_melt;
 }
 
-const array::Scalar& Cache::runoff_impl() const {
+const array::Scalar &Cache::runoff_impl() const {
   return *m_runoff;
 }
 

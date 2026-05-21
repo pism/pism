@@ -21,24 +21,23 @@
 
 // ocean models:
 #include "pism/coupler/ocean/Anomaly.hh"
+#include "pism/coupler/ocean/Cache.hh"
 #include "pism/coupler/ocean/Constant.hh"
 #include "pism/coupler/ocean/ConstantPIK.hh"
-#include "pism/coupler/ocean/GivenClimate.hh"
-#include "pism/coupler/ocean/Delta_T.hh"
-#include "pism/coupler/ocean/Delta_SMB.hh"
 #include "pism/coupler/ocean/Delta_MBP.hh"
+#include "pism/coupler/ocean/Delta_SMB.hh"
+#include "pism/coupler/ocean/Delta_T.hh"
 #include "pism/coupler/ocean/Frac_MBP.hh"
 #include "pism/coupler/ocean/Frac_SMB.hh"
-#include "pism/coupler/ocean/Runoff_SMB.hh"
-#include "pism/coupler/ocean/Cache.hh"
+#include "pism/coupler/ocean/GivenClimate.hh"
 #include "pism/coupler/ocean/GivenTH.hh"
 #include "pism/coupler/ocean/Pico.hh"
+#include "pism/coupler/ocean/Runoff_SMB.hh"
 
 namespace pism {
 namespace ocean {
 // Ocean
-Factory::Factory(std::shared_ptr<const Grid> g)
-  : PCFactory<OceanModel>(g, "ocean.models") {
+Factory::Factory(std::shared_ptr<const Grid> g) : PCFactory<OceanModel>(g, "ocean.models") {
 
   add_model<GivenTH>("th");
   add_model<PIK>("pik");

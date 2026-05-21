@@ -16,18 +16,18 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <cmath>                // fabs()
 #include <cassert>
+#include <cmath>   // fabs()
+#include <cstring> // memset
 #include <fstream>
 #include <iostream>
-#include <cstring>              // memset
 
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/array/Array3D.hh"
 #include "pism/util/ColumnSystem.hh"
+#include "pism/util/array/Array3D.hh"
+#include "pism/util/pism_utilities.hh"
 
-#include "pism/util/error_handling.hh"
 #include "pism/util/ColumnInterpolation.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 
@@ -47,9 +47,8 @@ with the last row
 \endverbatim
 Thus the index into the arrays L, D, U is always the row number.
  */
-TridiagonalSystem::TridiagonalSystem(unsigned int max_size,
-                                     const std::string &prefix)
-  : m_max_system_size(max_size), m_prefix(prefix) {
+TridiagonalSystem::TridiagonalSystem(unsigned int max_size, const std::string &prefix)
+    : m_max_system_size(max_size), m_prefix(prefix) {
   const unsigned int huge = 1e6;
   assert(max_size >= 1 && max_size < huge);
 
@@ -62,12 +61,12 @@ TridiagonalSystem::TridiagonalSystem(unsigned int max_size,
 
 //! Zero all entries.
 void TridiagonalSystem::reset() {
-#if Pism_DEBUG==1
-  memset(&m_L[0],    0, (m_max_system_size)*sizeof(double));
-  memset(&m_U[0],    0, (m_max_system_size)*sizeof(double));
-  memset(&m_D[0],    0, (m_max_system_size)*sizeof(double));
-  memset(&m_rhs[0],  0, (m_max_system_size)*sizeof(double));
-  memset(&m_work[0], 0, (m_max_system_size)*sizeof(double));
+#if Pism_DEBUG == 1
+  memset(&m_L[0], 0, (m_max_system_size) * sizeof(double));
+  memset(&m_U[0], 0, (m_max_system_size) * sizeof(double));
+  memset(&m_D[0], 0, (m_max_system_size) * sizeof(double));
+  memset(&m_rhs[0], 0, (m_max_system_size) * sizeof(double));
+  memset(&m_work[0], 0, (m_max_system_size) * sizeof(double));
 #endif
 }
 
@@ -75,13 +74,13 @@ void TridiagonalSystem::reset() {
 double TridiagonalSystem::norm1(unsigned int system_size) const {
   assert(system_size <= m_max_system_size);
   if (system_size == 1) {
-    return fabs(m_D[0]);   // only 1x1 case is special
+    return fabs(m_D[0]); // only 1x1 case is special
   }
   double z = fabs(m_D[0]) + fabs(m_L[1]);
-  for (unsigned int k = 1; k < system_size; k++) {  // k is column index (zero-based)
-    z = std::max(z, fabs(m_U[k-1])) + fabs(m_D[k]) + fabs(m_L[k+1]);
+  for (unsigned int k = 1; k < system_size; k++) { // k is column index (zero-based)
+    z = std::max(z, fabs(m_U[k - 1])) + fabs(m_D[k]) + fabs(m_L[k + 1]);
   }
-  z = std::max(z, fabs(m_U[system_size-2]) + fabs(m_D[system_size-1]));
+  z = std::max(z, fabs(m_U[system_size - 2]) + fabs(m_D[system_size - 1]));
   return z;
 }
 
@@ -102,7 +101,7 @@ We return -1.0 if the absolute value of any diagonal element is less than
 double TridiagonalSystem::ddratio(unsigned int system_size) const {
   assert(system_size <= m_max_system_size);
 
-  const double eps = 1.0e-12;
+  const double eps   = 1.0e-12;
   const double scale = norm1(system_size);
 
   if ((fabs(m_D[0]) / scale) < eps) {
@@ -110,12 +109,12 @@ double TridiagonalSystem::ddratio(unsigned int system_size) const {
   }
   double z = fabs(m_U[0]) / fabs(m_D[0]);
 
-  for (unsigned int k = 1; k < system_size - 1; k++) {  // k is row index (zero-based)
+  for (unsigned int k = 1; k < system_size - 1; k++) { // k is row index (zero-based)
     if ((fabs(m_D[k]) / scale) < eps) {
       return -1.0;
     }
     const double s = fabs(m_L[k]) + fabs(m_U[k]);
-    z = std::max(z, s / fabs(m_D[k]));
+    z              = std::max(z, s / fabs(m_D[k]));
   }
 
   if ((fabs(m_D[system_size - 1]) / scale) < eps) {
@@ -136,10 +135,8 @@ Result should be executable as a Python (SciPy) script.
 
 Does not stop on non-fatal errors.
  */
-void TridiagonalSystem::save_vector(std::ostream &output,
-                                    const std::vector<double> &v,
-                                    unsigned int system_size,
-                                    const std::string &variable) {
+void TridiagonalSystem::save_vector(std::ostream &output, const std::vector<double> &v,
+                                    unsigned int system_size, const std::string &variable) {
   assert(system_size >= 1);
 
   output << variable << " = numpy.array([";
@@ -151,8 +148,7 @@ void TridiagonalSystem::save_vector(std::ostream &output,
 
 
 //! View the tridiagonal matrix.
-void TridiagonalSystem::save_matrix(std::ostream &output,
-                                    unsigned int system_size,
+void TridiagonalSystem::save_matrix(std::ostream &output, unsigned int system_size,
                                     const std::string &variable) const {
 
   if (system_size < 2) {
@@ -166,18 +162,16 @@ void TridiagonalSystem::save_matrix(std::ostream &output,
   save_vector(output, m_L, system_size, variable + "_L");
 
   // prepare to convert to a sparse matrix
-  output << variable << "_diagonals = ["
-         << variable << "_L[1:], "
-         << variable << "_D, "
-         << variable << "_U[:-1]]" << std::endl;
+  output << variable << "_diagonals = [" << variable << "_L[1:], " << variable << "_D, " << variable
+         << "_U[:-1]]" << std::endl;
   output << "import scipy.sparse" << std::endl;
-  output << variable << " = scipy.sparse.diags(" << variable << "_diagonals, [-1, 0, 1])" << std::endl;
+  output << variable << " = scipy.sparse.diags(" << variable << "_diagonals, [-1, 0, 1])"
+         << std::endl;
 }
 
 
 //! View the tridiagonal system A x = b to an output stream, both A as a full matrix and b as a vector.
-void TridiagonalSystem::save_system(std::ostream &output,
-                                    unsigned int system_size) const {
+void TridiagonalSystem::save_system(std::ostream &output, unsigned int system_size) const {
   save_matrix(output, system_size, m_prefix + "_A");
   save_vector(output, m_rhs, system_size, m_prefix + "_rhs");
 }
@@ -232,7 +226,7 @@ void TridiagonalSystem::solve(unsigned int system_size, double *result) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "zero pivot at row %d", k + 1);
     }
 
-    result[k] = (m_rhs[k] - m_L[k] * result[k-1]) / b;
+    result[k] = (m_rhs[k] - m_L[k] * result[k - 1]) / b;
   }
 
   for (int k = static_cast<int>(system_size) - 2; k >= 0; --k) {
@@ -245,13 +239,10 @@ std::string TridiagonalSystem::prefix() const {
 }
 
 //! A column system is a kind of a tridiagonal system.
-columnSystemCtx::columnSystemCtx(const std::vector<double>& storage_grid,
-                                 const std::string &prefix,
-                                 double dx, double dy, double dt,
-                                 const array::Array3D &u3,
-                                 const array::Array3D &v3,
-                                 const array::Array3D &w3)
-  : m_dx(dx), m_dy(dy), m_dt(dt), m_u3(u3), m_v3(v3), m_w3(w3) {
+columnSystemCtx::columnSystemCtx(const std::vector<double> &storage_grid, const std::string &prefix,
+                                 double dx, double dy, double dt, const array::Array3D &u3,
+                                 const array::Array3D &v3, const array::Array3D &w3)
+    : m_dx(dx), m_dy(dy), m_dt(dt), m_u3(u3), m_v3(v3), m_w3(w3) {
   assert(dx > 0.0);
   assert(dy > 0.0);
   assert(dt > 0.0);
@@ -280,32 +271,32 @@ double columnSystemCtx::dz() const {
   return m_dz;
 }
 
-const std::vector<double>& columnSystemCtx::z() const {
+const std::vector<double> &columnSystemCtx::z() const {
   return m_z;
 }
 
 void columnSystemCtx::fine_to_coarse(const std::vector<double> &input, int i, int j,
-                                     array::Array3D& output) const {
+                                     array::Array3D &output) const {
   m_interp->fine_to_coarse(input.data(), output.get_column(i, j));
 }
 
 void columnSystemCtx::coarse_to_fine(const array::Array3D &input, int i, int j,
-                                     double* output) const {
+                                     double *output) const {
   m_interp->coarse_to_fine(input.get_column(i, j), m_ks, output);
 }
 
-void columnSystemCtx::init_fine_grid(const std::vector<double>& storage_grid) {
+void columnSystemCtx::init_fine_grid(const std::vector<double> &storage_grid) {
   // Compute m_dz as the minimum vertical spacing in the coarse
   // grid:
   unsigned int Mz = storage_grid.size();
-  double Lz = storage_grid.back();
-  m_dz = Lz;
+  double Lz       = storage_grid.back();
+  m_dz            = Lz;
   for (unsigned int k = 1; k < Mz; ++k) {
     m_dz = std::min(m_dz, storage_grid[k] - storage_grid[k - 1]);
   }
 
   size_t Mz_fine = static_cast<size_t>(ceil(Lz / m_dz) + 1);
-  m_dz = Lz / static_cast<double>(Mz_fine - 1);
+  m_dz           = Lz / static_cast<double>(Mz_fine - 1);
 
   m_z.resize(Mz_fine);
   // compute levels of the fine grid:
@@ -315,8 +306,7 @@ void columnSystemCtx::init_fine_grid(const std::vector<double>& storage_grid) {
   // Note that it *is* allowed to go over Lz.
 }
 
-void columnSystemCtx::init_column(int i, int j,
-                                  double ice_thickness) {
+void columnSystemCtx::init_column(int i, int j, double ice_thickness) {
   m_i  = i;
   m_j  = j;
   m_ks = static_cast<unsigned int>(floor(ice_thickness / m_dz));
@@ -329,12 +319,14 @@ void columnSystemCtx::init_column(int i, int j,
   m_solver->reset();
 
   // post-condition
-#if Pism_DEBUG==1
+#if Pism_DEBUG == 1
   // check if m_ks is valid
   if (m_ks >= m_z.size()) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "ks = %d computed at i = %d, j = %d is invalid,\n"
-                                  "possibly because of invalid ice thickness (%f meters) or dz (%f meters).",
-                                  m_ks, m_i, m_j, ice_thickness, m_dz);
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION,
+        "ks = %d computed at i = %d, j = %d is invalid,\n"
+        "possibly because of invalid ice thickness (%f meters) or dz (%f meters).",
+        m_ks, m_i, m_j, ice_thickness, m_dz);
   }
 #endif
 }
@@ -342,8 +334,8 @@ void columnSystemCtx::init_column(int i, int j,
 //! Write system matrix and right-hand-side into an Python script.  The file name contains ZERO_PIVOT_ERROR.
 void columnSystemCtx::reportColumnZeroPivotErrorMFile(unsigned int M) {
 
-  auto filename = pism::printf("%s_i%d_j%d_ZERO_PIVOT_ERROR.py",
-                               m_solver->prefix().c_str(), m_i, m_j);
+  auto filename =
+      pism::printf("%s_i%d_j%d_ZERO_PIVOT_ERROR.py", m_solver->prefix().c_str(), m_i, m_j);
 
   std::ofstream output(filename);
   output << "# system has 1-norm = " << m_solver->norm1(M)
@@ -359,15 +351,14 @@ void columnSystemCtx::save_to_file(const std::vector<double> &x) {
 
   auto filename = pism::printf("%s_i%d_j%d.py", m_solver->prefix().c_str(), m_i, m_j);
 
-  std::cout << "saving "
-            << m_solver->prefix() << " column system at (i,j)"
-            << " = (" << m_i << "," << m_j << ") to " << filename << " ...\n" << std::endl;
+  std::cout << "saving " << m_solver->prefix() << " column system at (i,j)"
+            << " = (" << m_i << "," << m_j << ") to " << filename << " ...\n"
+            << std::endl;
 
   this->save_to_file(filename, x);
 }
 
-void columnSystemCtx::save_to_file(const std::string &filename,
-                                   const std::vector<double> &x) {
+void columnSystemCtx::save_to_file(const std::string &filename, const std::vector<double> &x) {
   m_solver->save_system_with_solution(filename, m_z.size(), x);
 }
 

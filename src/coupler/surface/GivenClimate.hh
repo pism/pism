@@ -28,6 +28,7 @@ class Given : public SurfaceModel {
 public:
   Given(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere::AtmosphereModel> input);
   virtual ~Given() = default;
+
 protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
@@ -35,9 +36,9 @@ protected:
   const array::Scalar &temperature_impl() const;
   const array::Scalar &mass_flux_impl() const;
 
-  const array::Scalar& accumulation_impl() const;
-  const array::Scalar& melt_impl() const;
-  const array::Scalar& runoff_impl() const;
+  const array::Scalar &accumulation_impl() const;
+  const array::Scalar &melt_impl() const;
+  const array::Scalar &runoff_impl() const;
 
   std::set<VariableMetadata> state_impl() const;
   void write_state_impl(const OutputFile &output) const;

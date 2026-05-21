@@ -40,7 +40,7 @@ private:
   void begin_pointwise_access_impl() const;
   void end_pointwise_access_impl() const;
 
-  const array::Scalar& precipitation_impl() const;
+  const array::Scalar &precipitation_impl() const;
 
   void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
 

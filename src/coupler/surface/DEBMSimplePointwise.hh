@@ -19,8 +19,8 @@
 #ifndef PISM_DEBM_SIMPLE_POINTWISE_H
 #define PISM_DEBM_SIMPLE_POINTWISE_H
 
-#include <memory>
 #include <array>
+#include <memory>
 
 #include "pism/util/Mask.hh"
 #include "pism/util/ScalarForcing.hh"
@@ -77,14 +77,8 @@ public:
 
   DEBMSimpleOrbitalParameters orbital_parameters(double time) const;
 
-  DEBMSimpleMelt melt(double declination,
-                      double distance_factor,
-                      double dt,
-                      double T_std_deviation,
-                      double T,
-                      double surface_elevation,
-                      double lat,
-                      double albedo) const;
+  DEBMSimpleMelt melt(double declination, double distance_factor, double dt, double T_std_deviation,
+                      double T, double surface_elevation, double lat, double albedo) const;
 
   DEBMSimpleChanges step(double ice_thickness, double max_melt, double snow_depth,
                          double accumulation) const;
@@ -92,9 +86,8 @@ public:
   // public because it is a diagnostic field
   double atmosphere_transmissivity(double elevation) const;
 
-  double insolation_diagnostic(double declination,
-                    double distance_factor,
-                    double latitude_degrees) const;
+  double insolation_diagnostic(double declination, double distance_factor,
+                               double latitude_degrees) const;
 
   // implementation details (exposed as "public" methods for testing)
   static double CalovGreveIntegrand(double sigma, double temperature);
@@ -104,8 +97,7 @@ public:
   static double distance_factor_present_day(double year_fraction);
   static double distance_factor_paleo(double eccentricity, double true_anomaly);
   static double solar_declination_present_day(double year_fraction);
-  static double solar_declination_paleo(double obliquity,
-                                        double solar_longitude);
+  static double solar_declination_paleo(double obliquity, double solar_longitude);
   static double insolation(double solar_constant, double distance_factor, double hour_angle,
                            double latitude, double declination);
 
@@ -166,4 +158,4 @@ private:
 } // end of namespace surface
 } // end of namespace pism
 
-#endif  /* PISM_DEBM_SIMPLE_POINTWISE_H */
+#endif /* PISM_DEBM_SIMPLE_POINTWISE_H */

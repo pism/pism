@@ -25,13 +25,13 @@
 
 #include "pism/util/error_handling.hh"
 
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/Vars.hh"
 #include "pism/geometry/Geometry.hh"
-#include "pism/util/Profiling.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/Profiling.hh"
+#include "pism/util/Vars.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace hydrology {
@@ -39,11 +39,9 @@ namespace hydrology {
 namespace diagnostics {
 
 //! \brief Reports the pressure of the transportable water in the subglacial layer.
-class BasalWaterPressure : public Diag<Routing>
-{
+class BasalWaterPressure : public Diag<Routing> {
 public:
-  BasalWaterPressure(const Routing *m)
-    : Diag<Routing>(m) {
+  BasalWaterPressure(const Routing *m) : Diag<Routing>(m) {
     m_vars = { { m_sys, "bwp", *m_grid } };
     m_vars[0].long_name("pressure of transportable water in subglacial layer").units("Pa");
   }
@@ -61,17 +59,15 @@ protected:
 
 //! \brief Reports the pressure of the transportable water in the subglacial layer as a
 //! fraction of the overburden pressure.
-class RelativeBasalWaterPressure : public Diag<Routing>
-{
+class RelativeBasalWaterPressure : public Diag<Routing> {
 public:
-  RelativeBasalWaterPressure(const Routing *m)
-    : Diag<Routing>(m) {
+  RelativeBasalWaterPressure(const Routing *m) : Diag<Routing>(m) {
     m_vars = { { m_sys, "bwprel", *m_grid } };
     m_vars[0]
         .long_name(
             "pressure of transportable water in subglacial layer as fraction of the overburden pressure")
         .units("1");
-    m_vars[0]["_FillValue"] = {m_fill_value};
+    m_vars[0]["_FillValue"] = { m_fill_value };
   }
 
 protected:
@@ -80,18 +76,16 @@ protected:
 
     auto result = allocate<array::Scalar>("bwprel");
 
-    const array::Scalar
-      &P  = model->subglacial_water_pressure(),
-      &Po = model->overburden_pressure();
+    const array::Scalar &P = model->subglacial_water_pressure(), &Po = model->overburden_pressure();
 
-    array::AccessScope list{result.get(), &Po, &P};
+    array::AccessScope list{ result.get(), &Po, &P };
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
-      if (Po(i,j) > 0.0) {
-        (*result)(i,j) = P(i, j) / Po(i,j);
+      if (Po(i, j) > 0.0) {
+        (*result)(i, j) = P(i, j) / Po(i, j);
       } else {
-        (*result)(i,j) = fill_value;
+        (*result)(i, j) = fill_value;
       }
     }
 
@@ -102,11 +96,9 @@ protected:
 
 //! \brief Reports the effective pressure of the transportable water in the subglacial
 //! layer, that is, the overburden pressure minus the pressure.
-class EffectiveBasalWaterPressure : public Diag<Routing>
-{
+class EffectiveBasalWaterPressure : public Diag<Routing> {
 public:
-  EffectiveBasalWaterPressure(const Routing *m)
-    : Diag<Routing>(m) {
+  EffectiveBasalWaterPressure(const Routing *m) : Diag<Routing>(m) {
     m_vars = { { m_sys, "effbwp", *m_grid } };
     m_vars[0]
         .long_name("effective pressure of transportable water in subglacial layer"
@@ -119,11 +111,9 @@ protected:
 
     auto result = allocate<array::Scalar>("effbwp");
 
-    const array::Scalar
-      &P  = model->subglacial_water_pressure(),
-      &Po = model->overburden_pressure();
+    const array::Scalar &P = model->subglacial_water_pressure(), &Po = model->overburden_pressure();
 
-    array::AccessScope list{&Po, &P, result.get()};
+    array::AccessScope list{ &Po, &P, result.get() };
 
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
@@ -138,11 +128,9 @@ protected:
 
 //! \brief Report the wall melt rate from dissipation of the potential energy of the
 //! transportable water.
-class WallMelt : public Diag<Routing>
-{
+class WallMelt : public Diag<Routing> {
 public:
-  WallMelt(const Routing *m)
-    : Diag<Routing>(m) {
+  WallMelt(const Routing *m) : Diag<Routing>(m) {
     m_vars = { { m_sys, "wallmelt", *m_grid } };
     m_vars[0]
         .long_name("wall melt into subglacial hydrology layer from (turbulent)"
@@ -164,15 +152,14 @@ protected:
 
 //! @brief Diagnostically reports the staggered-grid components of the velocity of the
 //! water in the subglacial layer.
-class BasalWaterVelocity : public Diag<Routing>
-{
+class BasalWaterVelocity : public Diag<Routing> {
 public:
-  BasalWaterVelocity(const Routing *m)
-    : Diag<Routing>(m) {
+  BasalWaterVelocity(const Routing *m) : Diag<Routing>(m) {
     m_vars = { { m_sys, "bwatvel[0]", *m_grid }, { m_sys, "bwatvel[1]", *m_grid } };
     m_vars[0].long_name("velocity of water in subglacial layer, i-offset").units("m s^-1");
     m_vars[1].long_name("velocity of water in subglacial layer, j-offset").units("m s^-1");
   }
+
 protected:
   virtual std::shared_ptr<array::Array> compute_impl() const {
     auto result = allocate<array::Staggered>("bwatvel");
@@ -187,25 +174,21 @@ protected:
 /*!
   Computes \f$\psi = P + \rho_w g (b + W)\f$.
 */
-void hydraulic_potential(const array::Scalar &W,
-                         const array::Scalar &P,
-                         const array::Scalar &sea_level,
-                         const array::Scalar &bed,
-                         const array::Scalar &ice_thickness,
-                         array::Scalar &result) {
+void hydraulic_potential(const array::Scalar &W, const array::Scalar &P,
+                         const array::Scalar &sea_level, const array::Scalar &bed,
+                         const array::Scalar &ice_thickness, array::Scalar &result) {
 
   auto grid = result.grid();
 
   auto config = grid->ctx()->config();
 
-  double
-    ice_density       = config->get_number("constants.ice.density"),
-    sea_water_density = config->get_number("constants.sea_water.density"),
-    C                 = ice_density / sea_water_density,
-    rg                = (config->get_number("constants.fresh_water.density") *
-                         config->get_number("constants.standard_gravity"));
+  double ice_density       = config->get_number("constants.ice.density"),
+         sea_water_density = config->get_number("constants.sea_water.density"),
+         C                 = ice_density / sea_water_density,
+         rg                = (config->get_number("constants.fresh_water.density") *
+               config->get_number("constants.standard_gravity"));
 
-  array::AccessScope list{&P, &W, &sea_level, &ice_thickness, &bed, &result};
+  array::AccessScope list{ &P, &W, &sea_level, &ice_thickness, &bed, &result };
 
   for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
@@ -217,8 +200,7 @@ void hydraulic_potential(const array::Scalar &W,
 }
 
 /*! @brief Report hydraulic potential in the subglacial hydrology system */
-class HydraulicPotential : public Diag<Routing>
-{
+class HydraulicPotential : public Diag<Routing> {
 public:
   HydraulicPotential(const Routing *m) : Diag<Routing>(m) {
     m_vars = { { m_sys, "hydraulic_potential", *m_grid } };
@@ -234,12 +216,8 @@ protected:
     const auto &bed_elevation = *m_grid->variables().get_2d_scalar("bedrock_altitude");
     const auto &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
-    hydraulic_potential(model->subglacial_water_thickness(),
-                        model->subglacial_water_pressure(),
-                        sea_level,
-                        bed_elevation,
-                        ice_thickness,
-                        *result);
+    hydraulic_potential(model->subglacial_water_thickness(), model->subglacial_water_pressure(),
+                        sea_level, bed_elevation, ice_thickness, *result);
 
     return result;
   }
@@ -248,18 +226,18 @@ protected:
 } // end of namespace diagnostics
 
 Routing::Routing(std::shared_ptr<const Grid> grid)
-  : Hydrology(grid),
-    m_Qstag(grid, "advection_flux"),
-    m_Qstag_average(grid, "cumulative_advection_flux"),
-    m_Vstag(grid, "water_velocity"),
-    m_Wstag(grid, "W_staggered"),
-    m_Kstag(grid, "K_staggered"),
-    m_Wnew(grid, "W_new"),
-    m_Wtillnew(grid, "Wtill_new"),
-    m_R(grid, "potential_workspace"), /* box stencil used */
-    m_dx(grid->dx()),
-    m_dy(grid->dy()),
-    m_bottom_surface(grid, "ice_bottom_surface_elevation") {
+    : Hydrology(grid),
+      m_Qstag(grid, "advection_flux"),
+      m_Qstag_average(grid, "cumulative_advection_flux"),
+      m_Vstag(grid, "water_velocity"),
+      m_Wstag(grid, "W_staggered"),
+      m_Kstag(grid, "K_staggered"),
+      m_Wnew(grid, "W_new"),
+      m_Wtillnew(grid, "Wtill_new"),
+      m_R(grid, "potential_workspace"), /* box stencil used */
+      m_dx(grid->dx()),
+      m_dy(grid->dy()),
+      m_bottom_surface(grid, "ice_bottom_surface_elevation") {
 
   m_rg = (m_config->get_number("constants.fresh_water.density") *
           m_config->get_number("constants.standard_gravity"));
@@ -283,8 +261,7 @@ Routing::Routing(std::shared_ptr<const Grid> grid)
       .units("m");
   m_Wstag.metadata()["valid_min"] = { 0.0 };
 
-  m_Kstag.metadata(0)
-      .long_name("cell face-centered (staggered) values of nonlinear conductivity");
+  m_Kstag.metadata(0).long_name("cell face-centered (staggered) values of nonlinear conductivity");
   m_Kstag.metadata()["valid_min"] = { 0.0 };
 
   m_R.metadata(0)
@@ -305,8 +282,8 @@ Routing::Routing(std::shared_ptr<const Grid> grid)
   {
     double alpha = m_config->get_number("hydrology.thickness_power_in_flux");
     if (alpha < 1.0) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "alpha = %f < 1 which is not allowed", alpha);
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "alpha = %f < 1 which is not allowed",
+                                    alpha);
     }
 
     if (m_config->get_number("hydrology.tillwat_max") < 0.0) {
@@ -318,8 +295,7 @@ Routing::Routing(std::shared_ptr<const Grid> grid)
 }
 
 void Routing::initialization_message() const {
-  m_log->message(2,
-                 "* Initializing the routing subglacial hydrology model ...\n");
+  m_log->message(2, "* Initializing the routing subglacial hydrology model ...\n");
 
   if (m_config->get_flag("hydrology.routing.include_floating_ice")) {
     m_log->message(2, "  ... routing subglacial water under grounded and floating ice.\n");
@@ -336,8 +312,7 @@ void Routing::restart_impl(const File &input_file, int record) {
   regrid("Hydrology", m_W);
 }
 
-void Routing::bootstrap_impl(const File &input_file,
-                             const array::Scalar &ice_thickness) {
+void Routing::bootstrap_impl(const File &input_file, const array::Scalar &ice_thickness) {
   Hydrology::bootstrap_impl(input_file, ice_thickness);
 
   double bwat_default = m_config->get_number("bootstrapping.defaults.bwat");
@@ -346,9 +321,8 @@ void Routing::bootstrap_impl(const File &input_file,
   regrid("Hydrology", m_W);
 }
 
-void Routing::init_impl(const array::Scalar &W_till,
-                              const array::Scalar &W,
-                              const array::Scalar &P) {
+void Routing::init_impl(const array::Scalar &W_till, const array::Scalar &W,
+                        const array::Scalar &P) {
   Hydrology::init_impl(W_till, W, P);
 
   m_W.copy_from(W);
@@ -365,11 +339,11 @@ void Routing::write_state_impl(const OutputFile &output) const {
 
 //! Returns the (trivial) overburden pressure as the pressure of the transportable water,
 //! because this is the model.
-const array::Scalar& Routing::subglacial_water_pressure() const {
+const array::Scalar &Routing::subglacial_water_pressure() const {
   return m_Pover;
 }
 
-const array::Staggered& Routing::velocity_staggered() const {
+const array::Staggered &Routing::velocity_staggered() const {
   return m_Vstag;
 }
 
@@ -377,8 +351,7 @@ const array::Staggered& Routing::velocity_staggered() const {
 //! Average the regular grid water thickness to values at the center of cell edges.
 /*! Uses mask values to avoid averaging using water thickness values from
   either ice-free or floating areas. */
-void Routing::water_thickness_staggered(const array::Scalar &W,
-                                        const array::CellType1 &mask,
+void Routing::water_thickness_staggered(const array::Scalar &W, const array::CellType1 &mask,
                                         array::Staggered &result) {
 
   bool include_floating = m_config->get_flag("hydrology.routing.include_floating_ice");
@@ -436,18 +409,15 @@ void Routing::water_thickness_staggered(const array::Scalar &W,
 
   Also returns the maximum over all staggered points of \f$ K W \f$.
 */
-void Routing::compute_conductivity(const array::Staggered &W,
-                                   const array::Scalar &P,
-                                   const array::Scalar &bed_elevation,
-                                   array::Staggered &result,
+void Routing::compute_conductivity(const array::Staggered &W, const array::Scalar &P,
+                                   const array::Scalar &bed_elevation, array::Staggered &result,
                                    double &KW_max) const {
-  const double
-    k     = m_config->get_number("hydrology.hydraulic_conductivity"),
-    alpha = m_config->get_number("hydrology.thickness_power_in_flux"),
-    beta  = m_config->get_number("hydrology.gradient_power_in_flux"),
-    betapow = (beta - 2.0) / 2.0;
+  const double k       = m_config->get_number("hydrology.hydraulic_conductivity"),
+               alpha   = m_config->get_number("hydrology.thickness_power_in_flux"),
+               beta    = m_config->get_number("hydrology.gradient_power_in_flux"),
+               betapow = (beta - 2.0) / 2.0;
 
-  array::AccessScope list({&result, &W});
+  array::AccessScope list({ &result, &W });
 
   KW_max = 0.0;
 
@@ -460,7 +430,7 @@ void Routing::compute_conductivity(const array::Staggered &W,
     // computed *once* in update_impl(), before entering the time-stepping loop
     {
       // R  <-- P + rhow g b
-      P.add(m_rg, bed_elevation, m_R);  // yes, it updates ghosts
+      P.add(m_rg, bed_elevation, m_R); // yes, it updates ghosts
 
       list.add(m_R);
       for (auto p : m_grid->points()) {
@@ -468,11 +438,13 @@ void Routing::compute_conductivity(const array::Staggered &W,
 
         double dRdx, dRdy;
         dRdx = (m_R(i + 1, j) - m_R(i, j)) / m_dx;
-        dRdy = (m_R(i + 1, j + 1) + m_R(i, j + 1) - m_R(i + 1, j - 1) - m_R(i, j - 1)) / (4.0 * m_dy);
+        dRdy =
+            (m_R(i + 1, j + 1) + m_R(i, j + 1) - m_R(i + 1, j - 1) - m_R(i, j - 1)) / (4.0 * m_dy);
         result(i, j, 0) = dRdx * dRdx + dRdy * dRdy;
 
-        dRdx = (m_R(i + 1, j + 1) + m_R(i + 1, j) - m_R(i - 1, j + 1) - m_R(i - 1, j)) / (4.0 * m_dx);
-        dRdy = (m_R(i, j + 1) - m_R(i, j)) / m_dy;
+        dRdx =
+            (m_R(i + 1, j + 1) + m_R(i + 1, j) - m_R(i - 1, j + 1) - m_R(i - 1, j)) / (4.0 * m_dx);
+        dRdy            = (m_R(i, j + 1) - m_R(i, j)) / m_dy;
         result(i, j, 1) = dRdx * dRdx + dRdy * dRdy;
       }
     }
@@ -527,28 +499,24 @@ void Routing::compute_conductivity(const array::Staggered &W,
 
   At the current state of the code, this is a diagnostic calculation only.
 */
-void wall_melt(const Routing &model,
-               const array::Scalar &bed_elevation,
-               array::Scalar &result) {
+void wall_melt(const Routing &model, const array::Scalar &bed_elevation, array::Scalar &result) {
 
   auto grid = result.grid();
 
   auto config = grid->ctx()->config();
 
-  const double
-    k     = config->get_number("hydrology.hydraulic_conductivity"),
-    L     = config->get_number("constants.fresh_water.latent_heat_of_fusion"),
-    alpha = config->get_number("hydrology.thickness_power_in_flux"),
-    beta  = config->get_number("hydrology.gradient_power_in_flux"),
-    g     = config->get_number("constants.standard_gravity"),
-    rhow  = config->get_number("constants.fresh_water.density"),
-    rg    = rhow * g,
-    CC    = k / (L * rhow);
+  const double k     = config->get_number("hydrology.hydraulic_conductivity"),
+               L     = config->get_number("constants.fresh_water.latent_heat_of_fusion"),
+               alpha = config->get_number("hydrology.thickness_power_in_flux"),
+               beta  = config->get_number("hydrology.gradient_power_in_flux"),
+               g     = config->get_number("constants.standard_gravity"),
+               rhow = config->get_number("constants.fresh_water.density"), rg = rhow * g,
+               CC = k / (L * rhow);
 
   // FIXME:  could be scaled with overall factor hydrology_coefficient_wall_melt ?
   if (alpha < 1.0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "alpha = %f < 1 which is not allowed", alpha);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "alpha = %f < 1 which is not allowed",
+                                  alpha);
   }
 
   array::Scalar1 R(grid, "R");
@@ -560,7 +528,7 @@ void wall_melt(const Routing &model,
   array::Scalar1 W(grid, "W");
   W.copy_from(model.subglacial_water_thickness());
 
-  array::AccessScope list{&R, &W, &result};
+  array::AccessScope list{ &R, &W, &result };
 
   double dx = grid->dx();
   double dy = grid->dy();
@@ -584,7 +552,7 @@ void wall_melt(const Routing &model,
       if (W(i, j - 1) > 0.0) {
         dRdy += (R(i, j) - R(i, j - 1)) / (2.0 * dy);
       }
-      result(i, j) = CC * pow(W(i, j), alpha) * pow(dRdx * dRdx + dRdy * dRdy, beta/2.0);
+      result(i, j) = CC * pow(W(i, j), alpha) * pow(dRdx * dRdx + dRdy * dRdy, beta / 2.0);
     } else {
       result(i, j) = 0.0;
     }
@@ -611,34 +579,28 @@ void wall_melt(const Routing &model,
   anyway) but it does provide the correct max velocity in the CFL calculation. We assume
   bed has valid ghosts.
 */
-void Routing::compute_velocity(const array::Staggered &W,
-                               const array::Scalar &pressure,
-                               const array::Scalar &bed,
-                               const array::Staggered &K,
+void Routing::compute_velocity(const array::Staggered &W, const array::Scalar &pressure,
+                               const array::Scalar &bed, const array::Staggered &K,
                                const array::Scalar1 *no_model_mask,
                                array::Staggered &result) const {
   array::Scalar &P = m_R;
-  P.copy_from(pressure);  // yes, it updates ghosts
+  P.copy_from(pressure); // yes, it updates ghosts
 
-  array::AccessScope list{&P, &W, &K, &bed, &result};
+  array::AccessScope list{ &P, &W, &K, &bed, &result };
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (W(i, j, 0) > 0.0) {
-      double
-        P_x = (P(i + 1, j) - P(i, j)) / m_dx,
-        b_x = (bed(i + 1, j) - bed(i, j)) / m_dx;
-      result(i, j, 0) = - K(i, j, 0) * (P_x + m_rg * b_x);
+      double P_x = (P(i + 1, j) - P(i, j)) / m_dx, b_x = (bed(i + 1, j) - bed(i, j)) / m_dx;
+      result(i, j, 0) = -K(i, j, 0) * (P_x + m_rg * b_x);
     } else {
       result(i, j, 0) = 0.0;
     }
 
     if (W(i, j, 1) > 0.0) {
-      double
-        P_y = (P(i, j + 1) - P(i, j)) / m_dy,
-        b_y = (bed(i, j + 1) - bed(i, j)) / m_dy;
-      result(i, j, 1) = - K(i, j, 1) * (P_y + m_rg * b_y);
+      double P_y = (P(i, j + 1) - P(i, j)) / m_dy, b_y = (bed(i, j + 1) - bed(i, j)) / m_dy;
+      result(i, j, 1) = -K(i, j, 1) * (P_y + m_rg * b_y);
     } else {
       result(i, j, 1) = 0.0;
     }
@@ -670,18 +632,17 @@ void Routing::compute_velocity(const array::Staggered &W,
 
   FIXME:  This could be re-implemented using the Koren (1993) flux-limiter.
 */
-void Routing::advective_fluxes(const array::Staggered &V,
-                               const array::Scalar &W,
+void Routing::advective_fluxes(const array::Staggered &V, const array::Scalar &W,
                                array::Staggered &result) const {
-  array::AccessScope list{&W, &V, &result};
+  array::AccessScope list{ &W, &V, &result };
 
   assert(W.stencil_width() >= 1);
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
-    result(i, j, 0) = V(i, j, 0) * (V(i, j, 0) >= 0.0 ? W(i, j) :  W(i + 1, j));
-    result(i, j, 1) = V(i, j, 1) * (V(i, j, 1) >= 0.0 ? W(i, j) :  W(i, j + 1));
+    result(i, j, 0) = V(i, j, 0) * (V(i, j, 0) >= 0.0 ? W(i, j) : W(i + 1, j));
+    result(i, j, 1) = V(i, j, 1) * (V(i, j, 1) >= 0.0 ? W(i, j) : W(i, j + 1));
   }
 
   result.update_ghosts();
@@ -708,9 +669,9 @@ double Routing::max_timestep_W_cfl() const {
 
   // add a safety margin
   double alpha = 0.95;
-  double eps = 1e-6;
+  double eps   = 1e-6;
 
-  return alpha * 0.5 / (tmp[0]/m_dx + tmp[1]/m_dy + eps);
+  return alpha * 0.5 / (tmp[0] / m_dx + tmp[1] / m_dy + eps);
 }
 
 
@@ -733,16 +694,13 @@ double Routing::max_timestep_W_cfl() const {
 
   Otherwise this is the same physical model with the same configurable parameters.
 */
-void Routing::update_Wtill(double dt,
-                           const array::Scalar &Wtill,
+void Routing::update_Wtill(double dt, const array::Scalar &Wtill,
                            const array::Scalar &surface_input_rate,
-                           const array::Scalar &basal_melt_rate,
-                           array::Scalar &Wtill_new) {
-  const double
-    tillwat_max = m_config->get_number("hydrology.tillwat_max"),
-    C           = m_config->get_number("hydrology.tillwat_decay_rate", "m / second");
+                           const array::Scalar &basal_melt_rate, array::Scalar &Wtill_new) {
+  const double tillwat_max = m_config->get_number("hydrology.tillwat_max"),
+               C           = m_config->get_number("hydrology.tillwat_decay_rate", "m / second");
 
-  array::AccessScope list{&Wtill, &Wtill_new, &basal_melt_rate};
+  array::AccessScope list{ &Wtill, &Wtill_new, &basal_melt_rate };
 
   bool add_surface_input = m_config->get_flag("hydrology.add_water_input_to_till_storage");
   if (add_surface_input) {
@@ -757,63 +715,51 @@ void Routing::update_Wtill(double dt,
       input_rate += surface_input_rate(i, j);
     }
 
-    Wtill_new(i, j) = clip(Wtill(i, j) + dt * (input_rate - C),
-                           0.0, tillwat_max);
+    Wtill_new(i, j) = clip(Wtill(i, j) + dt * (input_rate - C), 0.0, tillwat_max);
   }
 }
 
-void Routing::W_change_due_to_flow(double dt,
-                                   const array::Scalar1    &W,
-                                   const array::Staggered1 &Wstag,
-                                   const array::Staggered1 &K,
-                                   const array::Staggered1 &Q,
-                                   array::Scalar &result) {
-  const double
-    wux = 1.0 / (m_dx * m_dx),
-    wuy = 1.0 / (m_dy * m_dy);
+void Routing::W_change_due_to_flow(double dt, const array::Scalar1 &W,
+                                   const array::Staggered1 &Wstag, const array::Staggered1 &K,
+                                   const array::Staggered1 &Q, array::Scalar &result) {
+  const double wux = 1.0 / (m_dx * m_dx), wuy = 1.0 / (m_dy * m_dy);
 
-  array::AccessScope list{&W, &Wstag, &K, &Q, &result};
+  array::AccessScope list{ &W, &Wstag, &K, &Q, &result };
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
-    auto q = Q.star(i, j);
+    auto q            = Q.star(i, j);
     const double divQ = (q.e - q.w) / m_dx + (q.n - q.s) / m_dy;
 
     auto k  = K.star(i, j);
     auto ws = Wstag.star(i, j);
 
-    const double
-      De = m_rg * k.e * ws.e,
-      Dw = m_rg * k.w * ws.w,
-      Dn = m_rg * k.n * ws.n,
-      Ds = m_rg * k.s * ws.s;
+    const double De = m_rg * k.e * ws.e, Dw = m_rg * k.w * ws.w, Dn = m_rg * k.n * ws.n,
+                 Ds = m_rg * k.s * ws.s;
 
     auto w = W.star(i, j);
-    const double diffW = (wux * (De * (w.e - w.c) - Dw * (w.c - w.w)) +
-                          wuy * (Dn * (w.n - w.c) - Ds * (w.c - w.s)));
+    const double diffW =
+        (wux * (De * (w.e - w.c) - Dw * (w.c - w.w)) + wuy * (Dn * (w.n - w.c) - Ds * (w.c - w.s)));
 
-    result(i, j) = dt * (- divQ + diffW);
+    result(i, j) = dt * (-divQ + diffW);
   }
 }
 
 
 //! The computation of Wnew, called by update().
-void Routing::update_W(double dt,
-                       const array::Scalar     &surface_input_rate,
-                       const array::Scalar     &basal_melt_rate,
-                       const array::Scalar1    &W,
-                       const array::Staggered1 &Wstag,
-                       const array::Scalar     &Wtill,
-                       const array::Scalar     &Wtill_new,
-                       const array::Staggered1 &K,
-                       const array::Staggered1 &Q,
-                       array::Scalar &W_new) {
+void Routing::update_W(double dt, const array::Scalar &surface_input_rate,
+                       const array::Scalar &basal_melt_rate, const array::Scalar1 &W,
+                       const array::Staggered1 &Wstag, const array::Scalar &Wtill,
+                       const array::Scalar &Wtill_new, const array::Staggered1 &K,
+                       const array::Staggered1 &Q, array::Scalar &W_new) {
 
   W_change_due_to_flow(dt, W, Wstag, K, Q, m_flow_change_incremental);
 
-  array::AccessScope list{&W, &Wtill, &Wtill_new, &surface_input_rate,
-                               &basal_melt_rate, &m_flow_change_incremental, &W_new};
+  array::AccessScope list{
+    &W,    &Wtill, &Wtill_new, &surface_input_rate, &basal_melt_rate, &m_flow_change_incremental,
+    &W_new
+  };
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
@@ -838,18 +784,15 @@ void Routing::update_W(double dt,
   To update W = `bwat` we call update_W(), and to update Wtill = `tillwat` we
   call update_Wtill().
 */
-void Routing::update_impl(double t, double dt, const Inputs& inputs) {
+void Routing::update_impl(double t, double dt, const Inputs &inputs) {
 
   ice_bottom_surface(*inputs.geometry, m_bottom_surface);
 
-  double
-    ht  = t,
-    hdt = 0.0;
+  double ht = t, hdt = 0.0;
 
-  const double
-    t_final     = t + dt,
-    dt_max      = m_config->get_number("hydrology.maximum_time_step", "seconds"),
-    tillwat_max = m_config->get_number("hydrology.tillwat_max");
+  const double t_final     = t + dt,
+               dt_max      = m_config->get_number("hydrology.maximum_time_step", "seconds"),
+               tillwat_max = m_config->get_number("hydrology.tillwat_max");
 
   m_Qstag_average.set(0.0);
 
@@ -860,34 +803,25 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
   for (; ht < t_final; ht += hdt) {
     step_counter++;
 
-#if (Pism_DEBUG==1)
+#if (Pism_DEBUG == 1)
     double huge_number = 1e6;
     check_bounds(m_W, huge_number);
     check_bounds(m_Wtill, tillwat_max);
 #endif
 
     // updates ghosts of m_Wstag
-    water_thickness_staggered(m_W,
-                              inputs.geometry->cell_type,
-                              m_Wstag);
+    water_thickness_staggered(m_W, inputs.geometry->cell_type, m_Wstag);
 
     double maxKW = 0.0;
     // updates ghosts of m_Kstag
     profiling().begin("routing_conductivity");
-    compute_conductivity(m_Wstag,
-                         subglacial_water_pressure(),
-                         m_bottom_surface,
-                         m_Kstag, maxKW);
+    compute_conductivity(m_Wstag, subglacial_water_pressure(), m_bottom_surface, m_Kstag, maxKW);
     profiling().end("routing_conductivity");
 
     // ghosts of m_Vstag are not updated
     profiling().begin("routing_velocity");
-    compute_velocity(m_Wstag,
-                     subglacial_water_pressure(),
-                     m_bottom_surface,
-                     m_Kstag,
-                     inputs.no_model_mask,
-                     m_Vstag);
+    compute_velocity(m_Wstag, subglacial_water_pressure(), m_bottom_surface, m_Kstag,
+                     inputs.no_model_mask, m_Vstag);
     profiling().end("routing_velocity");
 
     // to get Q, W needs valid ghosts (ghosts of m_Vstag are not used)
@@ -899,9 +833,7 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
     m_Qstag_average.add(hdt, m_Qstag);
 
     {
-      const double
-        dt_cfl    = max_timestep_W_cfl(),
-        dt_diff_w = max_timestep_W_diff(maxKW);
+      const double dt_cfl = max_timestep_W_cfl(), dt_diff_w = max_timestep_W_diff(maxKW);
 
       hdt = std::min(t_final - ht, dt_max);
       hdt = std::min(hdt, dt_cfl);
@@ -913,21 +845,13 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
     // update Wtillnew from Wtill and input_rate
     {
       profiling().begin("routing_Wtill");
-      update_Wtill(hdt,
-                   m_Wtill,
-                   m_surface_input_rate,
-                   m_basal_melt_rate,
-                   m_Wtillnew);
+      update_Wtill(hdt, m_Wtill, m_surface_input_rate, m_basal_melt_rate, m_Wtillnew);
       // remove water in ice-free areas and account for changes
-      enforce_bounds(inputs.geometry->cell_type,
-                     inputs.no_model_mask,
-                     0.0,           // do not limit maximum thickness
-                     tillwat_max,   // till water thickness under the ocean
-                     m_Wtillnew,
-                     m_grounded_margin_change,
-                     m_grounding_line_change,
-                     m_conservation_error_change,
-                     m_no_model_mask_change);
+      enforce_bounds(inputs.geometry->cell_type, inputs.no_model_mask,
+                     0.0,         // do not limit maximum thickness
+                     tillwat_max, // till water thickness under the ocean
+                     m_Wtillnew, m_grounded_margin_change, m_grounding_line_change,
+                     m_conservation_error_change, m_no_model_mask_change);
       profiling().end("routing_Wtill");
     }
 
@@ -935,23 +859,14 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
     // uses ghosts of m_W, m_Wstag, m_Qstag, m_Kstag
     {
       profiling().begin("routing_W");
-      update_W(hdt,
-               m_surface_input_rate,
-               m_basal_melt_rate,
-               m_W, m_Wstag,
-               m_Wtill, m_Wtillnew,
-               m_Kstag, m_Qstag,
-               m_Wnew);
+      update_W(hdt, m_surface_input_rate, m_basal_melt_rate, m_W, m_Wstag, m_Wtill, m_Wtillnew,
+               m_Kstag, m_Qstag, m_Wnew);
       // remove water in ice-free areas and account for changes
-      enforce_bounds(inputs.geometry->cell_type,
-                     inputs.no_model_mask,
-                     0.0,        // do not limit maximum thickness
-                     0.0,        // transportable water thickness under the ocean
-                     m_Wnew,
-                     m_grounded_margin_change,
-                     m_grounding_line_change,
-                     m_conservation_error_change,
-                     m_no_model_mask_change);
+      enforce_bounds(inputs.geometry->cell_type, inputs.no_model_mask,
+                     0.0, // do not limit maximum thickness
+                     0.0, // transportable water thickness under the ocean
+                     m_Wnew, m_grounded_margin_change, m_grounding_line_change,
+                     m_conservation_error_change, m_no_model_mask_change);
 
       // transfer new into old (updates ghosts of m_W)
       m_W.copy_from(m_Wnew);
@@ -963,28 +878,25 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
   } // end of the time-stepping loop
 
   staggered_to_regular(inputs.geometry->cell_type, m_Qstag_average,
-                       m_config->get_flag("hydrology.routing.include_floating_ice"),
-                       m_Q);
+                       m_config->get_flag("hydrology.routing.include_floating_ice"), m_Q);
   m_Q.scale(1.0 / dt);
 
-  m_log->message(2,
-                 "  took %d hydrology sub-steps with average dt = %.6f years (%.3f s or %.3f hours)\n",
-                 step_counter,
-                 units::convert(m_sys, dt / step_counter, "seconds", "years"),
-                 dt / step_counter,
-                 (dt / step_counter) / 3600.0);
+  m_log->message(
+      2, "  took %d hydrology sub-steps with average dt = %.6f years (%.3f s or %.3f hours)\n",
+      step_counter, units::convert(m_sys, dt / step_counter, "seconds", "years"), dt / step_counter,
+      (dt / step_counter) / 3600.0);
 }
 
 std::map<std::string, Diagnostic::Ptr> Routing::spatial_diagnostics_impl() const {
   using namespace diagnostics;
 
   DiagnosticList result = {
-    {"bwatvel",             Diagnostic::Ptr(new BasalWaterVelocity(this))},
-    {"bwp",                 Diagnostic::Ptr(new BasalWaterPressure(this))},
-    {"bwprel",              Diagnostic::Ptr(new RelativeBasalWaterPressure(this))},
-    {"effbwp",              Diagnostic::Ptr(new EffectiveBasalWaterPressure(this))},
-    {"wallmelt",            Diagnostic::Ptr(new WallMelt(this))},
-    {"hydraulic_potential", Diagnostic::Ptr(new HydraulicPotential(this))},
+    { "bwatvel", Diagnostic::Ptr(new BasalWaterVelocity(this)) },
+    { "bwp", Diagnostic::Ptr(new BasalWaterPressure(this)) },
+    { "bwprel", Diagnostic::Ptr(new RelativeBasalWaterPressure(this)) },
+    { "effbwp", Diagnostic::Ptr(new EffectiveBasalWaterPressure(this)) },
+    { "wallmelt", Diagnostic::Ptr(new WallMelt(this)) },
+    { "hydraulic_potential", Diagnostic::Ptr(new HydraulicPotential(this)) },
   };
   return combine(result, Hydrology::spatial_diagnostics_impl());
 }

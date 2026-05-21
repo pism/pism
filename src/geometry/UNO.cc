@@ -61,29 +61,19 @@ static inline double sign(double x) {
 }
 
 // first order upwinding
-static inline double psi_upwind1(const double *x,
-                                 const double *y,
-                                 size_t j,
-                                 double velocity,
-                                 double dx,
-                                 double dt) {
-  (void) x;
-  (void) dx;
-  (void) dt;
+static inline double psi_upwind1(const double *x, const double *y, size_t j, double velocity,
+                                 double dx, double dt) {
+  (void)x;
+  (void)dx;
+  (void)dt;
 
   return y[central(velocity, j)];
 }
 
 // Lax-Wendroff
-static inline double psi_lax_wendroff(const double *x,
-                                      const double *y,
-                                      size_t j,
-                                      double velocity,
-                                      double dx,
-                                      double dt) {
-  size_t
-    c = central(velocity, j),
-    d = downstream(velocity, j);
+static inline double psi_lax_wendroff(const double *x, const double *y, size_t j, double velocity,
+                                      double dx, double dt) {
+  size_t c = central(velocity, j), d = downstream(velocity, j);
 
   double gc = difference_quotient(x, y, d, c);
 
@@ -92,16 +82,9 @@ static inline double psi_lax_wendroff(const double *x,
 }
 
 // Fromm
-static inline double psi_fromm(const double *x,
-                               const double *y,
-                               size_t j,
-                               double velocity,
-                               double dx,
-                               double dt) {
-  size_t
-    u = upstream(velocity, j),
-    c = central(velocity, j),
-    d = downstream(velocity, j);
+static inline double psi_fromm(const double *x, const double *y, size_t j, double velocity,
+                               double dx, double dt) {
+  size_t u = upstream(velocity, j), c = central(velocity, j), d = downstream(velocity, j);
 
   double gc = difference_quotient(x, y, d, u);
 
@@ -110,20 +93,11 @@ static inline double psi_fromm(const double *x,
 }
 
 // UNO2
-static inline double psi_uno2(const double *x,
-                              const double *y,
-                              size_t j,
-                              double velocity,
-                              double dx,
-                              double dt) {
-  size_t
-    u = upstream(velocity, j),
-    c = central(velocity, j),
-    d = downstream(velocity, j);
+static inline double psi_uno2(const double *x, const double *y, size_t j, double velocity,
+                              double dx, double dt) {
+  size_t u = upstream(velocity, j), c = central(velocity, j), d = downstream(velocity, j);
 
-  double
-    gdc = difference_quotient(x, y, d, c),
-    gcu = difference_quotient(x, y, c, u);
+  double gdc = difference_quotient(x, y, d, c), gcu = difference_quotient(x, y, c, u);
 
   // equation 5 in [Li2008]
   double gc = sign(gdc) * std::min(std::abs(gdc), std::abs(gcu));
@@ -133,21 +107,12 @@ static inline double psi_uno2(const double *x,
 }
 
 // UNO3
-static inline double psi_uno3(const double *x,
-                              const double *y,
-                              size_t j,
-                              double velocity,
-                              double dx,
-                              double dt) {
-  size_t
-    u = upstream(velocity, j),
-    c = central(velocity, j),
-    d = downstream(velocity, j);
+static inline double psi_uno3(const double *x, const double *y, size_t j, double velocity,
+                              double dx, double dt) {
+  size_t u = upstream(velocity, j), c = central(velocity, j), d = downstream(velocity, j);
 
-  double
-    gdc = difference_quotient(x, y, d, c),
-    gcu = difference_quotient(x, y, c, u),
-    gdu = difference_quotient(x, y, d, u);
+  double gdc = difference_quotient(x, y, d, c), gcu = difference_quotient(x, y, c, u),
+         gdu = difference_quotient(x, y, d, u);
 
   double abs_u = std::abs(velocity);
   double sgn_u = sign(velocity);
@@ -158,7 +123,7 @@ static inline double psi_uno3(const double *x,
   if (std::abs(gdc - gcu) < 1.2 * std::abs(gdu)) {
     gc = gdc - ((dx + abs_u * dt) / (1.5 * sgn_u)) * ((gdc - gcu) / (x[d] - x[u]));
   } else if (gdc * gcu > 0.0) {
-    gc =  2 * sign(gdc) * std::min(std::abs(gdc), std::abs(gcu));
+    gc = 2 * sign(gdc) * std::min(std::abs(gdc), std::abs(gcu));
   } else {
     gc = sign(gdc) * std::min(std::abs(gdc), std::abs(gcu)); // UNO2
   }
@@ -169,17 +134,16 @@ static inline double psi_uno3(const double *x,
 
 } // end of namespace uno
 
-const array::Scalar& UNO::x() const {
+const array::Scalar &UNO::x() const {
   return m_x;
 }
 
 UNO::UNO(std::shared_ptr<const Grid> grid, UNOType type)
-  : m_q(grid, "interface_fluxes"),
-    m_q_limited(grid, "limited_interface_fluxes"),
-    m_v_ghosted(grid, "velocity"),
-    m_x_ghosted(grid, "old_state"),
-    m_x(grid, "new_state")
-{
+    : m_q(grid, "interface_fluxes"),
+      m_q_limited(grid, "limited_interface_fluxes"),
+      m_v_ghosted(grid, "velocity"),
+      m_x_ghosted(grid, "old_state"),
+      m_x(grid, "new_state") {
   switch (type) {
   case PISM_UNO_UPWIND1:
     m_approx = uno::psi_upwind1;
@@ -205,18 +169,14 @@ UNO::UNO(std::shared_ptr<const Grid> grid, UNOType type)
  * regular grid velocities, and the current distribution of the advected quantity.
  */
 void UNO::compute_interface_fluxes(const array::CellType1 &cell_type,
-                                   const array::Vector1 &velocity,
-                                   const array::Scalar2 &x_old,
-                                   double dt,
-                                   array::Staggered &result) const {
+                                   const array::Vector1 &velocity, const array::Scalar2 &x_old,
+                                   double dt, array::Staggered &result) const {
 
   auto grid = cell_type.grid();
 
-  double
-    dx = grid->dx(),
-    dy = grid->dy();
+  double dx = grid->dx(), dy = grid->dy();
 
-  array::AccessScope scope{&cell_type, &velocity, &x_old, &result};
+  array::AccessScope scope{ &cell_type, &velocity, &x_old, &result };
 
   // temporary storage for values needed by stencil computations
   double coords[4];
@@ -228,15 +188,11 @@ void UNO::compute_interface_fluxes(const array::CellType1 &cell_type,
     // velocities through east and north cell interfaces:
     double vx, vy;
     {
-      Vector2d
-        V   = velocity(i, j),
-        V_e = velocity(i + 1, j),
-        V_n = velocity(i, j + 1);
+      Vector2d V = velocity(i, j), V_e = velocity(i + 1, j), V_n = velocity(i, j + 1);
 
-      double
-        W   = static_cast<double>(cell_type.icy(i, j)),
-        W_n = static_cast<double>(cell_type.icy(i, j + 1)),
-        W_e = static_cast<double>(cell_type.icy(i + 1, j));
+      double W   = static_cast<double>(cell_type.icy(i, j)),
+             W_n = static_cast<double>(cell_type.icy(i, j + 1)),
+             W_e = static_cast<double>(cell_type.icy(i + 1, j));
 
       vx = (W * V.u + W_e * V_e.u) / std::max(W + W_e, 1.0);
       vy = (W * V.v + W_n * V_n.v) / std::max(W + W_n, 1.0);
@@ -280,18 +236,14 @@ void UNO::compute_interface_fluxes(const array::CellType1 &cell_type,
  * @param[in] x_old current state
  * @param[out] result new state
  */
-static void step(double dt,
-                 const array::Staggered1 &flux,
-                 const array::Scalar &x_old,
+static void step(double dt, const array::Staggered1 &flux, const array::Scalar &x_old,
                  array::Scalar &result) {
 
   auto grid = result.grid();
 
-  double
-    dx  = grid->dx(),
-    dy  = grid->dy();
+  double dx = grid->dx(), dy = grid->dy();
 
-  array::AccessScope scope{&flux, &x_old, &result};
+  array::AccessScope scope{ &flux, &x_old, &result };
 
   for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
@@ -302,11 +254,8 @@ static void step(double dt,
   }
 }
 
-void UNO::update(double dt,
-                 const array::CellType1 &cell_type,
-                 const array::Scalar &x,
-                 const array::Vector &velocity,
-                 bool nonnegative) {
+void UNO::update(double dt, const array::CellType1 &cell_type, const array::Scalar &x,
+                 const array::Vector &velocity, bool nonnegative) {
 
   // make ghosted copies:
   m_v_ghosted.copy_from(velocity);

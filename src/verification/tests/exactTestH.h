@@ -22,8 +22,7 @@
 #define __exactTestH_h 1
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /*
@@ -58,4 +57,4 @@ struct TestHParameters exactH(const double f, const double t, const double r);
 #endif
 
 
-#endif  /* __exactTestH_h */
+#endif /* __exactTestH_h */

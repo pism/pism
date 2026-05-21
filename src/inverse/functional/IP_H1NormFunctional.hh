@@ -44,29 +44,26 @@ public:
    * @param[in] cH1 The constant \f$c_{H^1}\f$.
    * @param[in] dirichletLocations Nodes where the function will be set to zero prior to integration.
    */
-  IP_H1NormFunctional2S(std::shared_ptr<const Grid> grid,
-                        double cL2,
-                        double cH1,
-                        array::Scalar *dirichletLocations=NULL)
-    : IPInnerProductFunctional<array::Scalar>(grid),
-      m_cL2(cL2),
-      m_cH1(cH1),
-      m_dirichletIndices(dirichletLocations) {};
+  IP_H1NormFunctional2S(std::shared_ptr<const Grid> grid, double cL2, double cH1,
+                        array::Scalar *dirichletLocations = NULL)
+      : IPInnerProductFunctional<array::Scalar>(grid),
+        m_cL2(cL2),
+        m_cH1(cH1),
+        m_dirichletIndices(dirichletLocations) {};
   virtual ~IP_H1NormFunctional2S() {};
-  
+
   virtual void valueAt(array::Scalar &x, double *OUTPUT);
   virtual void dot(array::Scalar &a, array::Scalar &b, double *OUTPUT);
   virtual void gradientAt(array::Scalar &x, array::Scalar &gradient);
   virtual void assemble_form(Mat J);
 
 protected:
-
   double m_cL2, m_cH1;
   array::Scalar *m_dirichletIndices;
 
 private:
   IP_H1NormFunctional2S(IP_H1NormFunctional2S const &);
-  IP_H1NormFunctional2S & operator=(IP_H1NormFunctional2S const &);  
+  IP_H1NormFunctional2S &operator=(IP_H1NormFunctional2S const &);
 };
 
 } // end of namespace inverse

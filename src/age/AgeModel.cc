@@ -19,19 +19,17 @@
 
 #include "pism/age/AgeModel.hh"
 #include "pism/age/AgeColumnSystem.hh"
+#include "pism/util/Logger.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
-#include <memory>
-#include "pism/util/Logger.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include <memory>
 
 namespace pism {
 
-AgeModelInputs::AgeModelInputs(const array::Scalar *thickness,
-                               const array::Array3D *u,
-                               const array::Array3D *v,
-                               const array::Array3D *w)
-  : ice_thickness(thickness), u3(u), v3(v), w3(w) {
+AgeModelInputs::AgeModelInputs(const array::Scalar *thickness, const array::Array3D *u,
+                               const array::Array3D *v, const array::Array3D *w)
+    : ice_thickness(thickness), u3(u), v3(v), w3(w) {
   // empty
 }
 
@@ -44,8 +42,8 @@ AgeModelInputs::AgeModelInputs() {
 
 static void check_input(const array::Array *ptr, const char *name) {
   if (ptr == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "ice age model input %s was not provided", name);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "ice age model input %s was not provided",
+                                  name);
   }
 }
 
@@ -64,11 +62,9 @@ AgeModel::AgeModel(std::shared_ptr<const Grid> grid,
       m_work(m_grid, "work_vector", array::WITHOUT_GHOSTS, m_grid->z()),
       m_stress_balance(stress_balance) {
 
-  m_ice_age.metadata()
-    .long_name("age of ice")
-    .units("s");
+  m_ice_age.metadata().long_name("age of ice").units("s");
 
-  m_ice_age.metadata()["valid_min"] = {0.0};
+  m_ice_age.metadata()["valid_min"] = { 0.0 };
 
   m_work.metadata().units("s");
 }
@@ -110,25 +106,21 @@ AgeColumnSystem::solve() for the actual method.
 void AgeModel::update(double t, double dt, const AgeModelInputs &inputs) {
 
   // fix a compiler warning
-  (void) t;
+  (void)t;
 
   inputs.check();
 
   const array::Scalar &ice_thickness = *inputs.ice_thickness;
 
-  const array::Array3D
-    &u3 = *inputs.u3,
-    &v3 = *inputs.v3,
-    &w3 = *inputs.w3;
+  const array::Array3D &u3 = *inputs.u3, &v3 = *inputs.v3, &w3 = *inputs.w3;
 
-  AgeColumnSystem system(m_grid->z(), "age",
-                         m_grid->dx(), m_grid->dy(), dt,
-                         m_ice_age, u3, v3, w3); // linear system to solve in each column
+  AgeColumnSystem system(m_grid->z(), "age", m_grid->dx(), m_grid->dy(), dt, m_ice_age, u3, v3,
+                         w3); // linear system to solve in each column
 
   size_t Mz_fine = system.z().size();
-  std::vector<double> x(Mz_fine);   // space for solution
+  std::vector<double> x(Mz_fine); // space for solution
 
-  array::AccessScope list{&ice_thickness, &u3, &v3, &w3, &m_ice_age, &m_work};
+  array::AccessScope list{ &ice_thickness, &u3, &v3, &w3, &m_ice_age, &m_work };
 
   unsigned int Mz = m_grid->Mz();
 
@@ -171,16 +163,15 @@ void AgeModel::update(double t, double dt, const AgeModelInputs &inputs) {
   m_ice_age.copy_from(m_work);
 }
 
-const array::Array3D & AgeModel::age() const {
+const array::Array3D &AgeModel::age() const {
   return m_ice_age;
 }
 
 MaxTimestep AgeModel::max_timestep_impl(double /*t*/) const {
 
   if (m_stress_balance == nullptr) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "AgeModel: no stress balance provided."
-                                  " Cannot compute max. time step.");
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "AgeModel: no stress balance provided."
+                                                       " Cannot compute max. time step.");
   }
 
   return MaxTimestep(m_stress_balance->max_timestep_cfl_3d().dt_max.value(), "age model");

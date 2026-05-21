@@ -6,10 +6,10 @@
 #include "pism/util/Config.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/array/Array.hh"
-#include "pism/util/io/io_helpers.hh"
 #include "pism/util/Time.hh"
+#include "pism/util/array/Array.hh"
 #include "pism/util/io/SynchronousOutputWriter.hh"
+#include "pism/util/io/io_helpers.hh"
 
 using namespace pism;
 
@@ -29,7 +29,7 @@ void VecBundleWriter::init() {
   pism::OutputFile file(output_writer, fname);
 
   file.define_variable(m_grid->ctx()->time()->metadata());
-  
+
   for (const auto *vec : vecs) {
     for (const auto &var : vec->all_metadata()) {
       file.define_variable(var);

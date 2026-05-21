@@ -45,17 +45,15 @@ public:
 protected:
   virtual void restart_impl(const File &input_file, int record);
 
-  virtual void bootstrap_impl(const File &input_file,
-                              const array::Scalar &ice_thickness);
+  virtual void bootstrap_impl(const File &input_file, const array::Scalar &ice_thickness);
 
-  virtual void init_impl(const array::Scalar &W_till,
-                               const array::Scalar &W,
-                               const array::Scalar &P);
+  virtual void init_impl(const array::Scalar &W_till, const array::Scalar &W,
+                         const array::Scalar &P);
 
   virtual MaxTimestep max_timestep_impl(double t) const;
 
   //! Solves an implicit step of a highly-simplified ODE.
-  virtual void update_impl(double t, double dt, const Inputs& inputs);
+  virtual void update_impl(double t, double dt, const Inputs &inputs);
 
   void diffuse_till_water(double dt);
 

@@ -18,10 +18,10 @@
  */
 
 #include <memory>
-#include <unistd.h>
+#include <petscsys.h>
 #include <sstream>
 #include <stdarg.h>
-#include <petscsys.h>
+#include <unistd.h>
 
 #include "pism/util/Logger.hh"
 #include "pism/util/error_handling.hh"
@@ -34,11 +34,10 @@ struct Logger::Impl {
   int threshold;
 };
 
-Logger::Logger(MPI_Comm com, int threshold)
-  : m_impl(new Impl) {
+Logger::Logger(MPI_Comm com, int threshold) : m_impl(new Impl) {
 
-  m_impl->com = com;
-  m_impl->enabled = true;
+  m_impl->com       = com;
+  m_impl->enabled   = true;
   m_impl->threshold = threshold;
 }
 
@@ -108,8 +107,7 @@ struct StringLogger::Impl {
   std::ostringstream data;
 };
 
-StringLogger::StringLogger(MPI_Comm com, int threshold)
-  : Logger(com, threshold), m_impl(new Impl) {
+StringLogger::StringLogger(MPI_Comm com, int threshold) : Logger(com, threshold), m_impl(new Impl) {
   // empty
 }
 

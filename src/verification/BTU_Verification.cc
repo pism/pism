@@ -19,18 +19,17 @@
 
 #include "pism/verification/BTU_Verification.hh"
 #include "pism/util/Time.hh"
+#include "pism/util/array/Array3D.hh"
+#include "pism/util/error_handling.hh"
 #include "pism/verification/tests/exactTestK.h"
 #include "pism/verification/tests/exactTestO.h"
-#include "pism/util/error_handling.hh"
-#include "pism/util/array/Array3D.hh"
 
 namespace pism {
 namespace energy {
 
-BTU_Verification::BTU_Verification(std::shared_ptr<const Grid> g,
-                                   const BTUGrid &vertical_grid,
+BTU_Verification::BTU_Verification(std::shared_ptr<const Grid> g, const BTUGrid &vertical_grid,
                                    int testname, bool bedrock_is_ice)
-  : BTU_Full(g, vertical_grid) {
+    : BTU_Full(g, vertical_grid) {
 
   m_testname       = testname;
   m_bedrock_is_ice = bedrock_is_ice;
@@ -42,7 +41,7 @@ void BTU_Verification::initialize_bottom_surface_flux() {
 }
 
 void BTU_Verification::bootstrap(const array::Scalar &bedrock_top_temperature) {
-  (void) bedrock_top_temperature;
+  (void)bedrock_top_temperature;
 
   std::vector<double> temperature(m_Mbz), zlevels = m_temp->levels();
 

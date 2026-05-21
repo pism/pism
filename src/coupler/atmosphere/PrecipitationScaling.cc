@@ -15,27 +15,23 @@
 // You should have received a copy of the GNU General Public License
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-#include <cmath>                // exp()
+#include <cmath> // exp()
 
 #include "pism/coupler/atmosphere/PrecipitationScaling.hh"
 
-#include "pism/util/ScalarForcing.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/ScalarForcing.hh"
 
 namespace pism {
 namespace atmosphere {
 
 PrecipitationScaling::PrecipitationScaling(std::shared_ptr<const Grid> grid,
                                            std::shared_ptr<AtmosphereModel> in)
-  : AtmosphereModel(grid, in) {
+    : AtmosphereModel(grid, in) {
 
-  m_forcing.reset(new ScalarForcing(*grid->ctx(),
-                                    "atmosphere.precip_scaling",
-                                    "delta_T",
-                                    "kelvin",
-                                    "kelvin",
-                                    "air temperature offsets"));
+  m_forcing.reset(new ScalarForcing(*grid->ctx(), "atmosphere.precip_scaling", "delta_T", "kelvin",
+                                    "kelvin", "air temperature offsets"));
 
   m_exp_factor = m_config->get_number("atmosphere.precip_exponential_factor_for_temperature");
 
@@ -45,9 +41,8 @@ PrecipitationScaling::PrecipitationScaling(std::shared_ptr<const Grid> grid,
 void PrecipitationScaling::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);
 
-  m_log->message(2,
-                 "* Initializing precipitation scaling"
-                 " using temperature offsets...\n");
+  m_log->message(2, "* Initializing precipitation scaling"
+                    " using temperature offsets...\n");
 }
 
 void PrecipitationScaling::init_timeseries_impl(const std::vector<double> &ts) const {
@@ -66,11 +61,12 @@ void PrecipitationScaling::update_impl(const Geometry &geometry, double t, doubl
   m_precipitation->scale(exp(m_exp_factor * m_forcing->value(t + 0.5 * dt)));
 }
 
-const array::Scalar& PrecipitationScaling::precipitation_impl() const {
+const array::Scalar &PrecipitationScaling::precipitation_impl() const {
   return *m_precipitation;
 }
 
-void PrecipitationScaling::precip_time_series_impl(int i, int j, std::vector<double> &result) const {
+void PrecipitationScaling::precip_time_series_impl(int i, int j,
+                                                   std::vector<double> &result) const {
   m_input_model->precip_time_series(i, j, result);
 
   for (unsigned int k = 0; k < m_scaling_values.size(); ++k) {

@@ -19,20 +19,22 @@
 #ifndef PISM_ELEMENT_H
 #define PISM_ELEMENT_H
 
+#include <cassert> // assert
 #include <vector>
-#include <cassert>              // assert
 
-#include <petscdmda.h>          // DMDALocalInfo
+#include <petscdmda.h> // DMDALocalInfo
 
-#include "pism/util/fem/FEM.hh"
 #include "pism/util/Vector2d.hh"
+#include "pism/util/fem/FEM.hh"
 #include <petscmat.h>
 
 
 namespace pism {
 
 class Grid;
-namespace array { class Scalar; }
+namespace array {
+class Scalar;
+}
 
 struct Vector3 {
   double x, y, z;
@@ -70,7 +72,7 @@ public:
    * `chi(q, k)` returns values and partial derivatives of the `k`-th shape function at a
    * quadrature point `q`.
    */
-  const Germ& chi(unsigned int q, unsigned int k) const {
+  const Germ &chi(unsigned int q, unsigned int k) const {
     assert(q < m_Nq);
     assert(k < m_n_chi);
     return m_germs[q * m_n_chi + k];
@@ -115,11 +117,8 @@ protected:
   // pointer to a shape function
   typedef Germ (*ShapeFunction)(unsigned int k, const QuadPoint &p);
 
-  void initialize(const double J[3][3],
-                  ShapeFunction f,
-                  unsigned int n_chi,
-                  const std::vector<QuadPoint>& points,
-                  const std::vector<double>& W);
+  void initialize(const double J[3][3], ShapeFunction f, unsigned int n_chi,
+                  const std::vector<QuadPoint> &points, const std::vector<double> &W);
 
   //! grid offsets used to extract nodal values from the grid and add contributions from
   //! an element to the residual and the Jacobian.
@@ -153,18 +152,15 @@ protected:
 
   //! Quadrature weights for a particular physical element
   std::vector<double> m_weights;
+
 private:
-  Element()
-    : m_n_chi(1),
-      m_Nq(1),
-      m_block_size(1) {
+  Element() : m_n_chi(1), m_Nq(1), m_block_size(1) {
     // empty
   }
 };
 
 class Element2 : public Element {
 public:
-
   void reset(int i, int j);
 
   //! Convert a local degree of freedom index `k` to a global degree of freedom index (`i`,`j`).
@@ -219,12 +215,12 @@ public:
   /*! @brief Extract nodal values for the element (`i`,`j`) from global array `x_global`
     into the element-local array `result`.
   */
-  template<typename T>
-  void nodal_values(T const* const* x_global, T* result) const {
+  template <typename T>
+  void nodal_values(T const *const *x_global, T *result) const {
     for (unsigned int k = 0; k < m_n_chi; ++k) {
       int i = 0, j = 0;
       local_to_global(k, i, j);
-      result[k] = x_global[j][i];   // note the indexing order
+      result[k] = x_global[j][i]; // note the indexing order
     }
   }
 
@@ -234,22 +230,20 @@ public:
    *
    * Use this to add residual contributions.
    */
-  template<typename T>
-  void add_contribution(const T *local, T** y_global) const {
+  template <typename T>
+  void add_contribution(const T *local, T **y_global) const {
     for (unsigned int k = 0; k < m_n_chi; k++) {
       if (m_row[k].i == m_invalid_dof) {
         // skip rows marked as "invalid"
         continue;
       }
-      const int
-        i = m_row[k].i,
-        j = m_row[k].j;
-      y_global[j][i] += local[k];   // note the indexing order
+      const int i = m_row[k].i, j = m_row[k].j;
+      y_global[j][i] += local[k]; // note the indexing order
     }
   }
 
-  using Element::mark_row_invalid;
   using Element::mark_col_invalid;
+  using Element::mark_row_invalid;
 
 protected:
   Element2(const Grid &grid, int Nq, int n_chi, int block_size);
@@ -264,9 +258,7 @@ protected:
 class Q1Element2 : public Element2 {
 public:
   Q1Element2(const Grid &grid, const Quadrature &quadrature);
-  Q1Element2(const DMDALocalInfo &grid_info,
-             double dx, double dy,
-             const Quadrature &quadrature);
+  Q1Element2(const DMDALocalInfo &grid_info, double dx, double dy, const Quadrature &quadrature);
 };
 
 //! P1 element embedded in Q1Element2
@@ -291,9 +283,9 @@ public:
       for (unsigned int k = 0; k < m_n_chi; k++) {
         const Germ &psi = m_germs[q * m_n_chi + k];
         vals[q] += psi.val * x[k];
-        dx[q]   += psi.dx  * x[k];
-        dy[q]   += psi.dy  * x[k];
-        dz[q]   += psi.dz  * x[k];
+        dx[q] += psi.dx * x[k];
+        dy[q] += psi.dy * x[k];
+        dz[q] += psi.dz * x[k];
       }
     }
   }
@@ -303,24 +295,20 @@ public:
   };
 
   GlobalIndex local_to_global(int i, int j, int k, unsigned int n) const {
-    return {i + m_i_offset[n],
-            j + m_j_offset[n],
-            k + m_k_offset[n]};
+    return { i + m_i_offset[n], j + m_j_offset[n], k + m_k_offset[n] };
   }
 
   GlobalIndex local_to_global(unsigned int n) const {
-    return {m_i + m_i_offset[n],
-            m_j + m_j_offset[n],
-            m_k + m_k_offset[n]};
+    return { m_i + m_i_offset[n], m_j + m_j_offset[n], m_k + m_k_offset[n] };
   }
 
   /*! @brief Extract nodal values for the element (`i`,`j`,`k`) from global array `x_global`
     into the element-local array `result`.
   */
-  template<typename T>
-  void nodal_values(T const* const* const* x_global, T* result) const {
+  template <typename T>
+  void nodal_values(T const *const *const *x_global, T *result) const {
     for (unsigned int n = 0; n < m_n_chi; ++n) {
-      auto I = local_to_global(n);
+      auto I    = local_to_global(n);
       result[n] = x_global[I.j][I.i][I.k]; // note the STORAGE_ORDER
     }
   }
@@ -331,17 +319,18 @@ public:
    *
    * Use this to add residual contributions.
    */
-  template<typename T>
-  void add_contribution(const T *local, T*** y_global) const {
+  template <typename T>
+  void add_contribution(const T *local, T ***y_global) const {
     for (unsigned int n = 0; n < m_n_chi; n++) {
       if (m_row[n].i == m_invalid_dof) {
         // skip rows marked as "invalid"
         continue;
       }
       auto I = local_to_global(n);
-      y_global[I.j][I.i][I.k] += local[n];   // note the STORAGE_ORDER
+      y_global[I.j][I.i][I.k] += local[n]; // note the STORAGE_ORDER
     }
   }
+
 protected:
   Element3(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_size);
   Element3(const Grid &grid, int Nq, int n_chi, int block_size);
@@ -357,12 +346,8 @@ protected:
  */
 class Q1Element3 : public Element3 {
 public:
-  Q1Element3(const DMDALocalInfo &grid,
-             const Quadrature &quadrature,
-             double dx,
-             double dy,
-             double x_min,
-             double y_min);
+  Q1Element3(const DMDALocalInfo &grid, const Quadrature &quadrature, double dx, double dy,
+             double x_min, double y_min);
   Q1Element3(const Grid &grid, const Quadrature &quadrature);
 
   void reset(int i, int j, int k, const double *z);
@@ -382,8 +367,9 @@ public:
     return m_z_nodal[n];
   }
 
-  using Element::mark_row_invalid;
   using Element::mark_col_invalid;
+  using Element::mark_row_invalid;
+
 private:
   double m_dx;
   double m_dy;
@@ -416,14 +402,14 @@ public:
     return m_weights[q];
   }
 
-  const double& chi(unsigned int q, unsigned int k) const {
+  const double &chi(unsigned int q, unsigned int k) const {
     assert(q < m_Nq);
     assert(k < m_n_chi);
     return m_chi[q * m_n_chi + k];
   }
 
   // outward pointing unit normal vector to an element face at the quadrature point q
-  const Vector3& normal(unsigned int q) const {
+  const Vector3 &normal(unsigned int q) const {
     return m_normals[q];
   }
 
@@ -439,6 +425,7 @@ public:
       }
     }
   }
+
 protected:
   // grid spacing
   double m_dx;

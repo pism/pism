@@ -18,11 +18,11 @@
  */
 
 #include "pism/util/Context.hh"
-#include "pism/util/Profiling.hh"
-#include "pism/util/Units.hh"
-#include "pism/util/Time.hh"
-#include "pism/util/Logger.hh"
 #include "pism/util/EnthalpyConverter.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/Profiling.hh"
+#include "pism/util/Time.hh"
+#include "pism/util/Units.hh"
 #include <memory>
 #include <string>
 
@@ -30,15 +30,16 @@ namespace pism {
 
 class Context::Impl {
 public:
-  Impl(MPI_Comm c,
-       std::shared_ptr<units::System> sys,
-       std::shared_ptr<Config> conf,
-       std::shared_ptr<EnthalpyConverter> EC,
-       std::shared_ptr<Time> t,
-       std::shared_ptr<Logger> log,
+  Impl(MPI_Comm c, std::shared_ptr<units::System> sys, std::shared_ptr<Config> conf,
+       std::shared_ptr<EnthalpyConverter> EC, std::shared_ptr<Time> t, std::shared_ptr<Logger> log,
        const std::string &p)
-    : com(c), unit_system(sys), config(conf), enthalpy_converter(EC), time(t), prefix(p),
-      logger(log) {
+      : com(c),
+        unit_system(sys),
+        config(conf),
+        enthalpy_converter(EC),
+        time(t),
+        prefix(p),
+        logger(log) {
     // empty
   }
   MPI_Comm com;
@@ -51,11 +52,10 @@ public:
   std::shared_ptr<Logger> logger;
 };
 
-Context::Context(MPI_Comm c, std::shared_ptr<units::System> sys,
-                 std::shared_ptr<Config> config, std::shared_ptr<EnthalpyConverter> EC, std::shared_ptr<Time> t,
-                 std::shared_ptr<Logger> L,
-                 const std::string &p)
-  : m_impl(new Impl(c, sys, config, EC, t, L, p)) {
+Context::Context(MPI_Comm c, std::shared_ptr<units::System> sys, std::shared_ptr<Config> config,
+                 std::shared_ptr<EnthalpyConverter> EC, std::shared_ptr<Time> t,
+                 std::shared_ptr<Logger> L, const std::string &p)
+    : m_impl(new Impl(c, sys, config, EC, t, L, p)) {
   // empty
 }
 
@@ -111,11 +111,11 @@ std::shared_ptr<const Time> Context::time() const {
   return m_impl->time;
 }
 
-const std::string& Context::prefix() const {
+const std::string &Context::prefix() const {
   return m_impl->prefix;
 }
 
-const Profiling& Context::profiling() const {
+const Profiling &Context::profiling() const {
   return m_impl->profiling;
 }
 
@@ -127,8 +127,7 @@ std::shared_ptr<Logger> Context::log() {
   return m_impl->logger;
 }
 
-std::shared_ptr<Context> context_from_options(MPI_Comm com,
-                                              const std::string &prefix) {
+std::shared_ptr<Context> context_from_options(MPI_Comm com, const std::string &prefix) {
   // unit system
   auto sys = std::make_shared<units::System>();
 
@@ -138,8 +137,7 @@ std::shared_ptr<Context> context_from_options(MPI_Comm com,
   return context_from_config(com, config, prefix);
 }
 
-std::shared_ptr<Context> context_from_config(MPI_Comm com,
-                                             std::shared_ptr<Config> config,
+std::shared_ptr<Context> context_from_config(MPI_Comm com, std::shared_ptr<Config> config,
                                              const std::string &prefix) {
   // unit system
   auto sys = config->unit_system();

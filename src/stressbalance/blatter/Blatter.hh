@@ -20,11 +20,11 @@
 #define PISM_BLATTER_H
 
 #include "pism/stressbalance/ShallowStressBalance.hh"
-#include "pism/util/petscwrappers/SNES.hh"
-#include "pism/util/petscwrappers/DM.hh"
-#include "pism/util/petscwrappers/Vec.hh"
-#include "pism/util/fem/FEM.hh"
 #include "pism/util/fem/Element.hh"
+#include "pism/util/fem/FEM.hh"
+#include "pism/util/petscwrappers/DM.hh"
+#include "pism/util/petscwrappers/SNES.hh"
+#include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 
@@ -103,7 +103,7 @@ protected:
   // True if the Eisenstat-Walker method of adjusting linear solver tolerances is enabled.
   bool m_ksp_use_ew;
 
-  static const int m_Nq = 100;
+  static const int m_Nq     = 100;
   static const int m_n_work = 9;
 
   double m_work[m_n_work][m_Nq];
@@ -127,22 +127,14 @@ protected:
 
   void compute_node_type(double min_thickness);
 
-  virtual void nodal_parameter_values(const fem::Q1Element3 &element,
-                                      Parameters **P,
-                                      int i,
-                                      int j,
-                                      int *node_type,
-                                      double *bottom,
-                                      double *thickness,
-                                      double *surface,
-                                      double *sea_level) const;
+  virtual void nodal_parameter_values(const fem::Q1Element3 &element, Parameters **P, int i, int j,
+                                      int *node_type, double *bottom, double *thickness,
+                                      double *surface, double *sea_level) const;
 
-  virtual bool marine_boundary(int face,
-                               const int *node_type,
-                               const double *ice_bottom,
+  virtual bool marine_boundary(int face, const int *node_type, const double *ice_bottom,
                                const double *sea_level);
 
-  virtual bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I);
+  virtual bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex &I);
 
   virtual Vector2d u_bc(double x, double y, double z) const;
 
@@ -150,59 +142,40 @@ protected:
 
   void jacobian_dirichlet(const DMDALocalInfo &info, Parameters **P, Mat J);
 
-  virtual void jacobian_f(const fem::Q1Element3 &element,
-                          const Vector2d *u_nodal,
+  virtual void jacobian_f(const fem::Q1Element3 &element, const Vector2d *u_nodal,
                           const double *B_nodal,
                           double K[2 * fem::q13d::n_chi][2 * fem::q13d::n_chi]);
 
-  virtual void jacobian_basal(const fem::Q1Element3Face &face,
-                              const double *tauc_nodal,
-                              const double *f_nodal,
-                              const Vector2d *u_nodal,
+  virtual void jacobian_basal(const fem::Q1Element3Face &face, const double *tauc_nodal,
+                              const double *f_nodal, const Vector2d *u_nodal,
                               double K[2 * fem::q13d::n_chi][2 * fem::q13d::n_chi]);
 
   void compute_residual(DMDALocalInfo *info, const Vector2d ***X, Vector2d ***R);
 
-  void residual_dirichlet(const DMDALocalInfo &info,
-                          Parameters **P,
-                          const Vector2d ***x,
+  void residual_dirichlet(const DMDALocalInfo &info, Parameters **P, const Vector2d ***x,
                           Vector2d ***R);
 
-  virtual void residual_f(const fem::Q1Element3 &element,
-                          const Vector2d *u_nodal,
-                          const double *B_nodal,
-                          Vector2d *residual);
+  virtual void residual_f(const fem::Q1Element3 &element, const Vector2d *u_nodal,
+                          const double *B_nodal, Vector2d *residual);
 
-  virtual void residual_source_term(const fem::Q1Element3 &element,
-                                    const double *surface,
-                                    const double *bed,
-                                    Vector2d *residual);
+  virtual void residual_source_term(const fem::Q1Element3 &element, const double *surface,
+                                    const double *bed, Vector2d *residual);
 
-  virtual void residual_basal(const fem::Q1Element3 &element,
-                              const fem::Q1Element3Face &face,
-                              const double *tauc_nodal,
-                              const double *f_nodal,
-                              const Vector2d *u_nodal,
-                              Vector2d *residual);
+  virtual void residual_basal(const fem::Q1Element3 &element, const fem::Q1Element3Face &face,
+                              const double *tauc_nodal, const double *f_nodal,
+                              const Vector2d *u_nodal, Vector2d *residual);
 
-  virtual void residual_surface(const fem::Q1Element3 &element,
-                                const fem::Q1Element3Face &face,
+  virtual void residual_surface(const fem::Q1Element3 &element, const fem::Q1Element3Face &face,
                                 Vector2d *residual);
 
-  virtual void residual_lateral(const fem::Q1Element3 &element,
-                                const fem::Q1Element3Face &face,
-                                const double *surface_nodal,
-                                const double *z_nodal,
-                                const double *sl_nodal,
-                                Vector2d *residual);
+  virtual void residual_lateral(const fem::Q1Element3 &element, const fem::Q1Element3Face &face,
+                                const double *surface_nodal, const double *z_nodal,
+                                const double *sl_nodal, Vector2d *residual);
 
-  static PetscErrorCode jacobian_callback(DMDALocalInfo *info,
-                                          const Vector2d ***x,
-                                          Mat A, Mat J,
+  static PetscErrorCode jacobian_callback(DMDALocalInfo *info, const Vector2d ***x, Mat A, Mat J,
                                           Blatter *solver);
 
-  static PetscErrorCode function_callback(DMDALocalInfo *info,
-                                          const Vector2d ***x, Vector2d ***f,
+  static PetscErrorCode function_callback(DMDALocalInfo *info, const Vector2d ***x, Vector2d ***f,
                                           Blatter *solver);
 
   virtual void init_2d_parameters(const Inputs &inputs);

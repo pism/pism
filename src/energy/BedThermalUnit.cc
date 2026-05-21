@@ -26,14 +26,14 @@
 #include "pism/energy/BTU_Full.hh"
 #include "pism/energy/BTU_Minimal.hh"
 #include "pism/util/Logger.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace energy {
 
 BTUGrid::BTUGrid(std::shared_ptr<const Context> ctx) {
-  Mbz = (unsigned int) ctx->config()->get_number("grid.Mbz");
+  Mbz = (unsigned int)ctx->config()->get_number("grid.Mbz");
   Lbz = ctx->config()->get_number("grid.Lbz");
 }
 
@@ -41,7 +41,7 @@ BTUGrid::BTUGrid(std::shared_ptr<const Context> ctx) {
 BTUGrid BTUGrid::FromOptions(std::shared_ptr<const Context> ctx) {
   BTUGrid result(ctx);
 
-  auto config = ctx->config();
+  auto config       = ctx->config();
   InputOptions opts = process_input_options(ctx->com(), config);
 
   if (opts.type == INIT_RESTART) {
@@ -93,9 +93,9 @@ std::shared_ptr<BedThermalUnit> BedThermalUnit::FromOptions(std::shared_ptr<cons
 
 
 BedThermalUnit::BedThermalUnit(std::shared_ptr<const Grid> g)
-  : Component(g),
-    m_bottom_surface_flux(m_grid, "bheatflx"),
-    m_top_surface_flux(m_grid, "heat_flux_from_bedrock") {
+    : Component(g),
+      m_bottom_surface_flux(m_grid, "bheatflx"),
+      m_top_surface_flux(m_grid, "heat_flux_from_bedrock") {
 
   {
     m_top_surface_flux.metadata(0)
@@ -125,15 +125,12 @@ void BedThermalUnit::init_impl(const InputOptions &opts) {
   auto input_file = m_config->get_string("energy.bedrock_thermal.file");
 
   if (not input_file.empty()) {
-    m_log->message(2, "  - Reading geothermal flux from '%s' ...\n",
-                   input_file.c_str());
+    m_log->message(2, "  - Reading geothermal flux from '%s' ...\n", input_file.c_str());
 
     m_bottom_surface_flux.regrid(input_file, io::Default::Nil());
   } else {
-    m_log->message(2,
-                   "  - Parameter %s is not set. Reading geothermal flux from '%s'...\n",
-                   "energy.bedrock_thermal.file",
-                   opts.filename.c_str());
+    m_log->message(2, "  - Parameter %s is not set. Reading geothermal flux from '%s'...\n",
+                   "energy.bedrock_thermal.file", opts.filename.c_str());
 
     switch (opts.type) {
     case INIT_RESTART:
@@ -155,8 +152,7 @@ void BedThermalUnit::init_impl(const InputOptions &opts) {
 void BedThermalUnit::initialize_bottom_surface_flux() {
   const double heat_flux = m_config->get_number("bootstrapping.defaults.geothermal_flux");
 
-  m_log->message(2, "  using constant geothermal flux %f W m-2 ...\n",
-                 heat_flux);
+  m_log->message(2, "  using constant geothermal flux %f W m-2 ...\n", heat_flux);
 
   m_bottom_surface_flux.set(heat_flux);
 }
@@ -191,9 +187,9 @@ void BedThermalUnit::write_state_impl(const OutputFile &output) const {
 }
 
 DiagnosticList BedThermalUnit::spatial_diagnostics_impl() const {
-  DiagnosticList result = {
-    {"bheatflx",   Diagnostic::wrap(m_bottom_surface_flux)},
-    {"heat_flux_from_bedrock", Diagnostic::Ptr(new BTU_geothermal_flux_at_ground_level(this))}};
+  DiagnosticList result = { { "bheatflx", Diagnostic::wrap(m_bottom_surface_flux) },
+                            { "heat_flux_from_bedrock",
+                              Diagnostic::Ptr(new BTU_geothermal_flux_at_ground_level(this)) } };
 
   if (m_config->get_flag("output.ISMIP6")) {
     result["hfgeoubed"] = Diagnostic::Ptr(new BTU_geothermal_flux_at_ground_level(this));
@@ -201,16 +197,15 @@ DiagnosticList BedThermalUnit::spatial_diagnostics_impl() const {
   return result;
 }
 
-void BedThermalUnit::update(const array::Scalar &bedrock_top_temperature,
-                            double t, double dt) {
+void BedThermalUnit::update(const array::Scalar &bedrock_top_temperature, double t, double dt) {
   this->update_impl(bedrock_top_temperature, t, dt);
 }
 
-const array::Scalar& BedThermalUnit::flux_through_top_surface() const {
+const array::Scalar &BedThermalUnit::flux_through_top_surface() const {
   return m_top_surface_flux;
 }
 
-const array::Scalar& BedThermalUnit::flux_through_bottom_surface() const {
+const array::Scalar &BedThermalUnit::flux_through_bottom_surface() const {
   return m_bottom_surface_flux;
 }
 
@@ -229,7 +224,7 @@ BTU_geothermal_flux_at_ground_level::BTU_geothermal_flux_at_ground_level(const B
 }
 
 std::shared_ptr<array::Array> BTU_geothermal_flux_at_ground_level::compute_impl() const {
-  auto result = std::make_shared<array::Scalar>(m_grid, "hfgeoubed");
+  auto result        = std::make_shared<array::Scalar>(m_grid, "hfgeoubed");
   result->metadata() = m_vars[0];
 
   result->copy_from(model->flux_through_top_surface());

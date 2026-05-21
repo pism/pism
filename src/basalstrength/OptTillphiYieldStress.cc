@@ -21,15 +21,15 @@
 #include "pism/basalstrength/MohrCoulombYieldStress.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/array/CellType.hh"
+#include "pism/util/Logger.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Time.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/Logger.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/io/io_helpers.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -38,17 +38,17 @@ namespace pism {
   sliding coefficients under ice sheets, applied to Antarctica"
 */
 OptTillphiYieldStress::OptTillphiYieldStress(std::shared_ptr<const Grid> grid)
-  : MohrCoulombYieldStress(grid),
-    m_mask(m_grid, "diff_mask"),
-    m_usurf_difference(m_grid, "usurf_difference"),
-    m_usurf_target(m_grid, "usurf"),
-    m_time_name(m_config->get_string("time.dimension_name") + "_tillphi_opt")
-{
+    : MohrCoulombYieldStress(grid),
+      m_mask(m_grid, "diff_mask"),
+      m_usurf_difference(m_grid, "usurf_difference"),
+      m_usurf_target(m_grid, "usurf"),
+      m_time_name(m_config->get_string("time.dimension_name") + "_tillphi_opt") {
 
   // In this model tillphi is NOT time-independent.
   m_till_phi.metadata().set_time_dependent(true);
 
-  m_name = "Iterative optimization of the till friction angle for the Mohr-Coulomb yield stress model";
+  m_name =
+      "Iterative optimization of the till friction angle for the Mohr-Coulomb yield stress model";
 
   m_usurf_target.metadata()
       .long_name("target surface elevation for tillphi optimization")
@@ -61,19 +61,20 @@ OptTillphiYieldStress::OptTillphiYieldStress(std::shared_ptr<const Grid> grid)
 
   m_usurf_difference.set(0.0);
 
-  m_mask.metadata()
-      .long_name(
-          "one if the till friction angle was updated by the last iteration, zero otherwise ");
+  m_mask.metadata().long_name(
+      "one if the till friction angle was updated by the last iteration, zero otherwise ");
 
-  m_mask.metadata()["flag_values"] = {0.0, 1.0};
+  m_mask.metadata()["flag_values"]   = { 0.0, 1.0 };
   m_mask.metadata()["flag_meanings"] = "no_update updated_during_last_iteration";
 
   {
     // convergence threshold
-    m_dhdt_min  = m_config->get_number("basal_yield_stress.mohr_coulomb.tillphi_opt.dhdt_min", "m / s");
+    m_dhdt_min =
+        m_config->get_number("basal_yield_stress.mohr_coulomb.tillphi_opt.dhdt_min", "m / s");
 
     // scale used to compute tillphi adjustment using the surface elevation mismatch:
-    m_dphi_scale = m_config->get_number("basal_yield_stress.mohr_coulomb.tillphi_opt.dphi_scale", "degree / m");
+    m_dphi_scale = m_config->get_number("basal_yield_stress.mohr_coulomb.tillphi_opt.dphi_scale",
+                                        "degree / m");
     // upper and lower bounds of the tillphi adjustment during an iteration:
     m_dphi_max = m_config->get_number("basal_yield_stress.mohr_coulomb.tillphi_opt.dphi_max");
     m_dphi_min = -2 * m_dphi_max;
@@ -83,7 +84,7 @@ OptTillphiYieldStress::OptTillphiYieldStress(std::shared_ptr<const Grid> grid)
     m_topg_min = m_config->get_number("basal_yield_stress.mohr_coulomb.tillphi_opt.topg_min");
     m_topg_max = m_config->get_number("basal_yield_stress.mohr_coulomb.tillphi_opt.topg_max");
     // upper bound of tillphi:
-    m_phi_max  = m_config->get_number("basal_yield_stress.mohr_coulomb.tillphi_opt.phi_max");
+    m_phi_max = m_config->get_number("basal_yield_stress.mohr_coulomb.tillphi_opt.phi_max");
 
     if (m_phi0_min >= m_phi_max) {
       throw RuntimeError(PISM_ERROR_LOCATION,
@@ -98,19 +99,20 @@ OptTillphiYieldStress::OptTillphiYieldStress(std::shared_ptr<const Grid> grid)
 
   {
     m_t_last = time().current();
-    m_update_interval = m_config->get_number("basal_yield_stress.mohr_coulomb.tillphi_opt.dt", "seconds");
+    m_update_interval =
+        m_config->get_number("basal_yield_stress.mohr_coulomb.tillphi_opt.dt", "seconds");
     m_t_eps = m_config->get_number("time_stepping.resolution", "seconds");
   }
 
-  m_log->message(2,
-                 "  Using iterative optimization of the till friction angle.\n"
-                 "  Lower bound phi0 of the till friction angle is a piecewise-linear function of bed elevation (b):\n"
-                 "          /  %5.2f                                for b < %.f\n"
-                 "   phi0 = |  %5.2f + (b - (%.f)) * (%.2f / %.f)   for %.f < b < %.f\n"
-                 "          \\  %5.2f                               for %.f < b\n",
-                 m_phi0_min, m_topg_min,
-                 m_phi0_min, m_topg_min, m_phi0_max - m_phi0_min, m_topg_max - m_topg_min, m_topg_min, m_topg_max,
-                 m_phi0_max, m_topg_max);
+  m_log->message(
+      2,
+      "  Using iterative optimization of the till friction angle.\n"
+      "  Lower bound phi0 of the till friction angle is a piecewise-linear function of bed elevation (b):\n"
+      "          /  %5.2f                                for b < %.f\n"
+      "   phi0 = |  %5.2f + (b - (%.f)) * (%.2f / %.f)   for %.f < b < %.f\n"
+      "          \\  %5.2f                               for %.f < b\n",
+      m_phi0_min, m_topg_min, m_phi0_min, m_topg_min, m_phi0_max - m_phi0_min,
+      m_topg_max - m_topg_min, m_topg_min, m_topg_max, m_phi0_max, m_topg_max);
 }
 
 /*!
@@ -120,9 +122,10 @@ void OptTillphiYieldStress::init_t_last(const File &input_file) {
 
   if (input_file.variable_exists(m_time_name)) {
     auto t_length = input_file.nrecords(m_time_name, "", m_sys);
-    auto t_last = t_length > 0 ? t_length - 1 : 0;
+    auto t_last   = t_length > 0 ? t_length - 1 : 0;
 
-    auto t = io::read_timeseries_variable(input_file, m_time_name, time().units(), m_sys, t_last, 1);
+    auto t =
+        io::read_timeseries_variable(input_file, m_time_name, time().units(), m_sys, t_last, 1);
   } else {
     m_t_last = time().current();
   }
@@ -168,7 +171,7 @@ void OptTillphiYieldStress::bootstrap_impl(const File &input_file,
 }
 
 void OptTillphiYieldStress::init_impl(const YieldStressInputs &inputs) {
-  (void) inputs;
+  (void)inputs;
   throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                 "not implemented: till friction angle optimization "
                                 "cannot be initialized without an input file");
@@ -179,17 +182,14 @@ MaxTimestep OptTillphiYieldStress::max_timestep_impl(double t) const {
   {
     if (t < m_t_last) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "time %f is less than the previous time %f",
-                                    t, m_t_last);
+                                    "time %f is less than the previous time %f", t, m_t_last);
     }
 
     // Find the smallest time of the form m_t_last + k * m_update_interval that is greater
     // than t
     double k = ceil((t - m_t_last) / m_update_interval);
 
-    double
-      t_next = m_t_last + k * m_update_interval,
-      dt = t_next - t;
+    double t_next = m_t_last + k * m_update_interval, dt = t_next - t;
 
     if (dt < m_t_eps) {
       dt = m_update_interval;
@@ -203,20 +203,16 @@ MaxTimestep OptTillphiYieldStress::max_timestep_impl(double t) const {
   return std::min(dt_max, dt_mohr_coulomb);
 }
 
-void OptTillphiYieldStress::update_impl(const YieldStressInputs &inputs,
-                                        double t, double dt) {
+void OptTillphiYieldStress::update_impl(const YieldStressInputs &inputs, double t, double dt) {
 
-  double
-    t_next  = m_t_last + m_update_interval,
-    t_final = t + dt;
+  double t_next = m_t_last + m_update_interval, t_final = t + dt;
 
   if (t_final < m_t_last) {
     throw RuntimeError(PISM_ERROR_LOCATION, "cannot go back in time");
   }
 
   if (std::abs(t_next - t_final) < m_t_eps) { // reached the next update time
-    update_tillphi(inputs.geometry->ice_surface_elevation,
-                   inputs.geometry->bed_elevation,
+    update_tillphi(inputs.geometry->ice_surface_elevation, inputs.geometry->bed_elevation,
                    inputs.geometry->cell_type);
     m_t_last = t_final;
   }
@@ -232,8 +228,9 @@ void OptTillphiYieldStress::update_tillphi(const array::Scalar &ice_surface_elev
 
   m_log->message(2, "* Updating till friction angle...\n");
 
-  array::AccessScope list
-    { &m_till_phi, &m_usurf_target, &m_usurf_difference, &m_mask, &ice_surface_elevation, &bed_topography, &cell_type };
+  array::AccessScope list{ &m_till_phi, &m_usurf_target,        &m_usurf_difference,
+                           &m_mask,     &ice_surface_elevation, &bed_topography,
+                           &cell_type };
 
   m_mask.set(0.0);
 
@@ -289,7 +286,7 @@ std::set<VariableMetadata> OptTillphiYieldStress::state_impl() const {
   T["calendar"] = time().calendar();
 
   result.insert(T);
-  
+
   return result;
 }
 
@@ -301,11 +298,11 @@ void OptTillphiYieldStress::write_state_impl(const OutputFile &output) const {
 
 DiagnosticList OptTillphiYieldStress::spatial_diagnostics_impl() const {
 
-  return combine({{"tillphi", Diagnostic::wrap(m_till_phi)},
-                  {"usurf_difference", Diagnostic::wrap(m_usurf_difference)},
-                  {"usurf_target", Diagnostic::wrap(m_usurf_target)},
-                  {"diff_mask", Diagnostic::wrap(m_mask)}},
-    MohrCoulombYieldStress::spatial_diagnostics_impl());
+  return combine({ { "tillphi", Diagnostic::wrap(m_till_phi) },
+                   { "usurf_difference", Diagnostic::wrap(m_usurf_difference) },
+                   { "usurf_target", Diagnostic::wrap(m_usurf_target) },
+                   { "diff_mask", Diagnostic::wrap(m_mask) } },
+                 MohrCoulombYieldStress::spatial_diagnostics_impl());
 }
 
 } // end of namespace pism

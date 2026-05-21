@@ -16,25 +16,25 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <cstdlib>
 #include <cassert>
+#include <cstdlib>
 
-#include "pism/stressbalance/sia/BedSmoother.hh"
-#include "pism/stressbalance/sia/SIAFD.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/rheology/FlowLawFactory.hh"
 #include "pism/rheology/grain_size_vostok.hh"
 #include "pism/stressbalance/StressBalance.hh"
+#include "pism/stressbalance/sia/BedSmoother.hh"
+#include "pism/stressbalance/sia/SIAFD.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/Grid.hh"
+#include "pism/util/Logger.hh"
 #include "pism/util/Profiling.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/array/Scalar.hh"
+#include "pism/util/array/Vector.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/array/Vector.hh"
-#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -876,41 +876,29 @@ void SIAFD::compute_3d_horizontal_velocity(const Geometry &geometry, const array
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
-    const double
-      *I_e = I[0]->get_column(i, j),
-      *I_w = I[0]->get_column(i - 1, j),
-      *I_n = I[1]->get_column(i, j),
-      *I_s = I[1]->get_column(i, j - 1);
+    const double *I_e = I[0]->get_column(i, j), *I_w = I[0]->get_column(i - 1, j),
+                 *I_n = I[1]->get_column(i, j), *I_s = I[1]->get_column(i, j - 1);
 
     // Fetch values from 2D fields *outside* of the k-loop:
-    const double
-      h_x_w = h_x(i - 1, j, 0),
-      h_x_e = h_x(i, j, 0),
-      h_x_n = h_x(i, j, 1),
-      h_x_s = h_x(i, j - 1, 1);
+    const double h_x_w = h_x(i - 1, j, 0), h_x_e = h_x(i, j, 0), h_x_n = h_x(i, j, 1),
+                 h_x_s = h_x(i, j - 1, 1);
 
-    const double
-      h_y_w = h_y(i - 1, j, 0),
-      h_y_e = h_y(i, j, 0),
-      h_y_n = h_y(i, j, 1),
-      h_y_s = h_y(i, j - 1, 1);
+    const double h_y_w = h_y(i - 1, j, 0), h_y_e = h_y(i, j, 0), h_y_n = h_y(i, j, 1),
+                 h_y_s = h_y(i, j - 1, 1);
 
-    const double
-      sliding_velocity_u = sliding_velocity(i, j).u,
-      sliding_velocity_v = sliding_velocity(i, j).v;
+    const double sliding_velocity_u = sliding_velocity(i, j).u,
+                 sliding_velocity_v = sliding_velocity(i, j).v;
 
-    double
-      *u_ij = u_out.get_column(i, j),
-      *v_ij = v_out.get_column(i, j);
+    double *u_ij = u_out.get_column(i, j), *v_ij = v_out.get_column(i, j);
 
     // split into two loops to encourage auto-vectorization
     for (unsigned int k = 0; k < Mz; ++k) {
-      u_ij[k] = sliding_velocity_u - 0.25 * (I_e[k] * h_x_e + I_w[k] * h_x_w +
-                                             I_n[k] * h_x_n + I_s[k] * h_x_s);
+      u_ij[k] = sliding_velocity_u -
+                0.25 * (I_e[k] * h_x_e + I_w[k] * h_x_w + I_n[k] * h_x_n + I_s[k] * h_x_s);
     }
     for (unsigned int k = 0; k < Mz; ++k) {
-      v_ij[k] = sliding_velocity_v - 0.25 * (I_e[k] * h_y_e + I_w[k] * h_y_w +
-                                             I_n[k] * h_y_n + I_s[k] * h_y_s);
+      v_ij[k] = sliding_velocity_v -
+                0.25 * (I_e[k] * h_y_e + I_w[k] * h_y_w + I_n[k] * h_y_n + I_s[k] * h_y_s);
     }
   }
 
@@ -932,19 +920,19 @@ bool SIAFD::interglacial(double accumulation_time) const {
   return (accumulation_time >= m_holocene_start);
 }
 
-const array::Staggered& SIAFD::surface_gradient_x() const {
+const array::Staggered &SIAFD::surface_gradient_x() const {
   return m_h_x;
 }
 
-const array::Staggered& SIAFD::surface_gradient_y() const {
+const array::Staggered &SIAFD::surface_gradient_y() const {
   return m_h_y;
 }
 
-const array::Staggered1& SIAFD::diffusivity() const {
+const array::Staggered1 &SIAFD::diffusivity() const {
   return m_D;
 }
 
-const BedSmoother& SIAFD::bed_smoother() const {
+const BedSmoother &SIAFD::bed_smoother() const {
   return *m_bed_smoother;
 }
 

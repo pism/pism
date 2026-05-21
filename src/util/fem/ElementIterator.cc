@@ -29,14 +29,14 @@ ElementIterator::ElementIterator(const Grid &grid) {
   // Elements are indexed by their lower left vertex.  If there is a ghost
   // element on the right, its i-index will be the same as the maximum
   // i-index of a non-ghost vertex in the local grid.
-  xs = grid.xs() - 1;                    // Start at ghost to the left.
+  xs     = grid.xs() - 1;             // Start at ghost to the left.
   int xf = grid.xs() + grid.xm() - 1; // End at ghost to the right.
-  ys = grid.ys() - 1;                    // Start at ghost at the bottom.
+  ys     = grid.ys() - 1;             // Start at ghost at the bottom.
   int yf = grid.ys() + grid.ym() - 1; // End at ghost at the top.
 
-  lxs = grid.xs();
+  lxs     = grid.xs();
   int lxf = lxs + grid.xm() - 1;
-  lys = grid.ys();
+  lys     = grid.ys();
   int lyf = lys + grid.ym() - 1;
 
   // Now correct if needed. The only way there will not be ghosts is if the

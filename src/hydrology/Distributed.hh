@@ -45,53 +45,41 @@ public:
   Distributed(std::shared_ptr<const Grid> g);
   virtual ~Distributed() = default;
 
-  const array::Scalar& subglacial_water_pressure() const;
+  const array::Scalar &subglacial_water_pressure() const;
 
 protected:
   virtual void restart_impl(const File &input_file, int record);
 
-  virtual void bootstrap_impl(const File &input_file,
-                              const array::Scalar &ice_thickness);
+  virtual void bootstrap_impl(const File &input_file, const array::Scalar &ice_thickness);
 
-  virtual void init_impl(const array::Scalar &W_till,
-                               const array::Scalar &W,
-                               const array::Scalar &P);
+  virtual void init_impl(const array::Scalar &W_till, const array::Scalar &W,
+                         const array::Scalar &P);
 
   virtual double max_timestep_P_diff(double phi0, double dt_diff_w) const;
 
-  void update_impl(double t, double dt, const Inputs& inputs);
+  void update_impl(double t, double dt, const Inputs &inputs);
 
   std::map<std::string, TSDiagnostic::Ptr> scalar_diagnostics_impl() const;
 
   virtual std::set<VariableMetadata> state_impl() const;
   void write_state_impl(const OutputFile &output) const;
 
-  void check_P_bounds(array::Scalar &P,
-                      const array::Scalar &P_o,
-                      bool enforce_upper);
+  void check_P_bounds(array::Scalar &P, const array::Scalar &P_o, bool enforce_upper);
 
-  void P_from_W_steady(const array::Scalar &W,
-                       const array::Scalar &P_overburden,
-                       const array::Scalar &sliding_speed,
-                       array::Scalar &result);
+  void P_from_W_steady(const array::Scalar &W, const array::Scalar &P_overburden,
+                       const array::Scalar &sliding_speed, array::Scalar &result);
 
-  void update_P(double dt,
-                const array::CellType &cell_type,
-                const array::Scalar &sliding_speed,
-                const array::Scalar &surface_input_rate,
-                const array::Scalar &basal_melt_rate,
-                const array::Scalar &P_overburden,
-                const array::Scalar &Wtill,
-                const array::Scalar &Wtill_new,
-                const array::Scalar &P,
-                const array::Scalar1 &W,
-                const array::Staggered1 &Ws,
-                const array::Staggered1 &K,
-                const array::Staggered1 &Q,
+  void update_P(double dt, const array::CellType &cell_type, const array::Scalar &sliding_speed,
+                const array::Scalar &surface_input_rate, const array::Scalar &basal_melt_rate,
+                const array::Scalar &P_overburden, const array::Scalar &Wtill,
+                const array::Scalar &Wtill_new, const array::Scalar &P, const array::Scalar1 &W,
+                const array::Staggered1 &Ws, const array::Staggered1 &K, const array::Staggered1 &Q,
                 array::Scalar &P_new) const;
+
 protected:
   array::Scalar1 m_P;
   array::Scalar m_Pnew;
+
 private:
   void initialization_message() const;
 };

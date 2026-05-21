@@ -25,8 +25,7 @@ namespace pism {
 namespace atmosphere {
 
 //! \brief Reads and uses air_temp and precipitation anomalies from a file.
-class Anomaly : public AtmosphereModel
-{
+class Anomaly : public AtmosphereModel {
 public:
   Anomaly(std::shared_ptr<const Grid> g, std::shared_ptr<AtmosphereModel> in);
   virtual ~Anomaly() = default;
@@ -35,14 +34,15 @@ protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const array::Scalar& precipitation_impl() const;
-  const array::Scalar& air_temperature_impl() const;
+  const array::Scalar &precipitation_impl() const;
+  const array::Scalar &air_temperature_impl() const;
 
   void init_timeseries_impl(const std::vector<double> &ts) const;
   void begin_pointwise_access_impl() const;
   void end_pointwise_access_impl() const;
   void temp_time_series_impl(int i, int j, std::vector<double> &values) const;
   void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
+
 protected:
   mutable std::vector<double> m_mass_flux_anomaly, m_temp_anomaly;
 

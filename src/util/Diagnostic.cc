@@ -32,10 +32,10 @@
 namespace pism {
 
 Diagnostic::Diagnostic(std::shared_ptr<const Grid> grid)
-  : m_grid(grid),
-    m_sys(grid->ctx()->unit_system()),
-    m_config(grid->ctx()->config()),
-    m_fill_value(m_config->get_number("output.fill_value")) {
+    : m_grid(grid),
+      m_sys(grid->ctx()->unit_system()),
+      m_config(grid->ctx()->config()),
+      m_fill_value(m_config->get_number("output.fill_value")) {
   // empty
 }
 
@@ -44,7 +44,7 @@ void Diagnostic::update(double dt) {
 }
 
 void Diagnostic::update_impl(double dt) {
-  (void) dt;
+  (void)dt;
   // empty
 }
 
@@ -60,9 +60,7 @@ void Diagnostic::reset_impl() {
  * Convert from external (output) units to internal units.
  */
 double Diagnostic::to_internal(double x) const {
-  std::string
-    out = m_vars.at(0)["output_units"],
-    in  = m_vars.at(0)["units"];
+  std::string out = m_vars.at(0)["output_units"], in = m_vars.at(0)["units"];
   return convert(m_sys, x, out, in);
 }
 
@@ -70,9 +68,7 @@ double Diagnostic::to_internal(double x) const {
  * Convert from internal to external (output) units.
  */
 double Diagnostic::to_external(double x) const {
-  std::string
-    out = m_vars.at(0)["output_units"],
-    in  = m_vars.at(0)["units"];
+  std::string out = m_vars.at(0)["output_units"], in = m_vars.at(0)["units"];
   return convert(m_sys, x, in, out);
 }
 
@@ -98,22 +94,21 @@ void Diagnostic::write_state(const OutputFile &output) const {
 }
 
 void Diagnostic::init_impl(const File &input, unsigned int time) {
-  (void) input;
-  (void) time;
+  (void)input;
+  (void)time;
   // empty
 }
 
 void Diagnostic::write_state_impl(const OutputFile &output) const {
-  (void) output;
+  (void)output;
   // empty
 }
 
 //! Get a metadata object corresponding to variable number N.
-VariableMetadata& Diagnostic::metadata(unsigned int N) {
+VariableMetadata &Diagnostic::metadata(unsigned int N) {
   if (N >= m_vars.size()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "variable metadata index %d is out of bounds",
-                                  N);
+                                  "variable metadata index %d is out of bounds", N);
   }
 
   return m_vars[N];
@@ -138,10 +133,10 @@ std::shared_ptr<array::Array> Diagnostic::compute() const {
 }
 
 TSDiagnostic::TSDiagnostic(std::shared_ptr<const Grid> grid, const std::string &name)
-  : m_grid(grid),
-    m_config(grid->ctx()->config()),
-    m_sys(grid->ctx()->unit_system()),
-    m_variable(name, m_sys) {
+    : m_grid(grid),
+      m_config(grid->ctx()->config()),
+      m_sys(grid->ctx()->unit_system()),
+      m_variable(name, m_sys) {
 
   m_current_time = 0;
   m_start        = 0;
@@ -156,24 +151,24 @@ TSDiagnostic::~TSDiagnostic() {
   flush();
 }
 
-void TSDiagnostic::set_units(const std::string &units,
-                             const std::string &output_units) {
+void TSDiagnostic::set_units(const std::string &units, const std::string &output_units) {
   m_variable.units(units);
   m_variable.output_units(output_units);
 }
 
-TSSnapshotDiagnostic::TSSnapshotDiagnostic(std::shared_ptr<const Grid> grid, const std::string &name)
-  : TSDiagnostic(grid, name) {
+TSSnapshotDiagnostic::TSSnapshotDiagnostic(std::shared_ptr<const Grid> grid,
+                                           const std::string &name)
+    : TSDiagnostic(grid, name) {
   // empty
 }
 
 TSRateDiagnostic::TSRateDiagnostic(std::shared_ptr<const Grid> grid, const std::string &name)
-  : TSDiagnostic(grid, name), m_accumulator(0.0), m_v_previous(0.0), m_v_previous_set(false) {
+    : TSDiagnostic(grid, name), m_accumulator(0.0), m_v_previous(0.0), m_v_previous_set(false) {
   // empty
 }
 
 TSFluxDiagnostic::TSFluxDiagnostic(std::shared_ptr<const Grid> grid, const std::string &name)
-  : TSRateDiagnostic(grid, name) {
+    : TSRateDiagnostic(grid, name) {
   // empty
 }
 
@@ -184,7 +179,8 @@ void TSSnapshotDiagnostic::evaluate(double t0, double t1, double v) {
     m_current_time += 1;
   }
 
-  while (m_current_time < m_requested_times->size() and (*m_requested_times)[m_current_time] <= t1) {
+  while (m_current_time < m_requested_times->size() and
+         (*m_requested_times)[m_current_time] <= t1) {
     const unsigned int k = m_current_time;
     m_current_time += 1;
 
@@ -211,7 +207,8 @@ void TSRateDiagnostic::evaluate(double t0, double t1, double change) {
   assert(t1 > t0);
 
   // skip times before and including the beginning of this time step
-  while (m_current_time < m_requested_times->size() and (*m_requested_times)[m_current_time] <= t0) {
+  while (m_current_time < m_requested_times->size() and
+         (*m_requested_times)[m_current_time] <= t0) {
     m_current_time += 1;
   }
 
@@ -219,7 +216,8 @@ void TSRateDiagnostic::evaluate(double t0, double t1, double change) {
   unsigned int N = 0;
 
   // loop through requested times that are within this time step
-  while (m_current_time < m_requested_times->size() and (*m_requested_times)[m_current_time] <= t1) {
+  while (m_current_time < m_requested_times->size() and
+         (*m_requested_times)[m_current_time] <= t1) {
     const unsigned int k = m_current_time;
     m_current_time += 1;
 
@@ -237,9 +235,8 @@ void TSRateDiagnostic::evaluate(double t0, double t1, double change) {
     if (N == 1) {
       // it is the right end-point of the first reporting interval in this time step: count the
       // contribution from the last time step plus the one from the beginning of this time step
-      const double
-        total_change  = m_accumulator + change * (t_e - t0) / (t1 - t0);
-      const double dt = t_e - t_s;
+      const double total_change = m_accumulator + change * (t_e - t0) / (t1 - t0);
+      const double dt           = t_e - t_s;
 
       rate = total_change / dt;
 
@@ -298,7 +295,7 @@ void TSRateDiagnostic::update_impl(double t0, double t1) {
     evaluate(t0, t1, v - m_v_previous);
   }
 
-  m_v_previous = v;
+  m_v_previous     = v;
   m_v_previous_set = true;
 }
 
@@ -321,7 +318,7 @@ void TSDiagnostic::flush() {
   }
 
   auto &file = *m_output_file;
-  auto len = file.time_dimension_length();
+  auto len   = file.time_dimension_length();
 
   if (len > 0) {
     // Note: does not perform unit conversion of the time read from the file. This should
@@ -335,7 +332,7 @@ void TSDiagnostic::flush() {
 
   if (len == m_start) {
     bool with_bounds = true;
-    auto time = m_grid->ctx()->time()->metadata(with_bounds).get_name();
+    auto time        = m_grid->ctx()->time()->metadata(with_bounds).get_name();
     auto time_bounds = m_grid->ctx()->time()->bounds_metadata().get_name();
 
     // write requested times
@@ -351,7 +348,7 @@ void TSDiagnostic::flush() {
   // conversion in place (without making a copy).
   if (not m_config->get_flag("output.use_MKS")) {
 
-    std::string units = metadata()["units"];
+    std::string units        = metadata()["units"];
     std::string output_units = metadata()["output_units"];
 
     bool use_output_units =
@@ -380,7 +377,7 @@ void TSDiagnostic::flush() {
 }
 
 void TSDiagnostic::init(std::shared_ptr<OutputFile> output_file,
-                        std::shared_ptr<std::vector<double>> requested_times) {
+                        std::shared_ptr<std::vector<double> > requested_times) {
   m_output_file = output_file;
 
   m_requested_times = std::move(requested_times);

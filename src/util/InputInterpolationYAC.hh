@@ -49,15 +49,14 @@ class Vec;
 class InputInterpolationYAC : public InputInterpolation {
 public:
   InputInterpolationYAC(const Grid &target_grid, const File &input_file,
-                        const std::string &variable_name,
-                        InterpolationType type);
+                        const std::string &variable_name, InterpolationType type);
   virtual ~InputInterpolationYAC();
 
   void regrid(const File &file, array::Scalar &output) const;
 
 private:
-  double regrid_impl(const VariableMetadata &metadata, const pism::File &file,
-                     int record_index, const Grid &target_grid, petsc::Vec &output) const;
+  double regrid_impl(const VariableMetadata &metadata, const pism::File &file, int record_index,
+                     const Grid &target_grid, petsc::Vec &output) const;
 
   double interpolate(const array::Scalar *source, petsc::Vec &target) const;
 

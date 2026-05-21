@@ -20,8 +20,8 @@
 #define PISM_LOCALINTERPCTX_H
 
 #include <array>
-#include <vector>
 #include <memory>
+#include <vector>
 
 namespace pism {
 
@@ -33,7 +33,7 @@ class Grid;
 namespace grid {
 class InputGridInfo;
 class DistributedGridInfo;
-}
+} // namespace grid
 
 //! The "local interpolation context" describes the processor's part of the source NetCDF
 //! file (for regridding).

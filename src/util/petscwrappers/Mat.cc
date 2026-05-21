@@ -32,7 +32,8 @@ Mat::Mat(::Mat m) {
 
 Mat::~Mat() {
   if (m_value != NULL) {
-    PetscErrorCode ierr = MatDestroy(&m_value); CHKERRCONTINUE(ierr);
+    PetscErrorCode ierr = MatDestroy(&m_value);
+    CHKERRCONTINUE(ierr);
   }
 }
 

@@ -21,7 +21,7 @@
 #define PISM_STENCILS_HH
 
 namespace pism {
-enum Direction {North = 0, East, South, West};
+enum Direction { North = 0, East, South, West };
 
 namespace stencils {
 
@@ -42,9 +42,9 @@ struct Star {
 
   //! Get the element corresponding to a given direction.
   //! Use foo.c to get the value at i,j (center of the star).
-  inline T& operator[](Direction direction) {
+  inline T &operator[](Direction direction) {
     switch (direction) {
-    default:                    // just to silence the warning
+    default: // just to silence the warning
     case North:
       return n;
     case East:
@@ -56,9 +56,9 @@ struct Star {
     }
   }
 
-  inline const T& operator[](Direction direction) const {
+  inline const T &operator[](Direction direction) const {
     switch (direction) {
-    default:                    // just to silence the warning
+    default: // just to silence the warning
     case North:
       return n;
     case East:

@@ -24,10 +24,10 @@
 
 #include "pism/util/Grid.hh"
 #include "pism/util/Time.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/pism_signal.h"
 #include "pism/util/io/SynchronousOutputWriter.hh"
 #include "pism/util/io/io_helpers.hh"
+#include "pism/util/pism_signal.h"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -49,10 +49,11 @@ int IceModel::process_signals() {
 
   if (pism_signal == SIGTERM) {
     m_log->message(1,
-       "\ncaught signal SIGTERM:  EXITING EARLY and saving with original filename.\n");
+                   "\ncaught signal SIGTERM:  EXITING EARLY and saving with original filename.\n");
 
-    append_history(pism::printf("EARLY EXIT caused by signal SIGTERM. Completed timestep at time=%s.",
-                                 m_time->date(m_time->current()).c_str()));
+    append_history(
+        pism::printf("EARLY EXIT caused by signal SIGTERM. Completed timestep at time=%s.",
+                     m_time->date(m_time->current()).c_str()));
     // Tell the caller that the user requested an early termination of
     // the run.
     return 1;
@@ -60,10 +61,10 @@ int IceModel::process_signals() {
 
   if (pism_signal == SIGUSR1) {
     auto date_without_spaces = replace_character(m_time->date(m_time->current()), ' ', '_');
-    auto file_name = pism::printf("pism-%s.nc", date_without_spaces.c_str());
-    m_log->message(1,
-       "\ncaught signal SIGUSR1:  Writing intermediate file `%s' and flushing time series.\n\n",
-                   file_name.c_str());
+    auto file_name           = pism::printf("pism-%s.nc", date_without_spaces.c_str());
+    m_log->message(
+        1, "\ncaught signal SIGUSR1:  Writing intermediate file `%s' and flushing time series.\n\n",
+        file_name.c_str());
     pism_signal = 0;
 
     std::shared_ptr<OutputWriter> writer =
@@ -91,8 +92,7 @@ int IceModel::process_signals() {
   }
 
   if (pism_signal == SIGUSR2) {
-    m_log->message(1,
-       "\ncaught signal SIGUSR2:  Flushing time series.\n\n");
+    m_log->message(1, "\ncaught signal SIGUSR2:  Flushing time series.\n\n");
     pism_signal = 0;
 
     // flush all the time-series buffers:
@@ -103,7 +103,7 @@ int IceModel::process_signals() {
 }
 
 //! Get time and user/host name and add it to the given string.
-void  IceModel::append_history(const std::string &str) {
+void IceModel::append_history(const std::string &str) {
   m_output_history = m_output_history + "\n" + username_prefix(m_grid->com) + str;
 }
 

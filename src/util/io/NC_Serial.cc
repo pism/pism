@@ -27,10 +27,10 @@
 #endif
 #include <netcdf.h>
 
-#include <cstdio>               // stderr, fprintf
+#include <cstdio> // stderr, fprintf
 
-#include "pism/util/pism_utilities.hh" // join
 #include "pism/util/error_handling.hh"
+#include "pism/util/pism_utilities.hh" // join
 
 #include "pism/util/io/pism_type_conversion.hh" // This has to be included *after* netcdf.h.
 
@@ -52,8 +52,7 @@ static void check_and_abort(MPI_Comm com, const ErrorLocation &where, int return
   }
 }
 
-NC_Serial::NC_Serial(MPI_Comm c)
-  : NCFile(c), m_rank(0) {
+NC_Serial::NC_Serial(MPI_Comm c) : NCFile(c), m_rank(0) {
   MPI_Comm_rank(m_com, &m_rank);
 }
 
@@ -61,15 +60,14 @@ NC_Serial::~NC_Serial() {
   if (m_file_id >= 0) {
     if (m_rank == 0) {
       nc_close(m_file_id);
-      fprintf(stderr, "NC_Serial::~NC_Serial: NetCDF file %s is still open\n",
-              m_filename.c_str());
+      fprintf(stderr, "NC_Serial::~NC_Serial: NetCDF file %s is still open\n", m_filename.c_str());
     }
     m_file_id = -1;
   }
 }
 
 void NC_Serial::set_compression_level_impl(int level) const {
-  (void) level;
+  (void)level;
   // NetCDF-3 does not support compression.
 }
 
@@ -287,8 +285,7 @@ void NC_Serial::get_vara_double_impl(const std::string &variable_name,
 //! \brief Get variable data.
 void NC_Serial::get_var_double(const std::string &variable_name,
                                const std::vector<unsigned int> &start_input,
-                               const std::vector<unsigned int> &count_input,
-                               double *ip) const {
+                               const std::vector<unsigned int> &count_input, double *ip) const {
   std::vector<unsigned int> start = start_input;
   std::vector<unsigned int> count = count_input;
 
@@ -339,8 +336,8 @@ void NC_Serial::get_var_double(const std::string &variable_name,
       // This for loop uses start and count passed in as arguments when r == 0. For r > 0
       // they are overwritten by MPI_Recv calls above.
       for (int k = 0; k < ndims; ++k) {
-        nc_start[k]  = start[k];
-        nc_count[k]  = count[k];
+        nc_start[k] = start[k];
+        nc_count[k] = count[k];
       }
 
       stat = nc_get_vara_double(m_file_id, varid, nc_start.data(), nc_count.data(),
@@ -427,8 +424,8 @@ void NC_Serial::put_vara_double_impl(const std::string &variable_name,
       // they are overwritten by MPI_Recv calls above.
       std::vector<size_t> nc_start(ndims), nc_count(ndims);
       for (int k = 0; k < ndims; ++k) {
-        nc_start[k]  = start[k];
-        nc_count[k]  = count[k];
+        nc_start[k] = start[k];
+        nc_count[k] = count[k];
       }
 
       stat = nc_put_vara_double(m_file_id, varid, nc_start.data(), nc_count.data(),

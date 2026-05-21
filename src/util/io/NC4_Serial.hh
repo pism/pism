@@ -24,8 +24,7 @@
 namespace pism {
 namespace io {
 
-class NC4_Serial : public NC_Serial
-{
+class NC4_Serial : public NC_Serial {
 public:
   NC4_Serial(MPI_Comm c);
   virtual ~NC4_Serial() = default;

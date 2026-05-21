@@ -21,8 +21,8 @@
 #ifndef __exactTestP_h
 #define __exactTestP_h 1
 
-#include <vector>
 #include <string>
+#include <vector>
 
 namespace pism {
 
@@ -41,22 +41,21 @@ namespace pism {
 */
 
 /* determines range on which W(r) is valid in Test P */
-#define TESTP_R0       25000.0         /* m */
-#define TESTP_L        0.9 * TESTP_R0  /* m */
+#define TESTP_R0 25000.0       /* m */
+#define TESTP_L 0.9 * TESTP_R0 /* m */
 
 /* exit status of exactP() could be one of these; return of zero indicates success */
-#define TESTP_R_NEGATIVE          78463
-#define TESTP_W_EXCEEDS_WR        78464
-#define TESTP_W_BELOW_WCRIT       78465
-#define TESTP_INVALID_METHOD      78466
-#define TESTP_NOT_DONE            78467
-#define TESTP_NO_LIST             78482
+#define TESTP_R_NEGATIVE 78463
+#define TESTP_W_EXCEEDS_WR 78464
+#define TESTP_W_BELOW_WCRIT 78465
+#define TESTP_INVALID_METHOD 78466
+#define TESTP_NOT_DONE 78467
+#define TESTP_NO_LIST 78482
 #define TESTP_LIST_NOT_DECREASING 78483
-#define TESTP_OLD_GSL             78484
+#define TESTP_OLD_GSL 78484
 
 struct TestPParameters {
-  TestPParameters(int N)
-    : r(N), h(N), magvb(N), Wcrit(N), W(N), P(N) {
+  TestPParameters(int N) : r(N), h(N), magvb(N), Wcrit(N), W(N), P(N) {
     error_code = 0;
   }
 
@@ -66,8 +65,8 @@ struct TestPParameters {
 };
 
 
-TestPParameters exactP(const std::vector<double> &r,
-                       double EPS_ABS, double EPS_REL, int ode_method);
+TestPParameters exactP(const std::vector<double> &r, double EPS_ABS, double EPS_REL,
+                       int ode_method);
 /* Input r in meters, assumes that values in are decreasing (r[0] > r[1] > ... > r[N-1] >= 0).
    ode_method = 1  : rk8pd is Runge-Kutta Prince-Dormand (8,9) [default]
                 2  : rk2   is Runge-Kutta (2,3)
@@ -78,4 +77,4 @@ TestPParameters exactP(const std::vector<double> &r,
 
 } // end of namespace pism
 
-#endif  /* __exactTestP_h */
+#endif /* __exactTestP_h */

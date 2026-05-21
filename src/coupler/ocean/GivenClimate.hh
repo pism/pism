@@ -24,8 +24,7 @@
 namespace pism {
 namespace ocean {
 
-class Given : public OceanModel
-{
+class Given : public OceanModel {
 public:
   Given(std::shared_ptr<const Grid> g);
   virtual ~Given() = default;
@@ -35,8 +34,8 @@ private:
   void init_impl(const Geometry &geometry);
   MaxTimestep max_timestep_impl(double t) const;
 
-  const array::Scalar& shelf_base_temperature_impl() const;
-  const array::Scalar& shelf_base_mass_flux_impl() const;
+  const array::Scalar &shelf_base_temperature_impl() const;
+  const array::Scalar &shelf_base_mass_flux_impl() const;
 
   std::shared_ptr<array::Forcing> m_shelfbtemp;
   std::shared_ptr<array::Forcing> m_shelfbmassflux;

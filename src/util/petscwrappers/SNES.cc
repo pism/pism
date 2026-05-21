@@ -29,7 +29,8 @@ SNES::SNES() {
 }
 SNES::~SNES() {
   if (m_value != NULL) {
-    PetscErrorCode ierr = SNESDestroy(&m_value); CHKERRCONTINUE(ierr);
+    PetscErrorCode ierr = SNESDestroy(&m_value);
+    CHKERRCONTINUE(ierr);
   }
 }
 } // end of namespace petsc

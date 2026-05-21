@@ -29,13 +29,11 @@ namespace linear {
 //! Linear basis functions on the interval [-1, -1]
 Germ chi(unsigned int k, const QuadPoint &pt) {
   // coordinates of reference element nodes
-  static const double xis[n_chi]  = {-1.0,  1.0};
+  static const double xis[n_chi] = { -1.0, 1.0 };
 
   assert(k < linear::n_chi);
 
-  return {0.5 * (1.0 + xis[k] * pt.xi),
-          0.5 * xis[k],
-          0.0, 0.0};            // unused
+  return { 0.5 * (1.0 + xis[k] * pt.xi), 0.5 * xis[k], 0.0, 0.0 }; // unused
 }
 
 } // end of namespace linear
@@ -49,10 +47,8 @@ Germ chi(unsigned int k, const QuadPoint &pt) {
 
   Germ result;
 
-  if ((k == 0 and pt.xi <= 0.0 and pt.eta <= 0.0) or
-      (k == 1 and pt.xi > 0.0 and pt.eta <= 0.0) or
-      (k == 2 and pt.xi > 0.0 and pt.eta > 0.0) or
-      (k == 3 and pt.xi <= 0.0 and pt.eta > 0.0)) {
+  if ((k == 0 and pt.xi <= 0.0 and pt.eta <= 0.0) or (k == 1 and pt.xi > 0.0 and pt.eta <= 0.0) or
+      (k == 2 and pt.xi > 0.0 and pt.eta > 0.0) or (k == 3 and pt.xi <= 0.0 and pt.eta > 0.0)) {
     result.val = 1.0;
   } else {
     result.val = 0.0;
@@ -71,15 +67,14 @@ namespace q1 {
 //! Q1 basis functions on the reference element with nodes (-1,-1), (1,-1), (1,1), (-1,1).
 Germ chi(unsigned int k, const QuadPoint &pt) {
   // coordinates of reference element nodes
-  static const double xi[n_chi]  = {-1.0,  1.0, 1.0, -1.0};
-  static const double eta[n_chi] = {-1.0, -1.0, 1.0,  1.0};
+  static const double xi[n_chi]  = { -1.0, 1.0, 1.0, -1.0 };
+  static const double eta[n_chi] = { -1.0, -1.0, 1.0, 1.0 };
 
   assert(k < q1::n_chi);
 
-  return {0.25 * (1.0 + xi[k] * pt.xi) * (1.0 + eta[k] * pt.eta),
-          0.25 * xi[k] * (1.0 + eta[k] * pt.eta),
-          0.25 * eta[k] * (1.0 + xi[k] * pt.xi),
-          0.0};                 // unused
+  return { 0.25 * (1.0 + xi[k] * pt.xi) * (1.0 + eta[k] * pt.eta),
+           0.25 * xi[k] * (1.0 + eta[k] * pt.eta), 0.25 * eta[k] * (1.0 + xi[k] * pt.xi),
+           0.0 }; // unused
 }
 
 } // end of namespace q1
@@ -93,12 +88,12 @@ Germ chi(unsigned int k, const QuadPoint &pt) {
   switch (k) {
   default:
   case 0:
-    return {1.0 - pt.xi - pt.eta, -1.0, -1.0, 0.0};
+    return { 1.0 - pt.xi - pt.eta, -1.0, -1.0, 0.0 };
   case 1:
-    return {pt.xi, 1.0, 0.0, 0.0};
+    return { pt.xi, 1.0, 0.0, 0.0 };
   case 2:
-    return {pt.eta, 0.0, 1.0, 0.0};
- }
+    return { pt.eta, 0.0, 1.0, 0.0 };
+  }
 }
 
 } // end of namespace p1
@@ -139,14 +134,14 @@ namespace q13d {
 
 Germ chi(unsigned int k, const QuadPoint &p) {
   /* Coordinated of the nodes of the reference element: */
-  double xis[8]   = {-1.0,  1.0,  1.0, -1.0, -1.0,  1.0, 1.0, -1.0};
-  double etas[8]  = {-1.0, -1.0,  1.0,  1.0, -1.0, -1.0, 1.0,  1.0};
-  double zetas[8] = {-1.0, -1.0, -1.0, -1.0,  1.0,  1.0, 1.0,  1.0};
+  double xis[8]   = { -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0 };
+  double etas[8]  = { -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0 };
+  double zetas[8] = { -1.0, -1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 1.0 };
 
-  return {0.125 * (1.0 + xis[k]*p.xi) * (1.0 + etas[k]*p.eta) * (1.0 + zetas[k]*p.zeta),
-          0.125 *   xis[k] * (1.0 + etas[k] * p.eta) * (1.0 + zetas[k] * p.zeta),
-          0.125 *  etas[k] * (1.0 +  xis[k] *  p.xi) * (1.0 + zetas[k] * p.zeta),
-          0.125 * zetas[k] * (1.0 +  xis[k] *  p.xi) * (1.0 +  etas[k] *  p.eta)};
+  return { 0.125 * (1.0 + xis[k] * p.xi) * (1.0 + etas[k] * p.eta) * (1.0 + zetas[k] * p.zeta),
+           0.125 * xis[k] * (1.0 + etas[k] * p.eta) * (1.0 + zetas[k] * p.zeta),
+           0.125 * etas[k] * (1.0 + xis[k] * p.xi) * (1.0 + zetas[k] * p.zeta),
+           0.125 * zetas[k] * (1.0 + xis[k] * p.xi) * (1.0 + etas[k] * p.eta) };
 }
 
 } // end of namespace q13d

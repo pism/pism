@@ -26,7 +26,7 @@
 
 namespace pism {
 namespace petsc {
-class VecScatter : public Wrapper< ::VecScatter > {
+class VecScatter : public Wrapper< ::VecScatter> {
 public:
   VecScatter();
   VecScatter(::VecScatter m);

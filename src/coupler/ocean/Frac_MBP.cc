@@ -19,19 +19,16 @@
 
 #include "pism/coupler/ocean/Frac_MBP.hh"
 #include "pism/geometry/Geometry.hh"
-#include "pism/util/ScalarForcing.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/ScalarForcing.hh"
 
 namespace pism {
 namespace ocean {
 
 Frac_MBP::Frac_MBP(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in)
-  : OceanModel(g, in) {
+    : OceanModel(g, in) {
 
-  m_forcing.reset(new ScalarForcing(*g->ctx(),
-                                    "ocean.frac_MBP",
-                                    "frac_MBP",
-                                    "1", "1",
+  m_forcing.reset(new ScalarForcing(*g->ctx(), "ocean.frac_MBP", "frac_MBP", "1", "1",
                                     "melange back pressure fraction"));
 
   m_water_column_pressure = allocate_water_column_pressure(g);
@@ -45,8 +42,7 @@ void Frac_MBP::init_impl(const Geometry &geometry) {
 
   m_input_model->init(geometry);
 
-  m_log->message(2,
-                 "* Initializing melange back pressure fraction forcing...\n");
+  m_log->message(2, "* Initializing melange back pressure fraction forcing...\n");
 }
 
 
@@ -67,28 +63,26 @@ void Frac_MBP::update_impl(const Inputs &inputs, double t, double dt) {
   m_water_column_pressure->copy_from(m_input_model->average_water_column_pressure());
 
   const auto &geometry = *inputs.geometry;
-  
-  double
-    lambda      = m_forcing->value(t + 0.5 * dt),
-    ice_density = m_config->get_number("constants.ice.density"),
-    g           = m_config->get_number("constants.standard_gravity");
+
+  double lambda      = m_forcing->value(t + 0.5 * dt),
+         ice_density = m_config->get_number("constants.ice.density"),
+         g           = m_config->get_number("constants.standard_gravity");
 
   array::Scalar &P_o = *m_water_column_pressure;
 
-  array::AccessScope list{&P_o, &geometry.ice_thickness};
+  array::AccessScope list{ &P_o, &geometry.ice_thickness };
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
-    double
-      P_i = 0.5 * ice_density * g * geometry.ice_thickness(i, j), // vertical average
-      P_m = lambda * (P_i - P_o(i, j));
+    double P_i = 0.5 * ice_density * g * geometry.ice_thickness(i, j), // vertical average
+        P_m    = lambda * (P_i - P_o(i, j));
 
     P_o(i, j) += P_m;
   }
 }
 
-const array::Scalar& Frac_MBP::average_water_column_pressure_impl() const {
+const array::Scalar &Frac_MBP::average_water_column_pressure_impl() const {
   return *m_water_column_pressure;
 }
 

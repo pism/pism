@@ -19,7 +19,7 @@
 #ifndef _SIAFD_H_
 #define _SIAFD_H_
 
-#include "pism/stressbalance/SSB_Modifier.hh"      // derives from SSB_Modifier
+#include "pism/stressbalance/SSB_Modifier.hh" // derives from SSB_Modifier
 
 namespace pism {
 
@@ -47,8 +47,7 @@ class BedSmoother;
  *   step length)
  * - volumetric strain heating
  */
-class SIAFD : public SSB_Modifier
-{
+class SIAFD : public SSB_Modifier {
 public:
   SIAFD(std::shared_ptr<const Grid> g);
 
@@ -56,49 +55,40 @@ public:
 
   virtual void init();
 
-  virtual void update(const array::Vector &sliding_velocity,
-                      const Inputs &inputs,
+  virtual void update(const array::Vector &sliding_velocity, const Inputs &inputs,
                       bool full_update);
 
-  const BedSmoother& bed_smoother() const;
+  const BedSmoother &bed_smoother() const;
 
-  const array::Staggered& surface_gradient_x() const;
-  const array::Staggered& surface_gradient_y() const;
-  const array::Staggered1& diffusivity() const;
+  const array::Staggered &surface_gradient_x() const;
+  const array::Staggered &surface_gradient_y() const;
+  const array::Staggered1 &diffusivity() const;
 
 protected:
   virtual DiagnosticList spatial_diagnostics_impl() const;
 
-  virtual void compute_surface_gradient(const Inputs &inputs,
-                                        array::Staggered1 &h_x,
+  virtual void compute_surface_gradient(const Inputs &inputs, array::Staggered1 &h_x,
                                         array::Staggered1 &h_y);
 
   virtual void surface_gradient_eta(const array::Scalar2 &ice_thickness,
-                                    const array::Scalar2 &bed_elevation,
-                                    array::Staggered1 &h_x,
+                                    const array::Scalar2 &bed_elevation, array::Staggered1 &h_x,
                                     array::Staggered1 &h_y);
   virtual void surface_gradient_haseloff(const array::Scalar2 &ice_surface_elevation,
-                                         const array::CellType2 &cell_type,
-                                         array::Staggered1 &h_x,
+                                         const array::CellType2 &cell_type, array::Staggered1 &h_x,
                                          array::Staggered1 &h_y);
   virtual void surface_gradient_mahaffy(const array::Scalar &ice_surface_elevation,
-                                        array::Staggered1 &h_x,
-                                        array::Staggered1 &h_y);
+                                        array::Staggered1 &h_x, array::Staggered1 &h_y);
 
-  virtual void compute_diffusivity(bool full_update,
-                                   const Geometry &geometry,
-                                   const array::Array3D *enthalpy,
-                                   const array::Array3D *age,
-                                   const array::Staggered1 &h_x,
-                                   const array::Staggered1 &h_y,
+  virtual void compute_diffusivity(bool full_update, const Geometry &geometry,
+                                   const array::Array3D *enthalpy, const array::Array3D *age,
+                                   const array::Staggered1 &h_x, const array::Staggered1 &h_y,
                                    array::Staggered1 &result);
 
   virtual void compute_diffusive_flux(const array::Staggered &h_x, const array::Staggered &h_y,
                                       const array::Staggered &diffusivity,
                                       array::Staggered &result);
 
-  virtual void compute_3d_horizontal_velocity(const Geometry &geometry,
-                                              const array::Staggered &h_x,
+  virtual void compute_3d_horizontal_velocity(const Geometry &geometry, const array::Staggered &h_x,
                                               const array::Staggered &h_y,
                                               const array::Vector &sliding_velocity,
                                               array::Array3D &u_out, array::Array3D &v_out);

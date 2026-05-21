@@ -25,8 +25,8 @@
 #include <string>
 
 #include "OutputWriter.hh"
-#include "pism/util/io/OutputWriter.hh"
 #include "pism/external/nlohmann/json.hpp"
+#include "pism/util/io/OutputWriter.hh"
 
 namespace pism {
 
@@ -38,20 +38,20 @@ enum Backend : int;
 
 // These have to match the actions which are defined on the server
 enum ServerActions : int {
-    OPEN_FILE = 1,
-    CLOSE_FILE = 2,
-    DEFINE_DIMENSION = 3,
-    SET_FILE_ATTRIBUTES = 4,
-    APPEND_HISTORY = 5,
-    DEFINE_YAC_GRID = 6,
-    DEFINE_YAC_FIELD = 7,
-    FINISH_YAC_INITIALIZATION = 8,
-    DEFINE_VARIABLE = 9,
-    SEND_VARIABLE = 10,
-    SEND_GRIDDED_VARIABLE = 11,
-    APPEND_TIME = 12,
-    FINISH = 13,
-    SYNC = 14
+  OPEN_FILE                 = 1,
+  CLOSE_FILE                = 2,
+  DEFINE_DIMENSION          = 3,
+  SET_FILE_ATTRIBUTES       = 4,
+  APPEND_HISTORY            = 5,
+  DEFINE_YAC_GRID           = 6,
+  DEFINE_YAC_FIELD          = 7,
+  FINISH_YAC_INITIALIZATION = 8,
+  DEFINE_VARIABLE           = 9,
+  SEND_VARIABLE             = 10,
+  SEND_GRIDDED_VARIABLE     = 11,
+  APPEND_TIME               = 12,
+  FINISH                    = 13,
+  SYNC                      = 14
 };
 
 /*!
@@ -81,7 +81,7 @@ private:
 
   //! last time value in an output file
   std::map<std::string, double> m_last_time;
-  
+
   // Note (and possibly FIXME): these lists of variables and dimensions below are
   // inaccurate for files that are opened for appending. This means that when appending to
   // a file PISM will attempt to define variables *once*. The output server code is
@@ -115,13 +115,13 @@ private:
   std::vector<double *> m_buffers;
 
   int m_field_buffer_size = 0;
-  double *m_field_buffer = nullptr;
+  double *m_field_buffer  = nullptr;
 
   // --- MPI Communication
 
   //! Tags for MPI messages sending non-gridded variable data
 
-  enum TagTreatment : int {CREATE_NEW_TAG, GET_EXISTING_TAG};
+  enum TagTreatment : int { CREATE_NEW_TAG, GET_EXISTING_TAG };
   int tag(const std::string &variable_name, TagTreatment flag = GET_EXISTING_TAG);
   std::map<std::string, int> m_variable_tags;
 
@@ -169,8 +169,7 @@ private:
 
   void write_text_impl(const std::string &file_name, const std::string &variable_name,
                        const std::vector<unsigned int> &start,
-                       const std::vector<unsigned int> &count,
-                       const std::string &input);
+                       const std::vector<unsigned int> &count, const std::string &input);
 
   void write_distributed_array_impl(const std::string &file_name, const std::string &variable_name,
                                     const double *data);

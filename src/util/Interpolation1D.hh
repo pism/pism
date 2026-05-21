@@ -20,13 +20,13 @@
 #ifndef PISM_INTERPOLATION_H
 #define PISM_INTERPOLATION_H
 
-#include <cstddef>              // size_t
-#include <vector>
+#include <cstddef> // size_t
 #include <map>
+#include <vector>
 
 namespace pism {
 
-enum InterpolationType : int {LINEAR, NEAREST, PIECEWISE_CONSTANT};
+enum InterpolationType : int { LINEAR, NEAREST, PIECEWISE_CONSTANT };
 
 /**
  * Class encapsulating linear and piece-wise constant interpolation indexes and weights.
@@ -85,9 +85,9 @@ public:
   Interpolation1D(InterpolationType type, const double *input_x, unsigned int input_x_size,
                   const double *output_x, unsigned int output_x_size);
 
-  const std::vector<int>& left() const;
-  const std::vector<int>& right() const;
-  const std::vector<double>& alpha() const;
+  const std::vector<int> &left() const;
+  const std::vector<int> &right() const;
+  const std::vector<double> &alpha() const;
 
   int left(size_t j) const;
   int right(size_t j) const;
@@ -114,24 +114,19 @@ private:
   //! Interpolation weights
   std::vector<double> m_alpha;
 
-  void init_linear(const double *input_x, unsigned int input_x_size,
-                   const double *output_x, unsigned int output_x_size);
-  void init_nearest(const double *input_x, unsigned int input_x_size,
-                    const double *output_x, unsigned int output_x_size);
+  void init_linear(const double *input_x, unsigned int input_x_size, const double *output_x,
+                   unsigned int output_x_size);
+  void init_nearest(const double *input_x, unsigned int input_x_size, const double *output_x,
+                    unsigned int output_x_size);
   void init_piecewise_constant(const double *input_x, unsigned int input_x_size,
                                const double *output_x, unsigned int output_x_size);
 };
 
-std::map<size_t, double> integration_weights(const double *x,
-                                             size_t x_size,
-                                             InterpolationType type,
-                                             double a,
-                                             double b);
+std::map<size_t, double> integration_weights(const double *x, size_t x_size, InterpolationType type,
+                                             double a, double b);
 
-std::map<size_t, double> integration_weights(const std::vector<double> &x,
-                                             InterpolationType type,
-                                             double a,
-                                             double b);
+std::map<size_t, double> integration_weights(const std::vector<double> &x, InterpolationType type,
+                                             double a, double b);
 
 } // end of namespace pism
 

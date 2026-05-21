@@ -17,8 +17,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/earth/BedDef.hh"
-#include "pism/util/Grid.hh"
 #include "pism/util/Config.hh"
+#include "pism/util/Grid.hh"
 
 namespace pism {
 namespace bed {
@@ -28,7 +28,7 @@ PointwiseIsostasy::PointwiseIsostasy(std::shared_ptr<const Grid> grid)
   // empty
 }
 
-void PointwiseIsostasy::init_impl(const InputOptions &/*opts*/, const array::Scalar &ice_thickness,
+void PointwiseIsostasy::init_impl(const InputOptions & /*opts*/, const array::Scalar &ice_thickness,
                                   const array::Scalar &sea_level_elevation) {
   // store the initial load
   m_load_last.set(0.0);
@@ -37,7 +37,7 @@ void PointwiseIsostasy::init_impl(const InputOptions &/*opts*/, const array::Sca
 
 
 void PointwiseIsostasy::bootstrap_impl(const array::Scalar &bed_elevation,
-                                       const array::Scalar &/*bed_uplift*/,
+                                       const array::Scalar & /*bed_uplift*/,
                                        const array::Scalar &ice_thickness,
                                        const array::Scalar &sea_level_elevation) {
   // store initial load and bed elevation
@@ -60,12 +60,10 @@ void PointwiseIsostasy::bootstrap_impl(const array::Scalar &bed_elevation,
  * - new bed elevation
  * - updated "old" load
  */
-void PointwiseIsostasy::update_impl(const array::Scalar &load,
-                                    double /*t*/, double /*dt*/) {
-  const double
-    mantle_density = m_config->get_number("bed_deformation.mantle_density"),
-    load_density   = m_config->get_number("constants.ice.density"),
-    f              = load_density / mantle_density;
+void PointwiseIsostasy::update_impl(const array::Scalar &load, double /*t*/, double /*dt*/) {
+  const double mantle_density = m_config->get_number("bed_deformation.mantle_density"),
+               load_density   = m_config->get_number("constants.ice.density"),
+               f              = load_density / mantle_density;
 
   // Our goal: topg_{n+1} = topg_{n} - f*(load(topg_{n}) - load_{n-1})
 
@@ -76,7 +74,7 @@ void PointwiseIsostasy::update_impl(const array::Scalar &load,
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
-      m_topg(i, j) = m_topg_last(i, j) - f * (load(i, j) - m_load_last(i, j));
+      m_topg(i, j)      = m_topg_last(i, j) - f * (load(i, j) - m_load_last(i, j));
       m_load_last(i, j) = load(i, j);
     }
   } catch (...) {

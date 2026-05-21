@@ -18,9 +18,9 @@
 
 #include "pism/util/io/NCFile.hh"
 
-#include <cstdio>               // fprintf, stderr, rename, remove
-#include "pism/util/error_handling.hh"
 #include "pism/util/Grid.hh"
+#include "pism/util/error_handling.hh"
+#include <cstdio> // fprintf, stderr, rename, remove
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
 // serial mode in an MPI program:
@@ -32,8 +32,7 @@
 namespace pism {
 namespace io {
 
-NCFile::NCFile(MPI_Comm c)
-  : m_com(c), m_file_id(-1), m_define_mode(false) {
+NCFile::NCFile(MPI_Comm c) : m_com(c), m_file_id(-1), m_define_mode(false) {
 }
 
 std::string NCFile::filename() const {
@@ -45,27 +44,26 @@ void NCFile::set_compression_level(int level) const {
 }
 
 void NCFile::set_compression_level_impl(int level) const {
-  (void) level;
+  (void)level;
   // the default implementation does nothing
 }
 
-void NCFile::def_var_chunking_impl(const std::string &name,
-                                   std::vector<size_t> &dimensions) const {
-  (void) name;
-  (void) dimensions;
+void NCFile::def_var_chunking_impl(const std::string &name, std::vector<size_t> &dimensions) const {
+  (void)name;
+  (void)dimensions;
   // the default implementation does nothing
 }
 
 
 void NCFile::open(const std::string &filename, io::Mode mode) {
   this->open_impl(filename, mode);
-  m_filename = filename;
+  m_filename    = filename;
   m_define_mode = false;
 }
 
 void NCFile::create(const std::string &filename) {
   this->create_impl(filename);
-  m_filename = filename;
+  m_filename    = filename;
   m_define_mode = true;
 }
 
@@ -100,11 +98,11 @@ void NCFile::def_dim(const std::string &name, size_t length) const {
 }
 
 void NCFile::inq_dimid(const std::string &dimension_name, bool &exists) const {
-  this->inq_dimid_impl(dimension_name,exists);
+  this->inq_dimid_impl(dimension_name, exists);
 }
 
 void NCFile::inq_dimlen(const std::string &dimension_name, unsigned int &result) const {
-  this->inq_dimlen_impl(dimension_name,result);
+  this->inq_dimlen_impl(dimension_name, result);
 }
 
 void NCFile::inq_unlimdim(std::string &result) const {
@@ -112,22 +110,20 @@ void NCFile::inq_unlimdim(std::string &result) const {
 }
 
 void NCFile::def_var(const std::string &name, io::Type nctype,
-                    const std::vector<std::string> &dims) const {
+                     const std::vector<std::string> &dims) const {
   redef();
   this->def_var_impl(name, nctype, dims);
 }
 
-void NCFile::def_var_chunking(const std::string &name,
-                              std::vector<size_t> &dimensions) const {
+void NCFile::def_var_chunking(const std::string &name, std::vector<size_t> &dimensions) const {
   this->def_var_chunking_impl(name, dimensions);
 }
 
 
 void NCFile::get_vara_double(const std::string &variable_name,
-                            const std::vector<unsigned int> &start,
-                            const std::vector<unsigned int> &count,
-                            double *ip) const {
-#if (Pism_DEBUG==1)
+                             const std::vector<unsigned int> &start,
+                             const std::vector<unsigned int> &count, double *ip) const {
+#if (Pism_DEBUG == 1)
   if (start.size() != count.size()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "start and count arrays have to have the same size");
@@ -139,10 +135,9 @@ void NCFile::get_vara_double(const std::string &variable_name,
 }
 
 void NCFile::put_vara_double(const std::string &variable_name,
-                            const std::vector<unsigned int> &start,
-                            const std::vector<unsigned int> &count,
-                            const double *op) const {
-#if (Pism_DEBUG==1)
+                             const std::vector<unsigned int> &start,
+                             const std::vector<unsigned int> &count, const double *op) const {
+#if (Pism_DEBUG == 1)
   if (start.size() != count.size()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "start and count arrays have to have the same size");
@@ -160,11 +155,8 @@ void NCFile::put_vara_text(const std::string &variable_name, const std::vector<u
   this->put_vara_text_impl(variable_name, start, count, data.c_str());
 }
 
-void NCFile::write_darray(const std::string &variable_name,
-                          const grid::DistributedGridInfo &grid,
-                          unsigned int z_count,
-                          bool time_dependent,
-                          unsigned int record,
+void NCFile::write_darray(const std::string &variable_name, const grid::DistributedGridInfo &grid,
+                          unsigned int z_count, bool time_dependent, unsigned int record,
                           const double *input) {
   enddef();
   this->write_darray_impl(variable_name, grid, z_count, time_dependent, record, input);
@@ -174,16 +166,13 @@ void NCFile::write_darray(const std::string &variable_name,
  * The default implementation computes start and count and calls put_vara_double()
  */
 void NCFile::write_darray_impl(const std::string &variable_name,
-                               const grid::DistributedGridInfo &grid,
-                               unsigned int z_count,
-                               bool time_dependent,
-                               unsigned int record,
-                               const double *input) {
+                               const grid::DistributedGridInfo &grid, unsigned int z_count,
+                               bool time_dependent, unsigned int record, const double *input) {
   std::vector<unsigned int> start, count;
 
   if (time_dependent) {
     start = { record, grid.ys, grid.xs, 0 };
-    count = {      1, grid.ym, grid.xm, z_count };
+    count = { 1, grid.ym, grid.xm, z_count };
   } else {
     start = { grid.ys, grid.xs, 0 };
     count = { grid.ym, grid.xm, z_count };
@@ -196,7 +185,8 @@ void NCFile::inq_nvars(int &result) const {
   this->inq_nvars_impl(result);
 }
 
-void NCFile::inq_vardimid(const std::string &variable_name, std::vector<std::string> &result) const {
+void NCFile::inq_vardimid(const std::string &variable_name,
+                          std::vector<std::string> &result) const {
   this->inq_vardimid_impl(variable_name, result);
 }
 
@@ -212,39 +202,32 @@ void NCFile::inq_varname(unsigned int j, std::string &result) const {
   this->inq_varname_impl(j, result);
 }
 
-void NCFile::get_att_double(const std::string &variable_name,
-                            const std::string &att_name,
+void NCFile::get_att_double(const std::string &variable_name, const std::string &att_name,
                             std::vector<double> &result) const {
   this->get_att_double_impl(variable_name, att_name, result);
 }
 
-void NCFile::get_att_text(const std::string &variable_name,
-                          const std::string &att_name,
+void NCFile::get_att_text(const std::string &variable_name, const std::string &att_name,
                           std::string &result) const {
   this->get_att_text_impl(variable_name, att_name, result);
 }
 
-void NCFile::put_att_double(const std::string &variable_name,
-                            const std::string &att_name,
-                            io::Type xtype,
-                            const std::vector<double> &data) const {
+void NCFile::put_att_double(const std::string &variable_name, const std::string &att_name,
+                            io::Type xtype, const std::vector<double> &data) const {
   this->put_att_double_impl(variable_name, att_name, xtype, data);
 }
 
-void NCFile::put_att_text(const std::string &variable_name,
-                          const std::string &att_name,
+void NCFile::put_att_text(const std::string &variable_name, const std::string &att_name,
                           const std::string &value) const {
   this->put_att_text_impl(variable_name, att_name, value);
 }
 
-void NCFile::inq_attname(const std::string &variable_name,
-                         unsigned int n,
+void NCFile::inq_attname(const std::string &variable_name, unsigned int n,
                          std::string &result) const {
   this->inq_attname_impl(variable_name, n, result);
 }
 
-void NCFile::inq_atttype(const std::string &variable_name,
-                         const std::string &att_name,
+void NCFile::inq_atttype(const std::string &variable_name, const std::string &att_name,
                          io::Type &result) const {
   this->inq_atttype_impl(variable_name, att_name, result);
 }

@@ -27,8 +27,7 @@ class ScalarForcing;
 
 namespace ocean {
 //! \brief Forcing using shelf base temperature scalar time-dependent offsets.
-class Delta_T : public OceanModel
-{
+class Delta_T : public OceanModel {
 public:
   Delta_T(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in);
   virtual ~Delta_T();
@@ -38,7 +37,7 @@ private:
 
   void update_impl(const Inputs &inputs, double t, double dt);
 
-  const array::Scalar& shelf_base_temperature_impl() const;
+  const array::Scalar &shelf_base_temperature_impl() const;
 
   std::shared_ptr<array::Scalar> m_shelf_base_temperature;
   std::unique_ptr<ScalarForcing> m_forcing;

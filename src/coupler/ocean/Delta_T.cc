@@ -17,20 +17,16 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/coupler/ocean/Delta_T.hh"
-#include "pism/util/ScalarForcing.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/ScalarForcing.hh"
 
 namespace pism {
 namespace ocean {
 
 Delta_T::Delta_T(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in)
-  : OceanModel(g, in) {
+    : OceanModel(g, in) {
 
-  m_forcing.reset(new ScalarForcing(*g->ctx(),
-                                    "ocean.delta_T",
-                                    "delta_T",
-                                    "kelvin",
-                                    "kelvin",
+  m_forcing.reset(new ScalarForcing(*g->ctx(), "ocean.delta_T", "delta_T", "kelvin", "kelvin",
                                     "ice-shelf-base temperature offsets"));
 
   m_shelf_base_temperature = allocate_shelf_base_temperature(g);
@@ -44,8 +40,7 @@ void Delta_T::init_impl(const Geometry &geometry) {
 
   m_input_model->init(geometry);
 
-  m_log->message(2,
-                 "* Initializing ice shelf base temperature forcing using scalar offsets...\n");
+  m_log->message(2, "* Initializing ice shelf base temperature forcing using scalar offsets...\n");
 }
 
 void Delta_T::update_impl(const Inputs &inputs, double t, double dt) {
@@ -55,7 +50,7 @@ void Delta_T::update_impl(const Inputs &inputs, double t, double dt) {
   m_shelf_base_temperature->shift(m_forcing->value(t + 0.5 * dt));
 }
 
-const array::Scalar& Delta_T::shelf_base_temperature_impl() const {
+const array::Scalar &Delta_T::shelf_base_temperature_impl() const {
   return *m_shelf_base_temperature;
 }
 

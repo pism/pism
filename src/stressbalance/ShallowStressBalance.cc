@@ -30,14 +30,13 @@ namespace pism {
 namespace stressbalance {
 
 ShallowStressBalance::ShallowStressBalance(std::shared_ptr<const Grid> g)
-  : Component(g),
-    m_basal_sliding_law(NULL),
-    m_flow_law(NULL),
-    m_EC(g->ctx()->enthalpy_converter()),
-    m_velocity(m_grid, "bar"),
-    m_basal_frictional_heating(m_grid, "bfrict"),
-    m_e_factor(1.0)
-{
+    : Component(g),
+      m_basal_sliding_law(NULL),
+      m_flow_law(NULL),
+      m_EC(g->ctx()->enthalpy_converter()),
+      m_velocity(m_grid, "bar"),
+      m_basal_frictional_heating(m_grid, "bfrict"),
+      m_e_factor(1.0) {
 
   if (m_config->get_flag("basal_resistance.pseudo_plastic.enabled")) {
     m_basal_sliding_law = new IceBasalResistancePseudoPlasticLaw(*m_config);
@@ -88,31 +87,29 @@ std::shared_ptr<EnthalpyConverter> ShallowStressBalance::enthalpy_converter() co
   return m_EC;
 }
 
-const IceBasalResistancePlasticLaw* ShallowStressBalance::sliding_law() const {
+const IceBasalResistancePlasticLaw *ShallowStressBalance::sliding_law() const {
   return m_basal_sliding_law;
 }
 
 //! \brief Get the thickness-advective 2D velocity.
-const array::Vector1& ShallowStressBalance::velocity() const {
+const array::Vector1 &ShallowStressBalance::velocity() const {
   return m_velocity;
 }
 
 //! \brief Get the basal frictional heating (for the adaptive energy time-stepping).
-const array::Scalar& ShallowStressBalance::basal_frictional_heating() {
+const array::Scalar &ShallowStressBalance::basal_frictional_heating() {
   return m_basal_frictional_heating;
 }
 
 
 DiagnosticList ShallowStressBalance::spatial_diagnostics_impl() const {
-  DiagnosticList result = {
-    {"beta",     Diagnostic::Ptr(new SSB_beta(this))},
-    {"taub",     Diagnostic::Ptr(new SSB_taub(this))},
-    {"taub_mag", Diagnostic::Ptr(new SSB_taub_mag(this))},
-    {"taud",     Diagnostic::Ptr(new SSB_taud(this))},
-    {"taud_mag", Diagnostic::Ptr(new SSB_taud_mag(this))}
-  };
+  DiagnosticList result = { { "beta", Diagnostic::Ptr(new SSB_beta(this)) },
+                            { "taub", Diagnostic::Ptr(new SSB_taub(this)) },
+                            { "taub_mag", Diagnostic::Ptr(new SSB_taub_mag(this)) },
+                            { "taud", Diagnostic::Ptr(new SSB_taud(this)) },
+                            { "taud_mag", Diagnostic::Ptr(new SSB_taud_mag(this)) } };
 
-  if(m_config->get_flag("output.ISMIP6")) {
+  if (m_config->get_flag("output.ISMIP6")) {
     result["strbasemag"] = Diagnostic::Ptr(new SSB_taub_mag(this));
   }
 
@@ -120,8 +117,7 @@ DiagnosticList ShallowStressBalance::spatial_diagnostics_impl() const {
 }
 
 
-ZeroSliding::ZeroSliding(std::shared_ptr<const Grid> g)
-  : ShallowStressBalance(g) {
+ZeroSliding::ZeroSliding(std::shared_ptr<const Grid> g) : ShallowStressBalance(g) {
 
   rheology::FlowLawFactory ice_factory(m_config, m_EC);
   // Use the SIA flow law.
@@ -131,7 +127,7 @@ ZeroSliding::ZeroSliding(std::shared_ptr<const Grid> g)
 
 //! \brief Update the trivial shallow stress balance object.
 void ZeroSliding::update(const Inputs &inputs, bool full_update) {
-  (void) inputs;
+  (void)inputs;
 
   if (full_update) {
     m_velocity.set(0.0);
@@ -153,26 +149,23 @@ void ShallowStressBalance::compute_basal_frictional_heating(const array::Vector 
                                                             const array::CellType &mask,
                                                             array::Scalar &result) const {
 
-  array::AccessScope list{&V, &result, &tauc, &mask};
+  array::AccessScope list{ &V, &result, &tauc, &mask };
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
-    if (mask.ocean(i,j)) {
-      result(i,j) = 0.0;
+    if (mask.ocean(i, j)) {
+      result(i, j) = 0.0;
     } else {
-      const double
-        C = m_basal_sliding_law->drag(tauc(i,j), V(i,j).u, V(i,j).v),
-        basal_stress_x = - C * V(i,j).u,
-        basal_stress_y = - C * V(i,j).v;
-      result(i,j) = - basal_stress_x * V(i,j).u - basal_stress_y * V(i,j).v;
+      const double C              = m_basal_sliding_law->drag(tauc(i, j), V(i, j).u, V(i, j).v),
+                   basal_stress_x = -C * V(i, j).u, basal_stress_y = -C * V(i, j).v;
+      result(i, j) = -basal_stress_x * V(i, j).u - basal_stress_y * V(i, j).v;
     }
   }
 }
 
 
-SSB_taud::SSB_taud(const ShallowStressBalance *m)
-  : Diag<ShallowStressBalance>(m) {
+SSB_taud::SSB_taud(const ShallowStressBalance *m) : Diag<ShallowStressBalance>(m) {
 
   // set metadata:
   m_vars = { { m_sys, "taud_x", *m_grid }, { m_sys, "taud_y", *m_grid } };
@@ -228,7 +221,7 @@ SSB_taud_mag::SSB_taud_mag(const ShallowStressBalance *m) : Diag<ShallowStressBa
 
 std::shared_ptr<array::Array> SSB_taud_mag::compute_impl() const {
   auto result = allocate<array::Scalar>("taud_mag");
-  auto taud = array::cast<array::Vector>(SSB_taud(model).compute());
+  auto taud   = array::cast<array::Vector>(SSB_taud(model).compute());
 
   compute_magnitude(*taud, *result);
 
@@ -338,11 +331,11 @@ std::shared_ptr<array::Array> SSB_beta::compute_impl() const {
 
   const array::Vector &velocity = model->velocity();
 
-  array::AccessScope list{tauc, &velocity, result.get()};
+  array::AccessScope list{ tauc, &velocity, result.get() };
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
-    (*result)(i,j) =  basal_sliding_law->drag((*tauc)(i,j), velocity(i,j).u, velocity(i,j).v);
+    (*result)(i, j) = basal_sliding_law->drag((*tauc)(i, j), velocity(i, j).u, velocity(i, j).v);
   }
 
   return result;

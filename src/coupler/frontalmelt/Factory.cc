@@ -28,8 +28,7 @@
 namespace pism {
 namespace frontalmelt {
 // FrontalMelt
-Factory::Factory(std::shared_ptr<const Grid> g)
-  : PCFactory<FrontalMelt>(g, "frontal_melt.models") {
+Factory::Factory(std::shared_ptr<const Grid> g) : PCFactory<FrontalMelt>(g, "frontal_melt.models") {
 
   add_model<Constant>("constant");
   add_model<DischargeGiven>("discharge_given");

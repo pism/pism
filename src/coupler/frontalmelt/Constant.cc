@@ -18,17 +18,16 @@
 
 #include "pism/coupler/frontalmelt/Constant.hh"
 
+#include "pism/geometry/Geometry.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/MaxTimestep.hh"
-#include "pism/geometry/Geometry.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace frontalmelt {
 
-Constant::Constant(std::shared_ptr<const Grid> g)
-  : FrontalMelt(g) {
+Constant::Constant(std::shared_ptr<const Grid> g) : FrontalMelt(g) {
   m_frontal_melt_rate = std::make_shared<array::Scalar>(g, "frontal_melt_rate");
   m_frontal_melt_rate->metadata(0)
       .long_name("frontal melt rate")
@@ -37,15 +36,14 @@ Constant::Constant(std::shared_ptr<const Grid> g)
 }
 
 void Constant::update_impl(const FrontalMeltInputs &inputs, double t, double dt) {
-  (void) t;
-  (void) dt;
+  (void)t;
+  (void)dt;
 
   const auto &cell_type = inputs.geometry->cell_type;
 
-  const double
-    melt_rate = m_config->get_number("frontal_melt.constant.melt_rate", "m second-1");
+  const double melt_rate = m_config->get_number("frontal_melt.constant.melt_rate", "m second-1");
 
-  array::AccessScope list{&cell_type, m_frontal_melt_rate.get()};
+  array::AccessScope list{ &cell_type, m_frontal_melt_rate.get() };
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
@@ -58,12 +56,12 @@ void Constant::update_impl(const FrontalMeltInputs &inputs, double t, double dt)
   }
 }
 
-const array::Scalar& Constant::frontal_melt_rate_impl() const {
+const array::Scalar &Constant::frontal_melt_rate_impl() const {
   return *m_frontal_melt_rate;
 }
-  
+
 void Constant::init_impl(const Geometry &geometry) {
-  (void) geometry;
+  (void)geometry;
 
   m_log->message(2,
                  "* Initializing the constant frontal melt model...\n"
@@ -72,10 +70,10 @@ void Constant::init_impl(const Geometry &geometry) {
 }
 
 MaxTimestep Constant::max_timestep_impl(double t) const {
-  (void) t;
+  (void)t;
   return MaxTimestep("frontal_melt constant");
 }
 
 
-} // end of namespape frontalmelt
+} // namespace frontalmelt
 } // end of namespace pism

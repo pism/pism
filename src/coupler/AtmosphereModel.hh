@@ -41,10 +41,10 @@ public:
   void update(const Geometry &geometry, double t, double dt);
 
   //! @brief Sets result to the mean precipitation, in "kg m-2 second-1".
-  const array::Scalar& precipitation() const;
+  const array::Scalar &precipitation() const;
 
   //! @brief Sets result to the mean near-surface air temperature, in kelvin.
-  const array::Scalar& air_temperature() const;
+  const array::Scalar &air_temperature() const;
 
   void begin_pointwise_access() const;
   void end_pointwise_access() const;
@@ -60,8 +60,9 @@ public:
   //! grid. Times (in years) are specified in ts. NB! Has to be surrounded by
   //! begin_pointwise_access() and end_pointwise_access()
   void temp_time_series(int i, int j, std::vector<double> &result) const;
+
 protected:
-  virtual void init_impl(const Geometry &geometry) = 0;
+  virtual void init_impl(const Geometry &geometry)                        = 0;
   virtual void update_impl(const Geometry &geometry, double t, double dt) = 0;
 
   virtual std::set<VariableMetadata> state_impl() const;
@@ -70,8 +71,8 @@ protected:
 
   virtual MaxTimestep max_timestep_impl(double my_t) const;
 
-  virtual const array::Scalar& precipitation_impl() const;
-  virtual const array::Scalar& air_temperature_impl() const;
+  virtual const array::Scalar &precipitation_impl() const;
+  virtual const array::Scalar &air_temperature_impl() const;
 
   virtual void begin_pointwise_access_impl() const;
   virtual void end_pointwise_access_impl() const;
@@ -81,6 +82,7 @@ protected:
 
   virtual DiagnosticList spatial_diagnostics_impl() const;
   virtual TSDiagnosticList scalar_diagnostics_impl() const;
+
 protected:
   mutable std::vector<double> m_ts_times;
 
@@ -93,4 +95,4 @@ protected:
 } // end of namespace atmosphere
 } // end of namespace pism
 
-#endif  // __AtmosphereModel
+#endif // __AtmosphereModel

@@ -21,9 +21,11 @@
 #define _PATERSONBUDD_H_
 
 #include "pism/rheology/FlowLaw.hh"
-#include <string>                          // for string
-#include "pism/util/EnthalpyConverter.hh"  // for EnthalpyConverter, Enthalp...
-namespace pism { class Config; }
+#include "pism/util/EnthalpyConverter.hh" // for EnthalpyConverter, Enthalp...
+#include <string>                         // for string
+namespace pism {
+class Config;
+}
 
 namespace pism {
 namespace rheology {
@@ -35,8 +37,7 @@ public:
   virtual ~PatersonBudd() = default;
 
 protected:
-  virtual double flow_impl(double stress, double E,
-                           double pressure, double gs) const;
+  virtual double flow_impl(double stress, double E, double pressure, double gs) const;
   // This also takes care of hardness
   virtual double softness_impl(double enthalpy, double pressure) const;
 
@@ -44,8 +45,7 @@ protected:
   virtual double hardness_from_temp(double T_pa) const;
 
   // special temperature-dependent method
-  virtual double flow_from_temp(double stress, double temp,
-                                double pressure, double gs) const;
+  virtual double flow_from_temp(double stress, double temp, double pressure, double gs) const;
 };
 
 } // end of namespace rheology

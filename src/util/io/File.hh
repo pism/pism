@@ -19,9 +19,9 @@
 #ifndef _PISM_FILE_ACCESS_H_
 #define _PISM_FILE_ACCESS_H_
 
-#include <vector>
-#include <string>
 #include <mpi.h>
+#include <string>
+#include <vector>
 
 #include "pism/util/Units.hh"
 
@@ -53,8 +53,7 @@ struct VariableLookupData {
 /*!
  * Hides the low-level NetCDF wrapper.
  */
-class File
-{
+class File {
 public:
   File(MPI_Comm com, const std::string &filename, io::Backend backend, io::Mode mode);
   ~File();
@@ -90,8 +89,7 @@ public:
 
   bool dimension_exists(const std::string &name) const;
 
-  AxisType dimension_type(const std::string &name,
-                          units::System::Ptr unit_system) const;
+  AxisType dimension_type(const std::string &name, units::System::Ptr unit_system) const;
 
   // variables
 
@@ -100,19 +98,16 @@ public:
   void define_variable(const std::string &name, io::Type nctype,
                        const std::vector<std::string> &dims) const;
 
-  VariableLookupData find_variable(const std::string &short_name, const std::string &std_name) const;
+  VariableLookupData find_variable(const std::string &short_name,
+                                   const std::string &std_name) const;
 
   bool variable_exists(const std::string &short_name) const;
 
-  void read_variable(const std::string &variable_name,
-                       const std::vector<unsigned int> &start,
-                       const std::vector<unsigned int> &count,
-                       double *ip) const;
+  void read_variable(const std::string &variable_name, const std::vector<unsigned int> &start,
+                     const std::vector<unsigned int> &count, double *ip) const;
 
-  void write_variable(const std::string &variable_name,
-                      const std::vector<unsigned int> &start,
-                      const std::vector<unsigned int> &count,
-                      const double *op) const;
+  void write_variable(const std::string &variable_name, const std::vector<unsigned int> &start,
+                      const std::vector<unsigned int> &count, const double *op) const;
 
   void write_text_variable(const std::string &variable_name, const std::vector<unsigned int> &start,
                            const std::vector<unsigned int> &count, const std::string &input) const;
@@ -121,10 +116,8 @@ public:
   bool get_variable_was_written(const std::string &name) const;
 
   void write_distributed_array(const std::string &variable_name,
-                               const grid::DistributedGridInfo &grid,
-                               unsigned int z_count,
-                               bool time_dependent,
-                               const double *input) const;
+                               const grid::DistributedGridInfo &grid, unsigned int z_count,
+                               bool time_dependent, const double *input) const;
 
   void set_compression_level(int level) const;
 
@@ -136,8 +129,8 @@ public:
 
   io::Type attribute_type(const std::string &var_name, const std::string &att_name) const;
 
-  void write_attribute(const std::string &var_name, const std::string &att_name,
-                      io::Type nctype, const std::vector<double> &values) const;
+  void write_attribute(const std::string &var_name, const std::string &att_name, io::Type nctype,
+                       const std::vector<double> &values) const;
 
   void write_attribute(const std::string &var_name, const std::string &att_name,
                        const std::string &value) const;
@@ -148,6 +141,7 @@ public:
   std::string read_text_attribute(const std::string &var_name, const std::string &att_name) const;
 
   void append_history(const std::string &history) const;
+
 private:
   struct Impl;
   Impl *m_impl;
@@ -156,7 +150,7 @@ private:
 
   // disable copying and assignments
   File(const File &other);
-  File & operator=(const File &);
+  File &operator=(const File &);
 };
 
 } // end of namespace pism

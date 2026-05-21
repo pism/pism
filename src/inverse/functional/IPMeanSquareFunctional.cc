@@ -18,8 +18,8 @@
 
 #include "pism/inverse/functional/IPMeanSquareFunctional.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/array/Vector.hh"
 #include "pism/util/array/Scalar.hh"
+#include "pism/util/array/Vector.hh"
 #include "pism/util/pism_utilities.hh"
 
 namespace pism {
@@ -37,7 +37,7 @@ void IPMeanSquareFunctional2V::normalize(double scale) {
   double value = 0;
 
   if (m_weights != nullptr) {
-    array::AccessScope list{m_weights};
+    array::AccessScope list{ m_weights };
 
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
@@ -46,21 +46,21 @@ void IPMeanSquareFunctional2V::normalize(double scale) {
     }
   } else {
     for (auto p : m_grid->points()) {
-      (void) p;
+      (void)p;
       value += 1;
     }
   }
 
   m_normalization = GlobalSum(m_grid->com, value);
-  m_normalization *= (scale*scale);
+  m_normalization *= (scale * scale);
 }
 
-void IPMeanSquareFunctional2V::valueAt(array::Vector &x, double *OUTPUT)  {
+void IPMeanSquareFunctional2V::valueAt(array::Vector &x, double *OUTPUT) {
 
   // The value of the objective
   double value = 0;
 
-  array::AccessScope list{&x};
+  array::AccessScope list{ &x };
 
   if (m_weights != nullptr) {
     list.add(*m_weights);
@@ -68,27 +68,27 @@ void IPMeanSquareFunctional2V::valueAt(array::Vector &x, double *OUTPUT)  {
       const int i = p.i(), j = p.j();
 
       Vector2d &x_ij = x(i, j);
-      value += (x_ij.u*x_ij.u + x_ij.v*x_ij.v)*(*m_weights)(i, j);
+      value += (x_ij.u * x_ij.u + x_ij.v * x_ij.v) * (*m_weights)(i, j);
     }
   } else {
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       Vector2d &x_ij = x(i, j);
-      value += (x_ij.u*x_ij.u + x_ij.v*x_ij.v);
+      value += (x_ij.u * x_ij.u + x_ij.v * x_ij.v);
     }
   }
   value /= m_normalization;
 
-  GlobalSum( m_grid->com, &value, OUTPUT, 1);
+  GlobalSum(m_grid->com, &value, OUTPUT, 1);
 }
 
-void IPMeanSquareFunctional2V::dot(array::Vector &a, array::Vector &b, double *OUTPUT)  {
+void IPMeanSquareFunctional2V::dot(array::Vector &a, array::Vector &b, double *OUTPUT) {
 
   // The value of the objective
   double value = 0;
 
-  array::AccessScope list{&a, &b};
+  array::AccessScope list{ &a, &b };
 
   if (m_weights) {
     list.add(*m_weights);
@@ -97,7 +97,7 @@ void IPMeanSquareFunctional2V::dot(array::Vector &a, array::Vector &b, double *O
 
       Vector2d &a_ij = a(i, j);
       Vector2d &b_ij = b(i, j);
-      value += (a_ij.u*b_ij.u + a_ij.v*b_ij.v)*(*m_weights)(i, j);
+      value += (a_ij.u * b_ij.u + a_ij.v * b_ij.v) * (*m_weights)(i, j);
     }
   } else {
     for (auto p : m_grid->points()) {
@@ -105,33 +105,33 @@ void IPMeanSquareFunctional2V::dot(array::Vector &a, array::Vector &b, double *O
 
       Vector2d &a_ij = a(i, j);
       Vector2d &b_ij = b(i, j);
-      value += (a_ij.u*b_ij.u + a_ij.v*b_ij.v);
+      value += (a_ij.u * b_ij.u + a_ij.v * b_ij.v);
     }
   }
   value /= m_normalization;
 
-  GlobalSum( m_grid->com, &value, OUTPUT, 1);
+  GlobalSum(m_grid->com, &value, OUTPUT, 1);
 }
 
-void IPMeanSquareFunctional2V::gradientAt(array::Vector &x, array::Vector &gradient)  {
+void IPMeanSquareFunctional2V::gradientAt(array::Vector &x, array::Vector &gradient) {
   gradient.set(0);
 
-  array::AccessScope list{&x, &gradient};
+  array::AccessScope list{ &x, &gradient };
 
   if (m_weights) {
     list.add(*m_weights);
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
-      gradient(i, j).u = 2*x(i, j).u*(*m_weights)(i, j) / m_normalization;
-      gradient(i, j).v = 2*x(i, j).v*(*m_weights)(i, j) / m_normalization;
+      gradient(i, j).u = 2 * x(i, j).u * (*m_weights)(i, j) / m_normalization;
+      gradient(i, j).v = 2 * x(i, j).v * (*m_weights)(i, j) / m_normalization;
     }
   } else {
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
-      gradient(i, j).u = 2*x(i, j).u / m_normalization;
-      gradient(i, j).v = 2*x(i, j).v / m_normalization;
+      gradient(i, j).u = 2 * x(i, j).u / m_normalization;
+      gradient(i, j).v = 2 * x(i, j).v / m_normalization;
     }
   }
 }
@@ -156,16 +156,16 @@ void IPMeanSquareFunctional2S::normalize(double scale) {
     }
   } else {
     for (auto p : m_grid->points()) {
-      (void) p;
+      (void)p;
       value += 1;
     }
   }
 
   m_normalization = GlobalSum(m_grid->com, value);
-  m_normalization *= (scale*scale);
+  m_normalization *= (scale * scale);
 }
 
-void IPMeanSquareFunctional2S::valueAt(array::Scalar &x, double *OUTPUT)  {
+void IPMeanSquareFunctional2S::valueAt(array::Scalar &x, double *OUTPUT) {
 
   // The value of the objective
   double value = 0;
@@ -178,14 +178,14 @@ void IPMeanSquareFunctional2S::valueAt(array::Scalar &x, double *OUTPUT)  {
       const int i = p.i(), j = p.j();
 
       double &x_ij = x(i, j);
-      value += x_ij*x_ij*(*m_weights)(i, j);
+      value += x_ij * x_ij * (*m_weights)(i, j);
     }
   } else {
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       double &x_ij = x(i, j);
-      value += x_ij*x_ij;
+      value += x_ij * x_ij;
     }
   }
   value /= m_normalization;
@@ -193,25 +193,25 @@ void IPMeanSquareFunctional2S::valueAt(array::Scalar &x, double *OUTPUT)  {
   GlobalSum(m_grid->com, &value, OUTPUT, 1);
 }
 
-void IPMeanSquareFunctional2S::dot(array::Scalar &a, array::Scalar &b, double *OUTPUT)  {
+void IPMeanSquareFunctional2S::dot(array::Scalar &a, array::Scalar &b, double *OUTPUT) {
 
   // The value of the objective
   double value = 0;
 
-  array::AccessScope list{&a, &b};
+  array::AccessScope list{ &a, &b };
 
   if (m_weights) {
     list.add(*m_weights);
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
-      value += (a(i, j)*b(i, j))*(*m_weights)(i, j);
+      value += (a(i, j) * b(i, j)) * (*m_weights)(i, j);
     }
   } else {
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
-      value += (a(i, j)*b(i, j));
+      value += (a(i, j) * b(i, j));
     }
   }
   value /= m_normalization;
@@ -220,23 +220,23 @@ void IPMeanSquareFunctional2S::dot(array::Scalar &a, array::Scalar &b, double *O
 }
 
 
-void IPMeanSquareFunctional2S::gradientAt(array::Scalar &x, array::Scalar &gradient)  {
+void IPMeanSquareFunctional2S::gradientAt(array::Scalar &x, array::Scalar &gradient) {
   gradient.set(0);
 
-  array::AccessScope list{&x, &gradient};
+  array::AccessScope list{ &x, &gradient };
 
   if (m_weights) {
     list.add(*m_weights);
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
-      gradient(i, j) = 2*x(i, j)*(*m_weights)(i, j) / m_normalization;
+      gradient(i, j) = 2 * x(i, j) * (*m_weights)(i, j) / m_normalization;
     }
   } else {
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
-      gradient(i, j) = 2*x(i, j) / m_normalization;
+      gradient(i, j) = 2 * x(i, j) / m_normalization;
     }
   }
 }

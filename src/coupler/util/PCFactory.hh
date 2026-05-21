@@ -19,24 +19,25 @@
 #ifndef _PCFACTORY_H_
 #define _PCFACTORY_H_
 
-#include <memory>
 #include <map>
+#include <memory>
 
+#include "pism/util/Config.hh"
+#include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/Config.hh"
-#include "pism/util/Context.hh"
 
 namespace pism {
 
 template <class Model>
 class PCFactory {
 public:
-
   PCFactory(std::shared_ptr<const Grid> g, const std::string &parameter)
-    : m_parameter(parameter), m_grid(g)  {}
-  ~PCFactory() {}
+      : m_parameter(parameter), m_grid(g) {
+  }
+  ~PCFactory() {
+  }
 
   //! Creates a boundary model. Processes command-line options.
   virtual std::shared_ptr<Model> create() {
@@ -63,18 +64,18 @@ public:
 
     if (m_models.find(choices[0]) == m_models.end() and
         m_modifiers.find(choices[0]) != m_modifiers.end()) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "The first item on the list %s\n"
-                                    "(%s)\n"
-                                    "has to be a 'model' (one of %s),\n"
-                                    "while the rest have to be 'modifiers' (one of %s).\n"
-                                    "Got %s='%s'.\n"
-                                    "To use %s you also have to select a model, e.g. using the command-line option\n"
-                                    "'-%s %s,%s'.",
-                                    m_parameter.c_str(), doc.c_str(), key_list(m_models).c_str(),
-                                    key_list(m_modifiers).c_str(),
-                                    m_parameter.c_str(), list.c_str(), list.c_str(),
-                                    opt.c_str(), model1.c_str(), list.c_str());
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "The first item on the list %s\n"
+          "(%s)\n"
+          "has to be a 'model' (one of %s),\n"
+          "while the rest have to be 'modifiers' (one of %s).\n"
+          "Got %s='%s'.\n"
+          "To use %s you also have to select a model, e.g. using the command-line option\n"
+          "'-%s %s,%s'.",
+          m_parameter.c_str(), doc.c_str(), key_list(m_models).c_str(),
+          key_list(m_modifiers).c_str(), m_parameter.c_str(), list.c_str(), list.c_str(),
+          opt.c_str(), model1.c_str(), list.c_str());
     }
   }
 
@@ -92,7 +93,7 @@ public:
     ++j;
 
     // process remaining arguments:
-    for (;j != choices.end(); ++j) {
+    for (; j != choices.end(); ++j) {
       result = modifier(*j, result);
     }
 
@@ -151,7 +152,7 @@ protected:
   class ModelCreator {
   public:
     virtual std::shared_ptr<Model> create(std::shared_ptr<const Grid> g) = 0;
-    virtual ~ModelCreator() = default;
+    virtual ~ModelCreator()                                              = default;
   };
 
   // Creator for a specific model class M.

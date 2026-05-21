@@ -25,8 +25,7 @@ namespace pism {
 namespace bed {
 
 Given::Given(std::shared_ptr<const Grid> grid)
-  : BedDef(grid, "'prescribed topography change history'"),
-    m_topg_reference(grid, "topg") {
+    : BedDef(grid, "'prescribed topography change history'"), m_topg_reference(grid, "topg") {
 
   m_topg_reference.metadata(0)
       .long_name("reference bed elevation")
@@ -46,9 +45,7 @@ Given::Given(std::shared_ptr<const Grid> grid)
     m_topg_delta = std::make_shared<array::Forcing>(m_grid, file, "topg_delta",
                                                     "", // no standard name
                                                     buffer_size, periodic, LINEAR);
-    m_topg_delta->metadata(0)
-        .long_name("two-dimensional bed elevation changes")
-        .units("meters");
+    m_topg_delta->metadata(0).long_name("two-dimensional bed elevation changes").units("meters");
   }
 }
 

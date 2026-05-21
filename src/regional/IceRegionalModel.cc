@@ -163,12 +163,11 @@ void IceRegionalModel::allocate_energy_model() {
 
   m_submodels["energy balance model"] = m_energy_model.get();
 
-  if (m_config->get_flag("energy.ch_warming.enabled") and
-      not m_ch_system) {
+  if (m_config->get_flag("energy.ch_warming.enabled") and not m_ch_system) {
 
     m_log->message(2, "# Allocating the cryo-hydrologic warming model...\n");
 
-     m_ch_system = std::make_shared<energy::CHSystem>(m_grid, m_stress_balance);
+    m_ch_system = std::make_shared<energy::CHSystem>(m_grid, m_stress_balance);
     m_submodels["cryo-hydrologic warming"] = m_ch_system.get();
   }
 }
@@ -180,8 +179,8 @@ void IceRegionalModel::allocate_stressbalance() {
   }
 
   bool regional = true;
-  m_stress_balance = stressbalance::create(m_config->get_string("stress_balance.model"),
-                                           m_grid, regional);
+  m_stress_balance =
+      stressbalance::create(m_config->get_string("stress_balance.model"), m_grid, regional);
 
   m_submodels["stress balance"] = m_stress_balance.get();
 }
@@ -230,8 +229,7 @@ void IceRegionalModel::bootstrap_2d(const File &input_file) {
   }
 
   if (m_config->get_flag("stress_balance.ssa.dirichlet_bc")) {
-    array::AccessScope list
-      {&m_no_model_mask, &m_velocity_bc_mask, &m_ice_thickness_bc_mask};
+    array::AccessScope list{ &m_no_model_mask, &m_velocity_bc_mask, &m_ice_thickness_bc_mask };
 
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
@@ -267,16 +265,14 @@ void IceRegionalModel::energy_step(double t, double dt) {
   if (m_ch_system) {
     bedrock_thermal_model_step(t, dt);
 
-    energy::Inputs inputs = energy_model_inputs();
+    energy::Inputs inputs                = energy_model_inputs();
     const array::Array3D *strain_heating = inputs.volumetric_heating_rate;
-    inputs.volumetric_heating_rate = m_ch_warming_flux.get();
+    inputs.volumetric_heating_rate       = m_ch_warming_flux.get();
 
-    energy::cryo_hydrologic_warming_flux(m_config->get_number("constants.ice.thermal_conductivity"),
-                                         m_config->get_number("energy.ch_warming.average_channel_spacing"),
-                                         m_geometry.ice_thickness,
-                                         m_energy_model->enthalpy(),
-                                         m_ch_system->enthalpy(),
-                                         *m_ch_warming_flux);
+    energy::cryo_hydrologic_warming_flux(
+        m_config->get_number("constants.ice.thermal_conductivity"),
+        m_config->get_number("energy.ch_warming.average_channel_spacing"), m_geometry.ice_thickness,
+        m_energy_model->enthalpy(), m_ch_system->enthalpy(), *m_ch_warming_flux);
 
     // Convert to the loss of energy by the CH system:
     m_ch_warming_flux->scale(-1.0);
@@ -303,16 +299,14 @@ YieldStressInputs IceRegionalModel::yield_stress_inputs() {
   return result;
 }
 
-const energy::CHSystem* IceRegionalModel::cryo_hydrologic_system() const {
+const energy::CHSystem *IceRegionalModel::cryo_hydrologic_system() const {
   return m_ch_system.get();
 }
 
 /*! @brief Report temperature of the cryo-hydrologic system */
-class CHTemperature : public Diag<IceRegionalModel>
-{
+class CHTemperature : public Diag<IceRegionalModel> {
 public:
-  CHTemperature(const IceRegionalModel *m)
-    : Diag<IceRegionalModel>(m) {
+  CHTemperature(const IceRegionalModel *m) : Diag<IceRegionalModel>(m) {
 
     m_vars = { { m_sys, "ch_temp", *m_grid, m_grid->z() } };
     m_vars[0].long_name("temperature of the cryo-hydrologic system").units("kelvin");
@@ -321,11 +315,11 @@ public:
 protected:
   std::shared_ptr<array::Array> compute_impl() const {
 
-    std::shared_ptr<array::Array3D> result(new array::Array3D(m_grid, "ch_temp", array::WITHOUT_GHOSTS, m_grid->z()));
+    std::shared_ptr<array::Array3D> result(
+        new array::Array3D(m_grid, "ch_temp", array::WITHOUT_GHOSTS, m_grid->z()));
 
     energy::compute_temperature(model->cryo_hydrologic_system()->enthalpy(),
-                                model->geometry().ice_thickness,
-                                *result);
+                                model->geometry().ice_thickness, *result);
     result->metadata(0) = m_vars[0];
 
     return result;
@@ -333,11 +327,9 @@ protected:
 };
 
 /*! @brief Report liquid water fraction in the cryo-hydrologic system */
-class CHLiquidWaterFraction : public Diag<IceRegionalModel>
-{
+class CHLiquidWaterFraction : public Diag<IceRegionalModel> {
 public:
-  CHLiquidWaterFraction(const IceRegionalModel *m)
-    : Diag<IceRegionalModel>(m) {
+  CHLiquidWaterFraction(const IceRegionalModel *m) : Diag<IceRegionalModel>(m) {
 
     m_vars = { { m_sys, "ch_liqfrac", *m_grid, m_grid->z() } };
 
@@ -347,11 +339,11 @@ public:
 protected:
   std::shared_ptr<array::Array> compute_impl() const {
 
-    std::shared_ptr<array::Array3D> result(new array::Array3D(m_grid, "ch_liqfrac", array::WITHOUT_GHOSTS, m_grid->z()));
+    std::shared_ptr<array::Array3D> result(
+        new array::Array3D(m_grid, "ch_liqfrac", array::WITHOUT_GHOSTS, m_grid->z()));
 
     energy::compute_liquid_water_fraction(model->cryo_hydrologic_system()->enthalpy(),
-                                          model->geometry().ice_thickness,
-                                          *result);
+                                          model->geometry().ice_thickness, *result);
     result->metadata(0) = m_vars[0];
     return result;
   }
@@ -359,11 +351,9 @@ protected:
 
 
 /*! @brief Report rate of cryo-hydrologic warming */
-class CHHeatFlux : public Diag<IceRegionalModel>
-{
+class CHHeatFlux : public Diag<IceRegionalModel> {
 public:
-  CHHeatFlux(const IceRegionalModel *m)
-    : Diag<IceRegionalModel>(m) {
+  CHHeatFlux(const IceRegionalModel *m) : Diag<IceRegionalModel>(m) {
 
     m_vars = { { m_sys, "ch_heat_flux", *m_grid, m_grid->z() } };
     m_vars[0].long_name("rate of cryo-hydrologic warming").units("W m^-3");
@@ -372,15 +362,15 @@ public:
 protected:
   std::shared_ptr<array::Array> compute_impl() const {
 
-    std::shared_ptr<array::Array3D> result(new array::Array3D(m_grid, "ch_heat_flux", array::WITHOUT_GHOSTS, m_grid->z()));
+    std::shared_ptr<array::Array3D> result(
+        new array::Array3D(m_grid, "ch_heat_flux", array::WITHOUT_GHOSTS, m_grid->z()));
     result->metadata(0) = m_vars[0];
 
-    energy::cryo_hydrologic_warming_flux(m_config->get_number("constants.ice.thermal_conductivity"),
-                                         m_config->get_number("energy.ch_warming.average_channel_spacing"),
-                                         model->geometry().ice_thickness,
-                                         model->energy_balance_model()->enthalpy(),
-                                         model->cryo_hydrologic_system()->enthalpy(),
-                                         *result);
+    energy::cryo_hydrologic_warming_flux(
+        m_config->get_number("constants.ice.thermal_conductivity"),
+        m_config->get_number("energy.ch_warming.average_channel_spacing"),
+        model->geometry().ice_thickness, model->energy_balance_model()->enthalpy(),
+        model->cryo_hydrologic_system()->enthalpy(), *result);
     return result;
   }
 };

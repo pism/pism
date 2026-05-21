@@ -21,9 +21,9 @@
 
 #include <string>
 
-#include "pism/util/VariableMetadata.hh"
-#include "pism/util/Units.hh"
 #include "pism/util/Diagnostic.hh"
+#include "pism/util/Units.hh"
+#include "pism/util/VariableMetadata.hh"
 
 namespace pism {
 
@@ -36,7 +36,8 @@ class Grid;
 class Logger;
 
 namespace array {
-template<typename T> class Array2D;
+template <typename T>
+class Array2D;
 class Array3D;
 class Array;
 class CellType1;
@@ -53,7 +54,7 @@ class Vector2;
 class Vector;
 } // end of namespace array
 
-enum InitializationType {INIT_RESTART, INIT_BOOTSTRAP, INIT_OTHER};
+enum InitializationType { INIT_RESTART, INIT_BOOTSTRAP, INIT_OTHER };
 
 struct InputOptions {
   InputOptions(InitializationType t, const std::string &file, unsigned int index);

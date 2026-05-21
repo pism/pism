@@ -23,8 +23,7 @@
 
 namespace pism {
 namespace ocean {
-class GivenTH : public CompleteOceanModel
-{
+class GivenTH : public CompleteOceanModel {
 public:
   GivenTH(std::shared_ptr<const Grid> g);
   virtual ~GivenTH() = default;
@@ -57,6 +56,7 @@ public:
     double ice_thermal_diffusivity;
     bool limit_salinity_range;
   };
+
 private:
   void update_impl(const Inputs &inputs, double t, double dt);
   void init_impl(const Geometry &geometry);

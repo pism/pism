@@ -20,8 +20,8 @@
 #ifndef PISM_ARRAY_CELLTYPE_H
 #define PISM_ARRAY_CELLTYPE_H
 
-#include "pism/util/array/Scalar.hh"
 #include "pism/util/Mask.hh"
+#include "pism/util/array/Scalar.hh"
 
 namespace pism {
 namespace array {
@@ -62,6 +62,7 @@ public:
   inline bool ice_free_land(int i, int j) const {
     return mask::ice_free_land(as_int(i, j));
   }
+
 protected:
   CellType(std::shared_ptr<const Grid> grid, const std::string &name, int w);
 };
@@ -74,13 +75,13 @@ public:
   CellType1(std::shared_ptr<const Grid> grid, const std::string &name);
   using Array2D<double>::star;
   using Array2D<double>::box;
-  using Scalar::star_int;
   using Scalar::box_int;
+  using Scalar::star_int;
 
   //! \brief Ice margin (ice-filled with at least one of four neighbors ice-free).
   inline bool ice_margin(int i, int j) const {
-    return icy(i, j) and (ice_free(i + 1, j) or ice_free(i - 1, j) or
-                          ice_free(i, j + 1) or ice_free(i, j - 1));
+    return icy(i, j) and
+           (ice_free(i + 1, j) or ice_free(i - 1, j) or ice_free(i, j + 1) or ice_free(i, j - 1));
   }
 
   //! \brief Ice-free margin (at least one of four neighbors has ice).
@@ -89,24 +90,25 @@ public:
   }
 
   inline bool next_to_floating_ice(int i, int j) const {
-    return (floating_ice(i + 1, j) or floating_ice(i - 1, j) or
-            floating_ice(i, j + 1) or floating_ice(i, j - 1));
+    return (floating_ice(i + 1, j) or floating_ice(i - 1, j) or floating_ice(i, j + 1) or
+            floating_ice(i, j - 1));
   }
 
   inline bool next_to_grounded_ice(int i, int j) const {
-    return (grounded_ice(i + 1, j) or grounded_ice(i - 1, j) or
-            grounded_ice(i, j + 1) or grounded_ice(i, j - 1));
+    return (grounded_ice(i + 1, j) or grounded_ice(i - 1, j) or grounded_ice(i, j + 1) or
+            grounded_ice(i, j - 1));
   }
 
   inline bool next_to_ice_free_land(int i, int j) const {
-    return (ice_free_land(i + 1, j) or ice_free_land(i - 1, j) or
-            ice_free_land(i, j + 1) or ice_free_land(i, j - 1));
+    return (ice_free_land(i + 1, j) or ice_free_land(i - 1, j) or ice_free_land(i, j + 1) or
+            ice_free_land(i, j - 1));
   }
 
   inline bool next_to_ice_free_ocean(int i, int j) const {
-    return (ice_free_ocean(i + 1, j) or ice_free_ocean(i - 1, j) or
-            ice_free_ocean(i, j + 1) or ice_free_ocean(i, j - 1));
+    return (ice_free_ocean(i + 1, j) or ice_free_ocean(i - 1, j) or ice_free_ocean(i, j + 1) or
+            ice_free_ocean(i, j - 1));
   }
+
 protected:
   CellType1(std::shared_ptr<const Grid> grid, const std::string &name, int width);
 };

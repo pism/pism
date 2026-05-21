@@ -17,25 +17,24 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "util/io/IO_Flags.hh"
-static char help[] =
-  "Ice sheet driver for PISM ice sheet simulations, initialized from data.\n"
-  "The basic PISM executable for evolution runs.\n";
+static char help[] = "Ice sheet driver for PISM ice sheet simulations, initialized from data.\n"
+                     "The basic PISM executable for evolution runs.\n";
 
 #include <memory>
-#include <petscsys.h>           // PETSC_COMM_WORLD
+#include <petscsys.h> // PETSC_COMM_WORLD
 
-#include "pism/icemodel/IceModel.hh"
 #include "pism/icemodel/IceEISModel.hh"
-#include "pism/verification/iceCompModel.hh"
-#include "pism/util/NetCDFConfig.hh"
+#include "pism/icemodel/IceModel.hh"
 #include "pism/util/Grid.hh"
+#include "pism/util/NetCDFConfig.hh"
+#include "pism/verification/iceCompModel.hh"
 
 #include "pism/util/Context.hh"
+#include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/Profiling.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
 #include "pism/util/pism_options.hh"
-#include "pism/util/EnthalpyConverter.hh"
 
 #include "pism/regional/IceRegionalModel.hh"
 
@@ -68,8 +67,7 @@ static void set_config_defaults(Config &config) {
   // zero thickness bedrock layer is the default, but we want the ice/rock
   // interface segment to have geothermal flux applied directly to ice without
   // jump in material properties at base.
-  config.set_number("energy.bedrock_thermal.density",
-                    config.get_number("constants.ice.density"));
+  config.set_number("energy.bedrock_thermal.density", config.get_number("constants.ice.density"));
   config.set_number("energy.bedrock_thermal.conductivity",
                     config.get_number("constants.ice.thermal_conductivity"));
   config.set_number("energy.bedrock_thermal.specific_heat_capacity",
@@ -119,8 +117,8 @@ void set_config_defaults(Config &config, char testname) {
   case 'G':
   case 'L':
     // use 1800km by 1800km by 4000m rectangular domain
-    config.set_number("grid.Lx", 900); // in km
-    config.set_number("grid.Ly", 900); // in km
+    config.set_number("grid.Lx", 900);  // in km
+    config.set_number("grid.Ly", 900);  // in km
     config.set_number("grid.Lz", 4000); // in m
     break;
   case 'K':
@@ -128,13 +126,13 @@ void set_config_defaults(Config &config, char testname) {
     // use 2000km by 2000km by 4000m rectangular domain, but make truely periodic
     config.set_number("grid.Mbz", 2);
     config.set_number("grid.Lbz", 1000); // in m
-    config.set_number("grid.Lx", 1000); // in km
-    config.set_number("grid.Ly", 1000); // in km
-    config.set_number("grid.Lz", 4000); // in m
+    config.set_number("grid.Lx", 1000);  // in km
+    config.set_number("grid.Ly", 1000);  // in km
+    config.set_number("grid.Lz", 4000);  // in m
     config.set_string("grid.periodicity", "xy");
     break;
   case 'V':
-    config.set_number("grid.My", 3);// it's a flow-line setup
+    config.set_number("grid.My", 3);   // it's a flow-line setup
     config.set_number("grid.Lx", 500); // 500 km long
     config.set_string("grid.periodicity", "y");
     break;
@@ -144,8 +142,7 @@ void set_config_defaults(Config &config, char testname) {
 }
 
 //! Allocate the verification mode context. Uses ColdEnthalpyConverter.
-std::shared_ptr<Context> context(MPI_Comm com, const std::string &prefix,
-                                 char testname) {
+std::shared_ptr<Context> context(MPI_Comm com, const std::string &prefix, char testname) {
   // unit system
   auto sys = std::make_shared<units::System>();
 
@@ -176,7 +173,8 @@ std::shared_ptr<Grid> grid(std::shared_ptr<Context> ctx) {
   auto input_file_name = config->get_string("input.file");
 
   if (config->get_flag("input.bootstrap")) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "PISM does not support bootstrapping in verification mode");
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "PISM does not support bootstrapping in verification mode");
   }
 
   if (not input_file_name.empty()) {
@@ -202,9 +200,8 @@ int main(int argc, char *argv[]) {
   int exit_code = 0;
   try {
     // Note: EISMINT II experiments G and H are not supported.
-    auto eisII = options::Keyword("-eisII",
-                                  "EISMINT II experiment name",
-                                  "A,B,C,D,E,F,I,J,K,L", "A");
+    auto eisII =
+        options::Keyword("-eisII", "EISMINT II experiment name", "A,B,C,D,E,F,I,J,K,L", "A");
 
     auto verification_test =
         options::Keyword("-test", "Specifies PISM verification test", "A,B,C,D,F,G,H,K,L,V", "A");
@@ -216,12 +213,12 @@ int main(int argc, char *argv[]) {
     std::shared_ptr<Context> ctx;
     if (verification_test.is_set()) {
       char test = verification_test.value()[0];
-      ctx = verification::context(com, "pism", test);
+      ctx       = verification::context(com, "pism", test);
     } else {
       ctx = context_from_options(com, "pism");
     }
 
-    auto log = ctx->log();
+    auto log    = ctx->log();
     auto config = ctx->config();
 
     if (eisII.is_set()) {
@@ -257,16 +254,16 @@ int main(int argc, char *argv[]) {
     print_config(*ctx->log(), 3, *config);
 
     std::string usage =
-      "  pism -i IN.nc [-bootstrap] [-regional] [OTHER PISM & PETSc OPTIONS]\n"
-      "where:\n"
-      "  -i                         IN.nc is input file in NetCDF format: contains PISM-written model state\n"
-      "  -bootstrap                 enable heuristics to produce an initial state from an incomplete input\n"
-      "  -regional                  enable \"regional mode\"\n"
-      "  -eisII [experiment]        enable EISMINT II mode\n"
-      "  -test  [verification_test] enable verification mode\n"
-      "notes:\n"
-      "  * option -i is required\n"
-      "  * if -bootstrap is used then also '-Mx A -My B -Mz C -Lz D' are required\n";
+        "  pism -i IN.nc [-bootstrap] [-regional] [OTHER PISM & PETSc OPTIONS]\n"
+        "where:\n"
+        "  -i                         IN.nc is input file in NetCDF format: contains PISM-written model state\n"
+        "  -bootstrap                 enable heuristics to produce an initial state from an incomplete input\n"
+        "  -regional                  enable \"regional mode\"\n"
+        "  -eisII [experiment]        enable EISMINT II mode\n"
+        "  -test  [verification_test] enable verification mode\n"
+        "notes:\n"
+        "  * option -i is required\n"
+        "  * if -bootstrap is used then also '-Mx A -My B -Mz C -Lz D' are required\n";
     {
       bool done = maybe_show_usage(*log, "PISM (basic evolution run mode)", usage);
       if (done) {
@@ -274,8 +271,8 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    options::String profiling_log = options::String("-profile",
-                                                    "Save detailed profiling data to a file.");
+    options::String profiling_log =
+        options::String("-profile", "Save detailed profiling data to a file.");
 
     if (profiling_log.is_set()) {
       ctx->profiling().start();
@@ -287,10 +284,10 @@ int main(int argc, char *argv[]) {
 
     if (verification_test.is_set()) {
       char test = verification_test.value()[0];
-      grid = verification::grid(ctx);
+      grid      = verification::grid(ctx);
 
       verification_model = std::make_shared<IceCompModel>(grid, ctx, test);
-      model = verification_model;
+      model              = verification_model;
     } else {
       grid = Grid::FromOptions(ctx);
 
@@ -305,14 +302,13 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    auto list_type = options::Keyword("-list_diagnostics",
-                                      "List available diagnostic quantities and stop.",
-                                      "all,spatial,scalar,json",
-                                      "all");
+    auto list_type =
+        options::Keyword("-list_diagnostics", "List available diagnostic quantities and stop.",
+                         "all,spatial,scalar,json", "all");
 
     if (list_type.is_set()) {
       auto report = DIAG_NONE;
-      auto value = list_type.value();
+      auto value  = list_type.value();
       if (value == "spatial") {
         report = DIAG_SPATIAL;
       } else if (value == "scalar") {
@@ -330,26 +326,24 @@ int main(int argc, char *argv[]) {
       auto termination_reason = model->run();
 
       switch (termination_reason) {
-      case PISM_CHEKPOINT:
-        {
-          exit_code = static_cast<int>(config->get_number("output.checkpoint.exit_code"));
-          log->message(2, "... stopping (exit_code=%d) after saving the checkpoint file\n",
-                       exit_code);
-          break;
-        }
+      case PISM_CHEKPOINT: {
+        exit_code = static_cast<int>(config->get_number("output.checkpoint.exit_code"));
+        log->message(2, "... stopping (exit_code=%d) after saving the checkpoint file\n",
+                     exit_code);
+        break;
+      }
       case PISM_SIGNAL:
-      case PISM_DONE:
-        {
-          log->message(2, "... done with the run\n");
-          model->write_final_output();
-          exit_code = 0;
+      case PISM_DONE: {
+        log->message(2, "... done with the run\n");
+        model->write_final_output();
+        exit_code = 0;
 
-          if (verification_model and
-              not options::Bool("-no_report", "do not print the error report")) {
-            verification_model->reportErrors();
-          }
-          break;
+        if (verification_model and
+            not options::Bool("-no_report", "do not print the error report")) {
+          verification_model->reportErrors();
         }
+        break;
+      }
       }
     }
     print_unused_parameters(*log, 3, *config);
@@ -357,8 +351,7 @@ int main(int argc, char *argv[]) {
     if (profiling_log.is_set()) {
       ctx->profiling().report(profiling_log);
     }
-  }
-  catch (...) {
+  } catch (...) {
     handle_fatal_errors(com);
     exit_code = 1;
   }

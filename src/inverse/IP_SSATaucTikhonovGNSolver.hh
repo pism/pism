@@ -20,33 +20,34 @@
 #define IP_SSATAUCTIKHONOVGN_HH_SIU7F33G
 
 #include "pism/inverse/IP_SSATaucForwardProblem.hh"
+#include "pism/inverse/functional/IPFunctional.hh"
 #include "pism/util/TerminationReason.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/petscwrappers/KSP.hh"
-#include "pism/inverse/functional/IPFunctional.hh"
 
 namespace pism {
 namespace inverse {
 
-template<class C, void (C::*MultiplyCallback)(Vec,Vec) >
+template <class C, void (C::*MultiplyCallback)(Vec, Vec)>
 class MatrixMultiplyCallback {
 public:
   static void connect(Mat A) {
     PetscErrorCode ierr;
-    ierr = MatShellSetOperation(A, MATOP_MULT,
-                                (void(*)(void))MatrixMultiplyCallback::callback);
+    ierr = MatShellSetOperation(A, MATOP_MULT, (void (*)(void))MatrixMultiplyCallback::callback);
     PISM_CHK(ierr, "MatShellSetOperation");
   }
+
 protected:
   static PetscErrorCode callback(Mat A, Vec x, Vec y) {
     try {
       C *ctx;
-      PetscErrorCode ierr = MatShellGetContext(A,&ctx);
+      PetscErrorCode ierr = MatShellGetContext(A, &ctx);
       PISM_CHK(ierr, "MatShellGetContext");
-      (ctx->*MultiplyCallback)(x,y);
+      (ctx->*MultiplyCallback)(x, y);
     } catch (...) {
-      MPI_Comm com = MPI_COMM_SELF;
-      PetscErrorCode ierr = PetscObjectGetComm((PetscObject)A, &com); CHKERRQ(ierr);
+      MPI_Comm com        = MPI_COMM_SELF;
+      PetscErrorCode ierr = PetscObjectGetComm((PetscObject)A, &com);
+      CHKERRQ(ierr);
       handle_fatal_errors(com);
       SETERRQ(com, 1, "A PISM callback failed");
     }
@@ -64,11 +65,12 @@ public:
 
   // typedef IP_SSATaucTikhonovGNSolverListener Listener;
 
-  IP_SSATaucTikhonovGNSolver(IP_SSATaucForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs, double eta, 
-                              IPInnerProductFunctional<DesignVec> &designFunctional, IPInnerProductFunctional<StateVec> &stateFunctional);
+  IP_SSATaucTikhonovGNSolver(IP_SSATaucForwardProblem &ssaforward, DesignVec &d0, StateVec &u_obs,
+                             double eta, IPInnerProductFunctional<DesignVec> &designFunctional,
+                             IPInnerProductFunctional<StateVec> &stateFunctional);
 
   ~IP_SSATaucTikhonovGNSolver() = default;
-  
+
   virtual std::shared_ptr<StateVec> stateSolution() {
     return m_ssaforward.solution();
   }
@@ -94,13 +96,12 @@ public:
   virtual std::shared_ptr<TerminationReason> init();
 
   virtual std::shared_ptr<TerminationReason> check_convergence();
-  
+
   virtual std::shared_ptr<TerminationReason> solve();
 
   virtual std::shared_ptr<TerminationReason> evaluate_objective_and_gradient();
 
 protected:
-
   virtual void assemble_GN_rhs(DesignVec &out);
 
   virtual std::shared_ptr<TerminationReason> solve_linearized();
@@ -120,14 +121,14 @@ protected:
   DesignVec m_tmp_D2Global;
   DesignVecGhosted m_tmp_D1Local;
   DesignVecGhosted m_tmp_D2Local;
-  StateVec  m_tmp_S1Global;
-  StateVec  m_tmp_S2Global;
-  StateVec1  m_tmp_S1Local;      // ghosted
-  StateVec1  m_tmp_S2Local;      // ghosted
+  StateVec m_tmp_S1Global;
+  StateVec m_tmp_S2Global;
+  StateVec1 m_tmp_S1Local; // ghosted
+  StateVec1 m_tmp_S2Local; // ghosted
 
-  DesignVec  m_GN_rhs;
+  DesignVec m_GN_rhs;
 
-  std::shared_ptr<DesignVecGhosted> m_d;           // ghosted
+  std::shared_ptr<DesignVecGhosted> m_d; // ghosted
   DesignVec &m_d0;
   DesignVec m_dGlobal;
   DesignVecGhosted m_d_diff;
@@ -136,19 +137,19 @@ protected:
   DesignVecGhosted m_h;
   DesignVec m_hGlobal;
   DesignVec m_dalpha_rhs;
-  DesignVec m_dh_dalpha;        // ghosted
+  DesignVec m_dh_dalpha; // ghosted
   DesignVec m_dh_dalphaGlobal;
 
   DesignVec m_grad_design;
   DesignVec m_grad_state;
   DesignVec m_gradient;
-  
+
   double m_val_design, m_val_state, m_value;
 
   StateVec &m_u_obs;
-  StateVec1 m_u_diff;            // ghosted
+  StateVec1 m_u_diff; // ghosted
 
-  petsc::KSP m_ksp;  
+  petsc::KSP m_ksp;
   petsc::Mat m_mat_GN;
 
   double m_eta;

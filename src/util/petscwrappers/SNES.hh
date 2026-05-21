@@ -26,7 +26,7 @@
 
 namespace pism {
 namespace petsc {
-class SNES : public Wrapper< ::SNES > {
+class SNES : public Wrapper< ::SNES> {
 public:
   SNES();
   SNES(::SNES m);

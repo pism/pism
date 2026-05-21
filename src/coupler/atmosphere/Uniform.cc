@@ -26,13 +26,13 @@ namespace pism {
 namespace atmosphere {
 
 Uniform::Uniform(std::shared_ptr<const Grid> grid)
-  : AtmosphereModel(grid, std::shared_ptr<AtmosphereModel>()) {
+    : AtmosphereModel(grid, std::shared_ptr<AtmosphereModel>()) {
   m_precipitation = allocate_precipitation(grid);
-  m_temperature = allocate_temperature(grid);
+  m_temperature   = allocate_temperature(grid);
 }
 
 void Uniform::init_impl(const Geometry &geometry) {
-  (void) geometry;
+  (void)geometry;
 
   m_log->message(2, "* Initializing the test atmosphere model...\n");
 
@@ -41,16 +41,16 @@ void Uniform::init_impl(const Geometry &geometry) {
 }
 
 void Uniform::update_impl(const Geometry &geometry, double t, double dt) {
-  (void) geometry;
-  (void) t;
-  (void) dt;
+  (void)geometry;
+  (void)t;
+  (void)dt;
 }
 
-const array::Scalar& Uniform::precipitation_impl() const {
+const array::Scalar &Uniform::precipitation_impl() const {
   return *m_precipitation;
 }
 
-const array::Scalar& Uniform::air_temperature_impl() const {
+const array::Scalar &Uniform::air_temperature_impl() const {
   return *m_temperature;
 }
 

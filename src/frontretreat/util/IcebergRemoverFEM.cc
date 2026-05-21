@@ -19,23 +19,22 @@
 
 #include <cassert>
 
-#include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/connected_components/label_components.hh"
+#include "pism/util/petscwrappers/DM.hh"
 
 #include "pism/frontretreat/util/IcebergRemoverFEM.hh"
 
-#include "pism/util/fem/Element.hh"
-#include "pism/util/array/CellType.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/Interpolation1D.hh"
+#include "pism/util/Mask.hh"
+#include "pism/util/array/CellType.hh"
+#include "pism/util/fem/Element.hh"
 #include "pism/util/fem/Quadrature.hh"
 
 namespace pism {
 namespace calving {
 
 IcebergRemoverFEM::IcebergRemoverFEM(std::shared_ptr<const Grid> grid)
-  : IcebergRemover(grid),
-    m_mask(grid, "temporary_mask") {
+    : IcebergRemover(grid), m_mask(grid, "temporary_mask") {
   m_mask.set_interpolation_type(NEAREST);
 }
 
@@ -64,12 +63,9 @@ IcebergRemoverFEM::IcebergRemoverFEM(std::shared_ptr<const Grid> grid)
  * 4. Now loop over all nodes and remove nodes with positive mask values.
  *
  */
-void IcebergRemoverFEM::update_impl(const array::Scalar &bc_mask,
-                                    array::CellType1 &cell_type,
+void IcebergRemoverFEM::update_impl(const array::Scalar &bc_mask, array::CellType1 &cell_type,
                                     array::Scalar &ice_thickness) {
-  const int
-    mask_grounded_ice = 1,
-    mask_floating_ice = 2;
+  const int mask_grounded_ice = 1, mask_floating_ice = 2;
 
   int bc_mask_nodal[fem::q1::n_chi];
   int cell_type_nodal[fem::q1::n_chi];
@@ -77,7 +73,7 @@ void IcebergRemoverFEM::update_impl(const array::Scalar &bc_mask,
   assert(bc_mask.stencil_width() >= 1);
   assert(cell_type.stencil_width() >= 1);
 
-  array::AccessScope list{&bc_mask, &cell_type, &m_iceberg_mask};
+  array::AccessScope list{ &bc_mask, &cell_type, &m_iceberg_mask };
 
   fem::Q1Element2 element(*m_grid, fem::Q1Quadrature1());
 
@@ -125,7 +121,7 @@ void IcebergRemoverFEM::update_impl(const array::Scalar &bc_mask,
   {
     DMDALocalInfo info;
     {
-      auto da = m_grid->get_dm(1, 0);  // dof = 1, stencil_width = 0
+      auto da             = m_grid->get_dm(1, 0); // dof = 1, stencil_width = 0
       PetscErrorCode ierr = DMDAGetLocalInfo(*da, &info);
       if (ierr != 0) {
         throw std::runtime_error("Failed to get DMDA info");
@@ -136,8 +132,8 @@ void IcebergRemoverFEM::update_impl(const array::Scalar &bc_mask,
     list.add(m_mask);
     double **M = m_mask.array();
 
-    double mask_iceberg[] = {1.0, 1.0, 1.0, 1.0};
-    double mask_grounded[] = {-1.0, -1.0, -1.0, -1.0};
+    double mask_iceberg[]  = { 1.0, 1.0, 1.0, 1.0 };
+    double mask_grounded[] = { -1.0, -1.0, -1.0, -1.0 };
 
     // loop over all the elements that have at least one owned node
     for (int j = info.gys; j < info.gys + info.gym - 1; j++) {
@@ -180,8 +176,8 @@ void IcebergRemoverFEM::update_impl(const array::Scalar &bc_mask,
       const int i = p.i(), j = p.j();
 
       if (m_mask(i, j) > 0) {
-        ice_thickness(i,j) = 0.0;
-        cell_type(i,j)          = MASK_ICE_FREE_OCEAN;
+        ice_thickness(i, j) = 0.0;
+        cell_type(i, j)     = MASK_ICE_FREE_OCEAN;
       }
     }
   }

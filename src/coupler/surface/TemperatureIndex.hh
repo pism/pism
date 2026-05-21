@@ -38,14 +38,15 @@ namespace surface {
 */
 class TemperatureIndex : public SurfaceModel {
 public:
-  TemperatureIndex(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere::AtmosphereModel> input);
+  TemperatureIndex(std::shared_ptr<const Grid> g,
+                   std::shared_ptr<atmosphere::AtmosphereModel> input);
   virtual ~TemperatureIndex() = default;
 
   // diagnostics (for the last time step)
-  const array::Scalar& firn_depth() const;
-  const array::Scalar& snow_depth() const;
+  const array::Scalar &firn_depth() const;
+  const array::Scalar &snow_depth() const;
   // these represent totals (not rates) over the time step
-  const array::Scalar& air_temp_sd() const;
+  const array::Scalar &air_temp_sd() const;
 
 protected:
   virtual void init_impl(const Geometry &geometry);
@@ -57,14 +58,15 @@ protected:
 
   virtual DiagnosticList spatial_diagnostics_impl() const;
 
-  virtual const array::Scalar& mass_flux_impl() const;
-  virtual const array::Scalar& temperature_impl() const;
-  
-  virtual const array::Scalar& accumulation_impl() const;
-  virtual const array::Scalar& melt_impl() const;
-  virtual const array::Scalar& runoff_impl() const;
+  virtual const array::Scalar &mass_flux_impl() const;
+  virtual const array::Scalar &temperature_impl() const;
+
+  virtual const array::Scalar &accumulation_impl() const;
+  virtual const array::Scalar &melt_impl() const;
+  virtual const array::Scalar &runoff_impl() const;
 
   double compute_next_balance_year_start(double time);
+
 protected:
   //! mass balance scheme to use
 

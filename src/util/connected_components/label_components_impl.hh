@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "pism/util/array/Scalar.hh"
 #include "connected_components_impl.hh"
+#include "pism/util/array/Scalar.hh"
 #include <map>
 
 namespace pism {

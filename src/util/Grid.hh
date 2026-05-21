@@ -22,15 +22,15 @@
 #include "VariableMetadata.hh"
 #include "io/File.hh"
 #include <cassert>
+#include <map>
 #include <memory> // shared_ptr
 #include <string>
 #include <vector>
-#include <map>
 
-#include <mpi.h>                // MPI_Comm
+#include <mpi.h> // MPI_Comm
 
-#include "pism/util/Interpolation1D.hh"
 #include "pism/util/GridInfo.hh"
+#include "pism/util/Interpolation1D.hh"
 
 namespace pism {
 
@@ -52,7 +52,7 @@ class System;
 
 namespace grid {
 
-typedef enum {UNKNOWN = 0, EQUAL, QUADRATIC} VerticalSpacing;
+typedef enum { UNKNOWN = 0, EQUAL, QUADRATIC } VerticalSpacing;
 
 VerticalSpacing string_to_spacing(const std::string &keyword);
 std::string spacing_to_string(VerticalSpacing s);
@@ -80,6 +80,7 @@ public:
 
   //! z coordinates: input grids may be 3-dimensional
   std::vector<double> z;
+
 private:
   void reset();
 };
@@ -109,7 +110,8 @@ public:
   Parameters(const Config &config, std::shared_ptr<units::System> unit_system, const File &file,
              const std::string &variable_name, Registration r);
 
-  static Parameters FromGridDefinition(const Config &config, std::shared_ptr<units::System> unit_system, const File &file,
+  static Parameters FromGridDefinition(const Config &config,
+                                       std::shared_ptr<units::System> unit_system, const File &file,
                                        const std::string &variable_name, Registration registration);
 
   //! Process -Lx, -Ly, -x0, -y0; set Lx, Ly, x0, y0.
@@ -149,6 +151,7 @@ public:
 
   //! Name of the variable used to initialize the instance (empty if not used)
   std::string variable_name;
+
 private:
   Parameters() = delete;
 };
@@ -162,23 +165,23 @@ public:
   }
 
   GridPoint(int i_, int j_, int i_first, int i_last) {
-    m_i = i_;
-    m_j = j_;
+    m_i       = i_;
+    m_j       = j_;
     m_i_first = i_first;
-    m_i_last = i_last;
+    m_i_last  = i_last;
   }
 
   inline GridPoint &operator++() {
     m_i += 1;
     if (m_i > m_i_last) {
-      m_i = m_i_first;        // wrap around
+      m_i = m_i_first; // wrap around
       m_j += 1;
     }
 
     return *this;
   }
 
-  inline GridPoint& operator*() {
+  inline GridPoint &operator*() {
     return *this;
   }
 
@@ -220,6 +223,7 @@ public:
   GridPoint &end() {
     return m_end;
   }
+
 private:
   GridPoint m_begin;
   GridPoint m_end;
@@ -294,8 +298,7 @@ public:
                                        double x0, double y0, unsigned int Mx, unsigned int My,
                                        grid::Registration r, grid::Periodicity p);
 
-  static std::shared_ptr<Grid> FromFile(std::shared_ptr<const Context> ctx,
-                                        const File &file,
+  static std::shared_ptr<Grid> FromFile(std::shared_ptr<const Context> ctx, const File &file,
                                         const std::vector<std::string> &var_names,
                                         grid::Registration r);
 
@@ -312,9 +315,8 @@ public:
 
   void report_parameters() const;
 
-  void compute_point_neighbors(double X, double Y,
-                               int &i_left, int &i_right,
-                               int &j_bottom, int &j_top) const;
+  void compute_point_neighbors(double X, double Y, int &i_left, int &i_right, int &j_bottom,
+                               int &j_top) const;
   std::vector<int> point_neighbors(double X, double Y) const;
   std::vector<double> interpolation_weights(double x, double y) const;
 
@@ -326,20 +328,20 @@ public:
 
   std::shared_ptr<const Context> ctx() const;
 
-  const grid::DistributedGridInfo& info() const;
+  const grid::DistributedGridInfo &info() const;
 
   int xs() const;
   int xm() const;
   int ys() const;
   int ym() const;
 
-  const std::vector<double>& x() const;
+  const std::vector<double> &x() const;
   double x(size_t i) const;
 
-  const std::vector<double>& y() const;
+  const std::vector<double> &y() const;
   double y(size_t i) const;
 
-  const std::vector<double>& z() const;
+  const std::vector<double> &z() const;
   double z(size_t i) const;
 
   double dx() const;
@@ -356,7 +358,7 @@ public:
   double x0() const;
   double y0() const;
 
-  const VariableMetadata& get_mapping_info() const;
+  const VariableMetadata &get_mapping_info() const;
   void set_mapping_info(const VariableMetadata &info);
 
   double dz_min() const;
@@ -370,15 +372,15 @@ public:
 
   const MPI_Comm com;
 
-  Vars& variables();
-  const Vars& variables() const;
+  Vars &variables();
+  const Vars &variables() const;
 
   GridPoints points() const {
-    return {*this, 0};
+    return { *this, 0 };
   }
 
   GridPoints points_with_ghosts(unsigned int stencil_width) const {
-    return {*this, stencil_width};
+    return { *this, stencil_width };
   }
 
 private:
@@ -387,7 +389,7 @@ private:
 
   // Hide copy constructor / assignment operator.
   Grid(const Grid &);
-  Grid & operator=(const Grid &);
+  Grid &operator=(const Grid &);
 };
 
 namespace grid {
@@ -400,12 +402,11 @@ double radius(const Grid &grid, int i, int j);
 
 //! @brief Check if a point `(i,j)` is in the strip of `stripwidth` meters around the edge
 //! of the computational domain.
-inline bool in_null_strip(const Grid& grid, int i, int j, double strip_width) {
-  return (strip_width >  0.0                               &&
-          (grid.x(i)  <= grid.x(0) + strip_width           ||
-           grid.x(i)  >= grid.x(grid.Mx()-1) - strip_width ||
-           grid.y(j)  <= grid.y(0) + strip_width           ||
-           grid.y(j)  >= grid.y(grid.My()-1) - strip_width));
+inline bool in_null_strip(const Grid &grid, int i, int j, double strip_width) {
+  return (strip_width > 0.0 && (grid.x(i) <= grid.x(0) + strip_width ||
+                                grid.x(i) >= grid.x(grid.Mx() - 1) - strip_width ||
+                                grid.y(j) <= grid.y(0) + strip_width ||
+                                grid.y(j) >= grid.y(grid.My() - 1) - strip_width));
 }
 
 /*!
@@ -415,8 +416,7 @@ inline bool domain_edge(const Grid &grid, int i, int j) {
   return ((j == 0) or (j == (int)grid.My() - 1) or (i == 0) or (i == (int)grid.Mx() - 1));
 }
 
-std::array<unsigned, 2> nprocs(unsigned int size, unsigned int Mx,
-                                       unsigned int My);
+std::array<unsigned, 2> nprocs(unsigned int size, unsigned int Mx, unsigned int My);
 
 std::vector<unsigned int> ownership_ranges(unsigned int Mx, unsigned int Nx);
 
@@ -426,4 +426,4 @@ std::vector<double> subset(unsigned int xs, unsigned int xm, const std::vector<d
 
 } // end of namespace pism
 
-#endif  /* PISM_GRID_H */
+#endif /* PISM_GRID_H */

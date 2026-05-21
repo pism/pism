@@ -20,37 +20,32 @@
 #include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
 
-#include "pism/util/error_handling.hh"
 #include "pism/util/MaxTimestep.hh"
+#include "pism/util/error_handling.hh"
 
-#include "pism/util/ScalarForcing.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/ScalarForcing.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace atmosphere {
 
-CosineYearlyCycle::CosineYearlyCycle(std::shared_ptr<const Grid> grid)
-  : YearlyCycle(grid) {
+CosineYearlyCycle::CosineYearlyCycle(std::shared_ptr<const Grid> grid) : YearlyCycle(grid) {
 
   auto scaling_file = m_config->get_string("atmosphere.yearly_cycle.scaling.file");
 
   if (not scaling_file.empty()) {
-    m_A.reset(new ScalarForcing(*grid->ctx(),
-                                "atmosphere.yearly_cycle.scaling",
-                                "amplitude_scaling",
-                                "1", "1",
-                                "temperature amplitude scaling"));
+    m_A.reset(new ScalarForcing(*grid->ctx(), "atmosphere.yearly_cycle.scaling",
+                                "amplitude_scaling", "1", "1", "temperature amplitude scaling"));
   }
 }
 
 void CosineYearlyCycle::init_impl(const Geometry &geometry) {
-  (void) geometry;
+  (void)geometry;
 
-  m_log->message(2,
-                 "* Initializing the 'cosine yearly cycle' atmosphere model...\n");
+  m_log->message(2, "* Initializing the 'cosine yearly cycle' atmosphere model...\n");
 
-  auto input_file   = m_config->get_string("atmosphere.yearly_cycle.file");
+  auto input_file = m_config->get_string("atmosphere.yearly_cycle.file");
 
   if (input_file.empty()) {
     throw RuntimeError(PISM_ERROR_LOCATION,
@@ -60,7 +55,8 @@ void CosineYearlyCycle::init_impl(const Geometry &geometry) {
 
   m_log->message(2,
                  "  Reading mean annual air temperature, mean July air temperature, and\n"
-                 "  precipitation fields from '%s'...\n", input_file.c_str());
+                 "  precipitation fields from '%s'...\n",
+                 input_file.c_str());
 
   m_air_temp_mean_annual.regrid(input_file, io::Default::Nil());
   m_air_temp_mean_summer.regrid(input_file, io::Default::Nil());
@@ -68,14 +64,14 @@ void CosineYearlyCycle::init_impl(const Geometry &geometry) {
 }
 
 MaxTimestep CosineYearlyCycle::max_timestep_impl(double t) const {
-  (void) t;
+  (void)t;
   return MaxTimestep("atmosphere cosine_yearly_cycle");
 }
 
 void CosineYearlyCycle::update_impl(const Geometry &geometry, double t, double dt) {
-  (void) geometry;
-  (void) t;
-  (void) dt;
+  (void)geometry;
+  (void)t;
+  (void)dt;
   // an implementation is necessary because the base class does not define this
 }
 

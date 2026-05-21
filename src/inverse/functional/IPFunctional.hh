@@ -19,10 +19,10 @@
 #ifndef PISM_IPFUNCTIONAL_H
 #define PISM_IPFUNCTIONAL_H
 
-#include "pism/util/fem/Element.hh"
-#include "pism/util/fem/Quadrature.hh"
-#include "pism/util/fem/ElementIterator.hh"
 #include "pism/util/array/Vector.hh"
+#include "pism/util/fem/Element.hh"
+#include "pism/util/fem/ElementIterator.hh"
+#include "pism/util/fem/Quadrature.hh"
 
 namespace pism {
 
@@ -40,15 +40,12 @@ namespace inverse {
   surface velocities. Subclasses of IPFunctional define such maps,
   and permit computation of their gradients.
 */
-template<class IMVecType>
+template <class IMVecType>
 class IPFunctional {
 
 public:
   IPFunctional(std::shared_ptr<const Grid> grid)
-    : m_grid(grid),
-      m_element_index(*m_grid),
-      m_element(*m_grid, fem::Q1Quadrature4())
-  {
+      : m_grid(grid), m_element_index(*m_grid), m_element(*m_grid, fem::Q1Quadrature4()) {
     // empty
   }
 
@@ -74,13 +71,12 @@ protected:
   std::shared_ptr<const Grid> m_grid;
 
   fem::ElementIterator m_element_index;
-  fem::Q1Element2       m_element;
+  fem::Q1Element2 m_element;
 
 private:
   // Hide copy/assignment operations
   IPFunctional(IPFunctional const &);
-  IPFunctional & operator=(IPFunctional const &);
-
+  IPFunctional &operator=(IPFunctional const &);
 };
 
 //! Abstract base class for IPFunctionals arising from an inner product.
@@ -93,7 +89,7 @@ private:
   minimization algorithms only apply to such functionals, which should subclass
   from IPInnerProductFunctional.
 */
-template<class IMVecType>
+template <class IMVecType>
 class IPInnerProductFunctional : public IPFunctional<IMVecType> {
 
 public:
@@ -124,7 +120,6 @@ public:
   /* If \f$\{x_i\}\f$ is a basis for the vector space IMVecType,
     \f$Q_{ij}= Q(x_i, x_j)\f$. */
   // virtual void assemble_form(Mat Q) = 0;
-
 };
 
 //! Computes finite difference approximations of a IPFunctional<array::Scalar> gradient.

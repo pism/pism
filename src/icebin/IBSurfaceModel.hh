@@ -34,12 +34,12 @@ protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double my_t, double my_dt);
 
-  const array::Scalar& accumulation_impl() const;
-  const array::Scalar& liquid_water_fraction_impl() const;
-  const array::Scalar& mass_flux_impl() const;
-  const array::Scalar& melt_impl() const;
-  const array::Scalar& runoff_impl() const;
-  const array::Scalar& temperature_impl() const;
+  const array::Scalar &accumulation_impl() const;
+  const array::Scalar &liquid_water_fraction_impl() const;
+  const array::Scalar &mass_flux_impl() const;
+  const array::Scalar &melt_impl() const;
+  const array::Scalar &runoff_impl() const;
+  const array::Scalar &temperature_impl() const;
 
   std::set<VariableMetadata> state_impl() const;
   void write_state_impl(const OutputFile &output) const;

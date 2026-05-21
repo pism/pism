@@ -23,24 +23,25 @@ namespace pism {
 namespace ocean {
 
 // "modifier" constructor
-CompleteOceanModel::CompleteOceanModel(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> input)
-  : OceanModel(g, input) {
+CompleteOceanModel::CompleteOceanModel(std::shared_ptr<const Grid> g,
+                                       std::shared_ptr<OceanModel> input)
+    : OceanModel(g, input) {
 
   m_shelf_base_temperature = allocate_shelf_base_temperature(g);
-  m_shelf_base_mass_flux = allocate_shelf_base_mass_flux(g);
+  m_shelf_base_mass_flux   = allocate_shelf_base_mass_flux(g);
 }
 
 // "model" constructor
 CompleteOceanModel::CompleteOceanModel(std::shared_ptr<const Grid> g)
-  : CompleteOceanModel(g, std::shared_ptr<OceanModel>()) {
+    : CompleteOceanModel(g, std::shared_ptr<OceanModel>()) {
   // empty
 }
 
-const array::Scalar& CompleteOceanModel::shelf_base_temperature_impl() const {
+const array::Scalar &CompleteOceanModel::shelf_base_temperature_impl() const {
   return *m_shelf_base_temperature;
 }
 
-const array::Scalar& CompleteOceanModel::shelf_base_mass_flux_impl() const {
+const array::Scalar &CompleteOceanModel::shelf_base_mass_flux_impl() const {
   return *m_shelf_base_mass_flux;
 }
 

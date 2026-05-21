@@ -1,8 +1,8 @@
 #ifndef _PO_EXAMPLE_H_
 #define _PO_EXAMPLE_H_
 
-#include "coupler/PISMOcean.hh"
 #include "base/util/iceModelVec2T.hh"
+#include "coupler/PISMOcean.hh"
 #include <memory>
 
 namespace pism {
@@ -12,6 +12,7 @@ class Example : public OceanModel {
 public:
   Example(std::shared_ptr<const Grid> grid);
   virtual ~Example();
+
 protected:
   virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void update_impl(double my_t, double my_dt);
@@ -19,6 +20,7 @@ protected:
   virtual void sea_level_elevation_impl(double &result) const;
   virtual void shelf_base_temperature_impl(array::Scalar &result) const;
   virtual void shelf_base_mass_flux_impl(array::Scalar &result) const;
+
 protected:
   array::Forcing m_shelf_melt_rate;
 };

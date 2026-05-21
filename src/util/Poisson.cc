@@ -18,20 +18,20 @@
  */
 
 #include "pism/util/Poisson.hh"
-#include "pism/util/error_handling.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/Interpolation1D.hh"
+#include "pism/util/error_handling.hh"
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Vec.hh"
-#include "pism/util/Interpolation1D.hh"
 
 namespace pism {
 
 Poisson::Poisson(std::shared_ptr<const Grid> grid)
-  : m_grid(grid),
-    m_log(grid->ctx()->log()),
-    m_b(grid, "poisson_rhs"),
-    m_x(grid, "poisson_x"),
-    m_mask(grid, "poisson_mask") {
+    : m_grid(grid),
+      m_log(grid->ctx()->log()),
+      m_b(grid, "poisson_rhs"),
+      m_x(grid, "poisson_x"),
+      m_mask(grid, "poisson_mask") {
 
   m_da = m_x.dm();
   m_mask.set_interpolation_type(NEAREST);
@@ -64,7 +64,7 @@ Poisson::Poisson(std::shared_ptr<const Grid> grid)
  *
  * Set the mask to 2 to use zero Neumann BC.
  */
-int Poisson::solve(const array::Scalar& mask, const array::Scalar& bc, double rhs,
+int Poisson::solve(const array::Scalar &mask, const array::Scalar &bc, double rhs,
                    bool reuse_matrix) {
 
   PetscErrorCode ierr;
@@ -95,7 +95,7 @@ int Poisson::solve(const array::Scalar& mask, const array::Scalar& bc, double rh
   PISM_CHK(ierr, "KSPSolve");
 
   // Check if diverged
-  KSPConvergedReason  reason;
+  KSPConvergedReason reason;
   ierr = KSPGetConvergedReason(m_KSP, &reason);
   PISM_CHK(ierr, "KSPGetConvergedReason");
 
@@ -112,13 +112,13 @@ int Poisson::solve(const array::Scalar& mask, const array::Scalar& bc, double rh
 
   // report on KSP success
   PetscInt ksp_iterations = 0;
-  ierr = KSPGetIterationNumber(m_KSP, &ksp_iterations);
+  ierr                    = KSPGetIterationNumber(m_KSP, &ksp_iterations);
   PISM_CHK(ierr, "KSPGetIterationNumber");
 
   return ksp_iterations;
 }
 
-const array::Scalar& Poisson::solution() const {
+const array::Scalar &Poisson::solution() const {
   return m_x;
 }
 
@@ -159,21 +159,14 @@ const array::Scalar& Poisson::solution() const {
 void Poisson::assemble_matrix(const array::Scalar1 &mask, Mat A) {
   PetscErrorCode ierr = 0;
 
-  const double
-    dx = m_grid->dx(),
-    dy = m_grid->dy(),
-    C_x = 1.0 / (dx * dx),
-    C_y = 1.0 / (dy * dy);
+  const double dx = m_grid->dx(), dy = m_grid->dy(), C_x = 1.0 / (dx * dx), C_y = 1.0 / (dy * dy);
 
-  const int
-    nrow = 1,
-    ncol = 5,
-    Mx   = m_grid->Mx(),
-    My   = m_grid->My();
+  const int nrow = 1, ncol = 5, Mx = m_grid->Mx(), My = m_grid->My();
 
-  ierr = MatZeroEntries(A); PISM_CHK(ierr, "MatZeroEntries");
+  ierr = MatZeroEntries(A);
+  PISM_CHK(ierr, "MatZeroEntries");
 
-  array::AccessScope list{&mask};
+  array::AccessScope list{ &mask };
 
   /* matrix assembly loop */
   ParallelSection loop(m_grid->com);
@@ -197,10 +190,10 @@ void Poisson::assemble_matrix(const array::Scalar1 &mask, Mat A) {
        */
 
       /* i indices */
-      const int I[] = {i, i - 1,  i,  i + 1, i};
+      const int I[] = { i, i - 1, i, i + 1, i };
 
       /* j indices */
-      const int J[] = {j + 1, j,  j,  j, j - 1};
+      const int J[] = { j + 1, j, j, j, j - 1 };
 
       row.i = i;
       row.j = j;
@@ -216,33 +209,26 @@ void Poisson::assemble_matrix(const array::Scalar1 &mask, Mat A) {
         // Regular location: use coefficients of the discretization of the Laplacian
 
         // Use zero Neumann BC if a neighbor is marked as a Neumann boundary
-        double
-          N = M.n == 2 ? 0.0 : 1.0,
-          E = M.e == 2 ? 0.0 : 1.0,
-          W = M.w == 2 ? 0.0 : 1.0,
-          S = M.s == 2 ? 0.0 : 1.0;
+        double N = M.n == 2 ? 0.0 : 1.0, E = M.e == 2 ? 0.0 : 1.0, W = M.w == 2 ? 0.0 : 1.0,
+               S = M.s == 2 ? 0.0 : 1.0;
 
         // Use zero Neumann BC at edges of the computational domain
         {
           N = j == My - 1 ? 0.0 : N;
           E = i == Mx - 1 ? 0.0 : E;
-          W = i == 0      ? 0.0 : W;
-          S = j == 0      ? 0.0 : S;
+          W = i == 0 ? 0.0 : W;
+          S = j == 0 ? 0.0 : S;
         }
 
         // discretization of the Laplacian
-        double L[ncol] = {- N * C_y,
-                          - W * C_x, (W + E) * C_x + (N + S) * C_y, - E * C_x,
-                          - S * C_y};
+        double L[ncol] = { -N * C_y, -W * C_x, (W + E) * C_x + (N + S) * C_y, -E * C_x, -S * C_y };
 
         ierr = MatSetValuesStencil(A, nrow, &row, ncol, col, L, INSERT_VALUES);
         PISM_CHK(ierr, "MatSetValuesStencil");
       } else {
         // Boundary or outside the domain: assemble trivial equations (1 on the diagonal,
         // 0 elsewhere)
-        double D[ncol] = {0.0,
-                          0.0, 1.0, 0.0,
-                          0.0};
+        double D[ncol] = { 0.0, 0.0, 1.0, 0.0, 0.0 };
 
         ierr = MatSetValuesStencil(A, nrow, &row, ncol, col, D, INSERT_VALUES);
         PISM_CHK(ierr, "MatSetValuesStencil");
@@ -254,21 +240,20 @@ void Poisson::assemble_matrix(const array::Scalar1 &mask, Mat A) {
   }
   loop.check();
 
-  ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY); PISM_CHK(ierr, "MatAssemblyBegin");
-  ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY); PISM_CHK(ierr, "MatAssemblyif");
+  ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+  PISM_CHK(ierr, "MatAssemblyBegin");
+  ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
+  PISM_CHK(ierr, "MatAssemblyif");
 
-#if (Pism_DEBUG==1)
+#if (Pism_DEBUG == 1)
   ierr = MatSetOption(A, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_TRUE);
   PISM_CHK(ierr, "MatSetOption");
 #endif
-
 }
 
-void Poisson::assemble_rhs(double rhs,
-                           const array::Scalar &mask,
-                           const array::Scalar &bc,
+void Poisson::assemble_rhs(double rhs, const array::Scalar &mask, const array::Scalar &bc,
                            array::Scalar &b) {
-  array::AccessScope list{&mask, &bc, &b};
+  array::AccessScope list{ &mask, &bc, &b };
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();

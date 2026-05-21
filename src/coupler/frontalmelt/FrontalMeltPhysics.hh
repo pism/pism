@@ -27,13 +27,11 @@ class FrontalMeltPhysics {
 public:
   FrontalMeltPhysics(const Config &config);
 
-  double frontal_melt_from_undercutting(double ice_thickness,
-                                        double discharge_flux,
+  double frontal_melt_from_undercutting(double ice_thickness, double discharge_flux,
                                         double potential_temperature) const;
 
-  double frontal_melt_from_ismip6(double ice_thickness,
-                                        double discharge_flux,
-                                        double potential_temperature) const;
+  double frontal_melt_from_ismip6(double ice_thickness, double discharge_flux,
+                                  double potential_temperature) const;
 
 private:
   double m_A, m_B, m_alpha, m_beta;

@@ -39,8 +39,7 @@ protected:
   double softness_from_temp(double T_pa) const;
 
   // ignores pressure and uses non-pressure-adjusted temperature
-  double flow_from_temp(double stress, double temp,
-                        double , double) const;
+  double flow_from_temp(double stress, double temp, double, double) const;
 };
 
 } // end of namespace rheology

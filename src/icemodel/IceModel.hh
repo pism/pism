@@ -34,24 +34,24 @@
 */
 
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
-#include <memory>
 
 // IceModel owns a bunch of fields, so we have to include this.
-#include "pism/util/array/Vector.hh"
-#include "pism/util/Config.hh"
-#include "pism/util/Context.hh"
-#include "pism/util/Logger.hh"
-#include "pism/util/Time.hh"
-#include "pism/util/Diagnostic.hh"
-#include "pism/util/MaxTimestep.hh"
+#include "pism/basalstrength/YieldStress.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/geometry/GeometryEvolution.hh"
 #include "pism/stressbalance/StressBalance.hh"
-#include "pism/basalstrength/YieldStress.hh"
+#include "pism/util/Config.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/Diagnostic.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/MaxTimestep.hh"
 #include "pism/util/ScalarForcing.hh" // for use with std::unique_ptr
+#include "pism/util/Time.hh"
+#include "pism/util/array/Vector.hh"
 
 namespace pism {
 
@@ -61,7 +61,7 @@ class PyOceanModel;
 namespace sea_level {
 class SeaLevel;
 }
-}
+} // namespace ocean
 
 namespace surface {
 class SurfaceModel;
@@ -78,7 +78,7 @@ class FloatKill;
 class HayhurstCalving;
 class CalvingAtThickness;
 class IcebergRemover;
-}
+} // namespace calving
 
 class FractureDensity;
 
@@ -87,10 +87,10 @@ class BedThermalUnit;
 class Inputs;
 class EnergyModelStats;
 class EnergyModel;
-}
+} // namespace energy
 
 namespace frontalmelt {
-  class FrontalMelt;
+class FrontalMelt;
 }
 
 namespace bed {
@@ -100,7 +100,7 @@ class BedDef;
 namespace array {
 class Forcing;
 class CellType;
-}
+} // namespace array
 
 class Grid;
 class AgeModel;
@@ -112,9 +112,9 @@ class ScalarForcing;
 
 class OutputWriter;
 
-enum IceModelTerminationReason {PISM_DONE, PISM_CHEKPOINT, PISM_SIGNAL};
+enum IceModelTerminationReason { PISM_DONE, PISM_CHEKPOINT, PISM_SIGNAL };
 
-enum DiagnosticReport {DIAG_NONE, DIAG_ALL, DIAG_SPATIAL, DIAG_SCALAR, DIAG_JSON};
+enum DiagnosticReport { DIAG_NONE, DIAG_ALL, DIAG_SPATIAL, DIAG_SCALAR, DIAG_JSON };
 
 //! The base class for PISM. Contains all essential variables, parameters, and flags for modelling
 //! an ice sheet.
@@ -144,20 +144,20 @@ public:
   const array::Scalar &frontal_melt() const;
   const array::Scalar &forced_retreat() const;
 
-  const stressbalance::StressBalance* stress_balance() const;
-  const ocean::OceanModel* ocean_model() const;
-  const energy::BedThermalUnit* bedrock_thermal_model() const;
-  const energy::EnergyModel* energy_balance_model() const;
-  const YieldStress* basal_yield_stress_model() const;
-  const bed::BedDef* bed_deformation_model() const;
+  const stressbalance::StressBalance *stress_balance() const;
+  const ocean::OceanModel *ocean_model() const;
+  const energy::BedThermalUnit *bedrock_thermal_model() const;
+  const energy::EnergyModel *energy_balance_model() const;
+  const YieldStress *basal_yield_stress_model() const;
+  const bed::BedDef *bed_deformation_model() const;
 
   /*!
    * Replace the ocean model with an implementation in Python.
    */
   void set_python_ocean_model(std::shared_ptr<ocean::PyOceanModel> model);
 
-  const Geometry& geometry() const;
-  const GeometryEvolution& geometry_evolution() const;
+  const Geometry &geometry() const;
+  const GeometryEvolution &geometry_evolution() const;
 
   double dt() const;
 
@@ -266,8 +266,7 @@ protected:
 
   void write_run_stats(const OutputFile &file) const;
 
-  void write_diagnostics(const OutputFile &file,
-                         const std::set<std::string> &variable_names) const;
+  void write_diagnostics(const OutputFile &file, const std::set<std::string> &variable_names) const;
 
   std::string save_state_on_error(const std::string &suffix,
                                   const std::set<std::string> &additional_variables);
@@ -294,7 +293,7 @@ protected:
   std::string m_output_history;
 
   //! the list of sub-models, for writing model states and obtaining diagnostics
-  std::map<std::string,const Component*> m_submodels;
+  std::map<std::string, const Component *> m_submodels;
 
   std::unique_ptr<hydrology::Hydrology> m_subglacial_hydrology;
   std::shared_ptr<YieldStress> m_basal_yield_stress_model;
@@ -307,13 +306,13 @@ protected:
   std::shared_ptr<AgeModel> m_age_model;
   std::shared_ptr<Isochrones> m_isochrones;
 
-  std::shared_ptr<calving::IcebergRemover>     m_iceberg_remover;
-  std::shared_ptr<calving::FloatKill>          m_float_kill_calving;
+  std::shared_ptr<calving::IcebergRemover> m_iceberg_remover;
+  std::shared_ptr<calving::FloatKill> m_float_kill_calving;
   std::shared_ptr<calving::CalvingAtThickness> m_thickness_threshold_calving;
-  std::shared_ptr<calving::EigenCalving>       m_eigen_calving;
-  std::shared_ptr<calving::HayhurstCalving>    m_hayhurst_calving;
-  std::shared_ptr<calving::vonMisesCalving>    m_vonmises_calving;
-  std::shared_ptr<PrescribedRetreat>           m_prescribed_retreat;
+  std::shared_ptr<calving::EigenCalving> m_eigen_calving;
+  std::shared_ptr<calving::HayhurstCalving> m_hayhurst_calving;
+  std::shared_ptr<calving::vonMisesCalving> m_vonmises_calving;
+  std::shared_ptr<PrescribedRetreat> m_prescribed_retreat;
 
   // scalar time-dependent scaling for retreat rates coming from eigen calving, von Mises
   // calving, or Hayhurst calving
@@ -321,9 +320,9 @@ protected:
 
   std::shared_ptr<FrontRetreat> m_front_retreat;
 
-  std::shared_ptr<surface::SurfaceModel>      m_surface;
-  std::shared_ptr<ocean::OceanModel>          m_ocean;
-  std::shared_ptr<frontalmelt::FrontalMelt>   m_frontal_melt;
+  std::shared_ptr<surface::SurfaceModel> m_surface;
+  std::shared_ptr<ocean::OceanModel> m_ocean;
+  std::shared_ptr<frontalmelt::FrontalMelt> m_frontal_melt;
   std::shared_ptr<ocean::sea_level::SeaLevel> m_sea_level;
 
   std::shared_ptr<bed::BedDef> m_beddef;
@@ -391,7 +390,7 @@ protected:
                                        const array::Scalar &grounded_basal_melt_rate,
                                        array::Scalar &result);
 
-  enum ConsistencyFlag {REMOVE_ICEBERGS, DONT_REMOVE_ICEBERGS};
+  enum ConsistencyFlag { REMOVE_ICEBERGS, DONT_REMOVE_ICEBERGS };
   void enforce_consistency_of_geometry(ConsistencyFlag flag);
 
   /*!
@@ -405,12 +404,9 @@ protected:
 
   virtual void front_retreat_step(double t, double dt);
 
-  void compute_geometry_change(const array::Scalar &thickness,
-                               const array::Scalar &Href,
-                               const array::Scalar &thickness_old,
-                               const array::Scalar &Href_old,
-                               bool add_values,
-                               array::Scalar &output);
+  void compute_geometry_change(const array::Scalar &thickness, const array::Scalar &Href,
+                               const array::Scalar &thickness_old, const array::Scalar &Href_old,
+                               bool add_values, array::Scalar &output);
 
   // see iMIO.cc
   virtual void regrid();
@@ -422,10 +418,9 @@ protected:
   virtual double compute_temperate_base_fraction(double ice_area);
   virtual double compute_original_ice_fraction(double ice_volume);
   virtual void print_summary(bool tempAndAge, double dt);
-  virtual void print_summary_line(bool printPrototype, bool tempAndAge,
-                                  double delta_t,
-                                  double volume, double area,
-                                  double meltfrac, double max_diffusivity);
+  virtual void print_summary_line(bool printPrototype, bool tempAndAge, double delta_t,
+                                  double volume, double area, double meltfrac,
+                                  double max_diffusivity);
 
 
   // see iMutil.cc
@@ -434,7 +429,7 @@ protected:
 
   // working space (a convenience)
   static const int m_n_work2d = 4;
-  mutable std::vector<std::shared_ptr<array::Scalar2>> m_work2d;
+  mutable std::vector<std::shared_ptr<array::Scalar2> > m_work2d;
 
   std::shared_ptr<stressbalance::StressBalance> m_stress_balance;
 
@@ -456,11 +451,11 @@ protected:
   /*!
    * The set of variables that the "state" of IceModel consists of.
    */
-  std::set<array::Array*> m_model_state;
+  std::set<array::Array *> m_model_state;
   //! Available spatially-variable diagnostics
-  std::map<std::string,Diagnostic::Ptr> m_available_spatial_diagnostics;
+  std::map<std::string, Diagnostic::Ptr> m_available_spatial_diagnostics;
   //! Available scalar diagnostics
-  std::map<std::string,TSDiagnostic::Ptr> m_available_scalar_diagnostics;
+  std::map<std::string, TSDiagnostic::Ptr> m_available_scalar_diagnostics;
 
   // This is related to the snapshot saving feature
   std::string m_snapshots_filename;
@@ -480,7 +475,7 @@ protected:
   //! file to write scalar time-series to
   std::shared_ptr<OutputFile> m_scalar_file;
   //! requested times for scalar time-series
-  std::shared_ptr<std::vector<double>> m_scalar_times;
+  std::shared_ptr<std::vector<double> > m_scalar_times;
   std::set<std::string> m_scalar_vars;
   void init_scalar_diagnostics();
   void scalar_diagnostics_flush_buffers();
@@ -517,20 +512,16 @@ protected:
   // diagnostic viewers; see iMviewers.cc
   virtual void update_viewers();
   virtual void view_field(const array::Array *field);
-  std::map<std::string,
-           std::vector<std::shared_ptr<petsc::Viewer> > > m_viewers;
+  std::map<std::string, std::vector<std::shared_ptr<petsc::Viewer> > > m_viewers;
 
 private:
-  double m_start_time;    // this is used in the wall-clock-time checkpoint code
+  double m_start_time; // this is used in the wall-clock-time checkpoint code
 };
 
-MaxTimestep reporting_max_timestep(const std::vector<double> &times,
-                                   double t,
-                                   double eps,
+MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t, double eps,
                                    const std::string &description);
 
-void bedrock_surface_temperature(const array::Scalar &sea_level,
-                                 const array::CellType &cell_type,
+void bedrock_surface_temperature(const array::Scalar &sea_level, const array::CellType &cell_type,
                                  const array::Scalar &bed_topography,
                                  const array::Scalar &ice_thickness,
                                  const array::Scalar &basal_enthalpy,

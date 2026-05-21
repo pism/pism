@@ -24,22 +24,22 @@
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/stressbalance/ssa/SSAFD.hh"
 #include "pism/util/Grid.hh"
+#include "pism/util/Logger.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace stressbalance {
 
-SSAFD::KSPFailure::KSPFailure(const char* reason)
-  : RuntimeError(ErrorLocation(), std::string("SSAFD KSP (linear solver) failed: ") + reason){
+SSAFD::KSPFailure::KSPFailure(const char *reason)
+    : RuntimeError(ErrorLocation(), std::string("SSAFD KSP (linear solver) failed: ") + reason) {
   // empty
 }
 
 SSAFD::PicardFailure::PicardFailure(const std::string &message)
-  : RuntimeError(ErrorLocation(), "SSAFD Picard iterations failed: " + message) {
+    : RuntimeError(ErrorLocation(), "SSAFD Picard iterations failed: " + message) {
   // empty
 }
 
@@ -195,7 +195,8 @@ void SSAFD::init_impl() {
 }
 
 void SSAFD::assemble_matrix(const Inputs &inputs, const array::Vector1 &velocity,
-                            const array::Staggered1 &nuH, const array::CellType1 &cell_type, Mat A) {
+                            const array::Staggered1 &nuH, const array::CellType1 &cell_type,
+                            Mat A) {
   array::AccessScope list{ &velocity };
   fd_operator(*inputs.geometry, inputs.bc_mask, m_bc_scaling, *inputs.basal_yield_stress,
               m_basal_sliding_law, velocity.array(), nuH, cell_type, &A, nullptr);
@@ -605,24 +606,22 @@ void SSAFD::update_nuH_viewers(const array::Staggered &nuH) {
   }
 
   array::Scalar tmp(m_grid, "nuH");
-  tmp.metadata(0)
-      .long_name("log10 of (viscosity * thickness)")
-      .units("Pa s m");
+  tmp.metadata(0).long_name("log10 of (viscosity * thickness)").units("Pa s m");
 
-  array::AccessScope list{&nuH, &tmp};
+  array::AccessScope list{ &nuH, &tmp };
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
-    double avg_nuH = 0.5 * (nuH(i,j,0) + nuH(i,j,1));
+    double avg_nuH = 0.5 * (nuH(i, j, 0) + nuH(i, j, 1));
     if (avg_nuH > 1.0e14) {
-      tmp(i,j) = log10(avg_nuH);
+      tmp(i, j) = log10(avg_nuH);
     } else {
-      tmp(i,j) = 14.0;
+      tmp(i, j) = 14.0;
     }
   }
 
-  tmp.view({m_nuh_viewer});
+  tmp.view({ m_nuh_viewer });
 }
 
 void SSAFD::write_system_petsc(const std::string &namepart) {
@@ -630,12 +629,10 @@ void SSAFD::write_system_petsc(const std::string &namepart) {
 
   // write a file with a fixed filename; avoid zillions of files
   std::string filename = "SSAFD_" + namepart + ".petsc";
-  m_log->message(1,
-             "  writing linear system to PETSc binary file %s ...\n", filename.c_str());
+  m_log->message(1, "  writing linear system to PETSc binary file %s ...\n", filename.c_str());
 
-  petsc::Viewer viewer;       // will be destroyed automatically
-  ierr = PetscViewerBinaryOpen(m_grid->com, filename.c_str(), FILE_MODE_WRITE,
-                               viewer.rawptr());
+  petsc::Viewer viewer; // will be destroyed automatically
+  ierr = PetscViewerBinaryOpen(m_grid->com, filename.c_str(), FILE_MODE_WRITE, viewer.rawptr());
   PISM_CHK(ierr, "PetscViewerBinaryOpen");
 
   ierr = MatView(m_A, viewer);

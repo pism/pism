@@ -17,17 +17,17 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/coupler/surface/Anomaly.hh"
-#include "pism/util/Grid.hh"
 #include "pism/coupler/util/options.hh"
-#include "pism/util/array/Forcing.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/array/Forcing.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace surface {
 
 Anomaly::Anomaly(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> in)
-  : SurfaceModel(g, in) {
+    : SurfaceModel(g, in) {
 
   ForcingOptions opt(*m_grid->ctx(), "surface.anomaly");
 
@@ -36,20 +36,15 @@ Anomaly::Anomaly(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> in
 
     File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    m_ice_surface_temp_anomaly = std::make_shared<array::Forcing>(m_grid,
-                                                             file,
-                                                             "ice_surface_temp_anomaly",
-                                                             "", // no standard name
-                                                             buffer_size,
-                                                             opt.periodic,
-                                                             LINEAR);
+    m_ice_surface_temp_anomaly =
+        std::make_shared<array::Forcing>(m_grid, file, "ice_surface_temp_anomaly",
+                                         "", // no standard name
+                                         buffer_size, opt.periodic, LINEAR);
 
-    m_climatic_mass_balance_anomaly = std::make_shared<array::Forcing>(m_grid,
-                                                                  file,
-                                                                  "climatic_mass_balance_anomaly",
-                                                                  "", // no standard name
-                                                                  buffer_size,
-                                                                  opt.periodic);
+    m_climatic_mass_balance_anomaly =
+        std::make_shared<array::Forcing>(m_grid, file, "climatic_mass_balance_anomaly",
+                                         "", // no standard name
+                                         buffer_size, opt.periodic);
   }
 
   m_ice_surface_temp_anomaly->metadata(0)
@@ -62,7 +57,7 @@ Anomaly::Anomaly(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> in
       .units("kg m^-2 s^-1")
       .output_units("kg m^-2 year^-1");
 
-  m_mass_flux = allocate_mass_flux(g);
+  m_mass_flux   = allocate_mass_flux(g);
   m_temperature = allocate_temperature(g);
 
   m_accumulation = allocate_accumulation(g);
@@ -76,13 +71,11 @@ void Anomaly::init_impl(const Geometry &geometry) {
     m_input_model->init(geometry);
   }
 
-  m_log->message(2,
-                 "* Initializing the '-surface ...,anomaly' modifier...\n");
+  m_log->message(2, "* Initializing the '-surface ...,anomaly' modifier...\n");
 
   ForcingOptions opt(*m_grid->ctx(), "surface.anomaly");
 
-  m_log->message(2,
-                 "    reading anomalies from %s ...\n", opt.filename.c_str());
+  m_log->message(2, "    reading anomalies from %s ...\n", opt.filename.c_str());
 
   m_ice_surface_temp_anomaly->init(opt.filename, opt.periodic);
   m_climatic_mass_balance_anomaly->init(opt.filename, opt.periodic);
@@ -97,10 +90,8 @@ void Anomaly::update_impl(const Geometry &geometry, double t, double dt) {
   m_climatic_mass_balance_anomaly->average(t, dt);
   m_ice_surface_temp_anomaly->average(t, dt);
 
-  m_input_model->mass_flux().add(1.0, *m_climatic_mass_balance_anomaly,
-                                 *m_mass_flux);
-  m_input_model->temperature().add(1.0, *m_ice_surface_temp_anomaly,
-                                   *m_temperature);
+  m_input_model->mass_flux().add(1.0, *m_climatic_mass_balance_anomaly, *m_mass_flux);
+  m_input_model->temperature().add(1.0, *m_ice_surface_temp_anomaly, *m_temperature);
 
   dummy_accumulation(*m_mass_flux, *m_accumulation);
   dummy_melt(*m_mass_flux, *m_melt);

@@ -22,12 +22,12 @@
 
 namespace pism {
 
-namespace array { class Scalar; }
+namespace array {
+class Scalar;
+}
 
-void lapse_rate_correction(const array::Scalar &surface,
-                           const array::Scalar &reference_surface,
-                           double lapse_rate,
-                           array::Scalar &result);
+void lapse_rate_correction(const array::Scalar &surface, const array::Scalar &reference_surface,
+                           double lapse_rate, array::Scalar &result);
 
 } // end of namespace pism
 

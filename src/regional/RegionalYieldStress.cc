@@ -18,15 +18,15 @@
  */
 
 #include "pism/regional/RegionalYieldStress.hh"
-#include "pism/util/pism_utilities.hh" // pism::combine()
+#include "pism/util/Interpolation1D.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/array/Scalar.hh"
-#include "pism/util/Interpolation1D.hh"
+#include "pism/util/pism_utilities.hh" // pism::combine()
 
 namespace pism {
 
 RegionalYieldStress::RegionalYieldStress(std::shared_ptr<YieldStress> input)
-  : YieldStress(input->grid()), m_input(input) {
+    : YieldStress(input->grid()), m_input(input) {
 
   m_high_tauc = m_config->get_number("regional.no_model_yield_stress", "Pa");
 
@@ -36,12 +36,11 @@ RegionalYieldStress::RegionalYieldStress(std::shared_ptr<YieldStress> input)
 /*!
  * Set `basal_yield_stress` to `tauc` in areas indicated using `mask`.
  */
-static void set_no_model_yield_stress(double tauc,
-                                      const array::Scalar &mask,
+static void set_no_model_yield_stress(double tauc, const array::Scalar &mask,
                                       array::Scalar &basal_yield_stress) {
   auto grid = mask.grid();
 
-  array::AccessScope list{&mask, &basal_yield_stress};
+  array::AccessScope list{ &mask, &basal_yield_stress };
 
   for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
@@ -61,9 +60,8 @@ void RegionalYieldStress::restart_impl(const File &input_file, int record) {
 
   array::Scalar no_model_mask(m_grid, "no_model_mask");
   no_model_mask.set_interpolation_type(NEAREST);
-  no_model_mask.metadata(0)
-      .long_name(
-          "mask: zeros (modeling domain) and ones (no-model buffer near grid edges)"); // no units and no standard name
+  no_model_mask.metadata(0).long_name(
+      "mask: zeros (modeling domain) and ones (no-model buffer near grid edges)"); // no units and no standard name
   // We are re-starting a simulation, so the input file has to contain no_model_mask.
   no_model_mask.read(input_file, record);
   // However, the used can set "-regrid_vars no_model_mask,...", so we have to try this,
@@ -89,8 +87,7 @@ void RegionalYieldStress::init_impl(const YieldStressInputs &inputs) {
   set_no_model_yield_stress(m_high_tauc, *inputs.no_model_mask, m_basal_yield_stress);
 }
 
-void RegionalYieldStress::update_impl(const YieldStressInputs &inputs,
-                                      double t, double dt) {
+void RegionalYieldStress::update_impl(const YieldStressInputs &inputs, double t, double dt) {
   m_input->update(inputs, t, dt);
 
   m_basal_yield_stress.copy_from(m_input->basal_material_yield_stress());
@@ -99,7 +96,7 @@ void RegionalYieldStress::update_impl(const YieldStressInputs &inputs,
 }
 
 std::set<VariableMetadata> RegionalYieldStress::state_impl() const {
-  auto variables = array::metadata({&m_basal_yield_stress});
+  auto variables = array::metadata({ &m_basal_yield_stress });
 
   return pism::combine(variables, m_input->state());
 }
@@ -113,7 +110,7 @@ void RegionalYieldStress::write_state_impl(const OutputFile &output) const {
 
 DiagnosticList RegionalYieldStress::spatial_diagnostics_impl() const {
   // Override the tauc diagnostic with the one that includes the regional modification
-  return combine({{"tauc", Diagnostic::wrap(m_basal_yield_stress)}},
+  return combine({ { "tauc", Diagnostic::wrap(m_basal_yield_stress) } },
                  m_input->spatial_diagnostics());
 }
 

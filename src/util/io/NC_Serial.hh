@@ -24,8 +24,7 @@
 namespace pism {
 namespace io {
 
-class NC_Serial : public NCFile
-{
+class NC_Serial : public NCFile {
 public:
   NC_Serial(MPI_Comm com);
   virtual ~NC_Serial();
@@ -58,17 +57,16 @@ protected:
   void inq_unlimdim_impl(std::string &result) const;
 
   // var
-  virtual void def_var_impl(const std::string &name, io::Type nctype, const std::vector<std::string> &dims) const;
+  virtual void def_var_impl(const std::string &name, io::Type nctype,
+                            const std::vector<std::string> &dims) const;
 
   void get_vara_double_impl(const std::string &variable_name,
-                      const std::vector<unsigned int> &start,
-                      const std::vector<unsigned int> &count,
-                      double *ip) const;
+                            const std::vector<unsigned int> &start,
+                            const std::vector<unsigned int> &count, double *ip) const;
 
   void put_vara_double_impl(const std::string &variable_name,
-                      const std::vector<unsigned int> &start,
-                      const std::vector<unsigned int> &count,
-                      const double *op) const;
+                            const std::vector<unsigned int> &start,
+                            const std::vector<unsigned int> &count, const double *op) const;
 
   void put_vara_text_impl(const std::string &variable_name, const std::vector<unsigned int> &start,
                           const std::vector<unsigned int> &count, const char *data) const;
@@ -86,17 +84,23 @@ protected:
   virtual void set_compression_level_impl(int level) const;
 
   // att
-  void get_att_double_impl(const std::string &variable_name, const std::string &att_name, std::vector<double> &result) const;
+  void get_att_double_impl(const std::string &variable_name, const std::string &att_name,
+                           std::vector<double> &result) const;
 
-  void get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const;
+  void get_att_text_impl(const std::string &variable_name, const std::string &att_name,
+                         std::string &result) const;
 
-  void put_att_double_impl(const std::string &variable_name, const std::string &att_name, io::Type xtype, const std::vector<double> &data) const;
+  void put_att_double_impl(const std::string &variable_name, const std::string &att_name,
+                           io::Type xtype, const std::vector<double> &data) const;
 
-  void put_att_text_impl(const std::string &variable_name, const std::string &att_name, const std::string &value) const;
+  void put_att_text_impl(const std::string &variable_name, const std::string &att_name,
+                         const std::string &value) const;
 
-  void inq_attname_impl(const std::string &variable_name, unsigned int n, std::string &result) const;
+  void inq_attname_impl(const std::string &variable_name, unsigned int n,
+                        std::string &result) const;
 
-  void inq_atttype_impl(const std::string &variable_name, const std::string &att_name, io::Type &result) const;
+  void inq_atttype_impl(const std::string &variable_name, const std::string &att_name,
+                        io::Type &result) const;
 
   // misc
   void set_fill_impl(int fillmode, int &old_modep) const;

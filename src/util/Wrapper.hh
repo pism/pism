@@ -22,7 +22,7 @@
 
 namespace pism {
 
-template<typename T>
+template <typename T>
 class Wrapper {
 public:
   operator T() const {
@@ -31,17 +31,19 @@ public:
   T get() const {
     return m_value;
   }
-  T* rawptr() {
+  T *rawptr() {
     return &m_value;
   }
+
 protected:
   Wrapper() {
     // empty
   }
   T m_value;
+
 private:
   Wrapper(Wrapper const &);
-  Wrapper & operator=(Wrapper const &);
+  Wrapper &operator=(Wrapper const &);
 };
 
 } // end of namespace pism

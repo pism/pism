@@ -18,8 +18,8 @@
  */
 
 #include "pism/regional/SIAFD_Regional.hh"
-#include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/Logger.hh"
 
 namespace pism {
@@ -27,9 +27,7 @@ namespace pism {
 namespace stressbalance {
 
 SIAFD_Regional::SIAFD_Regional(std::shared_ptr<const Grid> grid)
-  : SIAFD(grid),
-    m_h_x_no_model(grid, "h_x_no_model"),
-    m_h_y_no_model(grid, "h_y_no_model") {
+    : SIAFD(grid), m_h_x_no_model(grid, "h_x_no_model"), m_h_y_no_model(grid, "h_y_no_model") {
   // empty
 }
 
@@ -40,8 +38,7 @@ void SIAFD_Regional::init() {
   m_log->message(2, "  using the regional version of the SIA solver...\n");
 }
 
-void SIAFD_Regional::compute_surface_gradient(const Inputs &inputs,
-                                              array::Staggered1 &h_x,
+void SIAFD_Regional::compute_surface_gradient(const Inputs &inputs, array::Staggered1 &h_x,
                                               array::Staggered1 &h_y) {
 
   SIAFD::compute_surface_gradient(inputs, h_x, h_y);
@@ -52,15 +49,14 @@ void SIAFD_Regional::compute_surface_gradient(const Inputs &inputs,
   }
 
   // this call updates ghosts of h_x_no_model and h_y_no_model
-  surface_gradient_haseloff(*inputs.no_model_surface_elevation,
-                            inputs.geometry->cell_type,
+  surface_gradient_haseloff(*inputs.no_model_surface_elevation, inputs.geometry->cell_type,
                             m_h_x_no_model, m_h_y_no_model);
 
   const array::Scalar2 &no_model = *inputs.no_model_mask;
 
   const int Mx = m_grid->Mx(), My = m_grid->My();
 
-  array::AccessScope list{&h_x, &h_y, &no_model, &m_h_x_no_model, &m_h_y_no_model};
+  array::AccessScope list{ &h_x, &h_y, &no_model, &m_h_x_no_model, &m_h_y_no_model };
 
   for (auto p : m_grid->points_with_ghosts(1)) {
     const int i = p.i(), j = p.j();
@@ -78,14 +74,13 @@ void SIAFD_Regional::compute_surface_gradient(const Inputs &inputs,
     }
 
     // x-component, j-offset
-    if (M.nw > 0.5 or M.ne > 0.5 or M.w  > 0.5 or M.e  > 0.5) {
+    if (M.nw > 0.5 or M.ne > 0.5 or M.w > 0.5 or M.e > 0.5) {
 
       if (i - 1 < 0 or j + 1 > My - 1 or i + 1 > Mx - 1) {
         h_x(i, j, 1) = 0.0;
       } else {
         h_x(i, j, 1) = m_h_x_no_model(i, j, 1);
       }
-
     }
 
     // y-component, i-offset
@@ -96,7 +91,6 @@ void SIAFD_Regional::compute_surface_gradient(const Inputs &inputs,
       } else {
         h_y(i, j, 0) = m_h_y_no_model(i, j, 0);
       }
-
     }
 
     // y-component, j-offset
@@ -107,7 +101,6 @@ void SIAFD_Regional::compute_surface_gradient(const Inputs &inputs,
       } else {
         h_y(i, j, 1) = m_h_y_no_model(i, j, 1);
       }
-
     }
   } // end of the loop over grid points
 }

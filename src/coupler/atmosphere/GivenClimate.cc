@@ -19,18 +19,18 @@
 #include "pism/coupler/atmosphere/GivenClimate.hh"
 
 #include "pism/coupler/util/options.hh"
-#include "pism/util/Grid.hh"
 #include "pism/util/Config.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/Logger.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/array/Forcing.hh"
-#include "pism/util/Logger.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace atmosphere {
 
 Given::Given(std::shared_ptr<const Grid> g)
-  : AtmosphereModel(g, std::shared_ptr<AtmosphereModel>()) {
+    : AtmosphereModel(g, std::shared_ptr<AtmosphereModel>()) {
   ForcingOptions opt(*m_grid->ctx(), "atmosphere.given");
 
   {
@@ -40,28 +40,20 @@ Given::Given(std::shared_ptr<const Grid> g)
 
     auto interp_type = m_config->get_string("atmosphere.given.air_temperature_interpolation");
 
-    InterpolationType interpolation = interp_type == "piecewise_linear" ? LINEAR : PIECEWISE_CONSTANT;
+    InterpolationType interpolation =
+        interp_type == "piecewise_linear" ? LINEAR : PIECEWISE_CONSTANT;
 
-    m_air_temp = std::make_shared<array::Forcing>(m_grid,
-                                             file,
-                                             "air_temp",
-                                             "", // no standard name
-                                             buffer_size,
-                                             opt.periodic,
-                                             interpolation);
+    m_air_temp = std::make_shared<array::Forcing>(m_grid, file, "air_temp",
+                                                  "", // no standard name
+                                                  buffer_size, opt.periodic, interpolation);
 
-    m_precipitation = std::make_shared<array::Forcing>(m_grid,
-                                                       file,
-                                                       "precipitation",
+    m_precipitation = std::make_shared<array::Forcing>(m_grid, file, "precipitation",
                                                        "", // no standard name
-                                                       buffer_size,
-                                                       opt.periodic);
+                                                       buffer_size, opt.periodic);
   }
 
   {
-    m_air_temp->metadata(0)
-        .long_name("mean annual near-surface air temperature")
-        .units("kelvin");
+    m_air_temp->metadata(0).long_name("mean annual near-surface air temperature").units("kelvin");
     m_air_temp->metadata(0)["valid_range"] = { 0.0, 323.15 }; // (0 C, 50 C)
   }
   {
@@ -74,9 +66,8 @@ Given::Given(std::shared_ptr<const Grid> g)
 }
 
 void Given::init_impl(const Geometry &geometry) {
-  m_log->message(2,
-             "* Initializing the atmosphere model reading near-surface air temperature\n"
-             "  and ice-equivalent precipitation from a file...\n");
+  m_log->message(2, "* Initializing the atmosphere model reading near-surface air temperature\n"
+                    "  and ice-equivalent precipitation from a file...\n");
 
   ForcingOptions opt(*m_grid->ctx(), "atmosphere.given");
 
@@ -90,7 +81,7 @@ void Given::init_impl(const Geometry &geometry) {
 }
 
 void Given::update_impl(const Geometry &geometry, double t, double dt) {
-  (void) geometry;
+  (void)geometry;
 
   m_precipitation->update(t, dt);
   m_air_temp->update(t, dt);
@@ -99,11 +90,11 @@ void Given::update_impl(const Geometry &geometry, double t, double dt) {
   m_air_temp->average(t, dt);
 }
 
-const array::Scalar& Given::precipitation_impl() const {
+const array::Scalar &Given::precipitation_impl() const {
   return *m_precipitation;
 }
 
-const array::Scalar& Given::air_temperature_impl() const {
+const array::Scalar &Given::air_temperature_impl() const {
   return *m_air_temp;
 }
 

@@ -32,7 +32,8 @@ IS::IS(::IS m) {
 
 IS::~IS() {
   if (m_value != NULL) {
-    PetscErrorCode ierr = ISDestroy(&m_value); CHKERRCONTINUE(ierr);
+    PetscErrorCode ierr = ISDestroy(&m_value);
+    CHKERRCONTINUE(ierr);
   }
 }
 

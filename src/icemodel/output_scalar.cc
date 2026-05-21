@@ -47,7 +47,7 @@ void IceModel::init_scalar_diagnostics() {
 
   auto filename = m_config->get_string("output.scalar.file");
 
-  auto times = m_config->get_string("output.scalar.times");
+  auto times     = m_config->get_string("output.scalar.times");
   bool times_set = not times.empty();
 
   if (times_set xor not filename.empty()) {
@@ -85,7 +85,7 @@ void IceModel::init_scalar_diagnostics() {
     if (m_scalar_vars.empty()) {
       // use all diagnostics
     } else {
-    std::vector<std::string> missing;
+      std::vector<std::string> missing;
       TSDiagnosticList diagnostics;
       for (const auto &v : m_scalar_vars) {
         if (m_available_scalar_diagnostics.find(v) != m_available_scalar_diagnostics.end()) {
@@ -110,7 +110,7 @@ void IceModel::init_scalar_diagnostics() {
   // prepare the output file
   {
     m_scalar_file = std::make_shared<OutputFile>(m_output_writer, filename);
-    bool append = m_config->get_flag("output.scalar.append");
+    bool append   = m_config->get_flag("output.scalar.append");
     // default behavior is to move the file aside if it exists already; option allows appending
     if (append) {
       m_scalar_file->append();
@@ -142,7 +142,6 @@ void IceModel::init_scalar_diagnostics() {
   for (const auto &d : m_available_scalar_diagnostics) {
     d.second->init(m_scalar_file, m_scalar_times);
   }
-
 }
 
 //! Computes the maximum time-step we can take and still hit all `-scalar_times`.
@@ -155,8 +154,7 @@ MaxTimestep IceModel::scalar_diagnostics_max_timestep(double my_t) {
 
   double eps = m_config->get_number("time_stepping.resolution");
 
-  return reporting_max_timestep(*m_scalar_times, my_t, eps,
-                                "reporting (-scalar_times)");
+  return reporting_max_timestep(*m_scalar_times, my_t, eps, "reporting (-scalar_times)");
 }
 
 //! Flush scalar time-series.

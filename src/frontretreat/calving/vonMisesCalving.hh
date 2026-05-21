@@ -34,20 +34,19 @@ namespace calving {
 
 class vonMisesCalving : public StressCalving {
 public:
-  vonMisesCalving(std::shared_ptr<const Grid> grid, std::shared_ptr<const rheology::FlowLaw> flow_law);
+  vonMisesCalving(std::shared_ptr<const Grid> grid,
+                  std::shared_ptr<const rheology::FlowLaw> flow_law);
   virtual ~vonMisesCalving() = default;
 
   void init();
 
-  void update(const array::CellType1 &cell_type,
-              const array::Scalar &ice_thickness,
-              const array::Vector1 &ice_velocity,
-              const array::Array3D &ice_enthalpy);
-  const array::Scalar& threshold() const;
+  void update(const array::CellType1 &cell_type, const array::Scalar &ice_thickness,
+              const array::Vector1 &ice_velocity, const array::Array3D &ice_enthalpy);
+  const array::Scalar &threshold() const;
 
 protected:
   DiagnosticList spatial_diagnostics_impl() const;
-  
+
   array::Scalar m_calving_threshold;
 
   std::shared_ptr<const rheology::FlowLaw> m_flow_law;

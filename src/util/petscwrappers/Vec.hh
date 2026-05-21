@@ -20,8 +20,8 @@
 #ifndef _VEC_H_
 #define _VEC_H_
 
-#include <petscvec.h>
 #include <memory>
+#include <petscvec.h>
 
 #include "pism/util/Wrapper.hh"
 
@@ -36,7 +36,7 @@ class DM;
  *
  * The destructor call VecDestroy().
  */
-class Vec : public Wrapper< ::Vec > {
+class Vec : public Wrapper< ::Vec> {
 public:
   Vec();
   Vec(::Vec v);
@@ -48,7 +48,8 @@ class VecArray {
 public:
   VecArray(::Vec v);
   ~VecArray();
-  double* get();
+  double *get();
+
 private:
   ::Vec m_v;
   double *m_array;
@@ -61,9 +62,10 @@ public:
   VecArray2D(::Vec vec, int my_Mx, int my_My, int i0, int j0);
   ~VecArray2D();
 
-  inline double& operator()(int i, int j) {
+  inline double &operator()(int i, int j) {
     return m_array[j + m_j_offset][i + m_i_offset];
   }
+
 private:
   int m_Mx, m_My, m_i_offset, m_j_offset;
   ::Vec m_v;
@@ -74,7 +76,8 @@ class DMDAVecArray {
 public:
   DMDAVecArray(std::shared_ptr<DM> dm, ::Vec v);
   ~DMDAVecArray();
-  void* get();
+  void *get();
+
 private:
   std::shared_ptr<DM> m_dm;
   ::Vec m_v;
@@ -85,7 +88,8 @@ class DMDAVecArrayDOF {
 public:
   DMDAVecArrayDOF(std::shared_ptr<DM> dm, ::Vec v);
   ~DMDAVecArrayDOF();
-  void* get();
+  void *get();
+
 private:
   std::shared_ptr<DM> m_dm;
   ::Vec m_v;
@@ -96,6 +100,7 @@ class TemporaryGlobalVec : public Vec {
 public:
   TemporaryGlobalVec(std::shared_ptr<DM> dm);
   ~TemporaryGlobalVec();
+
 private:
   std::shared_ptr<DM> m_dm;
 };

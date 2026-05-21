@@ -21,8 +21,8 @@
 #define HAYHURSTCALVING_H
 
 #include "pism/util/Component.hh"
-#include "pism/util/array/Scalar.hh"
 #include "pism/util/array/CellType.hh"
+#include "pism/util/array/Scalar.hh"
 
 namespace pism {
 
@@ -44,12 +44,11 @@ public:
 
 protected:
   DiagnosticList spatial_diagnostics_impl() const;
-  
+
 protected:
   array::Scalar1 m_calving_rate;
 
   double m_B_tilde, m_exponent_r, m_sigma_threshold;
-
 };
 
 } // end of namespace calving

@@ -17,19 +17,17 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/coupler/ocean/sea_level/Delta_SL.hh"
-#include "pism/util/ScalarForcing.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/ScalarForcing.hh"
 
 namespace pism {
 namespace ocean {
 namespace sea_level {
 
 Delta_SL::Delta_SL(std::shared_ptr<const Grid> grid, std::shared_ptr<SeaLevel> in)
-  : SeaLevel(grid, in) {
+    : SeaLevel(grid, in) {
 
-  m_forcing.reset(new ScalarForcing(*grid->ctx(),
-                                    "ocean.delta_sl", "delta_SL",
-                                    "m", "m",
+  m_forcing.reset(new ScalarForcing(*grid->ctx(), "ocean.delta_sl", "delta_SL", "m", "m",
                                     "sea level elevation offsets"));
 }
 

@@ -29,7 +29,7 @@ namespace sea_level {
 
 InitializationHelper::InitializationHelper(std::shared_ptr<const Grid> grid,
                                            std::shared_ptr<SeaLevel> in)
-  : SeaLevel(grid, in) {
+    : SeaLevel(grid, in) {
 
   m_sea_level.metadata().set_name("effective_sea_level_elevation");
 }
@@ -65,8 +65,7 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
   // Support regridding. This is needed to ensure that initialization using "-i" is
   // equivalent to "-i ... -bootstrap -regrid_file ..."
   {
-    regrid("ocean model initialization helper", m_sea_level,
-           REGRID_WITHOUT_REGRID_VARS);
+    regrid("ocean model initialization helper", m_sea_level, REGRID_WITHOUT_REGRID_VARS);
   }
 }
 
@@ -80,7 +79,7 @@ void InitializationHelper::write_state_impl(const OutputFile &output) const {
   m_input_model->write_state(output);
 }
 
-const array::Scalar& InitializationHelper::sea_level_elevation_impl() const {
+const array::Scalar &InitializationHelper::sea_level_elevation_impl() const {
   return m_sea_level;
 }
 

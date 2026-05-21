@@ -38,16 +38,10 @@ namespace energy {
 class enthSystemCtx : public columnSystemCtx {
 
 public:
-  enthSystemCtx(const std::vector<double>& storage_grid,
-                const std::string &prefix,
-                double dx,  double dy, double dt,
-                const Config &config,
-                const array::Array3D &Enth3,
-                const array::Array3D &u3,
-                const array::Array3D &v3,
-                const array::Array3D &w3,
-                const array::Array3D &strain_heating3,
-                std::shared_ptr<EnthalpyConverter> EC);
+  enthSystemCtx(const std::vector<double> &storage_grid, const std::string &prefix, double dx,
+                double dy, double dt, const Config &config, const array::Array3D &Enth3,
+                const array::Array3D &u3, const array::Array3D &v3, const array::Array3D &w3,
+                const array::Array3D &strain_heating3, std::shared_ptr<EnthalpyConverter> EC);
   ~enthSystemCtx() = default;
 
   void init(int i, int j, bool ismarginal, double ice_thickness);
@@ -77,6 +71,7 @@ public:
   double Enth_s(size_t i) const {
     return m_Enth_s[i];
   }
+
 protected:
   // enthalpy in ice at previous time step
   std::vector<double> m_Enth;
@@ -93,13 +88,12 @@ protected:
   //! values of @f$ k \Delta t / (\rho c \Delta x^2) @f$
   std::vector<double> m_R;
 
-  double m_ice_density, m_ice_c, m_ice_k, m_p_air,
-    m_nu, m_R_cold, m_R_temp, m_R_factor;
+  double m_ice_density, m_ice_c, m_ice_k, m_p_air, m_nu, m_R_cold, m_R_temp, m_R_factor;
 
   double m_ice_thickness,
-    m_lambda;              //! implicit FD method parameter
-  double m_D0, m_U0, m_B0;   // coefficients of the first (basal) equation
-  double m_L_ks, m_D_ks, m_U_ks, m_B_ks;   // coefficients of the last (surface) equation
+      m_lambda;                          //! implicit FD method parameter
+  double m_D0, m_U0, m_B0;               // coefficients of the first (basal) equation
+  double m_L_ks, m_D_ks, m_U_ks, m_B_ks; // coefficients of the last (surface) equation
   bool m_marginal, m_k_depends_on_T;
 
   bool m_margin_exclude_horizontal_advection;
@@ -107,7 +101,7 @@ protected:
   bool m_margin_exclude_strain_heat;
 
   const array::Array3D &m_Enth3, &m_strain_heating3;
-  std::shared_ptr<EnthalpyConverter> m_EC;  // conductivity has known dependence on T, not enthalpy
+  std::shared_ptr<EnthalpyConverter> m_EC; // conductivity has known dependence on T, not enthalpy
 
   void compute_enthalpy_CTS();
   double compute_lambda();
@@ -119,4 +113,4 @@ protected:
 } // end of namespace energy
 } // end of namespace pism
 
-#endif   //  ifndef __enthSystem_hh
+#endif //  ifndef __enthSystem_hh

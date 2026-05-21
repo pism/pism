@@ -24,8 +24,7 @@
 namespace pism {
 namespace frontalmelt {
 
-class Given : public FrontalMelt
-{
+class Given : public FrontalMelt {
 public:
   Given(std::shared_ptr<const Grid> g);
   virtual ~Given() = default;
@@ -37,7 +36,7 @@ private:
 
   MaxTimestep max_timestep_impl(double t) const;
 
-  const array::Scalar& frontal_melt_rate_impl() const;
+  const array::Scalar &frontal_melt_rate_impl() const;
 
   std::shared_ptr<array::Forcing> m_frontal_melt_rate;
 };

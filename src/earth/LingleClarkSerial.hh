@@ -19,11 +19,11 @@
 #ifndef LINGLECLARKSERIAL_H
 #define LINGLECLARKSERIAL_H
 
-#include <vector>
 #include <fftw3.h>
+#include <vector>
 
-#include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 
@@ -53,16 +53,11 @@ namespace bed {
 */
 class LingleClarkSerial {
 public:
-  LingleClarkSerial(std::shared_ptr<const Logger> log,
-                    const Config &config,
-                    bool include_elastic,
-                    int Mx, int My,
-                    double dx, double dy,
-                    int Nx, int Ny);
+  LingleClarkSerial(std::shared_ptr<const Logger> log, const Config &config, bool include_elastic,
+                    int Mx, int My, double dx, double dy, int Nx, int Ny);
   ~LingleClarkSerial();
 
-  void init(petsc::Vec &viscous_displacement,
-            petsc::Vec &elastic_displacement);
+  void init(petsc::Vec &viscous_displacement, petsc::Vec &elastic_displacement);
 
   void bootstrap(petsc::Vec &thickness, petsc::Vec &uplift);
 
@@ -75,6 +70,7 @@ public:
   const petsc::Vec &elastic_displacement() const;
 
   void compute_load_response_matrix(fftw_complex *output);
+
 private:
   void compute_elastic_response(petsc::Vec &H, petsc::Vec &dE);
 

@@ -18,18 +18,18 @@
 
 #include "pism/coupler/atmosphere/Anomaly.hh"
 
+#include "pism/coupler/util/options.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
-#include "pism/coupler/util/options.hh"
-#include "pism/util/array/Forcing.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/array/Forcing.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace atmosphere {
 
 Anomaly::Anomaly(std::shared_ptr<const Grid> g, std::shared_ptr<AtmosphereModel> in)
-  : AtmosphereModel(g, in) {
+    : AtmosphereModel(g, in) {
 
   ForcingOptions opt(*m_grid->ctx(), "atmosphere.anomaly");
 
@@ -38,20 +38,14 @@ Anomaly::Anomaly(std::shared_ptr<const Grid> g, std::shared_ptr<AtmosphereModel>
 
     File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    m_air_temp_anomaly = std::make_shared<array::Forcing>(m_grid,
-                                                     file,
-                                                     "air_temp_anomaly",
-                                                     "", // no standard name
-                                                     buffer_size,
-                                                     opt.periodic,
-                                                     LINEAR);
-
-    m_precipitation_anomaly = std::make_shared<array::Forcing>(m_grid,
-                                                          file,
-                                                          "precipitation_anomaly",
+    m_air_temp_anomaly = std::make_shared<array::Forcing>(m_grid, file, "air_temp_anomaly",
                                                           "", // no standard name
-                                                          buffer_size,
-                                                          opt.periodic);
+                                                          buffer_size, opt.periodic, LINEAR);
+
+    m_precipitation_anomaly =
+        std::make_shared<array::Forcing>(m_grid, file, "precipitation_anomaly",
+                                         "", // no standard name
+                                         buffer_size, opt.periodic);
   }
 
   m_air_temp_anomaly->metadata(0)
@@ -72,12 +66,9 @@ void Anomaly::init_impl(const Geometry &geometry) {
 
   ForcingOptions opt(*m_grid->ctx(), "atmosphere.anomaly");
 
-  m_log->message(2,
-                 "* Initializing the -atmosphere ...,anomaly code...\n");
+  m_log->message(2, "* Initializing the -atmosphere ...,anomaly code...\n");
 
-  m_log->message(2,
-                 "    reading anomalies from %s ...\n",
-                 opt.filename.c_str());
+  m_log->message(2, "    reading anomalies from %s ...\n", opt.filename.c_str());
 
   m_air_temp_anomaly->init(opt.filename, opt.periodic);
   m_precipitation_anomaly->init(opt.filename, opt.periodic);
@@ -105,11 +96,11 @@ void Anomaly::update_impl(const Geometry &geometry, double t, double dt) {
   }
 }
 
-const array::Scalar& Anomaly::precipitation_impl() const {
+const array::Scalar &Anomaly::precipitation_impl() const {
   return *m_precipitation;
 }
 
-const array::Scalar& Anomaly::air_temperature_impl() const {
+const array::Scalar &Anomaly::air_temperature_impl() const {
   return *m_temperature;
 }
 

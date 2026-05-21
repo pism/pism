@@ -32,8 +32,7 @@ namespace ocean {
  * Scalar melange back-pressure fraction forcing.
  * 
  */
-class Frac_MBP : public OceanModel
-{
+class Frac_MBP : public OceanModel {
 public:
   Frac_MBP(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in);
   virtual ~Frac_MBP();
@@ -43,7 +42,7 @@ private:
 
   void update_impl(const Inputs &inputs, double t, double dt);
 
-  const array::Scalar& average_water_column_pressure_impl() const;
+  const array::Scalar &average_water_column_pressure_impl() const;
 
   std::unique_ptr<ScalarForcing> m_forcing;
 };

@@ -18,15 +18,15 @@
  */
 
 #include "pism/util/ColumnInterpolation.hh"
-#include <algorithm>  // for max, min
-#include <cmath>      // for fabs
+#include <algorithm> // for max, min
+#include <cmath>     // for fabs
 #include <cstddef>
 
 namespace pism {
 
 ColumnInterpolation::ColumnInterpolation(const std::vector<double> &new_z_coarse,
                                          const std::vector<double> &new_z_fine)
-  : m_z_fine(new_z_fine), m_z_coarse(new_z_coarse) {
+    : m_z_fine(new_z_fine), m_z_coarse(new_z_coarse) {
   init_interpolation();
 }
 
@@ -37,8 +37,7 @@ std::vector<double> ColumnInterpolation::coarse_to_fine(const std::vector<double
   return result;
 }
 
-void ColumnInterpolation::coarse_to_fine(const double *input,
-                                         unsigned int k_max_result,
+void ColumnInterpolation::coarse_to_fine(const double *input, unsigned int k_max_result,
                                          double *result) const {
   if (m_use_linear_interpolation) {
     coarse_to_fine_linear(input, k_max_result, result);
@@ -49,7 +48,7 @@ void ColumnInterpolation::coarse_to_fine(const double *input,
 
 void ColumnInterpolation::coarse_to_fine_linear(const double *input, unsigned int k_max_result,
                                                 double *result) const {
-  const unsigned int Mzfine = Mz_fine();
+  const unsigned int Mzfine   = Mz_fine();
   const unsigned int Mzcoarse = Mz_coarse();
 
   for (unsigned int k = 0; k < Mzfine; ++k) {
@@ -67,7 +66,7 @@ void ColumnInterpolation::coarse_to_fine_linear(const double *input, unsigned in
     }
 
     const double incr = (m_z_fine[k] - m_z_coarse[m]) / (m_z_coarse[m + 1] - m_z_coarse[m]);
-    result[k] = input[m] + incr * (input[m + 1] - input[m]);
+    result[k]         = input[m] + incr * (input[m + 1] - input[m]);
   }
 }
 
@@ -77,22 +76,14 @@ void ColumnInterpolation::coarse_to_fine_quadratic(const double *input, unsigned
   const unsigned int Mz = Mz_coarse();
   for (m = 0; m < Mz - 2 and k <= k_max_result; ++m) {
 
-    const double
-      z0      = m_z_coarse[m],
-      z1      = m_z_coarse[m + 1],
-      dz_inv  = m_constants[3 * m + 0], // = 1.0 / (z1 - z0)
-      dz1_inv = m_constants[3 * m + 1], // = 1.0 / (z2 - z0)
-      dz2_inv = m_constants[3 * m + 2], // = 1.0 / (z2 - z1)
-      f0      = input[m],
-      f1      = input[m + 1],
-      f2      = input[m + 2];
+    const double z0 = m_z_coarse[m], z1 = m_z_coarse[m + 1],
+                 dz_inv = m_constants[3 * m + 0], // = 1.0 / (z1 - z0)
+        dz1_inv         = m_constants[3 * m + 1], // = 1.0 / (z2 - z0)
+        dz2_inv         = m_constants[3 * m + 2], // = 1.0 / (z2 - z1)
+        f0 = input[m], f1 = input[m + 1], f2 = input[m + 2];
 
-    const double
-      d1 = (f1 - f0) * dz_inv,
-      d2 = (f2 - f0) * dz1_inv,
-      b  = (d2 - d1) * dz2_inv,
-      a  = d1 - b * (z1 - z0),
-      c  = f0;
+    const double d1 = (f1 - f0) * dz_inv, d2 = (f2 - f0) * dz1_inv, b = (d2 - d1) * dz2_inv,
+                 a = d1 - b * (z1 - z0), c = f0;
 
     for (; m_z_fine[k] < z1 and k <= k_max_result; ++k) {
       const double s = m_z_fine[k] - z0;
@@ -104,12 +95,8 @@ void ColumnInterpolation::coarse_to_fine_quadratic(const double *input, unsigned
   // check if we got to the end of the m-loop and use linear
   // interpolation between the remaining 2 coarse levels
   if (m == Mz - 2) {
-    const double
-      z0 = m_z_coarse[m],
-      z1 = m_z_coarse[m + 1],
-      f0 = input[m],
-      f1 = input[m + 1],
-      lambda = (f1 - f0) / (z1 - z0);
+    const double z0 = m_z_coarse[m], z1 = m_z_coarse[m + 1], f0 = input[m], f1 = input[m + 1],
+                 lambda = (f1 - f0) / (z1 - z0);
 
     for (; m_z_fine[k] < z1; ++k) {
       result[k] = f0 + lambda * (m_z_fine[k] - z0);
@@ -136,7 +123,7 @@ void ColumnInterpolation::fine_to_coarse(const double *input, double *result) co
     const auto &m = m_fine2coarse[k];
 
     const double increment = (m_z_coarse[k] - m_z_fine[m]) / (m_z_fine[m + 1] - m_z_fine[m]);
-    result[k] = input[m] + increment * (input[m + 1] - input[m]);
+    result[k]              = input[m] + increment * (input[m + 1] - input[m]);
   }
 
   result[N - 1] = input[m_fine2coarse[N - 1]];
@@ -154,11 +141,11 @@ double ColumnInterpolation::dz_fine() const {
   return m_z_fine[1] - m_z_fine[0];
 }
 
-const std::vector<double>& ColumnInterpolation::z_fine() const {
+const std::vector<double> &ColumnInterpolation::z_fine() const {
   return m_z_fine;
 }
 
-const std::vector<double>& ColumnInterpolation::z_coarse() const {
+const std::vector<double> &ColumnInterpolation::z_coarse() const {
   return m_z_coarse;
 }
 
@@ -177,8 +164,8 @@ const std::vector<double>& ColumnInterpolation::z_coarse() const {
  *
  * We use constant extrapolation outside the range defined by `z_input`.
  */
-static std::vector<unsigned int> init_interpolation_indexes(const std::vector<double>& z_input,
-                                                            const std::vector<double>& z_output) {
+static std::vector<unsigned int> init_interpolation_indexes(const std::vector<double> &z_input,
+                                                            const std::vector<double> &z_output) {
   std::vector<unsigned int> result(z_output.size());
 
   unsigned int m = 0;
@@ -217,11 +204,11 @@ void ColumnInterpolation::init_interpolation() {
   double dz_max = 0.0;
   for (unsigned int k = 0; k < Mz_coarse() - 1; ++k) {
     const double dz = m_z_coarse[k + 1] - m_z_coarse[k];
-    dz_min = std::min(dz, dz_min);
-    dz_max = std::max(dz, dz_max);
+    dz_min          = std::min(dz, dz_min);
+    dz_max          = std::max(dz, dz_max);
   }
 
-  const double eps = 1.0e-8;
+  const double eps           = 1.0e-8;
   m_use_linear_interpolation = (fabs(dz_max - dz_min) <= eps);
 
   // initialize quadratic interpolation constants
@@ -229,16 +216,12 @@ void ColumnInterpolation::init_interpolation() {
     size_t N = Mz_coarse() - 2;
     m_constants.resize(3 * N);
     for (unsigned int m = 0; m < N; ++m) {
-      const double
-        z0 = m_z_coarse[m],
-        z1 = m_z_coarse[m + 1],
-        z2 = m_z_coarse[m + 2];
+      const double z0 = m_z_coarse[m], z1 = m_z_coarse[m + 1], z2 = m_z_coarse[m + 2];
       m_constants[3 * m + 0] = 1.0 / (z1 - z0);
       m_constants[3 * m + 1] = 1.0 / (z2 - z0);
       m_constants[3 * m + 2] = 1.0 / (z2 - z1);
     }
   }
-
 }
 
 } // end of namespace pism

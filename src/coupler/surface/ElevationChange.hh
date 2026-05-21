@@ -24,23 +24,24 @@
 namespace pism {
 namespace surface {
 
-class ElevationChange : public SurfaceModel
-{
+class ElevationChange : public SurfaceModel {
 public:
   ElevationChange(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> in);
   virtual ~ElevationChange() = default;
+
 protected:
   virtual void init_impl(const Geometry &geometry);
   virtual void update_impl(const Geometry &geometry, double t, double dt);
 
-  const array::Scalar& mass_flux_impl() const;
-  const array::Scalar& temperature_impl() const;
+  const array::Scalar &mass_flux_impl() const;
+  const array::Scalar &temperature_impl() const;
 
-  const array::Scalar& accumulation_impl() const;
-  const array::Scalar& melt_impl() const;
-  const array::Scalar& runoff_impl() const;
+  const array::Scalar &accumulation_impl() const;
+  const array::Scalar &melt_impl() const;
+  const array::Scalar &runoff_impl() const;
+
 protected:
-  enum Method {SCALE, SHIFT};
+  enum Method { SCALE, SHIFT };
 
   Method m_smb_method;
   double m_smb_lapse_rate;

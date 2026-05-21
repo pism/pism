@@ -26,9 +26,8 @@
 namespace pism {
 namespace stressbalance {
 
-BlatterTestXZ::BlatterTestXZ(std::shared_ptr<const Grid> grid,
-                             int Mz, int coarsening_factor)
-  : Blatter(grid, Mz, coarsening_factor) {
+BlatterTestXZ::BlatterTestXZ(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor)
+    : Blatter(grid, Mz, coarsening_factor) {
 
   // use the isothermal Glen flow law
   double n = m_config->get_number("stress_balance.blatter.Glen_exponent");
@@ -59,45 +58,36 @@ BlatterTestXZ::BlatterTestXZ(std::shared_ptr<const Grid> grid,
   m_g   = m_config->get_number("constants.standard_gravity");
 }
 
-bool BlatterTestXZ::marine_boundary(int face,
-                                    const int *node_type,
-                                    const double *ice_bottom,
+bool BlatterTestXZ::marine_boundary(int face, const int *node_type, const double *ice_bottom,
                                     const double *sea_level) {
-  (void) face;
-  (void) node_type;
-  (void) ice_bottom;
-  (void) sea_level;
+  (void)face;
+  (void)node_type;
+  (void)ice_bottom;
+  (void)sea_level;
 
   return false;
 }
 
-bool BlatterTestXZ::dirichlet_node(const DMDALocalInfo &info,
-                                   const fem::Element3::GlobalIndex& I) {
+bool BlatterTestXZ::dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex &I) {
   // use Dirichlet BC at x == -Lx and x == Lx
   return (I.i == 0 or I.i == info.mx - 1);
 }
 
 Vector2d BlatterTestXZ::u_bc(double x, double y, double z) const {
-  (void) y;
+  (void)y;
 
   return blatter_xz_exact(x, z, m_A, m_rho, m_g, m_s0, m_alpha, m_H0, m_beta);
 }
 
-void BlatterTestXZ::residual_source_term(const fem::Q1Element3 &element,
-                                         const double *surface,
-                                         const double *bed,
-                                         Vector2d *residual) {
-  (void) surface;
-  (void) bed;
+void BlatterTestXZ::residual_source_term(const fem::Q1Element3 &element, const double *surface,
+                                         const double *bed, Vector2d *residual) {
+  (void)surface;
+  (void)bed;
 
   // compute x and z coordinates of quadrature points
-  double
-    *x = m_work[0],
-    *z = m_work[1];
+  double *x = m_work[0], *z = m_work[1];
   {
-    double
-      *x_nodal = m_work[2],
-      *z_nodal = m_work[3];
+    double *x_nodal = m_work[2], *z_nodal = m_work[3];
 
     for (int n = 0; n < fem::q13d::n_chi; ++n) {
       x_nodal[n] = element.x(n);
@@ -116,8 +106,8 @@ void BlatterTestXZ::residual_source_term(const fem::Q1Element3 &element,
     for (int t = 0; t < element.n_chi(); ++t) {
       const auto &psi = element.chi(q, t);
 
-      residual[t] += W * psi.val * blatter_xz_source(x[q], z[q], m_A, m_rho, m_g,
-                                                     m_s0, m_alpha, m_H0, m_beta);
+      residual[t] +=
+          W * psi.val * blatter_xz_source(x[q], z[q], m_A, m_rho, m_g, m_s0, m_alpha, m_H0, m_beta);
     }
   }
 }
@@ -125,12 +115,9 @@ void BlatterTestXZ::residual_source_term(const fem::Q1Element3 &element,
 /*!
  * Basal contribution to the residual.
  */
-void BlatterTestXZ::residual_basal(const fem::Q1Element3 &element,
-                                   const fem::Q1Element3Face &face,
-                                   const double *tauc_nodal,
-                                   const double *f_nodal,
-                                   const Vector2d *u_nodal,
-                                   Vector2d *residual) {
+void BlatterTestXZ::residual_basal(const fem::Q1Element3 &element, const fem::Q1Element3Face &face,
+                                   const double *tauc_nodal, const double *f_nodal,
+                                   const Vector2d *u_nodal, Vector2d *residual) {
 
   // The basal sliding BC contribution:
   Blatter::residual_basal(element, face, tauc_nodal, f_nodal, u_nodal, residual);
@@ -138,13 +125,9 @@ void BlatterTestXZ::residual_basal(const fem::Q1Element3 &element,
   // Additional contribution needed to satisfy the manufactured solution:
   {
     // compute x and z coordinates of quadrature points
-    double
-      *x = m_work[0],
-      *z = m_work[1];
+    double *x = m_work[0], *z = m_work[1];
     {
-      double
-        *x_nodal = m_work[2],
-        *z_nodal = m_work[3];
+      double *x_nodal = m_work[2], *z_nodal = m_work[3];
 
       for (int n = 0; n < fem::q13d::n_chi; ++n) {
         x_nodal[n] = element.x(n);
@@ -162,8 +145,9 @@ void BlatterTestXZ::residual_basal(const fem::Q1Element3 &element,
       for (int t = 0; t < element.n_chi(); ++t) {
         auto psi = face.chi(q, t);
 
-        residual[t] += - W * psi * blatter_xz_source_bed(x[q], z[q], m_A, m_rho, m_g,
-                                                         m_s0, m_alpha, m_H0, m_beta);
+        residual[t] +=
+            -W * psi *
+            blatter_xz_source_bed(x[q], z[q], m_A, m_rho, m_g, m_s0, m_alpha, m_H0, m_beta);
       }
     }
   }
@@ -173,17 +157,12 @@ void BlatterTestXZ::residual_basal(const fem::Q1Element3 &element,
  * Top surface contribution to the residual.
  */
 void BlatterTestXZ::residual_surface(const fem::Q1Element3 &element,
-                                     const fem::Q1Element3Face &face,
-                                     Vector2d *residual) {
+                                     const fem::Q1Element3Face &face, Vector2d *residual) {
 
   // compute x and z coordinates of quadrature points
-  double
-    *x = m_work[0],
-    *z = m_work[1];
+  double *x = m_work[0], *z = m_work[1];
   {
-    double
-      *x_nodal = m_work[2],
-      *z_nodal = m_work[3];
+    double *x_nodal = m_work[2], *z_nodal = m_work[3];
 
     for (int n = 0; n < fem::q13d::n_chi; ++n) {
       x_nodal[n] = element.x(n);
@@ -197,14 +176,13 @@ void BlatterTestXZ::residual_surface(const fem::Q1Element3 &element,
   for (unsigned int q = 0; q < face.n_pts(); ++q) {
     auto W = face.weight(q) / m_scaling;
 
-    auto F = blatter_xz_source_surface(x[q], z[q], m_A, m_rho, m_g,
-                                       m_s0, m_alpha, m_H0, m_beta);
+    auto F = blatter_xz_source_surface(x[q], z[q], m_A, m_rho, m_g, m_s0, m_alpha, m_H0, m_beta);
 
     // loop over all test functions
     for (int t = 0; t < element.n_chi(); ++t) {
       auto psi = face.chi(q, t);
 
-      residual[t] += - W * psi * F;
+      residual[t] += -W * psi * F;
     }
   }
 }

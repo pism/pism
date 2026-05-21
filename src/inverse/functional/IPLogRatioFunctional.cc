@@ -18,8 +18,8 @@
 
 #include "pism/inverse/functional/IPLogRatioFunctional.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/array/Vector.hh"
 #include "pism/util/array/Scalar.hh"
+#include "pism/util/array/Vector.hh"
 #include "pism/util/pism_utilities.hh"
 
 namespace pism {
@@ -52,25 +52,26 @@ void IPLogRatioFunctional::normalize(double scale) {
     }
 
     Vector2d &u_obs_ij = m_u_observed(i, j);
-    double obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
+    double obsMagSq    = u_obs_ij.u * u_obs_ij.u + u_obs_ij.v * u_obs_ij.v + m_eps * m_eps;
 
-    double modelMagSq = scale*scale*(u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v) + m_eps*m_eps;
+    double modelMagSq =
+        scale * scale * (u_obs_ij.u * u_obs_ij.u + u_obs_ij.v * u_obs_ij.v) + m_eps * m_eps;
 
-    double v = log(modelMagSq/obsMagSq);
-    value += w*v*v;
+    double v = log(modelMagSq / obsMagSq);
+    value += w * v * v;
   }
 
   m_normalization = GlobalSum(m_grid->com, value);
 }
 
-void IPLogRatioFunctional::valueAt(array::Vector &x, double *OUTPUT)  {
+void IPLogRatioFunctional::valueAt(array::Vector &x, double *OUTPUT) {
 
   // The value of the objective
   double value = 0;
 
   double w = 1.;
 
-  array::AccessScope list{&x, &m_u_observed};
+  array::AccessScope list{ &x, &m_u_observed };
 
   if (m_weights) {
     list.add(*m_weights);
@@ -82,14 +83,14 @@ void IPLogRatioFunctional::valueAt(array::Vector &x, double *OUTPUT)  {
     if (m_weights) {
       w = (*m_weights)(i, j);
     }
-    Vector2d &x_ij = x(i, j);
-    Vector2d &u_obs_ij = m_u_observed(i, j);
-    Vector2d u_model_ij = x_ij+u_obs_ij;
-    double obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
+    Vector2d &x_ij      = x(i, j);
+    Vector2d &u_obs_ij  = m_u_observed(i, j);
+    Vector2d u_model_ij = x_ij + u_obs_ij;
+    double obsMagSq     = u_obs_ij.u * u_obs_ij.u + u_obs_ij.v * u_obs_ij.v + m_eps * m_eps;
 
-    double modelMagSq = (u_model_ij.u*u_model_ij.u + u_model_ij.v*u_model_ij.v)+m_eps*m_eps;
-    double v = log(modelMagSq/obsMagSq);
-    value += w*v*v;
+    double modelMagSq = (u_model_ij.u * u_model_ij.u + u_model_ij.v * u_model_ij.v) + m_eps * m_eps;
+    double v          = log(modelMagSq / obsMagSq);
+    value += w * v * v;
   }
 
   value /= m_normalization;
@@ -97,12 +98,12 @@ void IPLogRatioFunctional::valueAt(array::Vector &x, double *OUTPUT)  {
   GlobalSum(m_grid->com, &value, OUTPUT, 1);
 }
 
-void IPLogRatioFunctional::gradientAt(array::Vector &x, array::Vector &gradient)  {
+void IPLogRatioFunctional::gradientAt(array::Vector &x, array::Vector &gradient) {
   gradient.set(0);
 
   double w = 1.;
 
-  array::AccessScope list{&x, &gradient, &m_u_observed};
+  array::AccessScope list{ &x, &gradient, &m_u_observed };
 
   if (m_weights) {
     list.add(*m_weights);
@@ -114,17 +115,17 @@ void IPLogRatioFunctional::gradientAt(array::Vector &x, array::Vector &gradient)
     if (m_weights) {
       w = (*m_weights)(i, j);
     }
-    Vector2d &x_ij = x(i, j);
-    Vector2d &u_obs_ij = m_u_observed(i, j);
-    Vector2d u_model_ij = x_ij+u_obs_ij;
+    Vector2d &x_ij      = x(i, j);
+    Vector2d &u_obs_ij  = m_u_observed(i, j);
+    Vector2d u_model_ij = x_ij + u_obs_ij;
 
-    double obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
-    double modelMagSq = (u_model_ij.u*u_model_ij.u + u_model_ij.v*u_model_ij.v)+m_eps*m_eps;
-    double v = log(modelMagSq/obsMagSq);
-    double dJdw =  2*w*v/modelMagSq;
+    double obsMagSq   = u_obs_ij.u * u_obs_ij.u + u_obs_ij.v * u_obs_ij.v + m_eps * m_eps;
+    double modelMagSq = (u_model_ij.u * u_model_ij.u + u_model_ij.v * u_model_ij.v) + m_eps * m_eps;
+    double v          = log(modelMagSq / obsMagSq);
+    double dJdw       = 2 * w * v / modelMagSq;
 
-    gradient(i, j).u = dJdw*2*u_model_ij.u/m_normalization;
-    gradient(i, j).v = dJdw*2*u_model_ij.v/m_normalization;
+    gradient(i, j).u = dJdw * 2 * u_model_ij.u / m_normalization;
+    gradient(i, j).v = dJdw * 2 * u_model_ij.v / m_normalization;
   }
 }
 

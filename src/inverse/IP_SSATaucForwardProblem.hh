@@ -19,8 +19,8 @@
 #ifndef IP_SSATAUCFORWARDPROBLEM_HH_4AEVR4Z
 #define IP_SSATAUCFORWARDPROBLEM_HH_4AEVR4Z
 
-#include "pism/stressbalance/ssa/SSAFEM.hh"
 #include "pism/inverse/IPDesignVariableParameterization.hh"
+#include "pism/stressbalance/ssa/SSAFEM.hh"
 #include "pism/util/petscwrappers/KSP.hh"
 #include "pism/util/petscwrappers/Mat.hh"
 
@@ -100,10 +100,8 @@ namespace inverse {
   methods require the transpose of this map; to apply \f$DF^t\f$ to \f$du\f$ use
   \ref apply_linearization_transpose.
 */
-class IP_SSATaucForwardProblem : public stressbalance::SSAFEM
-{
+class IP_SSATaucForwardProblem : public stressbalance::SSAFEM {
 public:
-
   /// The function space for the design variable, i.e. \f$\tau_c\f$.
   typedef array::Scalar DesignVec;
   typedef array::Scalar1 DesignVecGhosted;
@@ -114,8 +112,7 @@ public:
 
   //! Constructs from the same objects as SSAFEM, plus a specification of how \f$\tau_c\f$
   //! is parameterized.
-  IP_SSATaucForwardProblem(std::shared_ptr<const Grid> g,
-                           IPDesignVariableParameterization &tp);
+  IP_SSATaucForwardProblem(std::shared_ptr<const Grid> g, IPDesignVariableParameterization &tp);
 
   virtual ~IP_SSATaucForwardProblem() = default;
 
@@ -132,8 +129,7 @@ public:
     having the desired values in the fixed locations, and using set_tauc_fixed_locations()
     to indicate the nodes that should not be changed.
   */
-  virtual void set_tauc_fixed_locations(array::Scalar &locations)
-  {
+  virtual void set_tauc_fixed_locations(array::Scalar &locations) {
     m_fixed_tauc_locations = &locations;
   }
 
@@ -144,7 +140,7 @@ public:
   }
 
   //! Exposes the \f$\tau_c\f$ parameterization being used.
-  virtual IPDesignVariableParameterization & tauc_param() {
+  virtual IPDesignVariableParameterization &tauc_param() {
     return m_tauc_param;
   }
 
@@ -161,7 +157,8 @@ public:
   virtual void apply_jacobian_design(array::Vector &u, array::Scalar &dzeta, Vec du);
   virtual void apply_jacobian_design(array::Vector &u, array::Scalar &dzeta, Vector2d **du_a);
 
-  virtual void apply_jacobian_design_transpose(array::Vector &u, array::Vector &du, array::Scalar &dzeta);
+  virtual void apply_jacobian_design_transpose(array::Vector &u, array::Vector &du,
+                                               array::Scalar &dzeta);
   virtual void apply_jacobian_design_transpose(array::Vector &u, array::Vector &du, Vec dzeta);
   virtual void apply_jacobian_design_transpose(array::Vector &u, array::Vector &du, double **dzeta);
 
@@ -169,16 +166,15 @@ public:
   virtual void apply_linearization_transpose(array::Vector &du, array::Scalar &dzeta);
 
   //! Exposes the DMDA of the underlying grid for the benefit of TAO.
-  petsc::DM& get_da() const {
+  petsc::DM &get_da() const {
     return *m_velocity_global.dm();
   }
 
 protected:
-
   /// Current value of zeta, provided from caller.
-  array::Scalar   *m_zeta;
+  array::Scalar *m_zeta;
   /// Storage for d_zeta with ghosts, if needed when an argument d_zeta is ghost-less.
-  array::Scalar1   m_dzeta_local;
+  array::Scalar1 m_dzeta_local;
   /// Storage for tauc (avoids modifying fields obtained via pism::Vars)
   array::Scalar2 m_tauc_copy;
 
@@ -192,17 +188,17 @@ protected:
   std::shared_ptr<array::Vector> m_velocity_shared;
 
   /// Temporary storage when state vectors need to be used without ghosts.
-  array::Vector  m_du_global;
+  array::Vector m_du_global;
   /// Temporary storage when state vectors need to be used with ghosts.
-  array::Vector1  m_du_local;
+  array::Vector1 m_du_local;
 
   fem::ElementIterator m_element_index;
-  fem::Q1Element2       m_element;
+  fem::Q1Element2 m_element;
 
   /// KSP used in \ref apply_linearization and \ref apply_linearization_transpose
-  petsc::KSP  m_ksp;
+  petsc::KSP m_ksp;
   /// Mat used in \ref apply_linearization and \ref apply_linearization_transpose
-  petsc::Mat  m_J_state;
+  petsc::Mat m_J_state;
 
   SNESConvergedReason m_reason;
 

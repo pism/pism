@@ -32,7 +32,8 @@ KSP::KSP(::KSP ksp) {
 
 KSP::~KSP() {
   if (m_value != NULL) {
-    PetscErrorCode ierr = KSPDestroy(&m_value); CHKERRCONTINUE(ierr);
+    PetscErrorCode ierr = KSPDestroy(&m_value);
+    CHKERRCONTINUE(ierr);
   }
 }
 

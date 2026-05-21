@@ -20,8 +20,8 @@
 #ifndef AGEMODEL_H
 #define AGEMODEL_H
 
-#include "pism/util/Component.hh"
 #include "pism/stressbalance/StressBalance.hh"
+#include "pism/util/Component.hh"
 #include <memory>
 
 namespace pism {
@@ -29,10 +29,8 @@ namespace pism {
 class AgeModelInputs {
 public:
   AgeModelInputs();
-  AgeModelInputs(const array::Scalar *ice_thickness,
-                 const array::Array3D *u3,
-                 const array::Array3D *v3,
-                 const array::Array3D *w3);
+  AgeModelInputs(const array::Scalar *ice_thickness, const array::Array3D *u3,
+                 const array::Array3D *v3, const array::Array3D *w3);
   void check() const;
 
   const array::Scalar *ice_thickness;
@@ -50,7 +48,8 @@ public:
 
   void init(const InputOptions &opts);
 
-  const array::Array3D & age() const;
+  const array::Array3D &age() const;
+
 protected:
   MaxTimestep max_timestep_impl(double t) const;
 

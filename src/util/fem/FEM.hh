@@ -181,14 +181,14 @@ Germ chi(unsigned int k, const QuadPoint &pt);
 //! Q0 element information
 // FIXME: not sure if Q0 is the right notation here.
 namespace q0 {
-const int n_chi = 4;
+const int n_chi   = 4;
 const int n_sides = 4;
 Germ chi(unsigned int k, const QuadPoint &p);
 } // end of namespace q0
 
 //! Q1 element information
 namespace q1 {
-const int n_chi = 4;
+const int n_chi   = 4;
 const int n_sides = 4;
 Germ chi(unsigned int k, const QuadPoint &p);
 } // end of namespace q1
@@ -196,13 +196,18 @@ Germ chi(unsigned int k, const QuadPoint &p);
 //! P1 element information
 namespace p1 {
 Germ chi(unsigned int k, const QuadPoint &p);
-const int n_chi = 3;
+const int n_chi   = 3;
 const int n_sides = 3;
 } // end of namespace p1
 
-enum ElementType {ELEMENT_Q = -1,
-                  ELEMENT_P0 = 0, ELEMENT_P1 = 1, ELEMENT_P2 = 2, ELEMENT_P3 = 3,
-                  ELEMENT_EXTERIOR};
+enum ElementType {
+  ELEMENT_Q  = -1,
+  ELEMENT_P0 = 0,
+  ELEMENT_P1 = 1,
+  ELEMENT_P2 = 2,
+  ELEMENT_P3 = 3,
+  ELEMENT_EXTERIOR
+};
 
 ElementType element_type(const int node_type[q1::n_chi]);
 
@@ -220,21 +225,23 @@ Germ chi(unsigned int k, const QuadPoint &p);
  *
  * The order of faces is used in Q1Element3Face::reset()
  */
-const unsigned int incident_nodes[n_faces][4] =
-  {{3, 0, 4, 7},                // 0 - left,   xi   = -1
-   {1, 2, 6, 5},                // 1 - right,  xi   = +1
-   {0, 1, 5, 4},                // 2 - front,  eta  = -1
-   {2, 3, 7, 6},                // 3 - back,   eta  = +1
-   {0, 1, 2, 3},                // 4 - bottom, zeta = -1
-   {4, 5, 6, 7}                 // 5 - top,    zeta = +1
+const unsigned int incident_nodes[n_faces][4] = {
+  { 3, 0, 4, 7 }, // 0 - left,   xi   = -1
+  { 1, 2, 6, 5 }, // 1 - right,  xi   = +1
+  { 0, 1, 5, 4 }, // 2 - front,  eta  = -1
+  { 2, 3, 7, 6 }, // 3 - back,   eta  = +1
+  { 0, 1, 2, 3 }, // 4 - bottom, zeta = -1
+  { 4, 5, 6, 7 }  // 5 - top,    zeta = +1
 };
 
-enum ElementFace {FACE_LEFT   = 0,
-                  FACE_RIGHT  = 1,
-                  FACE_FRONT  = 2,
-                  FACE_BACK   = 3,
-                  FACE_BOTTOM = 4,
-                  FACE_TOP    = 5};
+enum ElementFace {
+  FACE_LEFT   = 0,
+  FACE_RIGHT  = 1,
+  FACE_FRONT  = 2,
+  FACE_BACK   = 3,
+  FACE_BOTTOM = 4,
+  FACE_TOP    = 5
+};
 
 } // end of namespace q13d
 

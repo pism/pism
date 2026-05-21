@@ -28,8 +28,7 @@ namespace pism {
 namespace calving {
 
 /*! \brief Calving mechanism removing floating ice. */
-class FloatKill : public Component
-{
+class FloatKill : public Component {
 public:
   FloatKill(std::shared_ptr<const Grid> g);
   virtual ~FloatKill() = default;

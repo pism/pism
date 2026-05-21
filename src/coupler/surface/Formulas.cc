@@ -24,11 +24,10 @@
 namespace pism {
 namespace surface {
 
-PSFormulas::PSFormulas(std::shared_ptr<const Grid> grid)
-  : SurfaceModel(grid) {
+PSFormulas::PSFormulas(std::shared_ptr<const Grid> grid) : SurfaceModel(grid) {
 
-  m_mass_flux   = allocate_mass_flux(grid);
-  m_temperature = allocate_temperature(grid);
+  m_mass_flux    = allocate_mass_flux(grid);
+  m_temperature  = allocate_temperature(grid);
   m_accumulation = allocate_accumulation(grid);
   m_melt         = allocate_melt(grid);
   m_runoff       = allocate_runoff(grid);
@@ -38,7 +37,7 @@ const array::Scalar &PSFormulas::mass_flux_impl() const {
   return *m_mass_flux;
 }
 
-const array::Scalar & PSFormulas::temperature_impl() const {
+const array::Scalar &PSFormulas::temperature_impl() const {
   return *m_temperature;
 }
 

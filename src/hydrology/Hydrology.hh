@@ -19,8 +19,8 @@
 #ifndef _PISMHYDROLOGY_H_
 #define _PISMHYDROLOGY_H_
 
-#include "pism/util/array/Vector.hh"
 #include "pism/util/Component.hh"
+#include "pism/util/array/Vector.hh"
 
 namespace pism {
 
@@ -32,13 +32,13 @@ public:
   Inputs();
 
   // modeling domain (set to NULL in whole-ice-sheet configurations)
-  const array::Scalar1      *no_model_mask;
+  const array::Scalar1 *no_model_mask;
   // geometry
   const Geometry *geometry;
   // hydrological inputs
-  const array::Scalar        *surface_input_rate;
-  const array::Scalar        *basal_melt_rate;
-  const array::Scalar        *ice_sliding_speed;
+  const array::Scalar *surface_input_rate;
+  const array::Scalar *basal_melt_rate;
+  const array::Scalar *ice_sliding_speed;
 };
 
 //! \brief The PISM subglacial hydrology model interface.
@@ -113,55 +113,48 @@ public:
 
   void restart(const File &input_file, int record);
 
-  void bootstrap(const File &input_file,
-                 const array::Scalar &ice_thickness);
+  void bootstrap(const File &input_file, const array::Scalar &ice_thickness);
 
-  void init(const array::Scalar &W_till,
-                  const array::Scalar &W,
-                  const array::Scalar &P);
+  void init(const array::Scalar &W_till, const array::Scalar &W, const array::Scalar &P);
 
-  void update(double t, double dt, const Inputs& inputs);
+  void update(double t, double dt, const Inputs &inputs);
 
-  const array::Scalar& till_water_thickness() const;
-  const array::Scalar& subglacial_water_thickness() const;
-  const array::Scalar& overburden_pressure() const;
-  const array::Scalar& surface_input_rate() const;
-  const array::Vector& flux() const;
+  const array::Scalar &till_water_thickness() const;
+  const array::Scalar &subglacial_water_thickness() const;
+  const array::Scalar &overburden_pressure() const;
+  const array::Scalar &surface_input_rate() const;
+  const array::Vector &flux() const;
 
-  const array::Scalar& mass_change() const;
-  const array::Scalar& mass_change_at_grounded_margin() const;
-  const array::Scalar& mass_change_at_grounding_line() const;
-  const array::Scalar& mass_change_at_domain_boundary() const;
-  const array::Scalar& mass_change_due_to_conservation_error() const;
-  const array::Scalar& mass_change_due_to_input() const;
-  const array::Scalar& mass_change_due_to_lateral_flow() const;
+  const array::Scalar &mass_change() const;
+  const array::Scalar &mass_change_at_grounded_margin() const;
+  const array::Scalar &mass_change_at_grounding_line() const;
+  const array::Scalar &mass_change_at_domain_boundary() const;
+  const array::Scalar &mass_change_due_to_conservation_error() const;
+  const array::Scalar &mass_change_due_to_input() const;
+  const array::Scalar &mass_change_due_to_lateral_flow() const;
 
 protected:
   virtual void restart_impl(const File &input_file, int record);
 
-  virtual void bootstrap_impl(const File &input_file,
-                              const array::Scalar &ice_thickness);
+  virtual void bootstrap_impl(const File &input_file, const array::Scalar &ice_thickness);
 
-  virtual void init_impl(const array::Scalar &W_till,
-                               const array::Scalar &W,
-                               const array::Scalar &P);
+  virtual void init_impl(const array::Scalar &W_till, const array::Scalar &W,
+                         const array::Scalar &P);
 
-  virtual void update_impl(double t, double dt, const Inputs& inputs) = 0;
+  virtual void update_impl(double t, double dt, const Inputs &inputs) = 0;
   virtual std::map<std::string, Diagnostic::Ptr> spatial_diagnostics_impl() const;
 
   virtual std::set<VariableMetadata> state_impl() const;
   virtual void write_state_impl(const OutputFile &output) const;
 
-  void compute_overburden_pressure(const array::Scalar &ice_thickness,
-                                   array::Scalar &result) const;
+  void compute_overburden_pressure(const array::Scalar &ice_thickness, array::Scalar &result) const;
 
   void compute_surface_input_rate(const array::CellType &mask,
-                                  const array::Scalar *surface_input_rate,
-                                  array::Scalar &result);
+                                  const array::Scalar *surface_input_rate, array::Scalar &result);
 
-  void compute_basal_melt_rate(const array::CellType &mask,
-                               const array::Scalar &basal_melt_rate,
+  void compute_basal_melt_rate(const array::CellType &mask, const array::Scalar &basal_melt_rate,
                                array::Scalar &result);
+
 protected:
   // water flux on the regular grid
   array::Vector m_Q;
@@ -197,20 +190,18 @@ protected:
 
   // when we update the water amounts, careful mass accounting at the boundary
   // is needed
-  void enforce_bounds(const array::CellType &cell_type,
-                      const array::Scalar *no_model_mask,
-                      double max_thickness,
-                      double ocean_water_thickness,
-                      array::Scalar &water_thickness,
-                      array::Scalar &grounded_margin_change,
+  void enforce_bounds(const array::CellType &cell_type, const array::Scalar *no_model_mask,
+                      double max_thickness, double ocean_water_thickness,
+                      array::Scalar &water_thickness, array::Scalar &grounded_margin_change,
                       array::Scalar &grounding_line_change,
                       array::Scalar &conservation_error_change,
                       array::Scalar &no_model_mask_change);
+
 private:
   virtual void initialization_message() const = 0;
 };
 
-void check_bounds(const array::Scalar& W, double W_max);
+void check_bounds(const array::Scalar &W, double W_max);
 
 } // end of namespace hydrology
 } // end of namespace pism

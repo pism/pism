@@ -16,34 +16,34 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <cassert>
-#include <ctime>  // for time(), used to initialize random number gen
-#include <gsl/gsl_rng.h>
-#include <gsl/gsl_randist.h>
-#include <gsl/gsl_math.h>       // M_PI
-#include <cmath>                // for erfc() in CalovGreveIntegrand()
 #include <algorithm>
+#include <cassert>
+#include <cmath>          // for erfc() in CalovGreveIntegrand()
+#include <ctime>          // for time(), used to initialize random number gen
+#include <gsl/gsl_math.h> // M_PI
+#include <gsl/gsl_randist.h>
+#include <gsl/gsl_rng.h>
 
-#include "pism/util/Config.hh"
 #include "pism/coupler/surface/localMassBalance.hh"
-#include "pism/util/Grid.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/VariableMetadata.hh"
 
 namespace pism {
 namespace surface {
 
 LocalMassBalance::Changes::Changes() {
-  firn_depth    = 0.0;
-  snow_depth    = 0.0;
-  melt          = 0.0;
-  runoff        = 0.0;
-  smb           = 0.0;
+  firn_depth = 0.0;
+  snow_depth = 0.0;
+  melt       = 0.0;
+  runoff     = 0.0;
+  smb        = 0.0;
 }
 
-LocalMassBalance::LocalMassBalance(std::shared_ptr<const Config> myconfig, units::System::Ptr system)
-  : m_config(myconfig), m_unit_system(system),
-    m_seconds_per_day(86400) {
+LocalMassBalance::LocalMassBalance(std::shared_ptr<const Config> myconfig,
+                                   units::System::Ptr system)
+    : m_config(myconfig), m_unit_system(system), m_seconds_per_day(86400) {
   // empty
 }
 
@@ -52,7 +52,7 @@ std::string LocalMassBalance::method() const {
 }
 
 PDDMassBalance::PDDMassBalance(std::shared_ptr<const Config> config, units::System::Ptr system)
-  : LocalMassBalance(config, system) {
+    : LocalMassBalance(config, system) {
   precip_as_snow     = m_config->get_flag("surface.pdd.interpret_precip_as_snow");
   Tmin               = m_config->get_number("surface.pdd.air_temp_all_precip_as_snow");
   Tmax               = m_config->get_number("surface.pdd.air_temp_all_precip_as_rain");
@@ -67,7 +67,8 @@ PDDMassBalance::PDDMassBalance(std::shared_ptr<const Config> config, units::Syst
     precipitation time-series.
  */
 unsigned int PDDMassBalance::get_timeseries_length(double dt) {
-  const unsigned int    NperYear = static_cast<unsigned int>(m_config->get_number("surface.pdd.max_evals_per_year"));
+  const unsigned int NperYear =
+      static_cast<unsigned int>(m_config->get_number("surface.pdd.max_evals_per_year"));
   const double dt_years = units::convert(m_unit_system, dt, "seconds", "years");
 
   return std::max(1U, static_cast<unsigned int>(ceil(NperYear * dt_years)));
@@ -98,7 +99,7 @@ static double CalovGreveIntegrand(double sigma, double TacC) {
   }
 
   const double Z = TacC / (sqrt(2.0) * sigma);
-  return (sigma / sqrt(2.0 * M_PI)) * exp(-Z*Z) + (TacC / 2.0) * erfc(-Z);
+  return (sigma / sqrt(2.0 * M_PI)) * exp(-Z * Z) + (TacC / 2.0) * erfc(-Z);
 }
 
 
@@ -112,15 +113,13 @@ static double CalovGreveIntegrand(double sigma, double TacC) {
  * @param N length of the T array
  * @param[out] PDDs pointer to a pre-allocated array with N-1 elements
  */
-void PDDMassBalance::get_PDDs(double dt_series,
-                              const std::vector<double> &S,
-                              const std::vector<double> &T,
-                              std::vector<double> &PDDs) {
+void PDDMassBalance::get_PDDs(double dt_series, const std::vector<double> &S,
+                              const std::vector<double> &T, std::vector<double> &PDDs) {
   assert(S.size() == T.size() and T.size() == PDDs.size());
   assert(dt_series > 0.0);
 
   const double h_days = dt_series / m_seconds_per_day;
-  const size_t N = S.size();
+  const size_t N      = S.size();
 
   for (unsigned int k = 0; k < N; ++k) {
     PDDs[k] = h_days * CalovGreveIntegrand(S[k], T[k] - pdd_threshold_temp);
@@ -144,8 +143,7 @@ void PDDMassBalance::get_PDDs(double dt_series,
  * @param[in] T air temperature (array of length N)
  * @param[in] N array length
  */
-void PDDMassBalance::get_snow_accumulation(const std::vector<double> &T,
-                                           std::vector<double> &P) {
+void PDDMassBalance::get_snow_accumulation(const std::vector<double> &T, std::vector<double> &P) {
 
   assert(T.size() == P.size());
   const size_t N = T.size();
@@ -166,7 +164,6 @@ void PDDMassBalance::get_snow_accumulation(const std::vector<double> &T,
       P[i] = 0.0;
     }
   }
-
 }
 
 
@@ -191,19 +188,11 @@ void PDDMassBalance::get_snow_accumulation(const std::vector<double> &T,
  * The scheme here came from EISMINT-Greenland [\ref RitzEISMINT], but
  * is influenced by R. Hock (personal communication).
  */
-PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
-                                             double PDDs,
-                                             double thickness,
-                                             double old_firn_depth,
-                                             double old_snow_depth,
-                                             double accumulation) {
-  double
-    firn_depth      = old_firn_depth,
-    snow_depth      = old_snow_depth,
-    max_snow_melted = PDDs * ddf.snow,
-    firn_melted     = 0.0,
-    snow_melted     = 0.0,
-    excess_pdds     = 0.0;
+PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf, double PDDs,
+                                             double thickness, double old_firn_depth,
+                                             double old_snow_depth, double accumulation) {
+  double firn_depth = old_firn_depth, snow_depth = old_snow_depth,
+         max_snow_melted = PDDs * ddf.snow, firn_melted = 0.0, snow_melted = 0.0, excess_pdds = 0.0;
 
   assert(thickness >= 0);
 
@@ -223,10 +212,9 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
 
   snow_depth += accumulation;
 
-  if (PDDs <= 0.0) {            // The "no melt" case.
+  if (PDDs <= 0.0) { // The "no melt" case.
     snow_melted = 0.0;
-    firn_melted = 0.0,
-    excess_pdds = 0.0;
+    firn_melted = 0.0, excess_pdds = 0.0;
   } else if (max_snow_melted <= snow_depth) {
     // Some of the snow melted and some is left; in any case, all of
     // the energy available for melt, namely all of the positive
@@ -249,10 +237,8 @@ PDDMassBalance::Changes PDDMassBalance::step(const DegreeDayFactors &ddf,
     excess_pdds = PDDs - ((firn_melted + snow_melted) / ddf.snow); // units: K day
   }
 
-  double
-    ice_melted              = std::min(excess_pdds * ddf.ice, ice_thickness),
-    melt                    = snow_melted + firn_melted + ice_melted,
-    ice_created_by_refreeze = 0.0;
+  double ice_melted = std::min(excess_pdds * ddf.ice, ice_thickness),
+         melt = snow_melted + firn_melted + ice_melted, ice_created_by_refreeze = 0.0;
 
   if (refreeze_ice_melt) {
     ice_created_by_refreeze = melt * ddf.refreeze_fraction;
@@ -297,17 +283,14 @@ Initializes the random number generator (RNG).  The RNG is GSL's recommended def
 which seems to be "mt19937" and is DIEHARD (whatever that means ...). Seed with
 wall clock time in seconds in non-repeatable case, and with 0 in repeatable case.
  */
-PDDrandMassBalance::PDDrandMassBalance(std::shared_ptr<const Config> config, units::System::Ptr system,
-                                       Kind kind)
-  : PDDMassBalance(config, system),
-    m_impl(new Impl)
-{
-  m_impl->rng = gsl_rng_alloc(gsl_rng_default);  // so m_impl->rng != NULL now
+PDDrandMassBalance::PDDrandMassBalance(std::shared_ptr<const Config> config,
+                                       units::System::Ptr system, Kind kind)
+    : PDDMassBalance(config, system), m_impl(new Impl) {
+  m_impl->rng = gsl_rng_alloc(gsl_rng_default); // so m_impl->rng != NULL now
   gsl_rng_set(m_impl->rng, kind == REPEATABLE ? 0 : time(0));
 
-  m_method = (kind == NOT_REPEATABLE
-              ? "simulation of a random process"
-              : "repeatable simulation of a random process");
+  m_method = (kind == NOT_REPEATABLE ? "simulation of a random process" :
+                                       "repeatable simulation of a random process");
 }
 
 
@@ -347,15 +330,13 @@ unsigned int PDDrandMassBalance::get_timeseries_length(double dt) {
  * @param N number of points in the temperature time-series, each corresponds to a sub-interval
  * @param PDDs pointer to a pre-allocated array of length N
  */
-void PDDrandMassBalance::get_PDDs(double dt_series,
-                                  const std::vector<double> &S,
-                                  const std::vector<double> &T,
-                                  std::vector<double> &PDDs) {
+void PDDrandMassBalance::get_PDDs(double dt_series, const std::vector<double> &S,
+                                  const std::vector<double> &T, std::vector<double> &PDDs) {
   assert(S.size() == T.size() and T.size() == PDDs.size());
   assert(dt_series > 0.0);
 
   const double h_days = dt_series / m_seconds_per_day;
-  const size_t N = S.size();
+  const size_t N      = S.size();
 
   for (unsigned int k = 0; k < N; ++k) {
     // average temperature in k-th interval
@@ -369,9 +350,7 @@ void PDDrandMassBalance::get_PDDs(double dt_series,
 
 
 FaustoGrevePDDObject::FaustoGrevePDDObject(std::shared_ptr<const Grid> grid)
-  : m_grid(grid), m_config(grid->ctx()->config()),
-    m_temp_mj(grid, "temp_mj_faustogreve")
-{
+    : m_grid(grid), m_config(grid->ctx()->config()), m_temp_mj(grid, "temp_mj_faustogreve") {
 
   m_beta_ice_w  = m_config->get_number("surface.pdd.fausto.beta_ice_w");
   m_beta_snow_w = m_config->get_number("surface.pdd.fausto.beta_snow_w");
@@ -398,7 +377,7 @@ LocalMassBalance::DegreeDayFactors FaustoGrevePDDObject::degree_day_factors(int 
   ddf.refreeze_fraction = m_refreeze_fraction;
 
   array::AccessScope list(m_temp_mj);
-  const double T_mj = m_temp_mj(i,j);
+  const double T_mj = m_temp_mj(i, j);
 
   if (latitude < m_pdd_fausto_latitude_beta_w) { // case latitude < 72 deg N
     ddf.ice  = m_beta_ice_w;
@@ -411,11 +390,10 @@ LocalMassBalance::DegreeDayFactors FaustoGrevePDDObject::degree_day_factors(int 
       ddf.ice  = m_beta_ice_c;
       ddf.snow = m_beta_snow_c;
     } else { // middle case   T_c < T_mj < T_w
-      const double
-        lam_i = pow((m_T_w - T_mj) / (m_T_w - m_T_c) , 3.0),
-        lam_s = (T_mj - m_T_c) / (m_T_w - m_T_c);
-      ddf.ice  = m_beta_ice_w + (m_beta_ice_c - m_beta_ice_w) * lam_i;
-      ddf.snow = m_beta_snow_w + (m_beta_snow_c - m_beta_snow_w) * lam_s;
+      const double lam_i = pow((m_T_w - T_mj) / (m_T_w - m_T_c), 3.0),
+                   lam_s = (T_mj - m_T_c) / (m_T_w - m_T_c);
+      ddf.ice            = m_beta_ice_w + (m_beta_ice_c - m_beta_ice_w) * lam_i;
+      ddf.snow           = m_beta_snow_w + (m_beta_snow_c - m_beta_snow_w) * lam_s;
     }
   }
 
@@ -424,7 +402,7 @@ LocalMassBalance::DegreeDayFactors FaustoGrevePDDObject::degree_day_factors(int 
   //   day is slightly larger; for example, iwfactor = 1000/910
   const double iwfactor = m_fresh_water_density / m_ice_density;
   ddf.snow *= iwfactor;
-  ddf.ice  *= iwfactor;
+  ddf.ice *= iwfactor;
 
   return ddf;
 }
@@ -434,25 +412,21 @@ LocalMassBalance::DegreeDayFactors FaustoGrevePDDObject::degree_day_factors(int 
 /*!
 Unfortunately this duplicates code in SeaRISEGreenland::update();
  */
-void FaustoGrevePDDObject::update_temp_mj(const array::Scalar &surfelev,
-                                          const array::Scalar &lat,
+void FaustoGrevePDDObject::update_temp_mj(const array::Scalar &surfelev, const array::Scalar &lat,
                                           const array::Scalar &lon) {
-  const double
-    d_mj     = m_config->get_number("atmosphere.fausto_air_temp.d_mj"),      // K
-    gamma_mj = m_config->get_number("atmosphere.fausto_air_temp.gamma_mj"),  // K m-1
-    c_mj     = m_config->get_number("atmosphere.fausto_air_temp.c_mj"),      // K (degN)-1
-    kappa_mj = m_config->get_number("atmosphere.fausto_air_temp.kappa_mj");  // K (degW)-1
+  const double d_mj = m_config->get_number("atmosphere.fausto_air_temp.d_mj"),     // K
+      gamma_mj      = m_config->get_number("atmosphere.fausto_air_temp.gamma_mj"), // K m-1
+      c_mj          = m_config->get_number("atmosphere.fausto_air_temp.c_mj"),     // K (degN)-1
+      kappa_mj      = m_config->get_number("atmosphere.fausto_air_temp.kappa_mj"); // K (degW)-1
 
-  const array::Scalar
-    &h        = surfelev,
-    &lat_degN = lat,
-    &lon_degE = lon;
+  const array::Scalar &h = surfelev, &lat_degN = lat, &lon_degE = lon;
 
-  array::AccessScope list{&h, &lat_degN, &lon_degE, &m_temp_mj};
+  array::AccessScope list{ &h, &lat_degN, &lon_degE, &m_temp_mj };
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
-    m_temp_mj(i,j) = d_mj + gamma_mj * h(i,j) + c_mj * lat_degN(i,j) + kappa_mj * (-lon_degE(i,j));
+    m_temp_mj(i, j) =
+        d_mj + gamma_mj * h(i, j) + c_mj * lat_degN(i, j) + kappa_mj * (-lon_degE(i, j));
   }
 }
 

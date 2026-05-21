@@ -20,7 +20,7 @@
 #ifndef PISM_VECTOR2D_HH
 #define PISM_VECTOR2D_HH
 
-#include <cmath>                // sqrt
+#include <cmath> // sqrt
 
 namespace pism {
 
@@ -28,20 +28,23 @@ namespace pism {
 //! velocity) at a certain grid point.
 class Vector2d {
 public:
-  Vector2d() : u(0), v(0) {}
-  Vector2d(double a, double b) : u(a), v(b) {}
-  Vector2d(const Vector2d &other) : u(other.u), v(other.v) {}
+  Vector2d() : u(0), v(0) {
+  }
+  Vector2d(double a, double b) : u(a), v(b) {
+  }
+  Vector2d(const Vector2d &other) : u(other.u), v(other.v) {
+  }
 
   //! Magnitude squared.
   inline double magnitude_squared() const {
-    return u*u + v*v;
+    return u * u + v * v;
   }
   //! Magnitude.
   inline double magnitude() const {
     return sqrt(magnitude_squared());
   }
 
-  inline Vector2d& operator=(const Vector2d &other) {
+  inline Vector2d &operator=(const Vector2d &other) {
     // NOTE: we don't check for self-assignment because there is no memory
     // (de-)allocation here.
     u = other.u;
@@ -50,31 +53,31 @@ public:
   }
 
   //! Set both components to the same number.
-  inline Vector2d& operator=(const double &a) {
+  inline Vector2d &operator=(const double &a) {
     u = a;
     v = a;
     return *this;
   }
 
-  inline Vector2d& operator+=(const Vector2d &other) {
+  inline Vector2d &operator+=(const Vector2d &other) {
     u += other.u;
     v += other.v;
     return *this;
   }
 
-  inline Vector2d& operator-=(const Vector2d &other) {
+  inline Vector2d &operator-=(const Vector2d &other) {
     u -= other.u;
     v -= other.v;
     return *this;
   }
 
-  inline Vector2d& operator*=(const double &a) {
+  inline Vector2d &operator*=(const double &a) {
     u *= a;
     v *= a;
     return *this;
   }
 
-  inline Vector2d& operator/=(const double &a) {
+  inline Vector2d &operator/=(const double &a) {
     u /= a;
     v /= a;
     return *this;

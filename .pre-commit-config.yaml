@@ -17,10 +17,12 @@ repos:
         # tricky later:
         #   types_or: [c, c++, c-header, c++-header]
       - id: clang-tidy
-        args:
-          - --fix-errors
-        exclude: '\.m$'
-
+        args: [--fix-errors]
+        # `c++` covers both .cc/.cpp/.cxx sources and .hh/.hpp headers
+        # — there's no separate `c++-header` tag in `identify`.
+        types_or: [c++]
+        exclude: '(^|/)(swig|.*_wrap\.cc|.*_wrap\.cxx)$'
+        
   # - repo: https://github.com/pre-commit/pre-commit-hooks
   #   rev: v6.0.0
   #   hooks:

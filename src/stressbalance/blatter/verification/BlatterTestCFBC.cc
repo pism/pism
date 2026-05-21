@@ -19,16 +19,16 @@
 
 #include "pism/stressbalance/blatter/verification/BlatterTestCFBC.hh"
 
+#include "pism/geometry/Geometry.hh"
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/stressbalance/StressBalance.hh"
-#include "pism/geometry/Geometry.hh"
 #include "pism/stressbalance/blatter/verification/manufactured_solutions.hh"
 
 namespace pism {
 namespace stressbalance {
 
 BlatterTestCFBC::BlatterTestCFBC(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor)
-  : Blatter(grid, Mz, coarsening_factor) {
+    : Blatter(grid, Mz, coarsening_factor) {
 
   assert(m_flow_law->exponent() == 1.0);
 
@@ -44,32 +44,26 @@ BlatterTestCFBC::BlatterTestCFBC(std::shared_ptr<const Grid> grid, int Mz, int c
 }
 
 bool BlatterTestCFBC::dirichlet_node(const DMDALocalInfo &info,
-                                     const fem::Element3::GlobalIndex& I) {
-  (void) info;
+                                     const fem::Element3::GlobalIndex &I) {
+  (void)info;
   return I.i == 0;
 }
 
 Vector2d BlatterTestCFBC::u_bc(double x, double y, double z) const {
-  (void) y;
+  (void)y;
 
   return blatter_xz_cfbc_exact(x, z, m_B, m_L, m_rho_i, m_rho_w, m_g);
 }
 
-void BlatterTestCFBC::residual_source_term(const fem::Q1Element3 &element,
-                                           const double *surface,
-                                           const double *bed,
-                                           Vector2d *residual) {
-  (void) surface;
-  (void) bed;
+void BlatterTestCFBC::residual_source_term(const fem::Q1Element3 &element, const double *surface,
+                                           const double *bed, Vector2d *residual) {
+  (void)surface;
+  (void)bed;
 
   // compute x and z coordinates of quadrature points
-  double
-    *x = m_work[0],
-    *z = m_work[1];
+  double *x = m_work[0], *z = m_work[1];
   {
-    double
-      *x_nodal = m_work[2],
-      *z_nodal = m_work[3];
+    double *x_nodal = m_work[2], *z_nodal = m_work[3];
 
     for (int n = 0; n < fem::q13d::n_chi; ++n) {
       x_nodal[n] = element.x(n);
@@ -96,8 +90,7 @@ void BlatterTestCFBC::residual_source_term(const fem::Q1Element3 &element,
 }
 
 void BlatterTestCFBC::residual_surface(const fem::Q1Element3 &element,
-                                       const fem::Q1Element3Face &face,
-                                       Vector2d *residual) {
+                                       const fem::Q1Element3Face &face, Vector2d *residual) {
   // compute x and z coordinates of quadrature points
   double *x = m_work[0];
   {
@@ -119,21 +112,19 @@ void BlatterTestCFBC::residual_surface(const fem::Q1Element3 &element,
     for (int t = 0; t < element.n_chi(); ++t) {
       auto psi = face.chi(q, t);
 
-      residual[t] += - W * psi * F;
+      residual[t] += -W * psi * F;
     }
   }
 }
 
 
 void BlatterTestCFBC::residual_basal(const fem::Q1Element3 &element,
-                                     const fem::Q1Element3Face &face,
-                                     const double *tauc_nodal,
-                                     const double *f_nodal,
-                                     const Vector2d *u_nodal,
+                                     const fem::Q1Element3Face &face, const double *tauc_nodal,
+                                     const double *f_nodal, const Vector2d *u_nodal,
                                      Vector2d *residual) {
-  (void) tauc_nodal;
-  (void) f_nodal;
-  (void) u_nodal;
+  (void)tauc_nodal;
+  (void)f_nodal;
+  (void)u_nodal;
 
   // compute x and z coordinates of quadrature points
   double *x = m_work[0];
@@ -156,21 +147,19 @@ void BlatterTestCFBC::residual_basal(const fem::Q1Element3 &element,
     for (int t = 0; t < element.n_chi(); ++t) {
       auto psi = face.chi(q, t);
 
-      residual[t] += - W * psi * F;
+      residual[t] += -W * psi * F;
     }
   }
 }
 
-void BlatterTestCFBC::jacobian_basal(const fem::Q1Element3Face &face,
-                                     const double *tauc_nodal,
-                                     const double *f_nodal,
-                                     const Vector2d *u_nodal,
+void BlatterTestCFBC::jacobian_basal(const fem::Q1Element3Face &face, const double *tauc_nodal,
+                                     const double *f_nodal, const Vector2d *u_nodal,
                                      double K[2 * fem::q13d::n_chi][2 * fem::q13d::n_chi]) {
-  (void) face;
-  (void) tauc_nodal;
-  (void) f_nodal;
-  (void) u_nodal;
-  (void) K;
+  (void)face;
+  (void)tauc_nodal;
+  (void)f_nodal;
+  (void)u_nodal;
+  (void)K;
   // empty: residual contribution from the basal boundary does not depend on ice velocity
 }
 
@@ -184,14 +173,14 @@ void BlatterTestCFBC::init_2d_parameters(const Inputs &inputs) {
   const array::Scalar &b = inputs.geometry->bed_elevation;
 
   {
-    array::AccessScope list{&b, &m_parameters};
+    array::AccessScope list{ &b, &m_parameters };
 
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
       m_parameters(i, j).bed        = b(i, j);
       m_parameters(i, j).floatation = 0.0;
-     }
+    }
   }
 
   m_parameters.update_ghosts();

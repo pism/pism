@@ -19,8 +19,8 @@
 #ifndef __enthalpyConverter_hh
 #define __enthalpyConverter_hh
 
-#include <vector>
 #include <memory>
+#include <vector>
 
 namespace pism {
 
@@ -71,8 +71,9 @@ public:
   double L(double T_pm) const;
 
   double pressure(double depth) const;
-  void pressure(const std::vector<double> &depth,
-                unsigned int ks, std::vector<double> &result) const;
+  void pressure(const std::vector<double> &depth, unsigned int ks,
+                std::vector<double> &result) const;
+
 protected:
   void validate_E_P(double E, double P) const;
   void validate_T_omega_P(double T, double omega, double P) const;
@@ -138,4 +139,3 @@ public:
 } // end of namespace pism
 
 #endif // __enthalpyConverter_hh
-

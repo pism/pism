@@ -23,9 +23,9 @@
 #include "pism/energy/utilities.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/EnthalpyConverter.hh"
+#include "pism/util/Logger.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/Logger.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
@@ -33,7 +33,7 @@ namespace energy {
 
 EnthalpyModel::EnthalpyModel(std::shared_ptr<const Grid> grid,
                              std::shared_ptr<const stressbalance::StressBalance> stress_balance)
-  : EnergyModel(grid, stress_balance) {
+    : EnergyModel(grid, stress_balance) {
   // empty
 }
 
@@ -49,8 +49,7 @@ void EnthalpyModel::restart_impl(const File &input_file, int record) {
   regrid_enthalpy();
 }
 
-void EnthalpyModel::bootstrap_impl(const File &input_file,
-                                   const array::Scalar &ice_thickness,
+void EnthalpyModel::bootstrap_impl(const File &input_file, const array::Scalar &ice_thickness,
                                    const array::Scalar &surface_temperature,
                                    const array::Scalar &climatic_mass_balance,
                                    const array::Scalar &basal_heat_flux) {
@@ -108,35 +107,30 @@ Regarding drainage, see [\ref AschwandenBuelerKhroulevBlatter] and references th
 
 void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
   // current time does not matter here
-  (void) t;
+  (void)t;
 
   auto EC = m_grid->ctx()->enthalpy_converter();
 
-  const double
-    ice_density           = m_config->get_number("constants.ice.density"), // kg m-3
-    bulgeEnthMax          = m_config->get_number("energy.enthalpy.cold_bulge_max"), // J kg-1
-    target_water_fraction = m_config->get_number("energy.drainage_target_water_fraction");
+  const double ice_density  = m_config->get_number("constants.ice.density"),          // kg m-3
+      bulgeEnthMax          = m_config->get_number("energy.enthalpy.cold_bulge_max"), // J kg-1
+      target_water_fraction = m_config->get_number("energy.drainage_target_water_fraction");
 
   energy::DrainageCalculator dc(*m_config);
 
   inputs.check();
 
   // give them names that are a bit shorter...
-  const array::Array3D
-    &strain_heating3 = *inputs.volumetric_heating_rate,
-    &u3              = *inputs.u3,
-    &v3              = *inputs.v3,
-    &w3              = *inputs.w3;
+  const array::Array3D &strain_heating3 = *inputs.volumetric_heating_rate, &u3 = *inputs.u3,
+                       &v3 = *inputs.v3, &w3 = *inputs.w3;
 
   const auto &cell_type = *inputs.cell_type;
 
-  const array::Scalar
-    &basal_frictional_heating = *inputs.basal_frictional_heating,
-    &basal_heat_flux          = *inputs.basal_heat_flux,
-    &surface_liquid_fraction  = *inputs.surface_liquid_fraction,
-    &shelf_base_temp          = *inputs.shelf_base_temp,
-    &ice_surface_temp         = *inputs.surface_temp,
-    &till_water_thickness     = *inputs.till_water_thickness;
+  const array::Scalar &basal_frictional_heating = *inputs.basal_frictional_heating,
+                      &basal_heat_flux          = *inputs.basal_heat_flux,
+                      &surface_liquid_fraction  = *inputs.surface_liquid_fraction,
+                      &shelf_base_temp          = *inputs.shelf_base_temp,
+                      &ice_surface_temp         = *inputs.surface_temp,
+                      &till_water_thickness     = *inputs.till_water_thickness;
 
   const array::Scalar1 &ice_thickness = *inputs.ice_thickness;
 
@@ -144,13 +138,24 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
                                *m_config, m_ice_enthalpy, u3, v3, w3, strain_heating3, EC);
 
   const size_t Mz_fine = system.z().size();
-  const double dz = system.dz();
+  const double dz      = system.dz();
   std::vector<double> Enthnew(Mz_fine); // new enthalpy in column
 
-  array::AccessScope list{&ice_surface_temp, &shelf_base_temp, &surface_liquid_fraction,
-      &ice_thickness, &basal_frictional_heating, &basal_heat_flux, &till_water_thickness,
-      &cell_type, &u3, &v3, &w3, &strain_heating3, &m_basal_melt_rate, &m_ice_enthalpy,
-      &m_work};
+  array::AccessScope list{ &ice_surface_temp,
+                           &shelf_base_temp,
+                           &surface_liquid_fraction,
+                           &ice_thickness,
+                           &basal_frictional_heating,
+                           &basal_heat_flux,
+                           &till_water_thickness,
+                           &cell_type,
+                           &u3,
+                           &v3,
+                           &w3,
+                           &strain_heating3,
+                           &m_basal_melt_rate,
+                           &m_ice_enthalpy,
+                           &m_work };
 
   double margin_threshold = m_config->get_number("energy.margin_ice_thickness_limit");
 
@@ -163,17 +168,14 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
 
       const double H = ice_thickness(i, j);
 
-      system.init(i, j,
-                  marginal(ice_thickness, i, j, margin_threshold),
-                  H);
+      system.init(i, j, marginal(ice_thickness, i, j, margin_threshold), H);
 
       // enthalpy and pressures at top of ice
-      const double
-        depth_ks = H - system.ks() * dz,
-        p_ks     = EC->pressure(depth_ks); // FIXME issue #15
+      const double depth_ks = H - system.ks() * dz,
+                   p_ks     = EC->pressure(depth_ks); // FIXME issue #15
 
-      const double Enth_ks = EC->enthalpy_permissive(ice_surface_temp(i, j),
-                                                     surface_liquid_fraction(i, j), p_ks);
+      const double Enth_ks =
+          EC->enthalpy_permissive(ice_surface_temp(i, j), surface_liquid_fraction(i, j), p_ks);
 
       const bool ice_free_column = (system.ks() == 0);
 
@@ -191,10 +193,9 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
         m_stats.reduced_accuracy_counter += 1; // count columns with lambda < 1
       }
 
-      const bool
-        is_floating        = cell_type.ocean(i, j),
-        base_is_warm       = system.Enth(0) >= system.Enth_s(0),
-        above_base_is_warm = system.Enth(1) >= system.Enth_s(1);
+      const bool is_floating        = cell_type.ocean(i, j),
+                 base_is_warm       = system.Enth(0) >= system.Enth_s(0),
+                 above_base_is_warm = system.Enth(1) >= system.Enth_s(1);
 
       // set boundary conditions and update enthalpy
       {
@@ -230,7 +231,6 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
 
         // solve the system
         system.solve(Enthnew);
-
       }
 
       // post-process (drainage and bulge-limiting)
@@ -238,17 +238,15 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
       {
         // drain ice segments by mechanism in [\ref AschwandenBuelerKhroulevBlatter],
         //   using DrainageCalculator dc
-        for (unsigned int k=0; k < system.ks(); k++) {
+        for (unsigned int k = 0; k < system.ks(); k++) {
           if (Enthnew[k] > system.Enth_s(k)) { // avoid doing any more work if cold
 
-            const double
-              depth = H - k * dz,
-              p     = EC->pressure(depth), // FIXME issue #15
-              T_m   = EC->melting_temperature(p),
-              L     = EC->L(T_m);
+            const double depth = H - k * dz,
+                         p     = EC->pressure(depth), // FIXME issue #15
+                T_m = EC->melting_temperature(p), L = EC->L(T_m);
 
             if (Enthnew[k] >= system.Enth_s(k) + 0.5 * L) {
-              liquifiedCount++; // count these rare events...
+              liquifiedCount++;                        // count these rare events...
               Enthnew[k] = system.Enth_s(k) + 0.5 * L; //  but lose the energy
             }
 
@@ -257,17 +255,16 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
             if (omega > target_water_fraction) {
               double fractiondrained = dc.get_drainage_rate(omega) * dt; // pure number
 
-              fractiondrained  = std::min(fractiondrained,
-                                          omega - target_water_fraction);
-              Hdrainedtotal   += fractiondrained * dz; // always a positive contribution
-              Enthnew[k]      -= fractiondrained * L;
+              fractiondrained = std::min(fractiondrained, omega - target_water_fraction);
+              Hdrainedtotal += fractiondrained * dz; // always a positive contribution
+              Enthnew[k] -= fractiondrained * L;
             }
           }
         }
 
         // apply bulge limiter
         const double lowerEnthLimit = Enth_ks - bulgeEnthMax;
-        for (unsigned int k=0; k < system.ks(); k++) {
+        for (unsigned int k = 0; k < system.ks(); k++) {
           if (Enthnew[k] < lowerEnthLimit) {
             // Count grid points which have very large cold limit advection bulge... enthalpy not
             // too low.
@@ -286,7 +283,7 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
 
       // compute basal melt rate
       {
-        bool base_is_cold = (Enthnew[0] < system.Enth_s(0)) && (till_water_thickness(i,j) == 0.0);
+        bool base_is_cold = (Enthnew[0] < system.Enth_s(0)) && (till_water_thickness(i, j) == 0.0);
         // Determine melt rate, but only preliminarily because of
         // drainage, from heat flux out of bedrock, heat flux into
         // ice, and frictional heating
@@ -298,22 +295,20 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
           m_basal_melt_rate(i, j) = 0.0;
         } else {
           if (base_is_cold) {
-            m_basal_melt_rate(i, j) = 0.0;  // zero melt rate if cold base
+            m_basal_melt_rate(i, j) = 0.0; // zero melt rate if cold base
           } else {
-            const double
-              p_0 = EC->pressure(H),
-              p_1 = EC->pressure(H - dz), // FIXME issue #15
-              Tpmp_0 = EC->melting_temperature(p_0);
+            const double p_0 = EC->pressure(H),
+                         p_1 = EC->pressure(H - dz), // FIXME issue #15
+                Tpmp_0       = EC->melting_temperature(p_0);
 
             const bool k1_istemperate = EC->is_temperate(Enthnew[1], p_1); // level  z = + \Delta z
-            double hf_up = 0.0;
+            double hf_up              = 0.0;
             if (k1_istemperate) {
-              const double
-                Tpmp_1 = EC->melting_temperature(p_1);
+              const double Tpmp_1 = EC->melting_temperature(p_1);
 
               hf_up = -system.k_from_T(Tpmp_0) * (Tpmp_1 - Tpmp_0) / dz;
             } else {
-              double T_0 = EC->temperature(Enthnew[0], p_0);
+              double T_0       = EC->temperature(Enthnew[0], p_0);
               const double K_0 = system.k_from_T(T_0) / EC->c();
 
               hf_up = -K_0 * (Enthnew[1] - Enthnew[0]) / dz;
@@ -325,7 +320,9 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
             //
             // after we compute it we make sure there is no refreeze if
             // there is no available basal water
-            m_basal_melt_rate(i, j) = (basal_frictional_heating(i, j) + basal_heat_flux(i, j) - hf_up) / (ice_density * EC->L(Tpmp_0));
+            m_basal_melt_rate(i, j) =
+                (basal_frictional_heating(i, j) + basal_heat_flux(i, j) - hf_up) /
+                (ice_density * EC->L(Tpmp_0));
 
             if (till_water_thickness(i, j) <= 0 && m_basal_melt_rate(i, j) < 0) {
               m_basal_melt_rate(i, j) = 0.0;
@@ -344,7 +341,7 @@ void EnthalpyModel::update_impl(double t, double dt, const Inputs &inputs) {
   }
   loop.check();
 
-  m_stats.liquified_ice_volume = ((double) liquifiedCount) * dz * m_grid->cell_area();
+  m_stats.liquified_ice_volume = ((double)liquifiedCount) * dz * m_grid->cell_area();
 }
 
 std::set<VariableMetadata> EnthalpyModel::state_impl() const {

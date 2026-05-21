@@ -23,10 +23,10 @@
 #include <stdexcept>
 #include <string>
 
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/TerminationReason.hh"
-#include "pism/util/petscwrappers/Tao.hh"
 #include "pism/util/error_handling.hh"
+#include "pism/util/petscwrappers/Tao.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -34,10 +34,10 @@ namespace pism {
 namespace taoutil {
 
 //! Encapsulate TAO's TaoSolverTerminationReason codes as a PISM TerminationReason.
-class TAOTerminationReason: public TerminationReason {
+class TAOTerminationReason : public TerminationReason {
 public:
   TAOTerminationReason(TaoConvergedReason r);
-  virtual void get_description(std::ostream &desc,int indent_level=0);
+  virtual void get_description(std::ostream &desc, int indent_level = 0);
 };
 
 //! \brief An interface for solving an optimization problem with TAO where the
@@ -88,19 +88,18 @@ public:
   }
   \endcode
 */
-template<class Problem>
+template <class Problem>
 class TaoBasicSolver {
 public:
-    
   //! Construct a solver to solve `prob` using TAO algorithm `tao_type`.
-  TaoBasicSolver(MPI_Comm comm, const std::string & tao_type, Problem &prob)
-    : m_comm(comm), m_problem(prob) {
+  TaoBasicSolver(MPI_Comm comm, const std::string &tao_type, Problem &prob)
+      : m_comm(comm), m_problem(prob) {
     PetscErrorCode ierr;
 
     ierr = TaoCreate(m_comm, m_tao.rawptr());
     PISM_CHK(ierr, "TaoCreate");
 
-    ierr = TaoSetType(m_tao,tao_type.c_str());
+    ierr = TaoSetType(m_tao, tao_type.c_str());
     PISM_CHK(ierr, "TaoSetType");
 
     m_problem.connect(m_tao);
@@ -108,7 +107,7 @@ public:
     ierr = TaoSetFromOptions(m_tao);
     PISM_CHK(ierr, "TaoSetFromOptions");
   }
-  
+
   virtual ~TaoBasicSolver() {
     // empty
   }
@@ -117,7 +116,7 @@ public:
   virtual std::shared_ptr<TerminationReason> solve() {
     PetscErrorCode ierr;
 
-    /* Solve the application */ 
+    /* Solve the application */
     Vec x0;
     auto reason = m_problem.formInitialGuess(&x0);
     if (reason->failed()) {
@@ -126,7 +125,7 @@ public:
       reason->set_root_cause(root_cause);
       return reason;
     }
-#if PETSC_VERSION_LT(3,17,0)
+#if PETSC_VERSION_LT(3, 17, 0)
     ierr = TaoSetInitialVector(m_tao, x0);
 #else
     ierr = TaoSetSolution(m_tao, x0);
@@ -148,7 +147,7 @@ public:
     PetscErrorCode ierr = TaoSetMaximumIterations(m_tao, max_it);
     PISM_CHK(ierr, "TaoSetMaximumIterations");
   }
-  
+
   virtual Problem &problem() {
     return m_problem;
   }
@@ -179,26 +178,25 @@ protected:
   See TaoObjGradCallback for a technique to allow 
   the method name to be specified (at the expense of a little more cumbersome code).
 */
-template<class Problem>
+template <class Problem>
 class TaoObjectiveCallback {
 public:
-
   static void connect(Tao tao, Problem &p) {
     PetscErrorCode ierr;
-    ierr = TaoSetObjectiveRoutine(tao,
-                                  TaoObjectiveCallback<Problem>::callback,
-                                  &p);
+    ierr = TaoSetObjectiveRoutine(tao, TaoObjectiveCallback<Problem>::callback, &p);
     PISM_CHK(ierr, "TaoSetObjectiveRoutine");
   }
 
 protected:
   static PetscErrorCode callback(Tao tao, Vec x, double *value, void *ctx) {
     try {
-      Problem *p = reinterpret_cast<Problem *>(ctx);
-      PetscErrorCode ierr = p->evaluateObjective(tao,x,value); CHKERRQ(ierr);
+      Problem *p          = reinterpret_cast<Problem *>(ctx);
+      PetscErrorCode ierr = p->evaluateObjective(tao, x, value);
+      CHKERRQ(ierr);
     } catch (...) {
-      MPI_Comm com = MPI_COMM_SELF;
-      PetscErrorCode ierr = PetscObjectGetComm((PetscObject)tao, &com); CHKERRQ(ierr);
+      MPI_Comm com        = MPI_COMM_SELF;
+      PetscErrorCode ierr = PetscObjectGetComm((PetscObject)tao, &com);
+      CHKERRQ(ierr);
       handle_fatal_errors(com);
       SETERRQ(com, 1, "A PISM callback failed");
     }
@@ -226,27 +224,28 @@ protected:
   See TaoObjGradCallback for a technique to allow 
   the method name to be specified (at the expense of a little more cumbersome code).
 */
-template<class Problem>
+template <class Problem>
 class TaoMonitorCallback {
 public:
   static void connect(Tao tao, Problem &p) {
-#if PETSC_VERSION_LT(3,21,0)
+#if PETSC_VERSION_LT(3, 21, 0)
     PetscErrorCode ierr = TaoSetMonitor(tao,
 #else
     PetscErrorCode ierr = TaoMonitorSet(tao,
 #endif
-                                        TaoMonitorCallback<Problem>::callback,
-                                        &p, NULL);
+                                        TaoMonitorCallback<Problem>::callback, &p, NULL);
     PISM_CHK(ierr, "TaoSetMonitor");
   }
+
 protected:
   static PetscErrorCode callback(Tao tao, void *ctx) {
     try {
       Problem *p = reinterpret_cast<Problem *>(ctx);
       p->monitorTao(tao);
     } catch (...) {
-      MPI_Comm com = MPI_COMM_SELF;
-      PetscErrorCode ierr = PetscObjectGetComm((PetscObject)tao, &com); CHKERRQ(ierr);
+      MPI_Comm com        = MPI_COMM_SELF;
+      PetscErrorCode ierr = PetscObjectGetComm((PetscObject)tao, &com);
+      CHKERRQ(ierr);
       handle_fatal_errors(com);
       SETERRQ(com, 1, "A PISM callback failed");
     }
@@ -273,14 +272,12 @@ protected:
   See TaoObjGradCallback for a technique to allow 
   the method name to be specified (at the expense of a little more cumbersome code).
 */
-template<class Problem>
+template <class Problem>
 class TaoGetVariableBoundsCallback {
 public:
   static void connect(Tao tao, Problem &p) {
     PetscErrorCode ierr;
-    ierr = TaoSetVariableBoundsRoutine(tao,
-                                       TaoGetVariableBoundsCallback<Problem>::callback,
-                                       &p);
+    ierr = TaoSetVariableBoundsRoutine(tao, TaoGetVariableBoundsCallback<Problem>::callback, &p);
     PISM_CHK(ierr, "TaoSetVariableBoundsRoutine");
   }
 
@@ -288,10 +285,11 @@ protected:
   static PetscErrorCode callback(Tao tao, Vec lo, Vec hi, void *ctx) {
     try {
       Problem *p = reinterpret_cast<Problem *>(ctx);
-      p->getVariableBounds(tao,lo,hi);
+      p->getVariableBounds(tao, lo, hi);
     } catch (...) {
-      MPI_Comm com = MPI_COMM_SELF;
-      PetscErrorCode ierr = PetscObjectGetComm((PetscObject)tao, &com); CHKERRQ(ierr);
+      MPI_Comm com        = MPI_COMM_SELF;
+      PetscErrorCode ierr = PetscObjectGetComm((PetscObject)tao, &com);
+      CHKERRQ(ierr);
       handle_fatal_errors(com);
       SETERRQ(com, 1, "A PISM callback failed");
     }
@@ -318,14 +316,12 @@ protected:
   See TaoObjGradCallback for a technique to allow 
   the method name to be specified (at the expense of a little more cumbersome code).
 */
-template<class Problem>
+template <class Problem>
 class TaoGradientCallback {
 public:
   static void connect(Tao tao, Problem &p) {
     PetscErrorCode ierr;
-    ierr = TaoSetGradientRoutine(tao,
-                                 TaoGradientCallback<Problem>::callback,
-                                 &p);
+    ierr = TaoSetGradientRoutine(tao, TaoGradientCallback<Problem>::callback, &p);
     PISM_CHK(ierr, "TaoSetGradientRoutine");
   }
 
@@ -333,10 +329,11 @@ protected:
   static PetscErrorCode callback(Tao tao, Vec x, Vec gradient, void *ctx) {
     try {
       Problem *p = reinterpret_cast<Problem *>(ctx);
-      p->evaluateGradient(tao,x,gradient);
+      p->evaluateGradient(tao, x, gradient);
     } catch (...) {
-      MPI_Comm com = MPI_COMM_SELF;
-      PetscErrorCode ierr = PetscObjectGetComm((PetscObject)tao, &com); CHKERRQ(ierr);
+      MPI_Comm com        = MPI_COMM_SELF;
+      PetscErrorCode ierr = PetscObjectGetComm((PetscObject)tao, &com);
+      CHKERRQ(ierr);
       handle_fatal_errors(com);
       SETERRQ(com, 1, "A PISM callback failed");
     }
@@ -363,24 +360,24 @@ protected:
   See TaoObjGradCallback for a technique to allow 
   the method name to be specified (at the expense of a little more cumbersome code).
 */
-template<class Problem>
+template <class Problem>
 class TaoConvergenceCallback {
 public:
   static void connect(Tao tao, Problem &p) {
     PetscErrorCode ierr;
-    ierr = TaoSetConvergenceTest(tao,
-                                 TaoConvergenceCallback<Problem>::callback,
-                                 &p);
+    ierr = TaoSetConvergenceTest(tao, TaoConvergenceCallback<Problem>::callback, &p);
     PISM_CHK(ierr, "TaoSetConvergenceTest");
   }
+
 protected:
   static PetscErrorCode callback(Tao tao, void *ctx) {
     try {
       Problem *p = reinterpret_cast<Problem *>(ctx);
       p->convergenceTest(tao);
     } catch (...) {
-      MPI_Comm com = MPI_COMM_SELF;
-      PetscErrorCode ierr = PetscObjectGetComm((PetscObject)tao, &com); CHKERRQ(ierr);
+      MPI_Comm com        = MPI_COMM_SELF;
+      PetscErrorCode ierr = PetscObjectGetComm((PetscObject)tao, &com);
+      CHKERRQ(ierr);
       handle_fatal_errors(com);
       SETERRQ(com, 1, "A PISM callback failed");
     }
@@ -407,31 +404,30 @@ protected:
 
   Note that the method name for the callback must be specified explicitly via a template argument.
 */
-template<class Problem, void (Problem::*Callback)(Tao,Vec,double*,Vec) >
+template <class Problem, void (Problem::*Callback)(Tao, Vec, double *, Vec)>
 class TaoObjGradCallback {
 public:
   static void connect(Tao tao, Problem &p) {
     PetscErrorCode ierr;
-#if PETSC_VERSION_LT(3,17,0)
-    ierr = TaoSetObjectiveAndGradientRoutine(tao,
-                                             TaoObjGradCallback<Problem,Callback>::callback,
-                                             &p);
+#if PETSC_VERSION_LT(3, 17, 0)
+    ierr =
+        TaoSetObjectiveAndGradientRoutine(tao, TaoObjGradCallback<Problem, Callback>::callback, &p);
 #else
-    ierr = TaoSetObjectiveAndGradient(tao,
-                                      NULL,
-                                      TaoObjGradCallback<Problem,Callback>::callback,
-                                      &p);
+    ierr =
+        TaoSetObjectiveAndGradient(tao, NULL, TaoObjGradCallback<Problem, Callback>::callback, &p);
 #endif
     PISM_CHK(ierr, "TaoSetObjectiveAndGradientRoutine");
   }
+
 protected:
   static PetscErrorCode callback(Tao tao, Vec x, double *value, Vec gradient, void *ctx) {
     try {
       Problem *p = reinterpret_cast<Problem *>(ctx);
-      (p->*Callback)(tao,x,value,gradient);
+      (p->*Callback)(tao, x, value, gradient);
     } catch (...) {
-      MPI_Comm com = MPI_COMM_SELF;
-      PetscErrorCode ierr = PetscObjectGetComm((PetscObject)tao, &com); CHKERRQ(ierr);
+      MPI_Comm com        = MPI_COMM_SELF;
+      PetscErrorCode ierr = PetscObjectGetComm((PetscObject)tao, &com);
+      CHKERRQ(ierr);
       handle_fatal_errors(com);
       SETERRQ(com, 1, "A PISM callback failed");
     }
@@ -457,14 +453,14 @@ protected:
 
   The method names for the callback (`evaluateConstraints`, etc.) are hard-coded.
 */
-template<class Problem>
+template <class Problem>
 class TaoLCLCallbacks {
 public:
-  static void connect(Tao tao, Problem &p, Vec c, Mat Jc, Mat Jd, Mat Jcpc=NULL, Mat Jcinv=NULL) {
+  static void connect(Tao tao, Problem &p, Vec c, Mat Jc, Mat Jd, Mat Jcpc = NULL,
+                      Mat Jcinv = NULL) {
     PetscErrorCode ierr;
 
-    ierr = TaoSetConstraintsRoutine(tao, c,
-                                    TaoLCLCallbacks<Problem>::constraints_callback, &p);
+    ierr = TaoSetConstraintsRoutine(tao, c, TaoLCLCallbacks<Problem>::constraints_callback, &p);
     PISM_CHK(ierr, "TaoSetConstraintsRoutine");
 
     if (Jcpc == NULL) {
@@ -475,26 +471,28 @@ public:
                                       TaoLCLCallbacks<Problem>::jacobian_state_callback, &p);
     PISM_CHK(ierr, "TaoSetJacobianStateRoutine");
 
-    ierr = TaoSetJacobianDesignRoutine(tao, Jd,
-                                       TaoLCLCallbacks<Problem>::jacobian_design_callback, &p);
+    ierr = TaoSetJacobianDesignRoutine(tao, Jd, TaoLCLCallbacks<Problem>::jacobian_design_callback,
+                                       &p);
     PISM_CHK(ierr, "TaoSetJacobianDesignRoutine");
   }
+
 protected:
-  static PetscErrorCode constraints_callback(Tao tao, Vec x, Vec c, void*ctx) {
+  static PetscErrorCode constraints_callback(Tao tao, Vec x, Vec c, void *ctx) {
     try {
       Problem *p = reinterpret_cast<Problem *>(ctx);
       p->evaluateConstraints(tao, x, c);
     } catch (...) {
-      MPI_Comm com = MPI_COMM_SELF;
-      PetscErrorCode ierr = PetscObjectGetComm((PetscObject)tao, &com); CHKERRQ(ierr);
+      MPI_Comm com        = MPI_COMM_SELF;
+      PetscErrorCode ierr = PetscObjectGetComm((PetscObject)tao, &com);
+      CHKERRQ(ierr);
       handle_fatal_errors(com);
       SETERRQ(com, 1, "A PISM callback failed");
     }
     return 0;
   }
 
-  static PetscErrorCode jacobian_state_callback(Tao tao, Vec x, Mat J, Mat Jpc,
-                                                Mat Jinv, void*ctx) {
+  static PetscErrorCode jacobian_state_callback(Tao tao, Vec x, Mat J, Mat Jpc, Mat Jinv,
+                                                void *ctx) {
     try {
       Problem *p = reinterpret_cast<Problem *>(ctx);
       // The MatStructure argument is not used in PETSc 3.5, but I want
@@ -503,21 +501,23 @@ protected:
       MatStructure structure;
       p->evaluateConstraintsJacobianState(tao, x, J, Jpc, Jinv, &structure);
     } catch (...) {
-      MPI_Comm com = MPI_COMM_SELF;
-      PetscErrorCode ierr = PetscObjectGetComm((PetscObject)tao, &com); CHKERRQ(ierr);
+      MPI_Comm com        = MPI_COMM_SELF;
+      PetscErrorCode ierr = PetscObjectGetComm((PetscObject)tao, &com);
+      CHKERRQ(ierr);
       handle_fatal_errors(com);
       SETERRQ(com, 1, "A PISM callback failed");
     }
     return 0;
   }
 
-  static PetscErrorCode jacobian_design_callback(Tao tao, Vec x, Mat J, void*ctx) {
+  static PetscErrorCode jacobian_design_callback(Tao tao, Vec x, Mat J, void *ctx) {
     try {
       Problem *p = reinterpret_cast<Problem *>(ctx);
       p->evaluateConstraintsJacobianDesign(tao, x, J);
     } catch (...) {
-      MPI_Comm com = MPI_COMM_SELF;
-      PetscErrorCode ierr = PetscObjectGetComm((PetscObject)tao, &com); CHKERRQ(ierr);
+      MPI_Comm com        = MPI_COMM_SELF;
+      PetscErrorCode ierr = PetscObjectGetComm((PetscObject)tao, &com);
+      CHKERRQ(ierr);
       handle_fatal_errors(com);
       SETERRQ(com, 1, "A PISM callback failed");
     }

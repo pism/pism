@@ -141,9 +141,7 @@ void compute_liquid_water_fraction(const array::Array3D &enthalpy,
 
   result.set_name("liqfrac");
   result.metadata(0).set_name("liqfrac");
-  result.metadata(0)
-      .long_name("liquid water fraction in ice (between 0 and 1)")
-      .units("1");
+  result.metadata(0).long_name("liquid water fraction in ice (between 0 and 1)").units("1");
 
   array::AccessScope list{ &result, &enthalpy, &ice_thickness };
 
@@ -187,20 +185,20 @@ void compute_cts(const array::Array3D &ice_enthalpy, const array::Scalar &ice_th
       .long_name("cts = E/E_s(p), so cold-temperate transition surface is at cts = 1")
       .units("1");
 
-  array::AccessScope list{&ice_enthalpy, &ice_thickness, &result};
+  array::AccessScope list{ &ice_enthalpy, &ice_thickness, &result };
 
   const std::vector<double> &z = ice_enthalpy.levels();
-  const unsigned int Mz = z.size();
+  const unsigned int Mz        = z.size();
 
   for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
-    double *CTS  = result.get_column(i,j);
-    const double *enthalpy = ice_enthalpy.get_column(i,j);
+    double *CTS            = result.get_column(i, j);
+    const double *enthalpy = ice_enthalpy.get_column(i, j);
 
     for (unsigned int k = 0; k < Mz; ++k) {
-      const double depth = ice_thickness(i,j) - z[k]; // FIXME issue #15
-      CTS[k] = enthalpy[k] / EC->enthalpy_cts(EC->pressure(depth));
+      const double depth = ice_thickness(i, j) - z[k]; // FIXME issue #15
+      CTS[k]             = enthalpy[k] / EC->enthalpy_cts(EC->pressure(depth));
     }
   }
 
@@ -214,19 +212,18 @@ void compute_cts(const array::Array3D &ice_enthalpy, const array::Scalar &ice_th
   by the density to get units of energy:
   \f[ E_{\text{total}}(t) = \int_{\Omega(t)} E(t,x,y,z) \rho_i \,dx\,dy\,dz. \f]
 */
-double total_ice_enthalpy(double thickness_threshold,
-                          const array::Array3D &ice_enthalpy,
+double total_ice_enthalpy(double thickness_threshold, const array::Array3D &ice_enthalpy,
                           const array::Scalar &ice_thickness) {
   double enthalpy_sum = 0.0;
 
-  auto grid = ice_enthalpy.grid();
+  auto grid   = ice_enthalpy.grid();
   auto config = grid->ctx()->config();
 
   auto cell_area = grid->cell_area();
 
   const std::vector<double> &z = ice_enthalpy.levels();
 
-  array::AccessScope list{&ice_enthalpy, &ice_thickness};
+  array::AccessScope list{ &ice_enthalpy, &ice_thickness };
   ParallelSection loop(grid->com);
   try {
     for (auto p : grid->points()) {
@@ -237,11 +234,10 @@ double total_ice_enthalpy(double thickness_threshold,
       if (H >= thickness_threshold) {
         const int ks = grid->kBelowHeight(H);
 
-        const double
-          *E   = ice_enthalpy.get_column(i, j);
+        const double *E = ice_enthalpy.get_column(i, j);
 
         for (int k = 0; k < ks; ++k) {
-          enthalpy_sum += cell_area * E[k] * (z[k+1] - z[k]);
+          enthalpy_sum += cell_area * E[k] * (z[k + 1] - z[k]);
         }
         enthalpy_sum += cell_area * E[ks] * (H - z[ks]);
       }
@@ -326,8 +322,7 @@ bootstrap temperature profile in the bedrock.
 void bootstrap_ice_temperature(const array::Scalar &ice_thickness,
                                const array::Scalar &ice_surface_temp,
                                const array::Scalar &surface_mass_balance,
-                               const array::Scalar &basal_heat_flux,
-                               array::Array3D &result) {
+                               const array::Scalar &basal_heat_flux, array::Array3D &result) {
 
   auto grid   = result.grid();
   auto ctx    = grid->ctx();
@@ -335,60 +330,55 @@ void bootstrap_ice_temperature(const array::Scalar &ice_thickness,
   auto log    = ctx->log();
   auto EC     = ctx->enthalpy_converter();
 
-  auto use_smb  = config->get_string("bootstrapping.temperature_heuristic") == "smb";
+  auto use_smb = config->get_string("bootstrapping.temperature_heuristic") == "smb";
 
   if (use_smb) {
-    log->message(2,
-                 " - Filling 3D ice temperatures using surface temperature"
-                 " (and mass balance for velocity estimate)...\n");
+    log->message(2, " - Filling 3D ice temperatures using surface temperature"
+                    " (and mass balance for velocity estimate)...\n");
 
   } else {
-    log->message(2,
-                 " - Filling 3D ice temperatures using surface temperature"
-                 " (and a quartic guess without SMB)...\n");
+    log->message(2, " - Filling 3D ice temperatures using surface temperature"
+                    " (and a quartic guess without SMB)...\n");
   }
 
-  const double
-    ice_k       = config->get_number("constants.ice.thermal_conductivity"),
-    ice_density = config->get_number("constants.ice.density"),
-    ice_c       = config->get_number("constants.ice.specific_heat_capacity"),
-    K           = ice_k / (ice_density * ice_c),
-    T_min       = config->get_number("energy.minimum_allowed_temperature"),
-    T_melting   = config->get_number("constants.fresh_water.melting_point_temperature",
-                                     "kelvin");
+  const double ice_k       = config->get_number("constants.ice.thermal_conductivity"),
+               ice_density = config->get_number("constants.ice.density"),
+               ice_c       = config->get_number("constants.ice.specific_heat_capacity"),
+               K           = ice_k / (ice_density * ice_c),
+               T_min       = config->get_number("energy.minimum_allowed_temperature"),
+               T_melting =
+                   config->get_number("constants.fresh_water.melting_point_temperature", "kelvin");
 
-  array::AccessScope list{&ice_surface_temp, &surface_mass_balance,
-      &ice_thickness, &basal_heat_flux, &result};
+  array::AccessScope list{ &ice_surface_temp, &surface_mass_balance, &ice_thickness,
+                           &basal_heat_flux, &result };
 
   ParallelSection loop(grid->com);
   try {
     for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
-      const double
-        T_surface = std::min(ice_surface_temp(i, j), T_melting),
-        H         = ice_thickness(i, j),
-        G         = basal_heat_flux(i, j);
+      const double T_surface = std::min(ice_surface_temp(i, j), T_melting), H = ice_thickness(i, j),
+                   G = basal_heat_flux(i, j);
 
       const unsigned int ks = grid->kBelowHeight(H);
 
       if (G < 0.0 and ks > 0) {
         std::string units = basal_heat_flux.metadata()["units"];
-        int Mbz = config->get_number("grid.Mbz");
-        const char *quantity = (Mbz > 0 ?
-                                "temperature of the bedrock thermal layer" :
-                                "geothermal flux");
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                      "Negative upward heat flux (%f %s) through the bottom of the ice column\n"
-                                      "is not allowed by PISM's ice temperature bootstrapping method.\n"
-                                      "Please check the %s at i=%d, j=%d.",
-                                      G, units.c_str(), quantity, i, j);
+        int Mbz           = config->get_number("grid.Mbz");
+        const char *quantity =
+            (Mbz > 0 ? "temperature of the bedrock thermal layer" : "geothermal flux");
+        throw RuntimeError::formatted(
+            PISM_ERROR_LOCATION,
+            "Negative upward heat flux (%f %s) through the bottom of the ice column\n"
+            "is not allowed by PISM's ice temperature bootstrapping method.\n"
+            "Please check the %s at i=%d, j=%d.",
+            G, units.c_str(), quantity, i, j);
       }
 
       if (T_surface < T_min) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                      "T_surface(%d,%d) = %f < T_min = %f kelvin",
-                                      i, j, T_surface, T_min);
+                                      "T_surface(%d,%d) = %f < T_min = %f kelvin", i, j, T_surface,
+                                      T_min);
       }
 
       double *T = result.get_column(i, j);
@@ -401,23 +391,21 @@ void bootstrap_ice_temperature(const array::Scalar &ice_thickness,
 
         for (unsigned int k = 0; k < ks; k++) {
           const double z = grid->z(k);
-          T[k] = ice_temperature_guess_smb(*EC, H, z, T_surface, G, ice_k, K, SMB);
+          T[k]           = ice_temperature_guess_smb(*EC, H, z, T_surface, G, ice_k, K, SMB);
         }
 
       } else { // method 2: a quartic guess; does not use SMB
 
         for (unsigned int k = 0; k < ks; k++) {
           const double z = grid->z(k);
-          T[k] = ice_temperature_guess(*EC, H, z, T_surface, G, ice_k);
+          T[k]           = ice_temperature_guess(*EC, H, z, T_surface, G, ice_k);
         }
-
       }
 
       // Make sure that resulting temperatures are not too low.
       for (unsigned int k = 0; k < ks; k++) {
         if (T[k] < T_min) {
-          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                        "T(%d,%d,%d) = %f < T_min = %f kelvin",
+          throw RuntimeError::formatted(PISM_ERROR_LOCATION, "T(%d,%d,%d) = %f < T_min = %f kelvin",
                                         i, j, k, T[k], T_min);
         }
       }
@@ -438,11 +426,9 @@ void bootstrap_ice_temperature(const array::Scalar &ice_thickness,
 void bootstrap_ice_enthalpy(const array::Scalar &ice_thickness,
                             const array::Scalar &ice_surface_temp,
                             const array::Scalar &surface_mass_balance,
-                            const array::Scalar &basal_heat_flux,
-                            array::Array3D &result) {
+                            const array::Scalar &basal_heat_flux, array::Array3D &result) {
 
-  bootstrap_ice_temperature(ice_thickness, ice_surface_temp,
-                            surface_mass_balance, basal_heat_flux,
+  bootstrap_ice_temperature(ice_thickness, ice_surface_temp, surface_mass_balance, basal_heat_flux,
                             result);
 
   compute_enthalpy_cold(result, ice_thickness, result);

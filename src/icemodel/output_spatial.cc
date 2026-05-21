@@ -20,24 +20,22 @@
 
 #include "pism/icemodel/IceModel.hh"
 
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"
 #include "pism/util/io/io_helpers.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
 //! Computes the maximum time-step we can take and still hit all `-spatial_times`.
 MaxTimestep IceModel::spatial_diagnostics_max_timestep(double t) {
 
-  if (m_spatial_filename.empty() or
-      (not m_config->get_flag("time_stepping.hit_spatial_times"))) {
+  if (m_spatial_filename.empty() or (not m_config->get_flag("time_stepping.hit_spatial_times"))) {
     return MaxTimestep("reporting (-spatial_times)");
   }
 
   double eps = m_config->get_number("time_stepping.resolution");
 
-  return reporting_max_timestep(m_spatial_times, t, eps,
-                                "reporting (-spatial_times)");
+  return reporting_max_timestep(m_spatial_times, t, eps, "reporting (-spatial_times)");
 }
 
 static std::set<std::string> process_variable_list_shortcuts(const Config &config,
@@ -87,12 +85,14 @@ static std::set<std::string> process_variable_list_shortcuts(const Config &confi
     const char *flag_name = "output.ISMIP6";
 
     if (not config.get_flag(flag_name)) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Please set %s to save ISMIP6 diagnostics "
-                                    "(-spatial_vars ismip6).", flag_name);
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "Please set %s to save ISMIP6 diagnostics "
+                                    "(-spatial_vars ismip6).",
+                                    flag_name);
     }
 
     result.erase("ismip6");
-    for (const auto& v : set_split(config.get_string("output.ISMIP6_spatial_variables"), ',')) {
+    for (const auto &v : set_split(config.get_string("output.ISMIP6_spatial_variables"), ',')) {
       result.insert(v);
     }
   }
@@ -103,15 +103,15 @@ static std::set<std::string> process_variable_list_shortcuts(const Config &confi
 //! Initialize the code saving spatially-variable diagnostic quantities.
 void IceModel::init_spatial_diagnostics() {
 
-  m_last_spatial_time = 0;               // will be set in write_extras()
+  m_last_spatial_time  = 0; // will be set in write_extras()
   m_next_spatial_index = 0;
 
-  m_spatial_filename   = m_config->get_string("output.spatial.file");
+  m_spatial_filename = m_config->get_string("output.spatial.file");
   std::string times  = m_config->get_string("output.spatial.times");
-  bool        split  = m_config->get_flag("output.spatial.split");
-  bool        append = m_config->get_flag("output.spatial.append");
+  bool split         = m_config->get_flag("output.spatial.split");
+  bool append        = m_config->get_flag("output.spatial.append");
 
-  bool file_set = not m_spatial_filename.empty();
+  bool file_set  = not m_spatial_filename.empty();
   bool times_set = not times.empty();
 
   if (file_set ^ times_set) {
@@ -209,8 +209,8 @@ void IceModel::init_spatial_diagnostics() {
           tmp[k] = m_spatial_times[m_next_spatial_index + k];
         }
 
-        m_spatial_times = tmp;
-        m_next_spatial_index  = 0;
+        m_spatial_times      = tmp;
+        m_next_spatial_index = 0;
       }
     } else {
       // prepare the output file
@@ -233,7 +233,6 @@ void IceModel::init_spatial_diagnostics() {
           "- upgrade NetCDF to 4.7.3");
     }
   }
-
 }
 
 //! Write spatially-variable diagnostic quantities.
@@ -250,7 +249,7 @@ void IceModel::write_spatial_diagnostics() {
   }
 
   const double time_resolution = m_config->get_number("time_stepping.resolution");
-  double current_time = m_time->current();
+  double current_time          = m_time->current();
 
   // do we need to save *now*?
   if (m_next_spatial_index < m_spatial_times.size() and
@@ -312,7 +311,8 @@ void IceModel::write_spatial_diagnostics() {
       if (split) {
         // each time-series record is written to a separate file
         auto date_without_spaces = replace_character(m_time->date(m_time->current()), ' ', '_');
-        filename = pism::printf("%s_%s.nc", m_spatial_filename.c_str(), date_without_spaces.c_str());
+        filename =
+            pism::printf("%s_%s.nc", m_spatial_filename.c_str(), date_without_spaces.c_str());
       }
 
       m_spatial_file.reset(new OutputFile(m_spatial_writer, filename));
@@ -352,7 +352,7 @@ void IceModel::write_spatial_diagnostics() {
         auto bounds_name = m_time->variable_name() + "_bounds";
 
         m_spatial_file->write_array(bounds_name, { time_start, 0 }, { 1, 2 },
-                                  { m_last_spatial_time, current_time });
+                                    { m_last_spatial_time, current_time });
       }
 
       write_run_stats(*m_spatial_file);

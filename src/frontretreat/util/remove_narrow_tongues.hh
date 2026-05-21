@@ -22,7 +22,9 @@
 
 namespace pism {
 
-namespace array { class Scalar; }
+namespace array {
+class Scalar;
+}
 class Geometry;
 
 void remove_narrow_tongues(const Geometry &geometry, array::Scalar &ice_thickness);

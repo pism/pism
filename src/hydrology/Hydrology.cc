@@ -17,10 +17,10 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/hydrology/Hydrology.hh"
+#include "pism/geometry/Geometry.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/array/CellType.hh"
-#include "pism/geometry/Geometry.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
@@ -28,11 +28,10 @@ namespace hydrology {
 
 namespace diagnostics {
 
-class TendencyOfWaterMass : public DiagAverageRate<Hydrology>
-{
+class TendencyOfWaterMass : public DiagAverageRate<Hydrology> {
 public:
   TendencyOfWaterMass(const Hydrology *m)
-    : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass", TOTAL_CHANGE) {
+      : DiagAverageRate<Hydrology>(m, "tendency_of_subglacial_water_mass", TOTAL_CHANGE) {
 
     m_accumulator.metadata()["units"] = "kg";
 
@@ -43,23 +42,22 @@ public:
         .output_units("Gt year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
-    m_vars[0]["comment"] = "positive flux corresponds to water gain";
+    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
+    m_vars[0]["comment"]    = "positive flux corresponds to water gain";
   }
 
 protected:
-  const array::Scalar& model_input() {
+  const array::Scalar &model_input() {
     return model->mass_change();
   }
 };
 
 /*! @brief Report water input rate from the ice surface into the subglacial water system.
  */
-class TotalInputRate : public DiagAverageRate<Hydrology>
-{
+class TotalInputRate : public DiagAverageRate<Hydrology> {
 public:
   TotalInputRate(const Hydrology *m)
-    : DiagAverageRate<Hydrology>(m, "subglacial_water_input_rate_from_surface", RATE) {
+      : DiagAverageRate<Hydrology>(m, "subglacial_water_input_rate_from_surface", RATE) {
 
     m_accumulator.metadata()["units"] = "m";
 
@@ -93,23 +91,22 @@ public:
         .units("kg second^-1")
         .output_units("Gt year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
-    m_vars[0]["comment"] = "positive flux corresponds to water gain";
+    m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
+    m_vars[0]["comment"]      = "positive flux corresponds to water gain";
   }
 
 protected:
-  const array::Scalar& model_input() {
+  const array::Scalar &model_input() {
     return model->mass_change_due_to_input();
   }
 };
 
 /*! @brief Report advective subglacial water flux. */
-class SubglacialWaterFlux : public DiagAverageRate<Hydrology>
-{
+class SubglacialWaterFlux : public DiagAverageRate<Hydrology> {
 public:
   SubglacialWaterFlux(const Hydrology *m)
-    : DiagAverageRate<Hydrology>(m, "subglacial_water_flux", RATE),
-      m_flux_magnitude(m_grid, "flux_magnitude"){
+      : DiagAverageRate<Hydrology>(m, "subglacial_water_flux", RATE),
+        m_flux_magnitude(m_grid, "flux_magnitude") {
 
     m_accumulator.metadata()["units"] = "m^2";
 
@@ -119,7 +116,7 @@ public:
         .units("m^2 second^-1")
         .output_units("m^2 year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+    m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
 
     m_flux_magnitude.metadata(0)
         .long_name("magnitude of the subglacial water flux")
@@ -154,8 +151,8 @@ public:
         .units("kg second^-1")
         .output_units("Gt year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
-    m_vars[0]["comment"]    = "positive flux corresponds to water gain";
+    m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
+    m_vars[0]["comment"]      = "positive flux corresponds to water gain";
   }
 
 protected:
@@ -206,8 +203,8 @@ public:
         .units("kg second^-1")
         .output_units("Gt year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
-    m_vars[0]["comment"]    = "positive flux corresponds to water gain";
+    m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
+    m_vars[0]["comment"]      = "positive flux corresponds to water gain";
   }
 
 protected:
@@ -311,9 +308,7 @@ Hydrology::Hydrology(std::shared_ptr<const Grid> g)
   m_Pover.metadata()["valid_min"] = { 0.0 };
 
   // needs ghosts in Routing and Distributed
-  m_W.metadata(0)
-      .long_name("thickness of transportable subglacial water layer")
-      .units("m");
+  m_W.metadata(0).long_name("thickness of transportable subglacial water layer").units("m");
   m_W.metadata()["valid_min"] = { 0.0 };
 
   m_Q.metadata(0)
@@ -563,16 +558,17 @@ void check_bounds(const array::Scalar &W, double W_max) {
     for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
-      if (W(i,j) < 0.0) {
+      if (W(i, j) < 0.0) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                       "Hydrology: negative %s of %.6f m at (i, j) = (%d, %d)",
                                       name.c_str(), W(i, j), i, j);
       }
 
-      if (W(i,j) > W_max) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                      "Hydrology: %s of %.6f m exceeds the maximum value %.6f at (i, j) = (%d, %d)",
-                                      name.c_str(), W(i, j), W_max, i, j);
+      if (W(i, j) > W_max) {
+        throw RuntimeError::formatted(
+            PISM_ERROR_LOCATION,
+            "Hydrology: %s of %.6f m exceeds the maximum value %.6f at (i, j) = (%d, %d)",
+            name.c_str(), W(i, j), W_max, i, j);
       }
     }
   } catch (...) {
@@ -600,18 +596,17 @@ void Hydrology::compute_surface_input_rate(const array::CellType &mask,
     return;
   }
 
-  array::AccessScope list{surface_input_rate, &mask, &result};
+  array::AccessScope list{ surface_input_rate, &mask, &result };
 
-  const double
-    water_density = m_config->get_number("constants.fresh_water.density");
+  const double water_density = m_config->get_number("constants.fresh_water.density");
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (mask.icy(i, j)) {
-      result(i,j) = (*surface_input_rate)(i, j) / water_density;
+      result(i, j) = (*surface_input_rate)(i, j) / water_density;
     } else {
-      result(i,j) = 0.0;
+      result(i, j) = 0.0;
     }
   }
 }
@@ -629,20 +624,19 @@ void Hydrology::compute_basal_melt_rate(const array::CellType &mask,
                                         const array::Scalar &basal_melt_rate,
                                         array::Scalar &result) {
 
-  array::AccessScope list{&basal_melt_rate, &mask, &result};
+  array::AccessScope list{ &basal_melt_rate, &mask, &result };
 
-  const double
-    ice_density   = m_config->get_number("constants.ice.density"),
-    water_density = m_config->get_number("constants.fresh_water.density"),
-    C             = ice_density / water_density;
+  const double ice_density   = m_config->get_number("constants.ice.density"),
+               water_density = m_config->get_number("constants.fresh_water.density"),
+               C             = ice_density / water_density;
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (mask.icy(i, j)) {
-      result(i,j) = C * basal_melt_rate(i, j);
+      result(i, j) = C * basal_melt_rate(i, j);
     } else {
-      result(i,j) = 0.0;
+      result(i, j) = 0.0;
     }
   }
 }
@@ -667,10 +661,8 @@ void Hydrology::compute_basal_melt_rate(const array::CellType &mask,
   @param[in,out] conservation_error_change change in water thickness due to mass conservation errors
   @param[in,out] no_model_mask_change change in water thickness outside the modeling domain (regional models)
 */
-void Hydrology::enforce_bounds(const array::CellType &cell_type,
-                               const array::Scalar *no_model_mask,
-                               double max_thickness,
-                               double ocean_water_thickness,
+void Hydrology::enforce_bounds(const array::CellType &cell_type, const array::Scalar *no_model_mask,
+                               double max_thickness, double ocean_water_thickness,
                                array::Scalar &water_thickness,
                                array::Scalar &grounded_margin_change,
                                array::Scalar &grounding_line_change,
@@ -679,13 +671,12 @@ void Hydrology::enforce_bounds(const array::CellType &cell_type,
 
   bool include_floating = m_config->get_flag("hydrology.routing.include_floating_ice");
 
-  array::AccessScope list{&water_thickness, &cell_type,
-      &grounded_margin_change, &grounding_line_change, &conservation_error_change,
-      &no_model_mask_change};
+  array::AccessScope list{ &water_thickness,           &cell_type,
+                           &grounded_margin_change,    &grounding_line_change,
+                           &conservation_error_change, &no_model_mask_change };
 
-  double
-    fresh_water_density = m_config->get_number("constants.fresh_water.density"),
-    kg_per_m            = m_grid->cell_area() * fresh_water_density; // kg m-1
+  double fresh_water_density = m_config->get_number("constants.fresh_water.density"),
+         kg_per_m            = m_grid->cell_area() * fresh_water_density; // kg m-1
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();

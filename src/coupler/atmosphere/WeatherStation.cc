@@ -20,79 +20,66 @@
 #include "pism/coupler/atmosphere/WeatherStation.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/error_handling.hh"
+#include "pism/util/Logger.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/ScalarForcing.hh"
-#include "pism/util/Logger.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 namespace atmosphere {
 
-WeatherStation::WeatherStation(std::shared_ptr<const Grid> grid)
-  : AtmosphereModel(grid) {
+WeatherStation::WeatherStation(std::shared_ptr<const Grid> grid) : AtmosphereModel(grid) {
 
-  m_log->message(2,
-                 "* Using the constant-in-space atmosphere model\n"
-                 "  for use with scalar data from one weather station\n"
-                 "  combined with lapse rate corrections...\n");
+  m_log->message(2, "* Using the constant-in-space atmosphere model\n"
+                    "  for use with scalar data from one weather station\n"
+                    "  combined with lapse rate corrections...\n");
 
   auto filename = m_config->get_string("atmosphere.one_station.file");
 
   if (filename.empty()) {
-    throw RuntimeError(PISM_ERROR_LOCATION,
-                       "atmosphere.one_station.file cannot be empty");
+    throw RuntimeError(PISM_ERROR_LOCATION, "atmosphere.one_station.file cannot be empty");
   }
 
-  m_log->message(2,
-                 "  - Reading air temperature and precipitation from '%s'...\n",
+  m_log->message(2, "  - Reading air temperature and precipitation from '%s'...\n",
                  filename.c_str());
 
   auto &ctx = *grid->ctx();
 
   bool periodic = false;
 
-  m_precipitation_timeseries = std::make_shared<ScalarForcing>(ctx,
-                                                               filename,
-                                                               "precipitation",
-                                                               "kg m-2 second-1",
-                                                               "kg m-2 year-1",
-                                                               "ice-equivalent precipitation rate",
-                                                               periodic);
+  m_precipitation_timeseries = std::make_shared<ScalarForcing>(
+      ctx, filename, "precipitation", "kg m-2 second-1", "kg m-2 year-1",
+      "ice-equivalent precipitation rate", periodic);
 
-  m_air_temp_timeseries = std::make_shared<ScalarForcing>(ctx,
-                                                          filename,
-                                                          "air_temp",
-                                                          "kelvin",
-                                                          "kelvin",
-                                                          "near-surface air temperature",
-                                                          periodic);
+  m_air_temp_timeseries = std::make_shared<ScalarForcing>(
+      ctx, filename, "air_temp", "kelvin", "kelvin", "near-surface air temperature", periodic);
 
   m_precipitation = allocate_precipitation(grid);
   m_temperature   = allocate_temperature(grid);
 }
 
 void WeatherStation::init_impl(const Geometry &geometry) {
-  (void) geometry;
+  (void)geometry;
 }
 
 MaxTimestep WeatherStation::max_timestep_impl(double t) const {
-  (void) t;
+  (void)t;
   return MaxTimestep("atmosphere weather_station");
 }
 
 void WeatherStation::update_impl(const Geometry &geometry, double t, double dt) {
-  (void) geometry;
+  (void)geometry;
 
   m_precipitation->set(m_precipitation_timeseries->average(t, dt));
 
   m_temperature->set(m_air_temp_timeseries->average(t, dt));
 }
 
-const array::Scalar& WeatherStation::precipitation_impl() const {
+const array::Scalar &WeatherStation::precipitation_impl() const {
   return *m_precipitation;
 }
 
-const array::Scalar& WeatherStation::air_temperature_impl() const {
+const array::Scalar &WeatherStation::air_temperature_impl() const {
   return *m_temperature;
 }
 

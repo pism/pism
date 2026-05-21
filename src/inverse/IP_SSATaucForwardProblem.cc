@@ -18,35 +18,34 @@
 
 #include "pism/inverse/IP_SSATaucForwardProblem.hh"
 #include "pism/basalstrength/basal_resistance.hh"
+#include "pism/geometry/Geometry.hh"
+#include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/Grid.hh"
+#include "pism/util/Logger.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/geometry/Geometry.hh"
-#include "pism/stressbalance/StressBalance.hh"
-#include "pism/util/petscwrappers/DM.hh"
-#include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/fem/DirichletData.hh"
 #include "pism/util/fem/Quadrature.hh"
-#include "pism/util/Logger.hh"
+#include "pism/util/petscwrappers/DM.hh"
+#include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 namespace inverse {
 
 IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(std::shared_ptr<const Grid> grid,
                                                    IPDesignVariableParameterization &tp)
-  : SSAFEM(grid),
-    m_zeta(NULL),
-    m_dzeta_local(m_grid, "d_zeta_local"),
-    m_tauc_copy(m_grid, "tauc"),
-    m_fixed_tauc_locations(NULL),
-    m_tauc_param(tp),
-    m_du_global(m_grid, "linearization work vector (sans ghosts)"),
-    m_du_local(m_grid, "linearization work vector (with ghosts)"),
-    m_element_index(*m_grid),
-    m_element(*m_grid, fem::Q1Quadrature4()),
-    m_rebuild_J_state(true)
-{
+    : SSAFEM(grid),
+      m_zeta(NULL),
+      m_dzeta_local(m_grid, "d_zeta_local"),
+      m_tauc_copy(m_grid, "tauc"),
+      m_fixed_tauc_locations(NULL),
+      m_tauc_param(tp),
+      m_du_global(m_grid, "linearization work vector (sans ghosts)"),
+      m_du_local(m_grid, "linearization work vector (with ghosts)"),
+      m_element_index(*m_grid),
+      m_element(*m_grid, fem::Q1Quadrature4()),
+      m_rebuild_J_state(true) {
 
   PetscErrorCode ierr;
 
@@ -69,7 +68,7 @@ IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(std::shared_ptr<const Grid> g
   PISM_CHK(ierr, "KSPCreate");
 
   double ksp_rtol = 1e-12;
-  ierr = KSPSetTolerances(m_ksp, ksp_rtol, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
+  ierr            = KSPSetTolerances(m_ksp, ksp_rtol, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
   PISM_CHK(ierr, "KSPSetTolerances");
 
   PC pc;
@@ -154,7 +153,7 @@ void IP_SSATaucForwardProblem::set_design(array::Scalar &new_zeta) {
   m_tauc_param.convertToDesignVariable(*m_zeta, tauc);
 
   // Cache tauc at the quadrature points.
-  array::AccessScope list{&tauc, &m_coefficients};
+  array::AccessScope list{ &tauc, &m_coefficients };
 
   for (auto p : m_grid->points_with_ghosts(1)) {
     const int i = p.i(), j = p.j();
@@ -177,7 +176,7 @@ std::shared_ptr<TerminationReason> IP_SSATaucForwardProblem::linearize_at(array:
 /* The value of \f$\zeta\f$ is set prior to this call via set_design or linearize_at. The value
 of the residual is returned in \a RHS.*/
 void IP_SSATaucForwardProblem::assemble_residual(array::Vector &u, array::Vector &RHS) {
-  array::AccessScope l{&u, &RHS};
+  array::AccessScope l{ &u, &RHS };
 
   this->compute_local_function(u.array(), RHS.array());
 }
@@ -186,10 +185,10 @@ void IP_SSATaucForwardProblem::assemble_residual(array::Vector &u, array::Vector
 /* The return value is specified via a Vec for the benefit of certain TAO routines.  Otherwise,
 the method is identical to the assemble_residual returning values as a StateVec (an array::Vector).*/
 void IP_SSATaucForwardProblem::assemble_residual(array::Vector &u, Vec RHS) {
-  array::AccessScope l{&u};
+  array::AccessScope l{ &u };
 
   petsc::DMDAVecArray rhs_a(m_velocity_global.dm(), RHS);
-  this->compute_local_function(u.array(), (Vector2d**)rhs_a.get());
+  this->compute_local_function(u.array(), (Vector2d **)rhs_a.get());
 }
 
 //! Assembles the state Jacobian matrix.
@@ -201,7 +200,7 @@ to this method.
   @param[out] J computed state Jacobian.
 */
 void IP_SSATaucForwardProblem::assemble_jacobian_state(array::Vector &u, Mat Jac) {
-  array::AccessScope l{&u};
+  array::AccessScope l{ &u };
 
   this->compute_local_jacobian(u.array(), Jac);
 }
@@ -212,7 +211,7 @@ void IP_SSATaucForwardProblem::assemble_jacobian_state(array::Vector &u, Mat Jac
 */
 void IP_SSATaucForwardProblem::apply_jacobian_design(array::Vector &u, array::Scalar &dzeta,
                                                      array::Vector &du) {
-  array::AccessScope l{&du};
+  array::AccessScope l{ &du };
 
   this->apply_jacobian_design(u, dzeta, du.array());
 }
@@ -224,7 +223,7 @@ be ghostless; no communication is done. \overload
 void IP_SSATaucForwardProblem::apply_jacobian_design(array::Vector &u, array::Scalar &dzeta,
                                                      Vec du) {
   petsc::DMDAVecArray du_a(m_velocity_global.dm(), du);
-  this->apply_jacobian_design(u, dzeta, (Vector2d**)du_a.get());
+  this->apply_jacobian_design(u, dzeta, (Vector2d **)du_a.get());
 }
 
 //! Applies the design Jacobian matrix to a perturbation of the design variable.
@@ -239,14 +238,13 @@ to this method.
 
   Typically this method is called via one of its overloads.
 */
-void IP_SSATaucForwardProblem::apply_jacobian_design(array::Vector &u,
-                                                     array::Scalar &dzeta,
+void IP_SSATaucForwardProblem::apply_jacobian_design(array::Vector &u, array::Scalar &dzeta,
                                                      Vector2d **du_a) {
   const unsigned int Nk     = fem::q1::n_chi;
   const unsigned int Nq     = m_element.n_pts();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
-  array::AccessScope list{&m_coefficients, m_zeta, &u};
+  array::AccessScope list{ &m_coefficients, m_zeta, &u };
 
   array::Scalar *dzeta_local;
   if (dzeta.stencil_width() > 0) {
@@ -267,8 +265,8 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(array::Vector &u,
 
   // Aliases to help with notation consistency below.
   const array::Scalar *dirichletLocations = &m_bc_mask;
-  const array::Vector   *dirichletValues    = &m_bc_values;
-  double                 dirichletWeight    = m_dirichletScale;
+  const array::Vector *dirichletValues    = &m_bc_values;
+  double dirichletWeight                  = m_dirichletScale;
 
   Vector2d u_e[Nk];
   Vector2d u_q[Nq_max];
@@ -282,16 +280,12 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(array::Vector &u,
   double dtauc_e[Nk];
   double dtauc_q[Nq_max];
 
-  fem::DirichletData_Vector dirichletBC(dirichletLocations, dirichletValues,
-                                        dirichletWeight);
+  fem::DirichletData_Vector dirichletBC(dirichletLocations, dirichletValues, dirichletWeight);
   fem::DirichletData_Scalar fixedZeta(m_fixed_tauc_locations, NULL);
 
   // Loop through all elements.
-  const int
-    xs = m_element_index.xs,
-    xm = m_element_index.xm,
-    ys = m_element_index.ys,
-    ym = m_element_index.ym;
+  const int xs = m_element_index.xs, xm = m_element_index.xm, ys = m_element_index.ys,
+            ym = m_element_index.ym;
 
   ParallelSection loop(m_grid->com);
   try {
@@ -339,8 +333,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(array::Vector &u,
 
           m_element.nodal_values(m_coefficients.array(), coeffs);
 
-          quad_point_values(m_element, coeffs,
-                            mask, thickness, tauc, hardness);
+          quad_point_values(m_element, coeffs, mask, thickness, tauc, hardness);
         }
 
         for (unsigned int q = 0; q < Nq; q++) {
@@ -355,8 +348,8 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(array::Vector &u,
           auto W = m_element.weight(q);
 
           for (unsigned int k = 0; k < Nk; k++) {
-            du_e[k].u += W*dbeta*u_qq.u*m_element.chi(q, k).val;
-            du_e[k].v += W*dbeta*u_qq.v*m_element.chi(q, k).val;
+            du_e[k].u += W * dbeta * u_qq.u * m_element.chi(q, k).val;
+            du_e[k].v += W * dbeta * u_qq.v * m_element.chi(q, k).val;
           }
         } // q
         m_element.add_contribution(du_e, du_a);
@@ -376,10 +369,9 @@ void IP_SSATaucForwardProblem::apply_jacobian_design(array::Vector &u,
 /*! The return value uses a StateVector (array::Scalar) which can be ghostless; ghosts (if present) are updated.
 \overload
 */
-void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(array::Vector &u,
-                                                               array::Vector &du,
+void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(array::Vector &u, array::Vector &du,
                                                                array::Scalar &dzeta) {
-  array::AccessScope l{&dzeta};
+  array::AccessScope l{ &dzeta };
 
   this->apply_jacobian_design_transpose(u, du, dzeta.array());
 }
@@ -387,12 +379,11 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(array::Vector &u,
 //! Applies the transpose of the design Jacobian matrix to a perturbation of the state variable.
 /*! The return value uses a Vec for the benefit of TAO.  It is assumed to be ghostless; no communication is done.
 \overload */
-void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(array::Vector &u,
-                                                               array::Vector &du,
+void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(array::Vector &u, array::Vector &du,
                                                                Vec dzeta) {
   auto da2 = m_grid->get_dm(1, m_grid->max_stencil_width());
   petsc::DMDAVecArray dzeta_a(da2, dzeta);
-  this->apply_jacobian_design_transpose(u, du, (double**)dzeta_a.get());
+  this->apply_jacobian_design_transpose(u, du, (double **)dzeta_a.get());
 }
 
 //! Applies the transpose of the design Jacobian matrix to a perturbation of the state variable.
@@ -407,14 +398,13 @@ to this method.
 
   Typically this method is called via one of its overloads.
 */
-void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(array::Vector &u,
-                                                               array::Vector &du,
+void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(array::Vector &u, array::Vector &du,
                                                                double **dzeta_a) {
-  const unsigned int Nk = fem::q1::n_chi;
-  const unsigned int Nq = m_element.n_pts();
+  const unsigned int Nk     = fem::q1::n_chi;
+  const unsigned int Nq     = m_element.n_pts();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
-  array::AccessScope list{&m_coefficients, m_zeta, &u};
+  array::AccessScope list{ &m_coefficients, m_zeta, &u };
 
   array::Vector *du_local;
   if (du.stencil_width() > 0) {
@@ -435,11 +425,10 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(array::Vector &u,
 
   // Aliases to help with notation consistency.
   const array::Scalar *dirichletLocations = &m_bc_mask;
-  const array::Vector   *dirichletValues    = &m_bc_values;
-  double                 dirichletWeight    = m_dirichletScale;
+  const array::Vector *dirichletValues    = &m_bc_values;
+  double dirichletWeight                  = m_dirichletScale;
 
-  fem::DirichletData_Vector dirichletBC(dirichletLocations, dirichletValues,
-                                        dirichletWeight);
+  fem::DirichletData_Vector dirichletBC(dirichletLocations, dirichletValues, dirichletWeight);
 
   // Zero out the portion of the function we are responsible for computing.
   for (auto p : m_grid->points()) {
@@ -448,16 +437,13 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(array::Vector &u,
     dzeta_a[j][i] = 0;
   }
 
-  const int
-    xs = m_element_index.xs,
-    xm = m_element_index.xm,
-    ys = m_element_index.ys,
-    ym = m_element_index.ym;
+  const int xs = m_element_index.xs, xm = m_element_index.xm, ys = m_element_index.ys,
+            ym = m_element_index.ym;
 
   ParallelSection loop(m_grid->com);
   try {
-    for (int j=ys; j<ys+ym; j++) {
-      for (int i=xs; i<xs+xm; i++) {
+    for (int j = ys; j < ys + ym; j++) {
+      for (int i = xs; i < xs + xm; i++) {
         // Initialize the map from global to local degrees of freedom for this element.
         m_element.reset(i, j);
 
@@ -476,7 +462,7 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(array::Vector &u,
         m_element.evaluate(u_e, u_q);
 
         // Zero out the element-local residual in prep for updating it.
-        for (unsigned int k=0; k<Nk; k++) {
+        for (unsigned int k = 0; k < Nk; k++) {
           dzeta_e[k] = 0;
         }
 
@@ -489,13 +475,12 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(array::Vector &u,
 
           m_element.nodal_values(m_coefficients.array(), coeffs);
 
-          quad_point_values(m_element, coeffs,
-                            mask, thickness, tauc, hardness);
+          quad_point_values(m_element, coeffs, mask, thickness, tauc, hardness);
         }
 
-        for (unsigned int q=0; q<Nq; q++) {
+        for (unsigned int q = 0; q < Nq; q++) {
           Vector2d du_qq = du_q[q];
-          Vector2d u_qq = u_q[q];
+          Vector2d u_qq  = u_q[q];
 
           // Determine "dbeta/dtauc" at the quadrature point
           double dbeta_dtauc = 0;
@@ -505,8 +490,9 @@ void IP_SSATaucForwardProblem::apply_jacobian_design_transpose(array::Vector &u,
 
           auto W = m_element.weight(q);
 
-          for (unsigned int k=0; k<Nk; k++) {
-            dzeta_e[k] += W*dbeta_dtauc*(du_qq.u*u_qq.u+du_qq.v*u_qq.v)*m_element.chi(q, k).val;
+          for (unsigned int k = 0; k < Nk; k++) {
+            dzeta_e[k] +=
+                W * dbeta_dtauc * (du_qq.u * u_qq.u + du_qq.v * u_qq.v) * m_element.chi(q, k).val;
           }
         } // q
 
@@ -564,7 +550,7 @@ void IP_SSATaucForwardProblem::apply_linearization(array::Scalar &dzeta, array::
   ierr = KSPSolve(m_ksp, m_du_global.vec(), m_du_global.vec());
   PISM_CHK(ierr, "KSPSolve"); // SOLVE
 
-  KSPConvergedReason  reason;
+  KSPConvergedReason reason;
   ierr = KSPGetConvergedReason(m_ksp, &reason);
   PISM_CHK(ierr, "KSPGetConvergedReason");
   if (reason < 0) {
@@ -611,15 +597,15 @@ void IP_SSATaucForwardProblem::apply_linearization_transpose(array::Vector &du,
 
   // Aliases to help with notation consistency below.
   const array::Scalar *dirichletLocations = &m_bc_mask;
-  const array::Vector   *dirichletValues    = &m_bc_values;
-  double                 dirichletWeight    = m_dirichletScale;
+  const array::Vector *dirichletValues    = &m_bc_values;
+  double dirichletWeight                  = m_dirichletScale;
 
   m_du_global.copy_from(du);
 
   fem::DirichletData_Vector dirichletBC(dirichletLocations, dirichletValues, dirichletWeight);
 
   if (dirichletBC) {
-    array::AccessScope l{&m_du_global};
+    array::AccessScope l{ &m_du_global };
     dirichletBC.fix_residual_homogeneous(m_du_global.array());
   }
 
@@ -630,7 +616,7 @@ void IP_SSATaucForwardProblem::apply_linearization_transpose(array::Vector &du,
   ierr = KSPSolve(m_ksp, m_du_global.vec(), m_du_global.vec());
   PISM_CHK(ierr, "KSPSolve"); // SOLVE
 
-  KSPConvergedReason  reason;
+  KSPConvergedReason reason;
   ierr = KSPGetConvergedReason(m_ksp, &reason);
   PISM_CHK(ierr, "KSPGetConvergedReason");
 

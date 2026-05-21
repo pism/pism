@@ -20,7 +20,7 @@
 #ifndef _ICEREGIONALMODEL_H_
 #define _ICEREGIONALMODEL_H_
 
-#include <memory>               // shared_ptr
+#include <memory> // shared_ptr
 
 #include "pism/icemodel/IceModel.hh"
 
@@ -36,7 +36,7 @@ class IceRegionalModel : public IceModel {
 public:
   IceRegionalModel(std::shared_ptr<Grid> g, std::shared_ptr<Context> c);
 
-  const energy::CHSystem* cryo_hydrologic_system() const;
+  const energy::CHSystem *cryo_hydrologic_system() const;
 
 protected:
   virtual void bootstrap_2d(const File &input_file);
@@ -56,10 +56,11 @@ protected:
   YieldStressInputs yield_stress_inputs();
 
   std::map<std::string, Diagnostic::Ptr> allocate_spatial_diagnostics();
+
 private:
   array::Scalar2 m_no_model_mask;
-  array::Scalar2   m_usurf_stored;
-  array::Scalar1   m_thk_stored;
+  array::Scalar2 m_usurf_stored;
+  array::Scalar1 m_thk_stored;
 
   std::shared_ptr<energy::CHSystem> m_ch_system;
   std::shared_ptr<array::Array3D> m_ch_warming_flux;

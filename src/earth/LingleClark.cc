@@ -19,24 +19,24 @@
 #include "pism/earth/LingleClark.hh"
 
 #include "BedDef.hh"
-#include "pism/util/io/File.hh"
-#include "pism/util/Grid.hh"
-#include "pism/util/Config.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/fftw_utilities.hh"
 #include "pism/earth/LingleClarkSerial.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/fftw_utilities.hh"
+#include "pism/util/io/File.hh"
+#include "pism/util/pism_utilities.hh"
 #include <memory>
 
 namespace pism {
 namespace bed {
 
 LingleClark::LingleClark(std::shared_ptr<const Grid> grid)
-  : BedDef(grid, "Lingle-Clark"),
-    m_total_displacement(m_grid, "bed_displacement"),
-    m_relief(m_grid, "bed_relief"),
-    m_elastic_displacement(grid, "elastic_bed_displacement") {
+    : BedDef(grid, "Lingle-Clark"),
+      m_total_displacement(m_grid, "bed_displacement"),
+      m_relief(m_grid, "bed_relief"),
+      m_elastic_displacement(grid, "elastic_bed_displacement") {
 
   // A work vector. This storage is used to put thickness change on rank 0 and to get the plate
   // displacement change back.
@@ -59,16 +59,11 @@ LingleClark::LingleClark(std::shared_ptr<const Grid> grid)
       .units("meters");
   m_elastic_displacement0 = m_elastic_displacement.allocate_proc0_copy();
 
-  const int
-    Mx = m_grid->Mx(),
-    My = m_grid->My(),
-    Z  = m_config->get_number("bed_deformation.lc.grid_size_factor"),
-    Nx = Z*(Mx - 1) + 1,
-    Ny = Z*(My - 1) + 1;
+  const int Mx = m_grid->Mx(), My = m_grid->My(),
+            Z = m_config->get_number("bed_deformation.lc.grid_size_factor"), Nx = Z * (Mx - 1) + 1,
+            Ny = Z * (My - 1) + 1;
 
-  const double
-    Lx = Z * (m_grid->x0() - m_grid->x(0)),
-    Ly = Z * (m_grid->y0() - m_grid->y(0));
+  const double Lx = Z * (m_grid->x0() - m_grid->x(0)), Ly = Z * (m_grid->y0() - m_grid->y(0));
 
   m_extended_grid = Grid::Shallow(m_grid->ctx(), Lx, Ly, m_grid->x0(), m_grid->y0(), Nx, Ny,
                                   grid::CELL_CORNER, grid::NOT_PERIODIC);
@@ -92,10 +87,8 @@ LingleClark::LingleClark(std::shared_ptr<const Grid> grid)
   ParallelSection rank0(m_grid->com);
   try {
     if (m_grid->rank() == 0) {
-      m_serial_model.reset(new LingleClarkSerial(m_log, *m_config, use_elastic_model,
-                                                 Mx, My,
-                                                 m_grid->dx(), m_grid->dy(),
-                                                 Nx, Ny));
+      m_serial_model.reset(new LingleClarkSerial(m_log, *m_config, use_elastic_model, Mx, My,
+                                                 m_grid->dx(), m_grid->dy(), Nx, Ny));
     }
   } catch (...) {
     rank0.failed();
@@ -175,9 +168,7 @@ void LingleClark::bootstrap_impl(const array::Scalar &bed_elevation,
 std::shared_ptr<array::Scalar> LingleClark::elastic_load_response_matrix() const {
   std::shared_ptr<array::Scalar> result(new array::Scalar(m_extended_grid, "lrm"));
 
-  int
-    Nx = m_extended_grid->Mx(),
-    Ny = m_extended_grid->My();
+  int Nx = m_extended_grid->Mx(), Ny = m_extended_grid->My();
 
   auto lrm0 = result->allocate_proc0_copy();
 
@@ -187,9 +178,9 @@ std::shared_ptr<array::Scalar> LingleClark::elastic_load_response_matrix() const
       if (m_grid->rank() == 0) {
         std::vector<std::complex<double> > array(Nx * Ny);
 
-        m_serial_model->compute_load_response_matrix((fftw_complex*)array.data());
+        m_serial_model->compute_load_response_matrix((fftw_complex *)array.data());
 
-        get_real_part((fftw_complex*)array.data(), 1.0, Nx, Ny, Nx, Ny, 0, 0, *lrm0);
+        get_real_part((fftw_complex *)array.data(), 1.0, Nx, Ny, Nx, Ny, 0, 0, *lrm0);
       }
     } catch (...) {
       rank0.failed();
@@ -225,10 +216,8 @@ void LingleClark::init_impl(const InputOptions &opts, const array::Scalar &ice_t
   }
 
   // Try re-gridding plate_displacement.
-  regrid("Lingle-Clark bed deformation model",
-         *m_viscous_displacement, REGRID_WITHOUT_REGRID_VARS);
-  regrid("Lingle-Clark bed deformation model",
-         m_elastic_displacement, REGRID_WITHOUT_REGRID_VARS);
+  regrid("Lingle-Clark bed deformation model", *m_viscous_displacement, REGRID_WITHOUT_REGRID_VARS);
+  regrid("Lingle-Clark bed deformation model", m_elastic_displacement, REGRID_WITHOUT_REGRID_VARS);
 
   // Now that viscous displacement and elastic displacement are finally initialized,
   // put them on rank 0 and initialize the serial model itself.
@@ -238,7 +227,7 @@ void LingleClark::init_impl(const InputOptions &opts, const array::Scalar &ice_t
 
     ParallelSection rank0(m_grid->com);
     try {
-      if (m_grid->rank() == 0) {  // only processor zero does the work
+      if (m_grid->rank() == 0) { // only processor zero does the work
         PetscErrorCode ierr = 0;
 
         m_serial_model->init(*m_viscous_displacement0, *m_work0);
@@ -261,30 +250,29 @@ void LingleClark::init_impl(const InputOptions &opts, const array::Scalar &ice_t
 /*!
  * Get total bed displacement on the PISM grid.
  */
-const array::Scalar& LingleClark::total_displacement() const {
+const array::Scalar &LingleClark::total_displacement() const {
   return m_total_displacement;
 }
 
-const array::Scalar& LingleClark::viscous_displacement() const {
+const array::Scalar &LingleClark::viscous_displacement() const {
   return *m_viscous_displacement;
 }
 
-const array::Scalar& LingleClark::elastic_displacement() const {
+const array::Scalar &LingleClark::elastic_displacement() const {
   return m_elastic_displacement;
 }
 
-const array::Scalar& LingleClark::relief() const {
+const array::Scalar &LingleClark::relief() const {
   return m_relief;
 }
 
-void LingleClark::step(const array::Scalar &load_thickness,
-                       double dt) {
+void LingleClark::step(const array::Scalar &load_thickness, double dt) {
 
   load_thickness.put_on_proc0(*m_work0);
 
   ParallelSection rank0(m_grid->com);
   try {
-    if (m_grid->rank() == 0) {  // only processor zero does the step
+    if (m_grid->rank() == 0) { // only processor zero does the step
       PetscErrorCode ierr = 0;
 
       m_serial_model->step(dt, *m_work0);
@@ -321,7 +309,7 @@ void LingleClark::update_impl(const array::Scalar &load, double /*t*/, double dt
 }
 
 std::set<VariableMetadata> LingleClark::state_impl() const {
-  auto variables = array::metadata({&m_elastic_displacement, m_viscous_displacement.get()});
+  auto variables = array::metadata({ &m_elastic_displacement, m_viscous_displacement.get() });
 
   return pism::combine(variables, BedDef::state_impl());
 }
@@ -335,8 +323,8 @@ void LingleClark::write_state_impl(const OutputFile &output) const {
 
 DiagnosticList LingleClark::spatial_diagnostics_impl() const {
   DiagnosticList result = {
-    {"viscous_bed_displacement", Diagnostic::wrap(*m_viscous_displacement)},
-    {"elastic_bed_displacement", Diagnostic::wrap(m_elastic_displacement)},
+    { "viscous_bed_displacement", Diagnostic::wrap(*m_viscous_displacement) },
+    { "elastic_bed_displacement", Diagnostic::wrap(m_elastic_displacement) },
   };
   return combine(result, BedDef::spatial_diagnostics_impl());
 }

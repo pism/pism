@@ -34,17 +34,17 @@ class PSFormulas : public SurfaceModel {
 public:
   PSFormulas(std::shared_ptr<const Grid> g);
   ~PSFormulas() = default;
-protected:
 
+protected:
   virtual std::set<VariableMetadata> state_impl() const;
   virtual void write_state_impl(const OutputFile &output) const;
 
-  const array::Scalar& mass_flux_impl() const;
-  const array::Scalar& temperature_impl() const;
+  const array::Scalar &mass_flux_impl() const;
+  const array::Scalar &temperature_impl() const;
 
-  const array::Scalar& accumulation_impl() const;
-  const array::Scalar& melt_impl() const;
-  const array::Scalar& runoff_impl() const;
+  const array::Scalar &accumulation_impl() const;
+  const array::Scalar &melt_impl() const;
+  const array::Scalar &runoff_impl() const;
 
   std::shared_ptr<array::Scalar> m_mass_flux;
   std::shared_ptr<array::Scalar> m_temperature;

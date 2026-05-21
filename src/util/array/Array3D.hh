@@ -32,13 +32,9 @@ class Scalar;
 //! fields.
 class Array3D : public Array {
 public:
-
   // Three-dimensional array with a number of vertical levels
-  Array3D(std::shared_ptr<const Grid> grid,
-          const std::string &name,
-          Kind ghostedp,
-          const std::vector<double> &levels,
-          unsigned int stencil_width = 1);
+  Array3D(std::shared_ptr<const Grid> grid, const std::string &name, Kind ghostedp,
+          const std::vector<double> &levels, unsigned int stencil_width = 1);
 
   virtual ~Array3D() = default;
 
@@ -48,8 +44,8 @@ public:
 
   void set_column(int i, int j, double c);
   void set_column(int i, int j, const double *input);
-  double* get_column(int i, int j);
-  const double* get_column(int i, int j) const;
+  double *get_column(int i, int j);
+  const double *get_column(int i, int j) const;
 
   double interpolate(int i, int j, double z) const;
 

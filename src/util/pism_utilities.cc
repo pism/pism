@@ -19,34 +19,34 @@
 
 #include "pism/util/pism_utilities.hh"
 
-#include <cstdarg>              // va_list, va_start(), va_end()
-#include <sstream>              // istringstream, ostringstream
-#include <cstdio>               // vsnprintf
-#include <cassert>              // assert
+#include <cassert> // assert
+#include <cstdarg> // va_list, va_start(), va_end()
+#include <cstdio>  // vsnprintf
+#include <sstream> // istringstream, ostringstream
 
-#include <mpi.h>                // MPI_Get_library_version
-#include <fftw3.h>              // fftw_version
-#include <gsl/gsl_version.h>    // GSL_VERSION
+#include <fftw3.h>           // fftw_version
+#include <gsl/gsl_version.h> // GSL_VERSION
+#include <mpi.h>             // MPI_Get_library_version
 
-#include "pism/pism_config.hh"  // Pism_USE_XXX, version info
+#include "pism/pism_config.hh" // Pism_USE_XXX, version info
 
 // The following is a stupid kludge necessary to make NetCDF 4.x work in
 // serial mode in an MPI program:
 #ifndef MPI_INCLUDED
 #define MPI_INCLUDED 1
 #endif
-#include <netcdf.h>             // nc_inq_libvers
+#include <netcdf.h> // nc_inq_libvers
 #ifdef NC_HAVE_META_H
-#include <netcdf_meta.h>        // NC_VERSION_MAJOR, etc
+#include <netcdf_meta.h> // NC_VERSION_MAJOR, etc
 #endif
 
-#if (Pism_USE_PROJ==1)
-#include "pism/util/Proj.hh"    // pj_release
+#if (Pism_USE_PROJ == 1)
+#include "pism/util/Proj.hh" // pj_release
 #endif
 
-#include <petsctime.h>          // PetscTime
+#include <petsctime.h> // PetscTime
 
-#include <cstdlib>              // strtol(), strtod()
+#include <cstdlib> // strtol(), strtod()
 
 #include "pism/util/error_handling.hh"
 
@@ -78,12 +78,12 @@ bool ends_with(const std::string &str, const std::string &suffix) {
 }
 
 template <class T>
-std::string join_impl(const T& input, const std::string& separator) {
+std::string join_impl(const T &input, const std::string &separator) {
   if (input.empty()) {
     return "";
   }
 
-  auto j = input.begin();
+  auto j             = input.begin();
   std::string result = *j;
   ++j;
   while (j != input.end()) {
@@ -98,7 +98,7 @@ std::string join(const std::vector<std::string> &strings, const std::string &sep
   return join_impl(strings, separator);
 }
 
-std::string set_join(const std::set<std::string> &input, const std::string& separator) {
+std::string set_join(const std::set<std::string> &input, const std::string &separator) {
   return join_impl(input, separator);
 }
 
@@ -142,16 +142,16 @@ std::set<std::string> set_split(const std::string &input, char separator) {
 //! Checks if a vector of doubles is strictly increasing.
 bool is_increasing(const std::vector<double> &a) {
   int len = (int)a.size();
-  for (int k = 0; k < len-1; k++) {
-    if (a[k] >= a[k+1]) {
+  for (int k = 0; k < len - 1; k++) {
+    if (a[k] >= a[k + 1]) {
       return false;
     }
   }
   return true;
 }
 
-template<typename T, typename A>
-bool member(const T& x, const A& iterable) {
+template <typename T, typename A>
+bool member(const T &x, const A &iterable) {
   return std::any_of(iterable.begin(), iterable.end(),
                      [&x](const std::string &y) { return x == y; });
 }
@@ -250,9 +250,7 @@ std::string version() {
 
   // OpenMPI added MPI_Get_library_version in version 1.7 (relatively recently).
 #ifdef OPEN_MPI
-  result += pism::printf("OpenMPI %d.%d.%d\n",
-                         OMPI_MAJOR_VERSION,
-                         OMPI_MINOR_VERSION,
+  result += pism::printf("OpenMPI %d.%d.%d\n", OMPI_MAJOR_VERSION, OMPI_MINOR_VERSION,
                          OMPI_RELEASE_VERSION);
 #else
   // Assume that other MPI libraries implement this part of the MPI-3 standard...
@@ -265,11 +263,11 @@ std::string version() {
   result += pism::printf("FFTW %s.\n", fftw_version);
   result += pism::printf("GSL %s.\n", GSL_VERSION);
 
-#if (Pism_USE_PROJ==1)
+#if (Pism_USE_PROJ == 1)
   result += pism::printf("PROJ %s.\n", pj_release);
 #endif
 
-#if (Pism_BUILD_PYTHON_BINDINGS==1)
+#if (Pism_BUILD_PYTHON_BINDINGS == 1)
   result += pism::printf("SWIG %s.\n", pism::swig_version);
   result += pism::printf("petsc4py %s.\n", pism::petsc4py_version);
 #endif
@@ -281,7 +279,7 @@ int netcdf_version() {
 #ifdef NC_HAVE_META_H
   return 100 * NC_VERSION_MAJOR + 10 * NC_VERSION_MINOR + NC_VERSION_PATCH;
 #else
-  return 0;                    // unknown
+  return 0; // unknown
 #endif
 }
 
@@ -404,7 +402,7 @@ std::string filename_add_suffix(const std::string &filename, const std::string &
 }
 
 double get_time(MPI_Comm comm) {
-  int rank = 0;
+  int rank      = 0;
   double result = 0.0;
 
   MPI_Comm_rank(comm, &rank);
@@ -413,7 +411,8 @@ double get_time(MPI_Comm comm) {
   try {
     if (rank == 0) {
       PetscLogDouble tmp;
-      PetscErrorCode ierr = PetscTime(&tmp); PISM_CHK(ierr, "PetscTime");
+      PetscErrorCode ierr = PetscTime(&tmp);
+      PISM_CHK(ierr, "PetscTime");
       result = tmp;
     }
   } catch (...) {
@@ -426,28 +425,33 @@ double get_time(MPI_Comm comm) {
   return result;
 }
 
-std::string printf(const char* format, ...) {
-    std::string result(1024, '\0');          // allocate and zero-terminate
-    va_list ap;
-    va_start(ap, format);
+std::string printf(const char *format, ...) {
+  std::string result(1024, '\0'); // allocate and zero-terminate
+  va_list ap;
+  va_start(ap, format);
 
-    // first try
-    va_list ap1; va_copy(ap1, ap);
-    int n = std::vsnprintf(&result[0], result.size(), format, ap1);
-    va_end(ap1);
-    if (n < 0) { va_end(ap); return {}; }
-
-    if (static_cast<size_t>(n) >= result.size()) {
-        // need a bigger buffer: resize (not reserve), and use a *fresh* va_list
-        result.resize(static_cast<size_t>(n) + 1);        // +1 for '\0' space
-        va_list ap2; va_copy(ap2, ap);
-        std::vsnprintf(&result[0], result.size(), format, ap2);
-        va_end(ap2);
-    }
-
+  // first try
+  va_list ap1;
+  va_copy(ap1, ap);
+  int n = std::vsnprintf(&result[0], result.size(), format, ap1);
+  va_end(ap1);
+  if (n < 0) {
     va_end(ap);
-    result.resize(static_cast<size_t>(n));                // drop the '\0'
-    return result;
+    return {};
+  }
+
+  if (static_cast<size_t>(n) >= result.size()) {
+    // need a bigger buffer: resize (not reserve), and use a *fresh* va_list
+    result.resize(static_cast<size_t>(n) + 1); // +1 for '\0' space
+    va_list ap2;
+    va_copy(ap2, ap);
+    std::vsnprintf(&result[0], result.size(), format, ap2);
+    va_end(ap2);
+  }
+
+  va_end(ap);
+  result.resize(static_cast<size_t>(n)); // drop the '\0'
+  return result;
 }
 
 /*!
@@ -518,21 +522,16 @@ uint64_t fletcher64(const uint32_t *data, size_t length) {
 /*!
  * Call fletcher64() to compute the checksum and print it.
  */
-void print_checksum(MPI_Comm com,
-                    const std::vector<double> &data,
-                    const char *label) {
+void print_checksum(MPI_Comm com, const std::vector<double> &data, const char *label) {
   int rank = 0;
   MPI_Comm_rank(com, &rank);
 
-  uint64_t sum = fletcher64((uint32_t*)data.data(), data.size() * 2);
+  uint64_t sum = fletcher64((uint32_t *)data.data(), data.size() * 2);
 
-  PetscPrintf(PETSC_COMM_SELF, "[%d] %s: %016llx\n",
-              rank, label, (unsigned long long int)sum);
+  PetscPrintf(PETSC_COMM_SELF, "[%d] %s: %016llx\n", rank, label, (unsigned long long int)sum);
 }
 
-void print_vector(MPI_Comm com,
-                  const std::vector<double> &data,
-                  const char *label) {
+void print_vector(MPI_Comm com, const std::vector<double> &data, const char *label) {
   int rank = 0;
   MPI_Comm_rank(com, &rank);
 
@@ -544,13 +543,10 @@ void print_vector(MPI_Comm com,
 
   auto str = join(tmp, ",");
 
-  PetscPrintf(PETSC_COMM_SELF, "[%d] %s: %s\n",
-              rank, label, str.c_str());
+  PetscPrintf(PETSC_COMM_SELF, "[%d] %s: %s\n", rank, label, str.c_str());
 }
 
-void print_vector(MPI_Comm com,
-                  const std::vector<int> &data,
-                  const char *label) {
+void print_vector(MPI_Comm com, const std::vector<int> &data, const char *label) {
   int rank = 0;
   MPI_Comm_rank(com, &rank);
 
@@ -562,17 +558,15 @@ void print_vector(MPI_Comm com,
 
   auto str = join(tmp, ",");
 
-  PetscPrintf(PETSC_COMM_SELF, "[%d] %s: %s\n",
-              rank, label, str.c_str());
+  PetscPrintf(PETSC_COMM_SELF, "[%d] %s: %s\n", rank, label, str.c_str());
 }
 
 /*!
  * Compute water column pressure vertically-averaged over the height of an ice cliff at a
  * margin.
  */
-double average_water_column_pressure(double ice_thickness, double bed,
-                                     double floatation_level, double rho_ice,
-                                     double rho_water, double g) {
+double average_water_column_pressure(double ice_thickness, double bed, double floatation_level,
+                                     double rho_ice, double rho_water, double g) {
 
   double ice_bottom = std::max(bed, floatation_level - rho_ice / rho_water * ice_thickness);
   double water_column_height = std::max(floatation_level - ice_bottom, 0.0);
@@ -584,12 +578,11 @@ double average_water_column_pressure(double ice_thickness, double bed,
 }
 
 double parse_number(const std::string &input) {
-  char *endptr = NULL;
+  char *endptr  = NULL;
   double result = strtod(input.c_str(), &endptr);
   if (*endptr != '\0') {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Can't parse %s (expected a floating point number)",
-                                  input.c_str());
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION, "Can't parse %s (expected a floating point number)", input.c_str());
   }
   return result;
 }
@@ -604,11 +597,10 @@ std::vector<double> parse_number_list(const std::string &input) {
 }
 
 long int parse_integer(const std::string &input) {
-  char *endptr = NULL;
+  char *endptr    = NULL;
   long int result = strtol(input.c_str(), &endptr, 10);
   if (*endptr != '\0') {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Can't parse %s (expected an integer)",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Can't parse %s (expected an integer)",
                                   input.c_str());
   }
   return result;

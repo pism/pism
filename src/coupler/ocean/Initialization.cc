@@ -18,16 +18,17 @@
  */
 
 #include "pism/coupler/ocean/Initialization.hh"
-#include "pism/util/io/File.hh"
 #include "pism/coupler/util/init_step.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace ocean {
 
-InitializationHelper::InitializationHelper(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in)
-  : OceanModel(g, in) {
+InitializationHelper::InitializationHelper(std::shared_ptr<const Grid> g,
+                                           std::shared_ptr<OceanModel> in)
+    : OceanModel(g, in) {
 
   m_water_column_pressure = allocate_water_column_pressure(g);
   m_water_column_pressure->set_name("effective_water_column_pressure");
@@ -106,15 +107,15 @@ void InitializationHelper::write_state_impl(const OutputFile &output) const {
   m_input_model->write_state(output);
 }
 
-const array::Scalar& InitializationHelper::shelf_base_temperature_impl() const {
+const array::Scalar &InitializationHelper::shelf_base_temperature_impl() const {
   return *m_shelf_base_temperature;
 }
 
-const array::Scalar& InitializationHelper::shelf_base_mass_flux_impl() const {
+const array::Scalar &InitializationHelper::shelf_base_mass_flux_impl() const {
   return *m_shelf_base_mass_flux;
 }
 
-const array::Scalar& InitializationHelper::average_water_column_pressure_impl() const {
+const array::Scalar &InitializationHelper::average_water_column_pressure_impl() const {
   return *m_water_column_pressure;
 }
 

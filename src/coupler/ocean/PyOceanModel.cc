@@ -34,20 +34,21 @@ void PyOceanModel::allocate(std::shared_ptr<const Grid> grid) {
 }
 
 MaxTimestep PyOceanModel::max_timestep(double t) const {
-  (void) t;
+  (void)t;
   return {};
 }
 
 void PyOceanModel::init(const Geometry &geometry) {
-  (void) geometry;
+  (void)geometry;
   throw RuntimeError(PISM_ERROR_LOCATION, "PyOceanModel.init(geometry) is not implemented");
 }
 
 void PyOceanModel::update(const Inputs &inputs, double t, double dt) {
-  (void) inputs;
-  (void) t;
-  (void) dt;
-  throw RuntimeError(PISM_ERROR_LOCATION, "PyOceanModel.update(geometry, t, dt) is not implemented");
+  (void)inputs;
+  (void)t;
+  (void)dt;
+  throw RuntimeError(PISM_ERROR_LOCATION,
+                     "PyOceanModel.update(geometry, t, dt) is not implemented");
 }
 
 std::set<VariableMetadata> PyOceanModel::state() const {
@@ -55,7 +56,7 @@ std::set<VariableMetadata> PyOceanModel::state() const {
 }
 
 void PyOceanModel::write_state(const OutputFile &output) const {
-  (void) output;
+  (void)output;
   // empty
 }
 
@@ -63,9 +64,9 @@ PyOceanModelAdapter::PyOceanModelAdapter(std::shared_ptr<const Grid> grid,
                                          std::shared_ptr<PyOceanModel> implementation)
     : CompleteOceanModel(grid), m_impl(implementation) {
 
-  m_impl->shelf_base_mass_flux = m_shelf_base_mass_flux;
+  m_impl->shelf_base_mass_flux   = m_shelf_base_mass_flux;
   m_impl->shelf_base_temperature = m_shelf_base_temperature;
-  m_impl->water_column_pressure = m_water_column_pressure;
+  m_impl->water_column_pressure  = m_water_column_pressure;
 }
 
 MaxTimestep PyOceanModelAdapter::max_timestep_impl(double t) const {

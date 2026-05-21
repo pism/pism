@@ -19,16 +19,16 @@
 
 #include "pism/hydrology/SteadyState.hh"
 
-#include <gsl/gsl_interp.h>     // gsl_interp_bsearch
+#include <gsl/gsl_interp.h> // gsl_interp_bsearch
 
 #include "NullTransport.hh"
 #include "pism/hydrology/EmptyingProblem.hh"
 
-#include "pism/util/Time.hh"    // time().current()
-#include "pism/util/Profiling.hh"
 #include "pism/util/Context.hh"
-#include "pism/util/MaxTimestep.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/Profiling.hh"
+#include "pism/util/Time.hh" // time().current()
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/io/io_helpers.hh"
 
@@ -55,24 +55,24 @@ namespace pism {
 namespace hydrology {
 
 void SteadyState::initialization_message() const {
-  m_log->message(2,
-                 "* Initializing the \"steady state\" subglacial hydrology model ...\n");
+  m_log->message(2, "* Initializing the \"steady state\" subglacial hydrology model ...\n");
 }
 
 SteadyState::SteadyState(std::shared_ptr<const Grid> grid)
     : NullTransport(grid),
       m_time_name(m_config->get_string("time.dimension_name") + "_hydrology_steady") {
 
-  m_t_last = time().current();
+  m_t_last          = time().current();
   m_update_interval = m_config->get_number("hydrology.steady.flux_update_interval", "seconds");
-  m_t_eps = 1.0;
-  m_bootstrap = false;
+  m_t_eps           = 1.0;
+  m_bootstrap       = false;
 
   m_emptying_problem.reset(new EmptyingProblem(grid));
 
   if (m_config->get_flag("hydrology.add_water_input_to_till_storage")) {
-    throw RuntimeError(PISM_ERROR_LOCATION,
-                       "'steady' hydrology requires hydrology.add_water_input_to_till_storage == false");
+    throw RuntimeError(
+        PISM_ERROR_LOCATION,
+        "'steady' hydrology requires hydrology.add_water_input_to_till_storage == false");
   }
 
   if (m_config->get_string("hydrology.surface_input.file").empty()) {
@@ -81,26 +81,23 @@ SteadyState::SteadyState(std::shared_ptr<const Grid> grid)
   }
 }
 
-void SteadyState::update_impl(double t, double dt, const Inputs& inputs) {
+void SteadyState::update_impl(double t, double dt, const Inputs &inputs) {
   NullTransport::update_impl(t, dt, inputs);
 
   double t_next = m_t_last + max_timestep(m_t_last).value();
 
-  if (t >= t_next or std::abs(t_next - t) < m_t_eps or
-      m_bootstrap) {
+  if (t >= t_next or std::abs(t_next - t) < m_t_eps or m_bootstrap) {
 
     m_log->message(3, " Updating the steady-state subglacial water flux...\n");
 
     profiling().begin("steady_emptying");
 
-    m_emptying_problem->update(*inputs.geometry,
-                               inputs.no_model_mask,
-                               m_surface_input_rate);
+    m_emptying_problem->update(*inputs.geometry, inputs.no_model_mask, m_surface_input_rate);
 
     profiling().end("steady_emptying");
     m_Q.copy_from(m_emptying_problem->flux());
 
-    m_t_last = t;
+    m_t_last    = t;
     m_bootstrap = false;
   }
 }
@@ -162,16 +159,14 @@ MaxTimestep SteadyState::max_timestep_impl(double t) const {
   {
     if (t < m_t_last) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "time %f is less than the previous time %f",
-                                    t, m_t_last);
+                                    "time %f is less than the previous time %f", t, m_t_last);
     }
 
     // Find the smallest time of the form m_t_last + k * m_update_interval that is greater
     // than t
     double k = ceil((t - m_t_last) / m_update_interval);
 
-    double
-      t_next = m_t_last + k * m_update_interval;
+    double t_next = m_t_last + k * m_update_interval;
 
     dt_interval = t_next - t;
 
@@ -203,11 +198,11 @@ std::set<VariableMetadata> SteadyState::state_impl() const {
   return pism::combine(variables, array::metadata({ &m_Q }));
 }
 
-void SteadyState::write_state_impl(const OutputFile& output) const {
+void SteadyState::write_state_impl(const OutputFile &output) const {
   NullTransport::write_state_impl(output);
 
   auto t_length = output.time_dimension_length();
-  auto t_start = t_length > 0 ? t_length - 1 : 0;
+  auto t_start  = t_length > 0 ? t_length - 1 : 0;
 
   output.write_timeseries(m_time_name, { t_start }, { 1 }, { m_t_last });
 
@@ -225,8 +220,8 @@ void SteadyState::restart_impl(const File &input_file, int record) {
       auto t_length = input_file.nrecords(m_time_name, "", m_sys);
       auto t_last   = t_length > 0 ? t_length - 1 : 0;
 
-      auto t   = io::read_timeseries_variable(input_file, m_time_name,
-                                              time().units(), m_sys, t_last, 1);
+      auto t =
+          io::read_timeseries_variable(input_file, m_time_name, time().units(), m_sys, t_last, 1);
       m_t_last = t[0];
 
     } else {
@@ -239,8 +234,7 @@ void SteadyState::restart_impl(const File &input_file, int record) {
   regrid("hydrology 'steady'", m_Q, REGRID_WITHOUT_REGRID_VARS);
 }
 
-void SteadyState::bootstrap_impl(const File &input_file,
-                                 const array::Scalar &ice_thickness) {
+void SteadyState::bootstrap_impl(const File &input_file, const array::Scalar &ice_thickness) {
   NullTransport::bootstrap_impl(input_file, ice_thickness);
 
   init_time(m_config->get_string("hydrology.surface_input.file"));
@@ -251,8 +245,8 @@ void SteadyState::bootstrap_impl(const File &input_file,
       auto t_length = input_file.nrecords(m_time_name, "", m_sys);
       auto t_last   = t_length > 0 ? t_length - 1 : 0;
 
-      auto t   = io::read_timeseries_variable(input_file, m_time_name,
-                                              time().units(), m_sys, t_last, 1);
+      auto t =
+          io::read_timeseries_variable(input_file, m_time_name, time().units(), m_sys, t_last, 1);
       m_t_last = t[0];
     } else {
       m_t_last = time().current();
@@ -280,8 +274,7 @@ void SteadyState::bootstrap_impl(const File &input_file,
   }
 }
 
-void SteadyState::init_impl(const array::Scalar &W_till,
-                            const array::Scalar &W,
+void SteadyState::init_impl(const array::Scalar &W_till, const array::Scalar &W,
                             const array::Scalar &P) {
   NullTransport::init_impl(W_till, W, P);
 
@@ -303,8 +296,7 @@ void SteadyState::init_time(const std::string &input_file) {
 
   File file(m_grid->com, input_file, io::PISM_GUESS, io::PISM_READONLY);
 
-  auto time_name = io::time_dimension(m_grid->ctx()->unit_system(),
-                                      file, variable_name);
+  auto time_name = io::time_dimension(m_grid->ctx()->unit_system(), file, variable_name);
 
   if (time_name.empty()) {
     // Water input rate is time-independent. m_time and m_time_bounds are left empty.
@@ -322,19 +314,18 @@ void SteadyState::init_time(const std::string &input_file) {
   }
 
   // read time bounds data from a file
-  m_time_bounds =
-      io::read_bounds(file, bounds_name, time().units(), m_grid->ctx()->unit_system());
+  m_time_bounds = io::read_bounds(file, bounds_name, time().units(), m_grid->ctx()->unit_system());
 
   // time bounds data overrides the time variable: we make t[j] be the
   // left end-point of the j-th interval
   m_time.resize(m_time_bounds.size() / 2);
   for (unsigned int k = 0; k < m_time.size(); ++k) {
-    m_time[k] = m_time_bounds[2*k];
+    m_time[k] = m_time_bounds[2 * k];
   }
 
   if (not is_increasing(m_time)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "time bounds in %s are invalid", input_file.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "time bounds in %s are invalid",
+                                  input_file.c_str());
   }
 }
 

@@ -32,9 +32,9 @@ public:
   SIAFD_Regional(std::shared_ptr<const Grid> g);
   virtual ~SIAFD_Regional() = default;
   void init();
+
 private:
-  void compute_surface_gradient(const Inputs &inputs,
-                                array::Staggered1 &h_x,
+  void compute_surface_gradient(const Inputs &inputs, array::Staggered1 &h_x,
                                 array::Staggered1 &h_y);
   array::Staggered1 m_h_x_no_model;
   array::Staggered1 m_h_y_no_model;

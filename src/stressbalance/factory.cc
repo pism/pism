@@ -36,31 +36,30 @@
 namespace pism {
 namespace stressbalance {
 
-std::shared_ptr<StressBalance> create(const std::string &model,
-                                      std::shared_ptr<const Grid> grid,
+std::shared_ptr<StressBalance> create(const std::string &model, std::shared_ptr<const Grid> grid,
                                       bool regional) {
 
   auto config = grid->ctx()->config();
 
   if (model == "blatter") {
     int Mz = config->get_number("stress_balance.blatter.Mz");
-    int C = config->get_number("stress_balance.blatter.coarsening_factor");
+    int C  = config->get_number("stress_balance.blatter.coarsening_factor");
 
     auto blatter = std::make_shared<Blatter>(grid, Mz, C);
-    auto mod = std::make_shared<BlatterMod>(blatter);
+    auto mod     = std::make_shared<BlatterMod>(blatter);
 
     return std::make_shared<StressBalance>(grid, blatter, mod);
   }
 
   auto ssa_method = config->get_string("stress_balance.ssa.method");
   std::shared_ptr<ShallowStressBalance> sliding;
-  if (set_member(model, {"none", "sia"})) {
+  if (set_member(model, { "none", "sia" })) {
     sliding = std::make_shared<ZeroSliding>(grid);
-  } else if (set_member(model, {"prescribed_sliding", "prescribed_sliding+sia"})) {
+  } else if (set_member(model, { "prescribed_sliding", "prescribed_sliding+sia" })) {
     sliding = std::make_shared<PrescribedSliding>(grid);
-  } else if (set_member(model, {"weertman_sliding", "weertman_sliding+sia"})) {
+  } else if (set_member(model, { "weertman_sliding", "weertman_sliding+sia" })) {
     sliding = std::make_shared<WeertmanSliding>(grid);
-  } else if (set_member(model, {"ssa", "ssa+sia"})) {
+  } else if (set_member(model, { "ssa", "ssa+sia" })) {
     if (ssa_method == "fd") {
       sliding = std::make_shared<SSAFD>(grid, regional);
     } else if (ssa_method == "fd_snes") {
@@ -69,22 +68,23 @@ std::shared_ptr<StressBalance> create(const std::string &model,
       sliding = std::make_shared<SSAFEM>(grid);
     }
   } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "invalid stress balance model: %s", model.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid stress balance model: %s",
+                                  model.c_str());
   }
 
   std::shared_ptr<SSB_Modifier> modifier;
-  if (set_member(model, {"none", "ssa", "prescribed_sliding", "weertman_sliding"})) {
+  if (set_member(model, { "none", "ssa", "prescribed_sliding", "weertman_sliding" })) {
     modifier = std::make_shared<ConstantInColumn>(grid);
-  } else if (set_member(model, {"prescribed_sliding+sia", "weertman_sliding+sia", "ssa+sia", "sia"})) {
+  } else if (set_member(model,
+                        { "prescribed_sliding+sia", "weertman_sliding+sia", "ssa+sia", "sia" })) {
     if (regional) {
       modifier = std::make_shared<SIAFD_Regional>(grid);
     } else {
       modifier = std::make_shared<SIAFD>(grid);
     }
   } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "invalid stress balance model: %s", model.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "invalid stress balance model: %s",
+                                  model.c_str());
   }
 
   return std::make_shared<StressBalance>(grid, sliding, modifier);

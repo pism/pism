@@ -22,7 +22,7 @@
 
 #include "pism/coupler/AtmosphereModel.hh"
 
-#include <memory>               // std::shared_ptr
+#include <memory> // std::shared_ptr
 
 
 namespace pism {
@@ -49,8 +49,8 @@ protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const array::Scalar& precipitation_impl() const;
-  const array::Scalar& air_temperature_impl() const;
+  const array::Scalar &precipitation_impl() const;
+  const array::Scalar &air_temperature_impl() const;
 
   void begin_pointwise_access_impl() const;
   void end_pointwise_access_impl() const;
@@ -59,8 +59,8 @@ protected:
   void temp_time_series_impl(int i, int j, std::vector<double> &values) const;
 
   MaxTimestep max_timestep_impl(double t) const;
-protected:
 
+protected:
   std::shared_ptr<ScalarForcing> m_precipitation_timeseries;
   std::shared_ptr<ScalarForcing> m_air_temp_timeseries;
 

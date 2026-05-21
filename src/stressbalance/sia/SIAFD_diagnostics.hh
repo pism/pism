@@ -31,10 +31,10 @@ namespace stressbalance {
 /*!
   See page \ref bedrough and reference [\ref Schoofbasaltopg2003].
 */
-class SIAFD_schoofs_theta : public Diag<SIAFD>
-{
+class SIAFD_schoofs_theta : public Diag<SIAFD> {
 public:
   SIAFD_schoofs_theta(const SIAFD *m);
+
 protected:
   virtual std::shared_ptr<array::Array> compute_impl() const;
 };
@@ -44,10 +44,10 @@ protected:
 /*!
   See page \ref bedrough and reference [\ref Schoofbasaltopg2003].
 */
-class SIAFD_topgsmooth : public Diag<SIAFD>
-{
+class SIAFD_topgsmooth : public Diag<SIAFD> {
 public:
   SIAFD_topgsmooth(const SIAFD *m);
+
 protected:
   virtual std::shared_ptr<array::Array> compute_impl() const;
 };
@@ -57,48 +57,48 @@ protected:
 /*!
   See page \ref bedrough and reference [\ref Schoofbasaltopg2003].
 */
-class SIAFD_thksmooth : public Diag<SIAFD>
-{
+class SIAFD_thksmooth : public Diag<SIAFD> {
 public:
   SIAFD_thksmooth(const SIAFD *m);
+
 protected:
   virtual std::shared_ptr<array::Array> compute_impl() const;
 };
 
 //! \brief Compute diffusivity of the SIA flow.
-class SIAFD_diffusivity : public Diag<SIAFD>
-{
+class SIAFD_diffusivity : public Diag<SIAFD> {
 public:
   SIAFD_diffusivity(const SIAFD *m);
+
 protected:
   virtual std::shared_ptr<array::Array> compute_impl() const;
 };
 
 //! \brief Compute diffusivity of the SIA flow (on the staggered grid).
-class SIAFD_diffusivity_staggered : public Diag<SIAFD>
-{
+class SIAFD_diffusivity_staggered : public Diag<SIAFD> {
 public:
   SIAFD_diffusivity_staggered(const SIAFD *m);
+
 protected:
   virtual std::shared_ptr<array::Array> compute_impl() const;
 };
 
 //! \brief Reports the x-component of the ice surface gradient on the staggered
 //! grid as computed by SIAFD.
-class SIAFD_h_x : public Diag<SIAFD>
-{
+class SIAFD_h_x : public Diag<SIAFD> {
 public:
   SIAFD_h_x(const SIAFD *m);
+
 protected:
   virtual std::shared_ptr<array::Array> compute_impl() const;
 };
 
 //! \brief Reports the y-component of the ice surface gradient on the staggered
 //! grid as computed by SIAFD.
-class SIAFD_h_y : public Diag<SIAFD>
-{
+class SIAFD_h_y : public Diag<SIAFD> {
 public:
   SIAFD_h_y(const SIAFD *m);
+
 protected:
   virtual std::shared_ptr<array::Array> compute_impl() const;
 };

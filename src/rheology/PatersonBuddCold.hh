@@ -39,12 +39,11 @@ protected:
   double softness_from_temp(double T_pa) const;
 
   // ignores pressure and uses non-pressure-adjusted temperature
-  double flow_from_temp(double stress, double temp,
-                        double  /*pressure*/, double /*gs*/) const;
+  double flow_from_temp(double stress, double temp, double /*pressure*/, double /*gs*/) const;
 };
 
-bool FlowLawIsPatersonBuddCold(const FlowLaw &flow_law,
-                               const Config &, std::shared_ptr<EnthalpyConverter>);
+bool FlowLawIsPatersonBuddCold(const FlowLaw &flow_law, const Config &,
+                               std::shared_ptr<EnthalpyConverter>);
 
 } // end of namespace rheology
 } // end of namespace pism

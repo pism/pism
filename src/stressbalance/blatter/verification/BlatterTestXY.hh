@@ -48,19 +48,15 @@ public:
   BlatterTestXY(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor);
 
 protected:
-  bool marine_boundary(int face,
-                       const int *node_type,
-                       const double *ice_bottom,
+  bool marine_boundary(int face, const int *node_type, const double *ice_bottom,
                        const double *sea_level);
 
-  bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I);
+  bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex &I);
 
   Vector2d u_bc(double x, double y, double z) const;
 
-  void residual_source_term(const fem::Q1Element3 &element,
-                            const double *surface,
-                            const double *bed,
-                            Vector2d *residual);
+  void residual_source_term(const fem::Q1Element3 &element, const double *surface,
+                            const double *bed, Vector2d *residual);
   //! constant ice hardness
   double m_B;
 };

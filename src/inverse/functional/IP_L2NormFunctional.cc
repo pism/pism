@@ -18,8 +18,8 @@
 
 #include "pism/inverse/functional/IP_L2NormFunctional.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/array/Vector.hh"
 #include "pism/util/array/Scalar.hh"
+#include "pism/util/array/Vector.hh"
 #include "pism/util/pism_utilities.hh"
 
 namespace pism {
@@ -38,11 +38,8 @@ void IP_L2NormFunctional2S::valueAt(array::Scalar &x, double *OUTPUT) {
   array::AccessScope list(x);
 
   // Loop through all LOCAL elements.
-  const int
-    xs = m_element_index.lxs,
-    xm = m_element_index.lxm,
-    ys = m_element_index.lys,
-    ym = m_element_index.lym;
+  const int xs = m_element_index.lxs, xm = m_element_index.lxm, ys = m_element_index.lys,
+            ym = m_element_index.lym;
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
@@ -54,9 +51,9 @@ void IP_L2NormFunctional2S::valueAt(array::Scalar &x, double *OUTPUT) {
       m_element.evaluate(tmp, x_q);
 
       for (unsigned int q = 0; q < Nq; q++) {
-        auto W = m_element.weight(q);
+        auto W            = m_element.weight(q);
         const double x_qq = x_q[q];
-        value += W*x_qq*x_qq;
+        value += W * x_qq * x_qq;
       } // q
     } // j
   } // i
@@ -75,14 +72,11 @@ void IP_L2NormFunctional2S::dot(array::Scalar &a, array::Scalar &b, double *OUTP
   double a_q[Nq_max];
   double b_q[Nq_max];
 
-  array::AccessScope list{&a, &b};
+  array::AccessScope list{ &a, &b };
 
   // Loop through all LOCAL elements.
-  const int
-    xs = m_element_index.lxs,
-    xm = m_element_index.lxm,
-    ys = m_element_index.lys,
-    ym = m_element_index.lym;
+  const int xs = m_element_index.lxs, xm = m_element_index.lxm, ys = m_element_index.lys,
+            ym = m_element_index.lym;
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
@@ -97,7 +91,7 @@ void IP_L2NormFunctional2S::dot(array::Scalar &a, array::Scalar &b, double *OUTP
 
       for (unsigned int q = 0; q < Nq; q++) {
         auto W = m_element.weight(q);
-        value += W*a_q[q]*b_q[q];
+        value += W * a_q[q] * b_q[q];
       } // q
     } // j
   } // i
@@ -117,14 +111,11 @@ void IP_L2NormFunctional2S::gradientAt(array::Scalar &x, array::Scalar &gradient
   double x_q[Nq_max];
   double gradient_e[Nk];
 
-  array::AccessScope list{&x, &gradient};
+  array::AccessScope list{ &x, &gradient };
 
   // Loop through all local and ghosted elements.
-  const int
-    xs = m_element_index.xs,
-    xm = m_element_index.xm,
-    ys = m_element_index.ys,
-    ym = m_element_index.ym;
+  const int xs = m_element_index.xs, xm = m_element_index.xm, ys = m_element_index.ys,
+            ym = m_element_index.ym;
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
@@ -143,10 +134,10 @@ void IP_L2NormFunctional2S::gradientAt(array::Scalar &x, array::Scalar &gradient
       }
 
       for (unsigned int q = 0; q < Nq; q++) {
-        auto W = m_element.weight(q);
+        auto W            = m_element.weight(q);
         const double x_qq = x_q[q];
         for (unsigned int k = 0; k < Nk; k++) {
-          gradient_e[k] += 2*W*x_qq*m_element.chi(q, k).val;
+          gradient_e[k] += 2 * W * x_qq * m_element.chi(q, k).val;
         } // k
       } // q
       m_element.add_contribution(gradient_e, gradient.array());
@@ -167,11 +158,8 @@ void IP_L2NormFunctional2V::valueAt(array::Vector &x, double *OUTPUT) {
   array::AccessScope list(x);
 
   // Loop through all local and ghosted elements.
-  const int
-    xs = m_element_index.lxs,
-    xm = m_element_index.lxm,
-    ys = m_element_index.lys,
-    ym = m_element_index.lym;
+  const int xs = m_element_index.lxs, xm = m_element_index.lxm, ys = m_element_index.lys,
+            ym = m_element_index.lym;
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
@@ -183,9 +171,9 @@ void IP_L2NormFunctional2V::valueAt(array::Vector &x, double *OUTPUT) {
       m_element.evaluate(tmp, x_q);
 
       for (unsigned int q = 0; q < Nq; q++) {
-        auto W = m_element.weight(q);
+        auto W               = m_element.weight(q);
         const Vector2d &x_qq = x_q[q];
-        value += W*(x_qq.u*x_qq.u + x_qq.v*x_qq.v);
+        value += W * (x_qq.u * x_qq.u + x_qq.v * x_qq.v);
       } // q
     } // j
   } // i
@@ -204,14 +192,11 @@ void IP_L2NormFunctional2V::dot(array::Vector &a, array::Vector &b, double *OUTP
   Vector2d a_q[Nq_max];
   Vector2d b_q[Nq_max];
 
-  array::AccessScope list{&a, &b};
+  array::AccessScope list{ &a, &b };
 
   // Loop through all LOCAL elements.
-  const int
-    xs = m_element_index.lxs,
-    xm = m_element_index.lxm,
-    ys = m_element_index.lys,
-    ym = m_element_index.lym;
+  const int xs = m_element_index.lxs, xm = m_element_index.lxm, ys = m_element_index.lys,
+            ym = m_element_index.lym;
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
@@ -226,7 +211,7 @@ void IP_L2NormFunctional2V::dot(array::Vector &a, array::Vector &b, double *OUTP
 
       for (unsigned int q = 0; q < Nq; q++) {
         auto W = m_element.weight(q);
-        value += W*(a_q[q].u*b_q[q].u + a_q[q].v*b_q[q].v);
+        value += W * (a_q[q].u * b_q[q].u + a_q[q].v * b_q[q].v);
       } // q
     } // j
   } // i
@@ -246,14 +231,11 @@ void IP_L2NormFunctional2V::gradientAt(array::Vector &x, array::Vector &gradient
   Vector2d x_q[Nq_max];
   Vector2d gradient_e[Nk];
 
-  array::AccessScope list{&x, &gradient};
+  array::AccessScope list{ &x, &gradient };
 
   // Loop through all local and ghosted elements.
-  const int
-    xs = m_element_index.xs,
-    xm = m_element_index.xm,
-    ys = m_element_index.ys,
-    ym = m_element_index.ym;
+  const int xs = m_element_index.xs, xm = m_element_index.xm, ys = m_element_index.ys,
+            ym = m_element_index.ym;
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
@@ -273,12 +255,12 @@ void IP_L2NormFunctional2V::gradientAt(array::Vector &x, array::Vector &gradient
       }
 
       for (unsigned int q = 0; q < Nq; q++) {
-        auto W = m_element.weight(q);
+        auto W               = m_element.weight(q);
         const Vector2d &x_qq = x_q[q];
         for (unsigned int k = 0; k < Nk; k++) {
-          double gcommon = 2*W*m_element.chi(q, k).val;
-          gradient_e[k].u += gcommon*x_qq.u;
-          gradient_e[k].v += gcommon*x_qq.v;
+          double gcommon = 2 * W * m_element.chi(q, k).val;
+          gradient_e[k].u += gcommon * x_qq.u;
+          gradient_e[k].v += gcommon * x_qq.v;
         } // k
       } // q
       m_element.add_contribution(gradient_e, gradient.array());

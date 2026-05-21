@@ -20,10 +20,10 @@
 #ifndef PISM_BLATTER_MOD_H
 #define PISM_BLATTER_MOD_H
 
-#include <memory>               // std::shared_ptr
+#include <memory> // std::shared_ptr
 
-#include "pism/stressbalance/blatter/Blatter.hh"
 #include "pism/stressbalance/SSB_Modifier.hh"
+#include "pism/stressbalance/blatter/Blatter.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -38,16 +38,14 @@ public:
 
   void init();
 
-  void update(const array::Vector &sliding_velocity,
-              const Inputs &inputs,
-              bool full_update);
+  void update(const array::Vector &sliding_velocity, const Inputs &inputs, bool full_update);
+
 private:
   std::shared_ptr<Blatter> m_solver;
 
   void transfer(const array::Scalar &ice_thickness);
 
-  void compute_max_diffusivity(const array::Vector &velocity,
-                               const array::Scalar &ice_thickness,
+  void compute_max_diffusivity(const array::Vector &velocity, const array::Scalar &ice_thickness,
                                const array::Scalar1 &surface);
 };
 

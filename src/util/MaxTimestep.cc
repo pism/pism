@@ -24,23 +24,19 @@
 namespace pism {
 
 // Time step restrictions
-MaxTimestep::MaxTimestep()
-  : m_finite(false), m_value(0.0) {
+MaxTimestep::MaxTimestep() : m_finite(false), m_value(0.0) {
   // empty
 }
 
-MaxTimestep::MaxTimestep(double v)
-  : m_finite(true), m_value(v) {
+MaxTimestep::MaxTimestep(double v) : m_finite(true), m_value(v) {
   assert(v > 0.0);
 }
 
-MaxTimestep::MaxTimestep(const std::string &description)
-  : MaxTimestep() {
+MaxTimestep::MaxTimestep(const std::string &description) : MaxTimestep() {
   m_description = description;
 }
 
-MaxTimestep::MaxTimestep(double v, const std::string &description)
-  : MaxTimestep(v) {
+MaxTimestep::MaxTimestep(double v, const std::string &description) : MaxTimestep(v) {
   m_description = description;
 }
 
@@ -77,7 +73,7 @@ bool operator<(const MaxTimestep &a, const MaxTimestep &b) {
 }
 
 bool operator>(const MaxTimestep &a, const MaxTimestep &b) {
-  return (not (a == b)) and (not (a < b));
+  return (not(a == b)) and (not(a < b));
 }
 
 } // end of namespace pism

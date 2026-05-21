@@ -18,25 +18,22 @@
 
 #include "pism/coupler/atmosphere/Delta_T.hh"
 
-#include "pism/util/Config.hh"
-#include "pism/util/ScalarForcing.hh"
 #include "pism/coupler/util/options.hh"
-#include "pism/util/array/Forcing.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/ScalarForcing.hh"
+#include "pism/util/array/Forcing.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace atmosphere {
 
 Delta_T::Delta_T(std::shared_ptr<const Grid> grid, std::shared_ptr<AtmosphereModel> in)
-  : AtmosphereModel(grid, in) {
+    : AtmosphereModel(grid, in) {
 
-  std::string
-    prefix         = "atmosphere.delta_T",
-    variable_name  = "delta_T",
-    long_name      = "near-surface air temperature offsets",
-    units          = "kelvin",
-    external_units = "kelvin";
+  std::string prefix = "atmosphere.delta_T", variable_name = "delta_T",
+              long_name = "near-surface air temperature offsets", units = "kelvin",
+              external_units = "kelvin";
 
   ForcingOptions opt(*m_grid->ctx(), prefix);
 
@@ -48,24 +45,15 @@ Delta_T::Delta_T(std::shared_ptr<const Grid> grid, std::shared_ptr<AtmosphereMod
   bool scalar = input.dimensions(variable_name).size() == 1;
 
   if (scalar) {
-    m_1d_offsets.reset(new ScalarForcing(*grid->ctx(),
-                                         prefix,
-                                         variable_name,
-                                         units, external_units,
-                                         long_name));
+    m_1d_offsets.reset(
+        new ScalarForcing(*grid->ctx(), prefix, variable_name, units, external_units, long_name));
   } else {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
 
-    m_2d_offsets = std::make_shared<array::Forcing>(m_grid,
-                                                    input,
-                                                    variable_name,
+    m_2d_offsets = std::make_shared<array::Forcing>(m_grid, input, variable_name,
                                                     "", // no standard name
-                                                    buffer_size,
-                                                    opt.periodic);
-    m_2d_offsets->metadata()
-        .long_name(long_name)
-        .units(units)
-        .output_units(external_units);
+                                                    buffer_size, opt.periodic);
+    m_2d_offsets->metadata().long_name(long_name).units(units).output_units(external_units);
   }
 
   m_temperature = allocate_temperature(grid);
@@ -74,8 +62,7 @@ Delta_T::Delta_T(std::shared_ptr<const Grid> grid, std::shared_ptr<AtmosphereMod
 void Delta_T::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);
 
-  m_log->message(2,
-                 "* Initializing near-surface air temperature offsets...\n");
+  m_log->message(2, "* Initializing near-surface air temperature offsets...\n");
 
   if (m_2d_offsets) {
     ForcingOptions opt(*m_grid->ctx(), "atmosphere.delta_T");
@@ -127,10 +114,10 @@ void Delta_T::update_impl(const Geometry &geometry, double t, double dt) {
     m_2d_offsets->update(t, dt);
     m_2d_offsets->average(t, dt);
 
-    auto &T = *m_temperature;
+    auto &T           = *m_temperature;
     const auto &delta = *m_2d_offsets;
 
-    array::AccessScope list{&T, &delta};
+    array::AccessScope list{ &T, &delta };
 
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
@@ -140,7 +127,7 @@ void Delta_T::update_impl(const Geometry &geometry, double t, double dt) {
   }
 }
 
-const array::Scalar& Delta_T::air_temperature_impl() const {
+const array::Scalar &Delta_T::air_temperature_impl() const {
   return *m_temperature;
 }
 

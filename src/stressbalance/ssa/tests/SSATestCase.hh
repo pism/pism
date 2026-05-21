@@ -19,8 +19,8 @@
 #ifndef PISM_SSATESTCASE_H
 #define PISM_SSATESTCASE_H
 
-#include "pism/stressbalance/ssa/SSA.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/stressbalance/ssa/SSA.hh"
 #include "pism/util/array/Array3D.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/array/Vector.hh"
@@ -51,8 +51,7 @@ namespace stressbalance {
   4) report
   5) write (to save the results of the computation to a file)
 */
-class SSATestCase
-{
+class SSATestCase {
 public:
   SSATestCase(std::shared_ptr<SSA> ssa);
 
@@ -66,30 +65,24 @@ public:
 
   virtual void write(const std::string &filename);
 
-  static std::shared_ptr<Grid> grid(std::shared_ptr<Context> ctx, int Mx, int My, double Lx, double Ly,
-                                    grid::Registration registration, grid::Periodicity periodicity) {
+  static std::shared_ptr<Grid> grid(std::shared_ptr<Context> ctx, int Mx, int My, double Lx,
+                                    double Ly, grid::Registration registration,
+                                    grid::Periodicity periodicity) {
     return Grid::Shallow(ctx, Lx, Ly, 0.0, 0.0, Mx, My, registration, periodicity);
   }
 
   static std::shared_ptr<SSA> solver(std::shared_ptr<Grid> grid, const std::string &method);
 
 protected:
-
   //! Set up the coefficient variables as appropriate for the test case.
   virtual void initializeSSACoefficients() = 0;
 
   //! Return the value of the exact solution at grid index (i,j) or equivalently
   //! at coordinates (x,y).
-  virtual void exactSolution(int i, int j,
-                             double x, double y, double *u, double *v);
+  virtual void exactSolution(int i, int j, double x, double y, double *u, double *v);
 
-  void report_netcdf(const std::string &testname,
-                     double max_vector,
-                     double rel_vector,
-                     double max_u,
-                     double max_v,
-                     double avg_u,
-                     double avg_v);
+  void report_netcdf(const std::string &testname, double max_vector, double rel_vector,
+                     double max_u, double max_v, double avg_u, double avg_v);
 
   std::shared_ptr<const pism::Grid> m_grid;
 

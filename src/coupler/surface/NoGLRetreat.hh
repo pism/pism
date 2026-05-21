@@ -30,17 +30,19 @@ public:
   NoGLRetreat(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> input);
   virtual ~NoGLRetreat() = default;
 
-  const array::Scalar& smb_adjustment() const;
+  const array::Scalar &smb_adjustment() const;
+
 protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const array::Scalar& mass_flux_impl() const;
-  const array::Scalar& accumulation_impl() const;
-  const array::Scalar& melt_impl() const;
-  const array::Scalar& runoff_impl() const;
+  const array::Scalar &mass_flux_impl() const;
+  const array::Scalar &accumulation_impl() const;
+  const array::Scalar &melt_impl() const;
+  const array::Scalar &runoff_impl() const;
 
   DiagnosticList spatial_diagnostics_impl() const;
+
 private:
   std::shared_ptr<array::Scalar> m_mass_flux;
   array::Scalar m_smb_adjustment;

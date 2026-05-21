@@ -18,18 +18,21 @@
 
 #include "pism/inverse/functional/IPTotalVariationFunctional.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/fem/DirichletData.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace inverse {
 
 IPTotalVariationFunctional2S::IPTotalVariationFunctional2S(std::shared_ptr<const Grid> grid,
                                                            double c, double exponent, double eps,
-                                                           array::Scalar *dirichletLocations) :
-    IPFunctional<array::Scalar>(grid), m_dirichletIndices(dirichletLocations),
-    m_c(c), m_lebesgue_exp(exponent), m_epsilon_sq(eps*eps) {
+                                                           array::Scalar *dirichletLocations)
+    : IPFunctional<array::Scalar>(grid),
+      m_dirichletIndices(dirichletLocations),
+      m_c(c),
+      m_lebesgue_exp(exponent),
+      m_epsilon_sq(eps * eps) {
 }
 
 void IPTotalVariationFunctional2S::valueAt(array::Scalar &x, double *OUTPUT) {
@@ -49,11 +52,8 @@ void IPTotalVariationFunctional2S::valueAt(array::Scalar &x, double *OUTPUT) {
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
   // Loop through all LOCAL elements.
-  const int
-    xs = m_element_index.lxs,
-    xm = m_element_index.lxm,
-    ys = m_element_index.lys,
-    ym = m_element_index.lym;
+  const int xs = m_element_index.lxs, xm = m_element_index.lxm, ys = m_element_index.lys,
+            ym = m_element_index.lym;
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
@@ -68,7 +68,9 @@ void IPTotalVariationFunctional2S::valueAt(array::Scalar &x, double *OUTPUT) {
 
       for (unsigned int q = 0; q < Nq; q++) {
         auto W = m_element.weight(q);
-        value += m_c*W*pow(m_epsilon_sq + dxdx_q[q]*dxdx_q[q] + dxdy_q[q]*dxdy_q[q], m_lebesgue_exp / 2);
+        value +=
+            m_c * W *
+            pow(m_epsilon_sq + dxdx_q[q] * dxdx_q[q] + dxdy_q[q] * dxdy_q[q], m_lebesgue_exp / 2);
       } // q
     } // j
   } // i
@@ -90,16 +92,13 @@ void IPTotalVariationFunctional2S::gradientAt(array::Scalar &x, array::Scalar &g
 
   double gradient_e[Nk];
 
-  array::AccessScope list{&x, &gradient};
+  array::AccessScope list{ &x, &gradient };
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
   // Loop through all local and ghosted elements.
-  const int
-    xs = m_element_index.xs,
-    xm = m_element_index.xm,
-    ys = m_element_index.ys,
-    ym = m_element_index.ym;
+  const int xs = m_element_index.xs, xm = m_element_index.xm, ys = m_element_index.ys,
+            ym = m_element_index.ym;
 
   for (int j = ys; j < ys + ym; j++) {
     for (int i = xs; i < xs + xm; i++) {
@@ -121,11 +120,14 @@ void IPTotalVariationFunctional2S::gradientAt(array::Scalar &x, array::Scalar &g
       }
 
       for (unsigned int q = 0; q < Nq; q++) {
-        auto W = m_element.weight(q);
+        auto W                = m_element.weight(q);
         const double &dxdx_qq = dxdx_q[q], &dxdy_qq = dxdy_q[q];
         for (unsigned int k = 0; k < Nk; k++) {
-          gradient_e[k] += m_c*W*(m_lebesgue_exp)*pow(m_epsilon_sq + dxdx_q[q]*dxdx_q[q] + dxdy_q[q]*dxdy_q[q], m_lebesgue_exp / 2 - 1)
-            *(dxdx_qq*m_element.chi(q, k).dx + dxdy_qq*m_element.chi(q, k).dy);
+          gradient_e[k] +=
+              m_c * W *
+              (m_lebesgue_exp)*pow(m_epsilon_sq + dxdx_q[q] * dxdx_q[q] + dxdy_q[q] * dxdy_q[q],
+                                   m_lebesgue_exp / 2 - 1) *
+              (dxdx_qq * m_element.chi(q, k).dx + dxdy_qq * m_element.chi(q, k).dy);
         } // k
       } // q
       m_element.add_contribution(gradient_e, gradient.array());

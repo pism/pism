@@ -26,22 +26,23 @@ namespace pism {
 
 class ColumnInterpolation {
 public:
-  ColumnInterpolation(const std::vector<double> &z_coarse,
-                      const std::vector<double> &z_fine);
+  ColumnInterpolation(const std::vector<double> &z_coarse, const std::vector<double> &z_fine);
 
   void coarse_to_fine(const double *input, unsigned int k_max_result, double *result) const;
   void fine_to_coarse(const double *input, double *result) const;
 
   // These two methods allocate fresh storage for the output.
-  std::vector<double> coarse_to_fine(const std::vector<double> &input, unsigned int k_max_result) const;
+  std::vector<double> coarse_to_fine(const std::vector<double> &input,
+                                     unsigned int k_max_result) const;
   std::vector<double> fine_to_coarse(const std::vector<double> &input) const;
 
   unsigned int Mz_coarse() const;
-  const std::vector<double>& z_coarse() const;
+  const std::vector<double> &z_coarse() const;
 
   unsigned int Mz_fine() const;
   double dz_fine() const;
-  const std::vector<double>& z_fine() const;
+  const std::vector<double> &z_fine() const;
+
 private:
   std::vector<double> m_z_fine, m_z_coarse;
   std::vector<double> m_constants;
@@ -55,7 +56,8 @@ private:
 
   void init_interpolation();
   void coarse_to_fine_linear(const double *input, unsigned int k_max_result, double *result) const;
-  void coarse_to_fine_quadratic(const double *input, unsigned int k_max_result, double *result) const;
+  void coarse_to_fine_quadratic(const double *input, unsigned int k_max_result,
+                                double *result) const;
 };
 
 } // end of namespace pism

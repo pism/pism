@@ -27,7 +27,7 @@ namespace pism {
 namespace stressbalance {
 
 BlatterTestXY::BlatterTestXY(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor)
-  : Blatter(grid, Mz, coarsening_factor) {
+    : Blatter(grid, Mz, coarsening_factor) {
 
   // use the isothermal Glen flow law
   double n = m_config->get_number("stress_balance.blatter.Glen_exponent");
@@ -40,45 +40,36 @@ BlatterTestXY::BlatterTestXY(std::shared_ptr<const Grid> grid, int Mz, int coars
   m_B = m_flow_law->hardness(1e5, 0);
 }
 
-bool BlatterTestXY::marine_boundary(int face,
-                                    const int *node_type,
-                                    const double *ice_bottom,
+bool BlatterTestXY::marine_boundary(int face, const int *node_type, const double *ice_bottom,
                                     const double *sea_level) {
-  (void) face;
-  (void) node_type;
-  (void) ice_bottom;
-  (void) sea_level;
+  (void)face;
+  (void)node_type;
+  (void)ice_bottom;
+  (void)sea_level;
 
   return false;
 }
 
-bool BlatterTestXY::dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I) {
+bool BlatterTestXY::dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex &I) {
   // use Dirichlet BC on the whole map-plane boundary
-  return (I.i == 0 or I.i == info.mx - 1 or
-          I.j == 0 or I.j == info.my - 1);
+  return (I.i == 0 or I.i == info.mx - 1 or I.j == 0 or I.j == info.my - 1);
 }
 
 Vector2d BlatterTestXY::u_bc(double x, double y, double z) const {
-  (void) z;
+  (void)z;
 
   return blatter_xy_exact(x, y);
 }
 
-void BlatterTestXY::residual_source_term(const fem::Q1Element3 &element,
-                                         const double *surface,
-                                         const double *bed,
-                                         Vector2d *residual) {
-  (void) surface;
-  (void) bed;
+void BlatterTestXY::residual_source_term(const fem::Q1Element3 &element, const double *surface,
+                                         const double *bed, Vector2d *residual) {
+  (void)surface;
+  (void)bed;
 
   // compute x and y coordinates of quadrature points
-  double
-    *x = m_work[0],
-    *y = m_work[1];
+  double *x = m_work[0], *y = m_work[1];
   {
-    double
-      *x_nodal = m_work[2],
-      *y_nodal = m_work[3];
+    double *x_nodal = m_work[2], *y_nodal = m_work[3];
 
     for (int n = 0; n < element.n_chi(); ++n) {
       x_nodal[n] = element.x(n);

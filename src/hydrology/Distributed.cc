@@ -21,12 +21,12 @@
 #include "Routing.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/hydrology/Distributed.hh"
+#include "pism/util/Logger.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/Logger.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace hydrology {
@@ -35,9 +35,7 @@ Distributed::Distributed(std::shared_ptr<const Grid> g)
     : Routing(g), m_P(m_grid, "bwp"), m_Pnew(m_grid, "Pnew_internal") {
 
   // additional variables beyond hydrology::Routing
-  m_P.metadata(0)
-      .long_name("pressure of transportable water in subglacial layer")
-      .units("Pa");
+  m_P.metadata(0).long_name("pressure of transportable water in subglacial layer").units("Pa");
   m_P.metadata()["valid_min"] = { 0.0 };
 
   m_Pnew.metadata(0)
@@ -86,14 +84,12 @@ void Distributed::bootstrap_impl(const File &input_file, const array::Scalar &ic
 
     sliding_speed.regrid(filename, io::Default::Nil());
 
-    P_from_W_steady(m_W, m_Pover, sliding_speed,
-                    m_P);
+    P_from_W_steady(m_W, m_Pover, sliding_speed, m_P);
   }
 }
 
-void Distributed::init_impl(const array::Scalar &W_till,
-                              const array::Scalar &W,
-                              const array::Scalar &P) {
+void Distributed::init_impl(const array::Scalar &W_till, const array::Scalar &W,
+                            const array::Scalar &P) {
   Routing::init_impl(W_till, W, P);
 
   m_P.copy_from(P);
@@ -116,7 +112,7 @@ std::map<std::string, TSDiagnostic::Ptr> Distributed::scalar_diagnostics_impl() 
 }
 
 //! Copies the P state variable which is the modeled water pressure.
-const array::Scalar& Distributed::subglacial_water_pressure() const {
+const array::Scalar &Distributed::subglacial_water_pressure() const {
   return m_P;
 }
 
@@ -125,18 +121,16 @@ const array::Scalar& Distributed::subglacial_water_pressure() const {
 /*!
   The bounds are \f$0 \le P \le P_o\f$ where \f$P_o\f$ is the overburden pressure.
 */
-void Distributed::check_P_bounds(array::Scalar &P,
-                                 const array::Scalar &P_o,
-                                 bool enforce_upper) {
+void Distributed::check_P_bounds(array::Scalar &P, const array::Scalar &P_o, bool enforce_upper) {
 
-  array::AccessScope list{&P, &P_o};
+  array::AccessScope list{ &P, &P_o };
 
   ParallelSection loop(m_grid->com);
   try {
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
-      if (P(i,j) < 0.0) {
+      if (P(i, j) < 0.0) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                       "negative subglacial water pressure\n"
                                       "P(%d, %d) = %.6f Pa",
@@ -144,8 +138,8 @@ void Distributed::check_P_bounds(array::Scalar &P,
       }
 
       if (enforce_upper) {
-        P(i,j) = std::min(P(i,j), P_o(i,j));
-      } else if (P(i,j) > P_o(i,j) + 0.001) {
+        P(i, j) = std::min(P(i, j), P_o(i, j));
+      } else if (P(i, j) > P_o(i, j) + 0.001) {
         throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                       "subglacial water pressure P = %.16f Pa exceeds\n"
                                       "overburden pressure Po = %.16f Pa at (i,j)=(%d,%d)",
@@ -156,7 +150,6 @@ void Distributed::check_P_bounds(array::Scalar &P,
     loop.failed();
   }
   loop.check();
-
 }
 
 
@@ -169,21 +162,20 @@ void Distributed::check_P_bounds(array::Scalar &P,
   in verification and/or reporting.  It is not used during time-dependent
   model runs.  To be more complete, \f$P = P(W,P_o,|v_b|)\f$.
 */
-void Distributed::P_from_W_steady(const array::Scalar &W,
-                                  const array::Scalar &P_overburden,
-                                  const array::Scalar &sliding_speed,
-                                  array::Scalar &result) {
+void Distributed::P_from_W_steady(const array::Scalar &W, const array::Scalar &P_overburden,
+                                  const array::Scalar &sliding_speed, array::Scalar &result) {
 
-  const double
-    ice_softness                   = m_config->get_number("flow_law.isothermal_Glen.ice_softness"),
-    creep_closure_coefficient      = m_config->get_number("hydrology.creep_closure_coefficient"),
-    cavitation_opening_coefficient = m_config->get_number("hydrology.cavitation_opening_coefficient"),
-    Glen_exponent                  = m_config->get_number("stress_balance.sia.Glen_exponent"),
-    Wr                             = m_config->get_number("hydrology.roughness_scale");
+  const double ice_softness = m_config->get_number("flow_law.isothermal_Glen.ice_softness"),
+               creep_closure_coefficient =
+                   m_config->get_number("hydrology.creep_closure_coefficient"),
+               cavitation_opening_coefficient =
+                   m_config->get_number("hydrology.cavitation_opening_coefficient"),
+               Glen_exponent = m_config->get_number("stress_balance.sia.Glen_exponent"),
+               Wr            = m_config->get_number("hydrology.roughness_scale");
 
   const double CC = cavitation_opening_coefficient / (creep_closure_coefficient * ice_softness);
 
-  array::AccessScope list{&W, &P_overburden, &sliding_speed, &result};
+  array::AccessScope list{ &W, &P_overburden, &sliding_speed, &result };
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
@@ -212,43 +204,43 @@ double Distributed::max_timestep_P_diff(double phi0, double dt_diff_w) const {
   return 2.0 * phi0 * dt_diff_w;
 }
 
-void Distributed::update_P(double dt,
-                           const array::CellType &cell_type,
+void Distributed::update_P(double dt, const array::CellType &cell_type,
                            const array::Scalar &sliding_speed,
                            const array::Scalar &surface_input_rate,
-                           const array::Scalar &basal_melt_rate,
-                           const array::Scalar &P_overburden,
-                           const array::Scalar &Wtill,
-                           const array::Scalar &Wtill_new,
-                           const array::Scalar &P,
-                           const array::Scalar1 &W,
-                           const array::Staggered1 &Ws,
-                           const array::Staggered1 &K,
-                           const array::Staggered1 &Q,
-                           array::Scalar &P_new) const {
+                           const array::Scalar &basal_melt_rate, const array::Scalar &P_overburden,
+                           const array::Scalar &Wtill, const array::Scalar &Wtill_new,
+                           const array::Scalar &P, const array::Scalar1 &W,
+                           const array::Staggered1 &Ws, const array::Staggered1 &K,
+                           const array::Staggered1 &Q, array::Scalar &P_new) const {
 
-  const double
-    n    = m_config->get_number("stress_balance.sia.Glen_exponent"),
-    A    = m_config->get_number("flow_law.isothermal_Glen.ice_softness"),
-    c1   = m_config->get_number("hydrology.cavitation_opening_coefficient"),
-    c2   = m_config->get_number("hydrology.creep_closure_coefficient"),
-    Wr   = m_config->get_number("hydrology.roughness_scale"),
-    phi0 = m_config->get_number("hydrology.regularizing_porosity");
+  const double n    = m_config->get_number("stress_balance.sia.Glen_exponent"),
+               A    = m_config->get_number("flow_law.isothermal_Glen.ice_softness"),
+               c1   = m_config->get_number("hydrology.cavitation_opening_coefficient"),
+               c2   = m_config->get_number("hydrology.creep_closure_coefficient"),
+               Wr   = m_config->get_number("hydrology.roughness_scale"),
+               phi0 = m_config->get_number("hydrology.regularizing_porosity");
 
   // update Pnew from time step
-  const double
-    CC  = (m_rg * dt) / phi0,
-    wux = 1.0 / (m_dx * m_dx),
-    wuy = 1.0 / (m_dy * m_dy);
+  const double CC = (m_rg * dt) / phi0, wux = 1.0 / (m_dx * m_dx), wuy = 1.0 / (m_dy * m_dy);
 
-  array::AccessScope list{&P, &W, &Wtill, &Wtill_new, &sliding_speed, &Ws,
-                               &K, &Q, &surface_input_rate, &basal_melt_rate,
-                               &cell_type, &P_overburden, &P_new};
+  array::AccessScope list{ &P,
+                           &W,
+                           &Wtill,
+                           &Wtill_new,
+                           &sliding_speed,
+                           &Ws,
+                           &K,
+                           &Q,
+                           &surface_input_rate,
+                           &basal_melt_rate,
+                           &cell_type,
+                           &P_overburden,
+                           &P_new };
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
-    auto w = W.star(i, j);
+    auto w     = W.star(i, j);
     double P_o = P_overburden(i, j);
 
     if (cell_type.ice_free_land(i, j)) {
@@ -258,21 +250,17 @@ void Distributed::update_P(double dt,
     } else if (w.c <= 0.0) {
       P_new(i, j) = P_o;
     } else {
-      auto q = Q.star(i, j);
-      auto k = K.star(i, j);
+      auto q  = Q.star(i, j);
+      auto k  = K.star(i, j);
       auto ws = Ws.star(i, j);
 
-      double
-        Open  = c1 * sliding_speed(i, j) * std::max(0.0, Wr - w.c),
-        Close = c2 * A * pow(P_o - P(i, j), n) * w.c;
+      double Open  = c1 * sliding_speed(i, j) * std::max(0.0, Wr - w.c),
+             Close = c2 * A * pow(P_o - P(i, j), n) * w.c;
 
       // compute the flux divergence the same way as in update_W()
       const double divadflux = (q.e - q.w) / m_dx + (q.n - q.s) / m_dy;
-      const double
-        De = m_rg * k.e * ws.e,
-        Dw = m_rg * k.w * ws.w,
-        Dn = m_rg * k.n * ws.n,
-        Ds = m_rg * k.s * ws.s;
+      const double De = m_rg * k.e * ws.e, Dw = m_rg * k.w * ws.w, Dn = m_rg * k.n * ws.n,
+                   Ds = m_rg * k.s * ws.s;
 
       double diffW = (wux * (De * (w.e - w.c) - Dw * (w.c - w.w)) +
                       wuy * (Dn * (w.n - w.c) - Ds * (w.c - w.s)));
@@ -281,8 +269,8 @@ void Distributed::update_P(double dt,
 
       // pressure update equation
       double Wtill_change = Wtill_new(i, j) - Wtill(i, j);
-      double total_input = surface_input_rate(i, j) + basal_melt_rate(i, j);
-      double ZZ = Close - Open + total_input - Wtill_change / dt;
+      double total_input  = surface_input_rate(i, j) + basal_melt_rate(i, j);
+      double ZZ           = Close - Open + total_input - Wtill_change / dt;
 
       P_new(i, j) = P(i, j) + CC * (divflux + ZZ);
 
@@ -299,19 +287,16 @@ void Distributed::update_P(double dt,
   is generally on the order of months to years.  This hydrology model will take its
   own shorter time steps, perhaps hours to weeks.
 */
-void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
+void Distributed::update_impl(double t, double dt, const Inputs &inputs) {
 
   ice_bottom_surface(*inputs.geometry, m_bottom_surface);
 
-  double
-    ht  = t,
-    hdt = 0.0;
+  double ht = t, hdt = 0.0;
 
-  const double
-    t_final     = t + dt,
-    dt_max      = m_config->get_number("hydrology.maximum_time_step", "seconds"),
-    phi0        = m_config->get_number("hydrology.regularizing_porosity"),
-    tillwat_max = m_config->get_number("hydrology.tillwat_max");
+  const double t_final     = t + dt,
+               dt_max      = m_config->get_number("hydrology.maximum_time_step", "seconds"),
+               phi0        = m_config->get_number("hydrology.regularizing_porosity"),
+               tillwat_max = m_config->get_number("hydrology.tillwat_max");
 
   m_Qstag_average.set(0.0);
 
@@ -323,7 +308,7 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
   for (; ht < t_final; ht += hdt) {
     step_counter++;
 
-#if (Pism_DEBUG==1)
+#if (Pism_DEBUG == 1)
     double huge_number = 1e6;
     check_bounds(m_W, huge_number);
     check_bounds(m_Wtill, tillwat_max);
@@ -335,22 +320,13 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
     bool enforce_upper = (step_counter == 1);
     check_P_bounds(m_P, m_Pover, enforce_upper);
 
-    water_thickness_staggered(m_W,
-                              inputs.geometry->cell_type,
-                              m_Wstag);
+    water_thickness_staggered(m_W, inputs.geometry->cell_type, m_Wstag);
 
     double maxKW = 0.0;
-    compute_conductivity(m_Wstag,
-                         subglacial_water_pressure(),
-                         m_bottom_surface,
-                         m_Kstag, maxKW);
+    compute_conductivity(m_Wstag, subglacial_water_pressure(), m_bottom_surface, m_Kstag, maxKW);
 
-    compute_velocity(m_Wstag,
-                     subglacial_water_pressure(),
-                     m_bottom_surface,
-                     m_Kstag,
-                     inputs.no_model_mask,
-                     m_Vstag);
+    compute_velocity(m_Wstag, subglacial_water_pressure(), m_bottom_surface, m_Kstag,
+                     inputs.no_model_mask, m_Vstag);
 
     // to get Q, W needs valid ghosts
     advective_fluxes(m_Vstag, m_W, m_Qstag);
@@ -358,10 +334,8 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
     m_Qstag_average.add(hdt, m_Qstag);
 
     {
-      const double
-        dt_cfl    = max_timestep_W_cfl(),
-        dt_diff_w = max_timestep_W_diff(maxKW),
-        dt_diff_p = max_timestep_P_diff(phi0, dt_diff_w);
+      const double dt_cfl = max_timestep_W_cfl(), dt_diff_w = max_timestep_W_diff(maxKW),
+                   dt_diff_p = max_timestep_P_diff(phi0, dt_diff_w);
 
       hdt = std::min(t_final - ht, dt_max);
       hdt = std::min(hdt, dt_cfl);
@@ -372,52 +346,27 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
     m_log->message(3, "  hydrology step %05d, dt = %f s\n", step_counter, hdt);
 
     // update Wtillnew from Wtill and input_rate
-    update_Wtill(hdt,
-                 m_Wtill,
-                 m_surface_input_rate,
-                 m_basal_melt_rate,
-                 m_Wtillnew);
+    update_Wtill(hdt, m_Wtill, m_surface_input_rate, m_basal_melt_rate, m_Wtillnew);
     // remove water in ice-free areas and account for changes
-    enforce_bounds(inputs.geometry->cell_type,
-                   inputs.no_model_mask,
-                   0.0,           // do not limit maximum thickness
-                   tillwat_max,   // till water thickness under the ocean
-                   m_Wtillnew,
-                   m_grounded_margin_change,
-                   m_grounding_line_change,
-                   m_conservation_error_change,
-                   m_no_model_mask_change);
+    enforce_bounds(inputs.geometry->cell_type, inputs.no_model_mask,
+                   0.0,         // do not limit maximum thickness
+                   tillwat_max, // till water thickness under the ocean
+                   m_Wtillnew, m_grounded_margin_change, m_grounding_line_change,
+                   m_conservation_error_change, m_no_model_mask_change);
 
-    update_P(hdt,
-             inputs.geometry->cell_type,
-             *inputs.ice_sliding_speed,
-             m_surface_input_rate,
-             m_basal_melt_rate,
-             m_Pover,
-             m_Wtill, m_Wtillnew,
-             subglacial_water_pressure(),
-             m_W, m_Wstag,
-             m_Kstag, m_Qstag,
-             m_Pnew);
+    update_P(hdt, inputs.geometry->cell_type, *inputs.ice_sliding_speed, m_surface_input_rate,
+             m_basal_melt_rate, m_Pover, m_Wtill, m_Wtillnew, subglacial_water_pressure(), m_W,
+             m_Wstag, m_Kstag, m_Qstag, m_Pnew);
 
     // update Wnew from W, Wtill, Wtillnew, Wstag, Q, input_rate
-    update_W(hdt,
-             m_surface_input_rate,
-             m_basal_melt_rate,
-             m_W, m_Wstag,
-             m_Wtill, m_Wtillnew,
-             m_Kstag, m_Qstag,
-             m_Wnew);
+    update_W(hdt, m_surface_input_rate, m_basal_melt_rate, m_W, m_Wstag, m_Wtill, m_Wtillnew,
+             m_Kstag, m_Qstag, m_Wnew);
     // remove water in ice-free areas and account for changes
-    enforce_bounds(inputs.geometry->cell_type,
-                   inputs.no_model_mask,
+    enforce_bounds(inputs.geometry->cell_type, inputs.no_model_mask,
                    0.0, // do not limit maximum thickness
                    0.0, // transportable water layer thickness under the ocean
-                   m_Wnew,
-                   m_grounded_margin_change,
-                   m_grounding_line_change,
-                   m_conservation_error_change,
-                   m_no_model_mask_change);
+                   m_Wnew, m_grounded_margin_change, m_grounding_line_change,
+                   m_conservation_error_change, m_no_model_mask_change);
 
     // transfer new into old
     m_W.copy_from(m_Wnew);
@@ -426,15 +375,12 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
   } // end of the time-stepping loop
 
   staggered_to_regular(inputs.geometry->cell_type, m_Qstag_average,
-                       m_config->get_flag("hydrology.routing.include_floating_ice"),
-                       m_Q);
+                       m_config->get_flag("hydrology.routing.include_floating_ice"), m_Q);
   m_Q.scale(1.0 / dt);
 
-  m_log->message(2,
-                 "  took %d hydrology sub-steps with average dt = %.6f years (%.6f s)\n",
-                 step_counter,
-                 units::convert(m_sys, dt/step_counter, "seconds", "years"),
-                 dt/step_counter);
+  m_log->message(2, "  took %d hydrology sub-steps with average dt = %.6f years (%.6f s)\n",
+                 step_counter, units::convert(m_sys, dt / step_counter, "seconds", "years"),
+                 dt / step_counter);
 }
 
 } // end of namespace hydrology

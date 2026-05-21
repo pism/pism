@@ -24,14 +24,14 @@
 namespace pism {
 namespace rheology {
 
-PatersonBuddWarm::PatersonBuddWarm(double exponent,
-                   const Config &config, std::shared_ptr<EnthalpyConverter> ec)
-  : PatersonBudd(exponent, config, ec) {
+PatersonBuddWarm::PatersonBuddWarm(double exponent, const Config &config,
+                                   std::shared_ptr<EnthalpyConverter> ec)
+    : PatersonBudd(exponent, config, ec) {
   m_name = "Paterson-Budd (warm case)";
 }
 
 double PatersonBuddWarm::tempFromSoftness(double A) const {
-  return - m_Q_warm / (m_ideal_gas_constant * (log(A) - log(m_A_warm)));
+  return -m_Q_warm / (m_ideal_gas_constant * (log(A) - log(m_A_warm)));
 }
 
 // takes care of hardness...
@@ -40,9 +40,8 @@ double PatersonBuddWarm::softness_from_temp(double T_pa) const {
 }
 
 // ignores pressure and uses non-pressure-adjusted temperature
-double PatersonBuddWarm::flow_from_temp(double stress, double temp,
-                                        double , double) const {
-  return softness_from_temp(temp) * pow(stress,m_n-1);
+double PatersonBuddWarm::flow_from_temp(double stress, double temp, double, double) const {
+  return softness_from_temp(temp) * pow(stress, m_n - 1);
 }
 
 

@@ -32,6 +32,7 @@ class ForceThickness : public SurfaceModel {
 public:
   ForceThickness(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> input);
   virtual ~ForceThickness() = default;
+
 protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
@@ -39,20 +40,19 @@ protected:
   std::set<VariableMetadata> state_impl() const;
   void write_state_impl(const OutputFile &output) const;
 
-  const array::Scalar& mass_flux_impl() const;
+  const array::Scalar &mass_flux_impl() const;
 
-  const array::Scalar& accumulation_impl() const;
-  const array::Scalar& melt_impl() const;
-  const array::Scalar& runoff_impl() const;
+  const array::Scalar &accumulation_impl() const;
+  const array::Scalar &melt_impl() const;
+  const array::Scalar &runoff_impl() const;
 
   MaxTimestep max_timestep_impl(double t) const;
-private:
-  void adjust_mass_flux(double time,
-                        const array::Scalar &ice_thickness,
-                        const array::CellType &cell_type,
-                        array::Scalar &result) const;
 
-  double m_alpha, m_alpha_ice_free_factor,  m_ice_free_thickness_threshold;
+private:
+  void adjust_mass_flux(double time, const array::Scalar &ice_thickness,
+                        const array::CellType &cell_type, array::Scalar &result) const;
+
+  double m_alpha, m_alpha_ice_free_factor, m_ice_free_thickness_threshold;
   double m_start_time;
   array::Scalar m_target_thickness;
   array::Scalar m_ftt_mask;

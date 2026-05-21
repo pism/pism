@@ -29,15 +29,15 @@ namespace pism {
 namespace petsc {
 class Viewer : public Wrapper<PetscViewer> {
 public:
-  Viewer(MPI_Comm com, const std::string &name,
-         unsigned int target_size, double Lx, double Ly);
+  Viewer(MPI_Comm com, const std::string &name, unsigned int target_size, double Lx, double Ly);
   Viewer(PetscViewer v);
   Viewer(MPI_Comm c);
   Viewer();
   ~Viewer();
+
 private:
-  void compute_size(unsigned int target_size, double Lx, double Ly,
-                    unsigned int &X, unsigned int &Y);
+  void compute_size(unsigned int target_size, double Lx, double Ly, unsigned int &X,
+                    unsigned int &Y);
 };
 } // end of namespace petsc
 } // end of namespace pism

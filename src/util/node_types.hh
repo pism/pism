@@ -30,19 +30,14 @@ namespace pism {
 
    This means that interior and boundary types should not use positive values.
  */
-enum NodeType {
-  NODE_INTERIOR = -1,
-  NODE_BOUNDARY = 0,
-  NODE_EXTERIOR = 1
-};
+enum NodeType { NODE_INTERIOR = -1, NODE_BOUNDARY = 0, NODE_EXTERIOR = 1 };
 
 namespace array {
 class Scalar;
 class Scalar1;
-}
+} // namespace array
 
-void compute_node_types(const array::Scalar1 &ice_thickness,
-                        double thickness_threshold,
+void compute_node_types(const array::Scalar1 &ice_thickness, double thickness_threshold,
                         array::Scalar &result);
 
 } // end of namespace pism

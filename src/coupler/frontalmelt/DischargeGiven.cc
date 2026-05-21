@@ -22,8 +22,8 @@
 #include "pism/coupler/util/options.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/array/Forcing.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/array/Forcing.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
@@ -177,10 +177,10 @@ MaxTimestep DischargeGiven::max_timestep_impl(double t) const {
   auto dt = std::min(m_theta_ocean->max_timestep(t), m_subglacial_discharge->max_timestep(t));
 
   if (dt.finite()) {
-    return {dt.value(), "frontal_melt discharge_given"};
+    return { dt.value(), "frontal_melt discharge_given" };
   }
 
-  return {"frontal_melt discharge_given"};
+  return { "frontal_melt discharge_given" };
 }
 
 } // end of namespace frontalmelt

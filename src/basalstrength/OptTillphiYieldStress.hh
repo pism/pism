@@ -33,8 +33,7 @@ private:
   DiagnosticList spatial_diagnostics_impl() const;
 
   void update_tillphi(const array::Scalar &ice_surface_elevation,
-                      const array::Scalar &bed_topography,
-                      const array::CellType &mask);
+                      const array::Scalar &bed_topography, const array::CellType &mask);
 
   void init_t_last(const File &input_file);
   void init_usurf_target(const File &input_file);

@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <cstring>              // memcpy
+#include <cstring> // memcpy
 
 #include "pism/util/fftw_utilities.hh"
 
@@ -25,19 +25,20 @@
 
 namespace pism {
 
-  // Access the central part of an array "a" of size My*Mx, using offsets i_offset and
-  // j_offset specifying the corner of the part to be accessed.
+// Access the central part of an array "a" of size My*Mx, using offsets i_offset and
+// j_offset specifying the corner of the part to be accessed.
 FFTWArray::FFTWArray(fftw_complex *a, int Mx, int My, int i_offset, int j_offset)
-  : m_My(My), m_i_offset(i_offset), m_j_offset(j_offset),
-    m_array(reinterpret_cast<std::complex<double>*>(a)) {
-  (void) Mx;
+    : m_My(My),
+      m_i_offset(i_offset),
+      m_j_offset(j_offset),
+      m_array(reinterpret_cast<std::complex<double> *>(a)) {
+  (void)Mx;
 }
 
-  // Access the whole array "a" of size My*My.
+// Access the whole array "a" of size My*My.
 FFTWArray::FFTWArray(fftw_complex *a, int Mx, int My)
-  : m_My(My), m_i_offset(0), m_j_offset(0),
-    m_array(reinterpret_cast<std::complex<double>*>(a)) {
-  (void) Mx;
+    : m_My(My), m_i_offset(0), m_j_offset(0), m_array(reinterpret_cast<std::complex<double> *>(a)) {
+  (void)Mx;
 }
 
 
@@ -86,12 +87,8 @@ void copy_fftw_array(fftw_complex *source, fftw_complex *destination, int Nx, in
 /*!
  * Sets the imaginary part to zero.
  */
-void set_real_part(petsc::Vec &input,
-                   double normalization,
-                   int Mx, int My,
-                   int Nx, int Ny,
-                   int i0, int j0,
-                   fftw_complex *output) {
+void set_real_part(petsc::Vec &input, double normalization, int Mx, int My, int Nx, int Ny, int i0,
+                   int j0, fftw_complex *output) {
   petsc::VecArray2D in(input, Mx, My);
   FFTWArray out(output, Nx, Ny, i0, j0);
 
@@ -107,12 +104,8 @@ void set_real_part(petsc::Vec &input,
 /*!
  * See set_real_part for details.
  */
-void get_real_part(fftw_complex *input,
-                   double normalization,
-                   int Mx, int My,
-                   int Nx, int Ny,
-                   int i0, int j0,
-                   petsc::Vec &output) {
+void get_real_part(fftw_complex *input, double normalization, int Mx, int My, int Nx, int Ny,
+                   int i0, int j0, petsc::Vec &output) {
   petsc::VecArray2D out(output, Mx, My);
   FFTWArray in(input, Nx, Ny, i0, j0);
   for (int j = 0; j < My; ++j) {

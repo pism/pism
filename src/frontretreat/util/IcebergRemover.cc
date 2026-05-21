@@ -18,11 +18,11 @@
  */
 
 #include "pism/frontretreat/util/IcebergRemover.hh"
-#include "pism/util/connected_components/label_components.hh"
-#include "pism/util/Mask.hh"
-#include "pism/util/error_handling.hh"
 #include "pism/util/Grid.hh"
+#include "pism/util/Mask.hh"
 #include "pism/util/array/CellType.hh"
+#include "pism/util/connected_components/label_components.hh"
+#include "pism/util/error_handling.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
@@ -38,33 +38,29 @@ IcebergRemover::IcebergRemover(std::shared_ptr<const Grid> g)
  * @param[in,out] pism_mask PISM's ice cover mask
  * @param[in,out] ice_thickness ice thickness
  */
-void IcebergRemover::update(const array::Scalar &bc_mask,
-                            array::CellType1 &cell_type,
+void IcebergRemover::update(const array::Scalar &bc_mask, array::CellType1 &cell_type,
                             array::Scalar &ice_thickness) {
   update_impl(bc_mask, cell_type, ice_thickness);
 }
 
-void IcebergRemover::update_impl(const array::Scalar &bc_mask,
-                                 array::CellType1 &cell_type,
+void IcebergRemover::update_impl(const array::Scalar &bc_mask, array::CellType1 &cell_type,
                                  array::Scalar &ice_thickness) {
-  const int
-    mask_grounded_ice = 1,
-    mask_floating_ice = 2;
+  const int mask_grounded_ice = 1, mask_floating_ice = 2;
 
   // prepare the mask that will be handed to the connected component
   // labeling code:
   {
     m_iceberg_mask.set(0.0);
 
-    array::AccessScope list{&cell_type, &m_iceberg_mask, &bc_mask};
+    array::AccessScope list{ &cell_type, &m_iceberg_mask, &bc_mask };
 
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
-      if (cell_type.grounded_ice(i,j)) {
-        m_iceberg_mask(i,j) = mask_grounded_ice;
-      } else if (cell_type.floating_ice(i,j)) {
-        m_iceberg_mask(i,j) = mask_floating_ice;
+      if (cell_type.grounded_ice(i, j)) {
+        m_iceberg_mask(i, j) = mask_grounded_ice;
+      } else if (cell_type.floating_ice(i, j)) {
+        m_iceberg_mask(i, j) = mask_floating_ice;
       }
     }
 
@@ -83,14 +79,14 @@ void IcebergRemover::update_impl(const array::Scalar &bc_mask,
   // correct ice thickness and the cell type mask using the resulting
   // "iceberg" mask:
   {
-    array::AccessScope list{&ice_thickness, &cell_type, &m_iceberg_mask, &bc_mask};
+    array::AccessScope list{ &ice_thickness, &cell_type, &m_iceberg_mask, &bc_mask };
 
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
-      if (m_iceberg_mask(i,j) > 0.5 && bc_mask(i,j) < 0.5) {
-        ice_thickness(i,j) = 0.0;
-        cell_type(i,j)     = MASK_ICE_FREE_OCEAN;
+      if (m_iceberg_mask(i, j) > 0.5 && bc_mask(i, j) < 0.5) {
+        ice_thickness(i, j) = 0.0;
+        cell_type(i, j)     = MASK_ICE_FREE_OCEAN;
       }
     }
   }

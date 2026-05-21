@@ -17,17 +17,17 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "pism/coupler/ocean/PicoGeometry.hh"
+#include "pism/util/array/CellType.hh"
+#include "pism/util/connected_components/label_components.hh"
+#include "pism/util/pism_utilities.hh"
 #include <algorithm> // max_element
 #include <queue>
-#include "pism/coupler/ocean/PicoGeometry.hh"
-#include "pism/util/connected_components/label_components.hh"
-#include "pism/util/array/CellType.hh"
-#include "pism/util/pism_utilities.hh"
 
 #include "pism/coupler/util/options.hh"
 #include "pism/util/Interpolation1D.hh"
-#include "pism/util/Profiling.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/Profiling.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
@@ -57,11 +57,10 @@ PicoGeometry::PicoGeometry(std::shared_ptr<const Grid> grid)
   m_ice_rises.set_interpolation_type(NEAREST);
   m_tmp.set_interpolation_type(NEAREST);
 
-  m_boxes.metadata()["_FillValue"] = {0.0};
+  m_boxes.metadata()["_FillValue"] = { 0.0 };
 
-  m_ice_rises.metadata()["flag_values"] = {OCEAN, RISE, CONTINENTAL, FLOATING};
-  m_ice_rises.metadata()["flag_meanings"] =
-    "ocean ice_rise continental_ice_sheet, floating_ice";
+  m_ice_rises.metadata()["flag_values"]   = { OCEAN, RISE, CONTINENTAL, FLOATING };
+  m_ice_rises.metadata()["flag_meanings"] = "ocean ice_rise continental_ice_sheet, floating_ice";
 
   m_basin_mask.metadata(0).long_name("mask determines basins for PICO");
   m_n_basins = 0;
@@ -102,8 +101,7 @@ void PicoGeometry::init() {
  * After this call box_mask(), ice_shelf_mask(), and continental_shelf_mask() will be up
  * to date.
  */
-void PicoGeometry::update(const array::Scalar &bed_elevation,
-                          const array::CellType1 &cell_type) {
+void PicoGeometry::update(const array::Scalar &bed_elevation, const array::CellType1 &cell_type) {
 
   // Update basin adjacency.
   //
@@ -136,7 +134,6 @@ void PicoGeometry::update(const array::Scalar &bed_elevation,
     compute_ocean_mask(cell_type, m_ocean_mask);
 
     compute_lakes(cell_type, m_lake_mask);
-
   }
 
   // these two could be optimized by trying to reduce the number of times we update ghosts
@@ -158,14 +155,13 @@ void PicoGeometry::update(const array::Scalar &bed_elevation,
     compute_ice_shelf_mask(m_ice_rises, m_lake_mask, m_ice_shelves);
     auto n_shelves = static_cast<int>(max(m_ice_shelves)) + 1;
 
-    std::vector<int> cfs_in_basins_per_shelf(n_shelves*m_n_basins, 0);
+    std::vector<int> cfs_in_basins_per_shelf(n_shelves * m_n_basins, 0);
     std::vector<int> most_shelf_cells_in_basin(n_shelves, 0);
     identify_calving_front_connection(cell_type, m_basin_mask, m_ice_shelves, n_shelves,
                                       most_shelf_cells_in_basin, cfs_in_basins_per_shelf);
 
-    split_ice_shelves(cell_type, m_basin_mask, m_basin_neighbors,
-                      most_shelf_cells_in_basin, cfs_in_basins_per_shelf, n_shelves,
-                      m_ice_shelves);
+    split_ice_shelves(cell_type, m_basin_mask, m_basin_neighbors, most_shelf_cells_in_basin,
+                      cfs_in_basins_per_shelf, n_shelves, m_ice_shelves);
 
     double continental_shelf_depth = m_config->get_number("ocean.pico.continental_shelf_depth");
 
@@ -179,7 +175,7 @@ void PicoGeometry::update(const array::Scalar &bed_elevation,
 }
 
 
-enum RelabelingType {BY_AREA, AREA_THRESHOLD};
+enum RelabelingType { BY_AREA, AREA_THRESHOLD };
 
 /*!
  * Re-label components in a mask processed by label_connected_components.
@@ -190,9 +186,7 @@ enum RelabelingType {BY_AREA, AREA_THRESHOLD};
  * If type is `AREA_THRESHOLD`, patches with areas above `threshold` get the value of 2,
  * all the other ones 1, the background is set to zero.
  */
-static void relabel(RelabelingType type,
-                    double threshold,
-                    array::Scalar &mask) {
+static void relabel(RelabelingType type, double threshold, array::Scalar &mask) {
 
   auto grid = mask.grid();
 
@@ -523,7 +517,7 @@ void PicoGeometry::compute_ocean_mask(const array::CellType &cell_type, array::S
  * Returns the map from the basin index to a set of indexes of neighbors.
  */
 std::vector<std::set<int> > PicoGeometry::basin_neighbors(const array::CellType1 &cell_type,
-                                                           const array::Scalar1 &basin_mask) {
+                                                          const array::Scalar1 &basin_mask) {
   using mask::ice_free_ocean;
 
   // Allocate the adjacency matrix. This uses twice the amount of storage necessary (the
@@ -538,9 +532,7 @@ std::vector<std::set<int> > PicoGeometry::basin_neighbors(const array::CellType1
     adjacency_matrix[b2 * m_n_basins + b1] = 1;
   };
 
-  auto adjacent = [&](int b1, int b2) {
-    return adjacency_matrix[b1 * m_n_basins + b2] > 0;
-  };
+  auto adjacent = [&](int b1, int b2) { return adjacency_matrix[b1 * m_n_basins + b2] > 0; };
 
   array::AccessScope list{ &cell_type, &basin_mask };
 
@@ -549,7 +541,7 @@ std::vector<std::set<int> > PicoGeometry::basin_neighbors(const array::CellType1
 
     auto B = basin_mask.star_int(i, j);
 
-    bool next_to_icefront = (cell_type.ice_free_ocean(i, j) and cell_type.next_to_ice(i,j));
+    bool next_to_icefront = (cell_type.ice_free_ocean(i, j) and cell_type.next_to_ice(i, j));
 
     // skip the "dummy" basin and cells that are not at the ice front
     if (B.c == 0 or not next_to_icefront) {
@@ -588,8 +580,7 @@ std::vector<std::set<int> > PicoGeometry::basin_neighbors(const array::CellType1
   // Make a copy to allreduce efficiently with IntelMPI:
   {
     std::vector<int> tmp(adjacency_matrix.size(), 0);
-    GlobalMax(m_grid->com, adjacency_matrix.data(), tmp.data(),
-              static_cast<int>(tmp.size()));
+    GlobalMax(m_grid->com, adjacency_matrix.data(), tmp.data(), static_cast<int>(tmp.size()));
     // Copy results:
     adjacency_matrix = tmp;
   }
@@ -614,15 +605,14 @@ std::vector<std::set<int> > PicoGeometry::basin_neighbors(const array::CellType1
  */
 void PicoGeometry::identify_calving_front_connection(const array::CellType1 &cell_type,
                                                      const array::Scalar &basin_mask,
-                                                     const array::Scalar &shelf_mask,
-                                                     int n_shelves,
+                                                     const array::Scalar &shelf_mask, int n_shelves,
                                                      std::vector<int> &most_shelf_cells_in_basin,
                                                      std::vector<int> &cfs_in_basins_per_shelf) {
 
-  std::vector<int> n_shelf_cells_per_basin(n_shelves * m_n_basins,0);
+  std::vector<int> n_shelf_cells_per_basin(n_shelves * m_n_basins, 0);
   // additional vectors to allreduce efficiently with IntelMPI
-  std::vector<int> n_shelf_cells_per_basinr(n_shelves * m_n_basins,0);
-  std::vector<int> cfs_in_basins_per_shelfr(n_shelves * m_n_basins,0);
+  std::vector<int> n_shelf_cells_per_basinr(n_shelves * m_n_basins, 0);
+  std::vector<int> cfs_in_basins_per_shelfr(n_shelves * m_n_basins, 0);
   std::vector<int> most_shelf_cells_in_basinr(n_shelves, 0);
 
   array::AccessScope list{ &cell_type, &basin_mask, &shelf_mask };
@@ -630,17 +620,15 @@ void PicoGeometry::identify_calving_front_connection(const array::CellType1 &cel
   {
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
-      int s = shelf_mask.as_int(i, j);
-      int b = basin_mask.as_int(i, j);
+      int s  = shelf_mask.as_int(i, j);
+      int b  = basin_mask.as_int(i, j);
       int sb = s * m_n_basins + b;
       n_shelf_cells_per_basin[sb]++;
 
       if (cell_type.as_int(i, j) == MASK_FLOATING) {
         auto M = cell_type.star(i, j);
-        if (M.n == MASK_ICE_FREE_OCEAN or
-            M.e == MASK_ICE_FREE_OCEAN or
-            M.s == MASK_ICE_FREE_OCEAN or
-            M.w == MASK_ICE_FREE_OCEAN) {
+        if (M.n == MASK_ICE_FREE_OCEAN or M.e == MASK_ICE_FREE_OCEAN or
+            M.s == MASK_ICE_FREE_OCEAN or M.w == MASK_ICE_FREE_OCEAN) {
           if (cfs_in_basins_per_shelf[sb] != b) {
             cfs_in_basins_per_shelf[sb] = b;
           }
@@ -648,10 +636,10 @@ void PicoGeometry::identify_calving_front_connection(const array::CellType1 &cel
       }
     }
 
-    GlobalSum(m_grid->com, cfs_in_basins_per_shelf.data(),
-              cfs_in_basins_per_shelfr.data(), n_shelves*m_n_basins);
-    GlobalSum(m_grid->com, n_shelf_cells_per_basin.data(),
-              n_shelf_cells_per_basinr.data(), n_shelves*m_n_basins);
+    GlobalSum(m_grid->com, cfs_in_basins_per_shelf.data(), cfs_in_basins_per_shelfr.data(),
+              n_shelves * m_n_basins);
+    GlobalSum(m_grid->com, n_shelf_cells_per_basin.data(), n_shelf_cells_per_basinr.data(),
+              n_shelves * m_n_basins);
     // copy values
     cfs_in_basins_per_shelf = cfs_in_basins_per_shelfr;
     n_shelf_cells_per_basin = n_shelf_cells_per_basinr;
@@ -677,8 +665,7 @@ void PicoGeometry::split_ice_shelves(const array::CellType &cell_type,
                                      const array::Scalar &basin_mask,
                                      const std::vector<std::set<int> > &basin_neighbors,
                                      const std::vector<int> &most_shelf_cells_in_basin,
-                                     const std::vector<int> &cfs_in_basins_per_shelf,
-                                     int n_shelves,
+                                     const std::vector<int> &cfs_in_basins_per_shelf, int n_shelves,
                                      array::Scalar &shelf_mask) {
 
   assert((int)basin_neighbors.size() == m_n_basins);
@@ -707,8 +694,7 @@ void PicoGeometry::split_ice_shelves(const array::CellType &cell_type,
 
   {
     std::vector<int> tmp(n_shelves * m_n_basins, 0);
-    GlobalSum(m_grid->com, n_shelf_cells_to_split.data(),
-              tmp.data(), n_shelves * m_n_basins);
+    GlobalSum(m_grid->com, n_shelf_cells_to_split.data(), tmp.data(), n_shelves * m_n_basins);
     // copy values
     n_shelf_cells_to_split = tmp;
   }
@@ -722,9 +708,10 @@ void PicoGeometry::split_ice_shelves(const array::CellType &cell_type,
       if (n_shelf_cells_to_split[s * m_n_basins + b] > 0) {
         n_shelf_numbers_to_add += 1;
         add_shelf_instance[s * m_n_basins + b] = n_shelves + n_shelf_numbers_to_add;
-        m_log->message(3, "\nPICO, split ice shelf s=%d with bmax=%d "
-                       "and b=%d and n=%d and si=%d\n", s, b0, b,
-                       n_shelf_cells_to_split[s * m_n_basins + b],
+        m_log->message(3,
+                       "\nPICO, split ice shelf s=%d with bmax=%d "
+                       "and b=%d and n=%d and si=%d\n",
+                       s, b0, b, n_shelf_cells_to_split[s * m_n_basins + b],
                        add_shelf_instance[s * m_n_basins + b]);
       }
     }
@@ -748,8 +735,7 @@ void PicoGeometry::split_ice_shelves(const array::CellType &cell_type,
  * Compute distance to the grounding line.
  */
 void PicoGeometry::compute_distances_gl(const array::Scalar &ocean_mask,
-                                        const array::Scalar1 &ice_rises,
-                                        bool exclude_ice_rises,
+                                        const array::Scalar1 &ice_rises, bool exclude_ice_rises,
                                         array::Scalar1 &result) {
 
   array::AccessScope list{ &ice_rises, &ocean_mask, &result };
@@ -765,21 +751,16 @@ void PicoGeometry::compute_distances_gl(const array::Scalar &ocean_mask,
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
-      if (ice_rises.as_int(i, j) == FLOATING or
-          ocean_mask.as_int(i, j) == 1 or
+      if (ice_rises.as_int(i, j) == FLOATING or ocean_mask.as_int(i, j) == 1 or
           (exclude_ice_rises and ice_rises.as_int(i, j) == RISE)) {
         // if this is an ice shelf cell (or an ice rise) or a hole in an ice shelf
 
         // label the shelf cells adjacent to the grounding line with 1
         bool neighbor_to_land =
-          (ice_rises(i, j + 1) == CONTINENTAL or
-           ice_rises(i, j - 1) == CONTINENTAL or
-           ice_rises(i + 1, j) == CONTINENTAL or
-           ice_rises(i - 1, j) == CONTINENTAL or
-           ice_rises(i + 1, j + 1) == CONTINENTAL or
-           ice_rises(i + 1, j - 1) == CONTINENTAL or
-           ice_rises(i - 1, j + 1) == CONTINENTAL or
-           ice_rises(i - 1, j - 1) == CONTINENTAL);
+            (ice_rises(i, j + 1) == CONTINENTAL or ice_rises(i, j - 1) == CONTINENTAL or
+             ice_rises(i + 1, j) == CONTINENTAL or ice_rises(i - 1, j) == CONTINENTAL or
+             ice_rises(i + 1, j + 1) == CONTINENTAL or ice_rises(i + 1, j - 1) == CONTINENTAL or
+             ice_rises(i - 1, j + 1) == CONTINENTAL or ice_rises(i - 1, j - 1) == CONTINENTAL);
 
         if (neighbor_to_land) {
           // i.e. there is a grounded neighboring cell (which is not an ice rise!)
@@ -805,8 +786,7 @@ void PicoGeometry::compute_distances_gl(const array::Scalar &ocean_mask,
  * Compute distance to the calving front.
  */
 void PicoGeometry::compute_distances_cf(const array::Scalar1 &ocean_mask,
-                                        const array::Scalar &ice_rises,
-                                        bool exclude_ice_rises,
+                                        const array::Scalar &ice_rises, bool exclude_ice_rises,
                                         array::Scalar1 &result) {
 
   array::AccessScope list{ &ice_rises, &ocean_mask, &result };
@@ -818,8 +798,7 @@ void PicoGeometry::compute_distances_cf(const array::Scalar1 &ocean_mask,
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
-      if (ice_rises.as_int(i, j) == FLOATING or
-          ocean_mask.as_int(i, j) == 1 or
+      if (ice_rises.as_int(i, j) == FLOATING or ocean_mask.as_int(i, j) == 1 or
           (exclude_ice_rises and ice_rises.as_int(i, j) == RISE)) {
         // if this is an ice shelf cell (or an ice rise) or a hole in an ice shelf
 
@@ -903,16 +882,16 @@ void eikonal_equation(array::Scalar1 &mask) {
         // that has a distance assigned
         mask(i, j) = 2;
         if (R.n == 0) {
-          unmarked_cells.push({i, j + 1});
+          unmarked_cells.push({ i, j + 1 });
         }
         if (R.s == 0) {
-          unmarked_cells.push({i, j - 1});
+          unmarked_cells.push({ i, j - 1 });
         }
         if (R.e == 0) {
-          unmarked_cells.push({i + 1, j});
+          unmarked_cells.push({ i + 1, j });
         }
         if (R.w == 0) {
-          unmarked_cells.push({i - 1, j});
+          unmarked_cells.push({ i - 1, j });
         }
       }
     }
@@ -1005,16 +984,16 @@ void eikonal_equation(array::Scalar1 &mask) {
 
             // Add cells to be updated
             if (north_cell == 0 or north_cell > min_label + 2) {
-              unmarked_cells.push({cell.i, cell.j + 1});
+              unmarked_cells.push({ cell.i, cell.j + 1 });
             }
             if (south_cell == 0 or south_cell > min_label + 2) {
-              unmarked_cells.push({cell.i, cell.j - 1});
+              unmarked_cells.push({ cell.i, cell.j - 1 });
             }
             if (east_cell == 0 or east_cell > min_label + 2) {
-              unmarked_cells.push({cell.i + 1, cell.j});
+              unmarked_cells.push({ cell.i + 1, cell.j });
             }
             if (west_cell == 0 or west_cell > min_label + 2) {
-              unmarked_cells.push({cell.i - 1, cell.j});
+              unmarked_cells.push({ cell.i - 1, cell.j });
             }
           }
         }
@@ -1154,7 +1133,8 @@ void PicoGeometry::compute_box_mask(const array::Scalar &D_gl, const array::Scal
   const double zeta = 0.5;
 
   for (int k = 0; k < n_shelves; ++k) {
-    n_boxes[k] = n_min + round(pow((GL_distance_max[k] / GL_distance_ref), zeta) * (max_number_of_boxes - n_min));
+    n_boxes[k] = n_min + round(pow((GL_distance_max[k] / GL_distance_ref), zeta) *
+                               (max_number_of_boxes - n_min));
 
     n_boxes[k] = std::min(n_boxes[k], max_number_of_boxes);
   }
@@ -1169,7 +1149,7 @@ void PicoGeometry::compute_box_mask(const array::Scalar &D_gl, const array::Scal
 
     if (shelf_mask.as_int(i, j) > 0 and d_gl > 0.0 and d_cf > 0.0) {
       int shelf_id = shelf_mask.as_int(i, j);
-      int n = n_boxes[shelf_id];
+      int n        = n_boxes[shelf_id];
 
       // relative position on the shelf (ranges from 0 to 1), increasing towards the
       // calving front (see equation 10 in the PICO paper)

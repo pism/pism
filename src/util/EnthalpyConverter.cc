@@ -53,18 +53,18 @@ namespace pism {
 */
 
 EnthalpyConverter::EnthalpyConverter(const Config &config) {
-  m_p_air       = config.get_number("surface.pressure"); // Pa
-  m_g           = config.get_number("constants.standard_gravity"); // m s-2
-  m_beta        = config.get_number("constants.ice.beta_Clausius_Clapeyron"); // K Pa-1
-  m_rho_i       = config.get_number("constants.ice.density"); // kg m-3
-  m_c_i         = config.get_number("constants.ice.specific_heat_capacity"); // J kg-1 K-1
+  m_p_air       = config.get_number("surface.pressure");                             // Pa
+  m_g           = config.get_number("constants.standard_gravity");                   // m s-2
+  m_beta        = config.get_number("constants.ice.beta_Clausius_Clapeyron");        // K Pa-1
+  m_rho_i       = config.get_number("constants.ice.density");                        // kg m-3
+  m_c_i         = config.get_number("constants.ice.specific_heat_capacity");         // J kg-1 K-1
   m_c_w         = config.get_number("constants.fresh_water.specific_heat_capacity"); // J kg-1 K-1
-  m_L           = config.get_number("constants.fresh_water.latent_heat_of_fusion"); // J kg-1
-  m_T_melting   = config.get_number("constants.fresh_water.melting_point_temperature"); // K
+  m_L           = config.get_number("constants.fresh_water.latent_heat_of_fusion");  // J kg-1
+  m_T_melting   = config.get_number("constants.fresh_water.melting_point_temperature");   // K
   m_T_tolerance = config.get_number("enthalpy_converter.relaxed_is_temperate_tolerance"); // K
-  m_T_0         = config.get_number("enthalpy_converter.T_reference"); // K
+  m_T_0         = config.get_number("enthalpy_converter.T_reference");                    // K
 
-  m_cold_mode = set_member(config.get_string("energy.model"), {"cold", "none"});
+  m_cold_mode = set_member(config.get_string("energy.model"), { "cold", "none" });
 }
 
 //! Return `true` if ice at `(E, P)` is temperate.
@@ -86,39 +86,45 @@ bool EnthalpyConverter::is_temperate_relaxed(double E, double P) const {
 }
 
 void EnthalpyConverter::validate_T_omega_P(double T, double omega, double P) const {
-#if (Pism_DEBUG==1)
+#if (Pism_DEBUG == 1)
   const double T_melting = melting_temperature(P);
   if (T <= 0.0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "T = %f <= 0 is not a valid absolute temperature",T);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "T = %f <= 0 is not a valid absolute temperature", T);
   }
   const double eps = 1.0e-6;
   if ((omega < 0.0 - eps) || (1.0 + eps < omega)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "water fraction omega=%f not in range [0,1]",omega);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "water fraction omega=%f not in range [0,1]",
+                                  omega);
   }
   if (T > T_melting + eps) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "T=%f exceeds T_melting=%f; not allowed",T,T_melting);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "T=%f exceeds T_melting=%f; not allowed", T,
+                                  T_melting);
   }
   if ((T < T_melting - eps) && (omega > 0.0 + eps)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "T < T_melting AND omega > 0 is contradictory;"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "T < T_melting AND omega > 0 is contradictory;"
                                   " got T=%f, T_melting=%f, omega=%f",
                                   T, T_melting, omega);
   }
 #else
-  (void) T;
-  (void) omega;
-  (void) P;
+  (void)T;
+  (void)omega;
+  (void)P;
 #endif
 }
 
 void EnthalpyConverter::validate_E_P(double E, double P) const {
-#if (Pism_DEBUG==1)
+#if (Pism_DEBUG == 1)
   if (E >= enthalpy_liquid(P)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "E=%f J/kg at P=%f Pa equals or exceeds that of liquid water (%f J/kg)",
-                                  E, P, enthalpy_liquid(P));
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION,
+        "E=%f J/kg at P=%f Pa equals or exceeds that of liquid water (%f J/kg)", E, P,
+        enthalpy_liquid(P));
   }
 #else
-  (void) E;
-  (void) P;
+  (void)E;
+  (void)P;
 #endif
 }
 
@@ -139,8 +145,7 @@ double EnthalpyConverter::pressure(double depth) const {
 }
 
 //! Compute pressure in a column of ice. Does not check validity of `depth`.
-void EnthalpyConverter::pressure(const std::vector<double> &depth,
-                                 unsigned int ks,
+void EnthalpyConverter::pressure(const std::vector<double> &depth, unsigned int ks,
                                  std::vector<double> &result) const {
   for (unsigned int k = 0; k <= ks; ++k) {
     result[k] = m_p_air + m_rho_i * m_g * depth[k];
@@ -174,7 +179,7 @@ We do not allow liquid water (%i.e. water fraction \f$\omega=1.0\f$) so we
 throw an exception if \f$E \ge E_l(p)\f$.
  */
 double EnthalpyConverter::temperature(double E, double P) const {
-#if (Pism_DEBUG==1)
+#if (Pism_DEBUG == 1)
   validate_E_P(E, P);
 #endif
 
@@ -210,7 +215,7 @@ double EnthalpyConverter::pressure_adjusted_temperature(double E, double P) cons
    We do not allow liquid water (i.e. water fraction @f$ \omega=1.0 @f$).
  */
 double EnthalpyConverter::water_fraction(double E, double P) const {
-#if (Pism_DEBUG==1)
+#if (Pism_DEBUG == 1)
   validate_E_P(E, P);
 #endif
 
@@ -239,7 +244,7 @@ Certain cases are not allowed and throw exceptions:
 These inequalities may be violated in the sixth digit or so, however.
  */
 double EnthalpyConverter::enthalpy(double T, double omega, double P) const {
-#if (Pism_DEBUG==1)
+#if (Pism_DEBUG == 1)
   validate_T_omega_P(T, omega, P);
 #endif
 
@@ -287,8 +292,7 @@ double EnthalpyConverter::enthalpy_permissive(double T, double omega, double P) 
   return enthalpy(T_m, std::max(0.0, std::min(omega, 1.0)), P);
 }
 
-ColdEnthalpyConverter::ColdEnthalpyConverter(const Config &config)
-  : EnthalpyConverter(config) {
+ColdEnthalpyConverter::ColdEnthalpyConverter(const Config &config) : EnthalpyConverter(config) {
   // turn on the "cold" enthalpy converter mode
   m_cold_mode = true;
   // set melting temperature to one million kelvin so that all ice is cold

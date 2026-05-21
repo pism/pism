@@ -40,15 +40,15 @@ namespace inverse {
   The TAO algorithm tao_lcl is not compatible with IP_SSATaucTaoTikhonovProblem.  Use IP_SSATaucTaoTikhonovProblemLCL
   instead.
 */
-class IP_SSATaucTaoTikhonovProblem: public IPTaoTikhonovProblem<IP_SSATaucForwardProblem> {
+class IP_SSATaucTaoTikhonovProblem : public IPTaoTikhonovProblem<IP_SSATaucForwardProblem> {
 public:
-
-  IP_SSATaucTaoTikhonovProblem(IP_SSATaucForwardProblem &forward, 
-                                IP_SSATaucTaoTikhonovProblem::DesignVec &d0, 
-                                IP_SSATaucTaoTikhonovProblem::StateVec &u_obs, double eta, 
-                                IPFunctional<IP_SSATaucTaoTikhonovProblem::DesignVec>&designFunctional, 
-                                IPFunctional<IP_SSATaucTaoTikhonovProblem::StateVec>&stateFunctional) :
-    IPTaoTikhonovProblem<IP_SSATaucForwardProblem>(forward,d0,u_obs,eta,designFunctional,stateFunctional) {};
+  IP_SSATaucTaoTikhonovProblem(
+      IP_SSATaucForwardProblem &forward, IP_SSATaucTaoTikhonovProblem::DesignVec &d0,
+      IP_SSATaucTaoTikhonovProblem::StateVec &u_obs, double eta,
+      IPFunctional<IP_SSATaucTaoTikhonovProblem::DesignVec> &designFunctional,
+      IPFunctional<IP_SSATaucTaoTikhonovProblem::StateVec> &stateFunctional)
+      : IPTaoTikhonovProblem<IP_SSATaucForwardProblem>(forward, d0, u_obs, eta, designFunctional,
+                                                       stateFunctional) {};
 
   virtual ~IP_SSATaucTaoTikhonovProblem() {};
 
@@ -56,11 +56,9 @@ public:
 
   //! Callback to TAO to set bounds on \f$\tau_c\f$ for constrained minimization algorithms.
   virtual void getVariableBounds(Tao tao, Vec lo, Vec hi);
-
 };
 
 } // end of namespace inverse
 } // end of namespace pism
 
 #endif /* end of include guard: IP_SSATAUCTIKHONOVPROBLEM_HH_HB8UWICX */
-

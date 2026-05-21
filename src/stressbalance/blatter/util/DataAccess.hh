@@ -27,7 +27,7 @@
 
 namespace pism {
 
-enum AccessType {GHOSTED, NOT_GHOSTED};
+enum AccessType { GHOSTED, NOT_GHOSTED };
 /*!
  * This template class manages access to 2D and 3D Vecs stored in a DM using
  * `PetscObjectCompose`. Performs cleanup at the end of scope.
@@ -37,11 +37,10 @@ enum AccessType {GHOSTED, NOT_GHOSTED};
  * @param[in] type NOT_GHOSTED -- for setting parameters; GHOSTED -- for accessing ghosts
  *                 during residual and Jacobian evaluation
  */
-template<typename T>
+template <typename T>
 class DataAccess {
 public:
-  DataAccess(DM da, int dim, AccessType type)
-    : m_local(type == GHOSTED) {
+  DataAccess(DM da, int dim, AccessType type) : m_local(type == GHOSTED) {
     int ierr;
 
     assert(dim == 2 or dim == 3);
@@ -53,8 +52,7 @@ public:
     }
 
     if (ierr != 0) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "Failed to create an DataAccess instance");
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Failed to create an DataAccess instance");
     }
   }
 
@@ -62,32 +60,39 @@ public:
     PetscErrorCode ierr;
 
     m_com = MPI_COMM_SELF;
-    ierr = PetscObjectGetComm((PetscObject)da, &m_com); CHKERRQ(ierr);
+    ierr  = PetscObjectGetComm((PetscObject)da, &m_com);
+    CHKERRQ(ierr);
 
-    ierr = PetscObjectQuery((PetscObject)da, dm_name, (PetscObject*)&m_da); CHKERRQ(ierr);
+    ierr = PetscObjectQuery((PetscObject)da, dm_name, (PetscObject *)&m_da);
+    CHKERRQ(ierr);
 
     if (!m_da) {
       SETERRQ(m_com, 1, "Failed to get the inner DM");
     }
 
     Vec X;
-    ierr = PetscObjectQuery((PetscObject)da, vec_name, (PetscObject*)&X); CHKERRQ(ierr);
+    ierr = PetscObjectQuery((PetscObject)da, vec_name, (PetscObject *)&X);
+    CHKERRQ(ierr);
 
     if (!X) {
       SETERRQ(m_com, 1, "Failed to get the inner Vec");
     }
 
     if (m_local) {
-      ierr = DMGetLocalVector(m_da, &m_x); CHKERRQ(ierr);
+      ierr = DMGetLocalVector(m_da, &m_x);
+      CHKERRQ(ierr);
 
-      ierr = DMGlobalToLocalBegin(m_da, X, INSERT_VALUES, m_x); CHKERRQ(ierr);
+      ierr = DMGlobalToLocalBegin(m_da, X, INSERT_VALUES, m_x);
+      CHKERRQ(ierr);
 
-      ierr = DMGlobalToLocalEnd(m_da, X, INSERT_VALUES, m_x); CHKERRQ(ierr);
+      ierr = DMGlobalToLocalEnd(m_da, X, INSERT_VALUES, m_x);
+      CHKERRQ(ierr);
     } else {
       m_x = X;
     }
 
-    ierr = DMDAVecGetArray(m_da, m_x, &m_a); CHKERRQ(ierr);
+    ierr = DMDAVecGetArray(m_da, m_x, &m_a);
+    CHKERRQ(ierr);
 
     return 0;
   }
@@ -109,6 +114,7 @@ public:
   operator T() {
     return m_a;
   }
+
 private:
   MPI_Comm m_com;
   bool m_local;

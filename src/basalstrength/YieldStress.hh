@@ -53,9 +53,10 @@ public:
 
   void update(const YieldStressInputs &inputs, double t, double dt);
 
-  const array::Scalar& basal_material_yield_stress();
+  const array::Scalar &basal_material_yield_stress();
 
   std::string name() const;
+
 protected:
   virtual void restart_impl(const File &input_file, int record) = 0;
 

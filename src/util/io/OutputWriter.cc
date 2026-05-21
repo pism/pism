@@ -17,20 +17,20 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <cassert>
 #include <cstddef>
 #include <map>
 #include <memory>
 #include <mpi.h>
 #include <string>
 #include <vector>
-#include <cassert>
 
-#include "pism/util/io/IO_Flags.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/GridInfo.hh"
 #include "pism/util/VariableMetadata.hh"
-#include "pism/util/io/OutputWriter.hh"
 #include "pism/util/error_handling.hh"
+#include "pism/util/io/IO_Flags.hh"
+#include "pism/util/io/OutputWriter.hh"
 #include "pism/util/pism_utilities.hh"
 
 namespace pism {
@@ -96,22 +96,20 @@ static VariableAttributes format_attributes(const VariableAttributes &metadata) 
 }
 
 struct OutputWriter::Impl {
-  Impl(MPI_Comm comm_, const Config &config)
-      : comm(comm_) {
-    time_name            = config.get_string("time.dimension_name");
-    experiment_id        = config.get_string("output.experiment_id");
-    experiment_id_name   = config.get_string("output.experiment_id_dimension");
+  Impl(MPI_Comm comm_, const Config &config) : comm(comm_) {
+    time_name                = config.get_string("time.dimension_name");
+    experiment_id            = config.get_string("output.experiment_id");
+    experiment_id_name       = config.get_string("output.experiment_id_dimension");
     experiment_id_max_length = (int)config.get_number("output.experiment_id_max_length");
-    relaxed_mode = false;
-    is_async = false;
+    relaxed_mode             = false;
+    is_async                 = false;
 
     // subtract one to account for the trailing null character:
     if ((int)experiment_id.size() > experiment_id_max_length - 1) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "the length of '%s' (%d) exceeds '%s' - 1. Please increase '%s'.",
-                                    "output.experiment_id", (int)experiment_id.size(),
-                                    "output.experiment_id_max_length",
-                                    "output.experiment_id_max_length");
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION, "the length of '%s' (%d) exceeds '%s' - 1. Please increase '%s'.",
+          "output.experiment_id", (int)experiment_id.size(), "output.experiment_id_max_length",
+          "output.experiment_id_max_length");
     }
 
     if (not experiment_id.empty()) {
@@ -143,8 +141,7 @@ struct OutputWriter::Impl {
   bool is_async;
 };
 
-bool &OutputWriter::already_written(const std::string &file_name,
-                                    const std::string &variable_name,
+bool &OutputWriter::already_written(const std::string &file_name, const std::string &variable_name,
                                     bool time_dependent) {
   if (time_dependent) {
     return m_impl->written_time_dependent[{ file_name, variable_name }];
@@ -153,8 +150,7 @@ bool &OutputWriter::already_written(const std::string &file_name,
   return m_impl->written_time_independent[{ file_name, variable_name }];
 }
 
-OutputWriter::OutputWriter(MPI_Comm comm, const Config &config)
-    : m_impl(new Impl(comm, config)) {
+OutputWriter::OutputWriter(MPI_Comm comm, const Config &config) : m_impl(new Impl(comm, config)) {
 }
 
 OutputWriter::~OutputWriter() {
@@ -394,11 +390,10 @@ void OutputWriter::write_distributed_array(const std::string &file_name,
 }
 
 
-void OutputWriter::write_timeseries(const std::string &file_name,
-                                             const std::string &variable_name,
-                                             const std::vector<unsigned int> &start,
-                                             const std::vector<unsigned int> &count,
-                                             const std::vector<double> &input) {
+void OutputWriter::write_timeseries(const std::string &file_name, const std::string &variable_name,
+                                    const std::vector<unsigned int> &start,
+                                    const std::vector<unsigned int> &count,
+                                    const std::vector<double> &input) {
   auto S = start;
   auto C = count;
 

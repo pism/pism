@@ -17,15 +17,15 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/stressbalance/ssa/SSA.hh"
-#include "pism/util/EnthalpyConverter.hh"
+#include "pism/geometry/Geometry.hh"
 #include "pism/rheology/FlowLawFactory.hh"
+#include "pism/stressbalance/StressBalance.hh"
+#include "pism/util/EnthalpyConverter.hh"
+#include "pism/util/Logger.hh"
 #include "pism/util/Mask.hh"
+#include "pism/util/array/CellType.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/array/CellType.hh"
-#include "pism/stressbalance/StressBalance.hh"
-#include "pism/geometry/Geometry.hh"
-#include "pism/util/Logger.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
@@ -33,7 +33,7 @@ namespace stressbalance {
 
 SSAStrengthExtension::SSAStrengthExtension(const Config &config) {
   m_min_thickness = config.get_number("stress_balance.ssa.strength_extension.min_thickness");
-  m_constant_nu = config.get_number("stress_balance.ssa.strength_extension.constant_nu");
+  m_constant_nu   = config.get_number("stress_balance.ssa.strength_extension.constant_nu");
 }
 
 //! Set strength = (viscosity times thickness).
@@ -52,9 +52,9 @@ void SSAStrengthExtension::set_min_thickness(double my_min_thickness) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "min_thickness must be positive, got %f",
                                   my_min_thickness);
   }
-  double nuH = m_constant_nu * m_min_thickness;
+  double nuH      = m_constant_nu * m_min_thickness;
   m_min_thickness = my_min_thickness;
-  m_constant_nu = nuH / m_min_thickness;
+  m_constant_nu   = nuH / m_min_thickness;
 }
 
 //! Returns strength = (viscosity times thickness).
@@ -69,9 +69,7 @@ double SSAStrengthExtension::get_min_thickness() const {
 
 
 SSA::SSA(std::shared_ptr<const Grid> g)
-  : ShallowStressBalance(g),
-    m_velocity_global(m_grid, "bar")
-{
+    : ShallowStressBalance(g), m_velocity_global(m_grid, "bar") {
 
   m_e_factor = m_config->get_number("stress_balance.ssa.enhancement_factor");
 
@@ -106,8 +104,7 @@ void SSA::init_impl() {
   ShallowStressBalance::init_impl();
 
   m_log->message(2, "* Initializing the SSA stress balance...\n");
-  m_log->message(2,
-             "  [using the %s flow law]\n", m_flow_law->name().c_str());
+  m_log->message(2, "  [using the %s flow law]\n", m_flow_law->name().c_str());
 
   InputOptions opts = process_input_options(m_grid->com, m_config);
 
@@ -116,8 +113,8 @@ void SSA::init_impl() {
   if (opts.type == INIT_RESTART) {
     if (m_config->get_flag("stress_balance.ssa.read_initial_guess")) {
       File input_file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
-      bool u_ssa_found = input_file.variable_exists("u_ssa");
-      bool v_ssa_found = input_file.variable_exists("v_ssa");
+      bool u_ssa_found   = input_file.variable_exists("u_ssa");
+      bool v_ssa_found   = input_file.variable_exists("v_ssa");
       unsigned int start = input_file.nrecords() - 1;
 
       if (u_ssa_found and v_ssa_found) {
@@ -136,10 +133,8 @@ void SSA::update(const Inputs &inputs, bool full_update) {
 
   if (full_update) {
     solve(inputs);
-    compute_basal_frictional_heating(m_velocity,
-                                     *inputs.basal_yield_stress,
-                                     inputs.geometry->cell_type,
-                                     m_basal_frictional_heating);
+    compute_basal_frictional_heating(m_velocity, *inputs.basal_yield_stress,
+                                     inputs.geometry->cell_type, m_basal_frictional_heating);
   }
 }
 
@@ -156,21 +151,20 @@ void SSA::update(const Inputs &inputs, bool full_update) {
  * write-only. This means that it's okay for `velocity` to be a input-output argument: we
  * don't use of the values modified by this method.
  */
-void SSA::extrapolate_velocity(const array::CellType1 &cell_type,
-                               array::Vector1 &velocity) const {
-  array::AccessScope list{&cell_type, &velocity};
+void SSA::extrapolate_velocity(const array::CellType1 &cell_type, array::Vector1 &velocity) const {
+  array::AccessScope list{ &cell_type, &velocity };
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (cell_type.ice_free(i, j) and cell_type.next_to_ice(i, j)) {
 
-      auto M = cell_type.star_int(i, j);
+      auto M   = cell_type.star_int(i, j);
       auto vel = velocity.star(i, j);
 
-      Vector2d sum{0.0, 0.0};
+      Vector2d sum{ 0.0, 0.0 };
       int N = 0;
-      for (auto d : {North, East, South, West}) {
+      for (auto d : { North, East, South, West }) {
         if (mask::icy(M[d])) {
           sum += vel[d];
           ++N;

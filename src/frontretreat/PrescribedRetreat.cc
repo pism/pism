@@ -17,18 +17,17 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <cmath>                // std::round
+#include <cmath> // std::round
 
-#include "pism/frontretreat/PrescribedRetreat.hh"
 #include "pism/coupler/util/options.hh"
-#include "pism/util/array/Forcing.hh"
+#include "pism/frontretreat/PrescribedRetreat.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/array/Forcing.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 
-PrescribedRetreat::PrescribedRetreat(std::shared_ptr<const Grid> grid)
-  : Component(grid) {
+PrescribedRetreat::PrescribedRetreat(std::shared_ptr<const Grid> grid) : Component(grid) {
   ForcingOptions opt(*m_grid->ctx(), "geometry.front_retreat.prescribed");
   {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
@@ -39,9 +38,7 @@ PrescribedRetreat::PrescribedRetreat(std::shared_ptr<const Grid> grid)
         std::make_shared<array::Forcing>(m_grid, file, "land_ice_area_fraction_retreat",
                                          "", // no standard name
                                          buffer_size, opt.periodic);
-    m_retreat_mask->metadata(0)
-        .long_name("maximum ice extent mask")
-        .units("1");
+    m_retreat_mask->metadata(0).long_name("maximum ice extent mask").units("1");
   }
 }
 

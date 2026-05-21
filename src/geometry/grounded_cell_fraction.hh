@@ -25,7 +25,7 @@ namespace pism {
 namespace array {
 class Scalar;
 class Scalar1;
-}
+} // namespace array
 
 double grounded_area_fraction(double a, double b, double c);
 
@@ -33,12 +33,10 @@ double grounded_area_fraction(double a, double b, double c);
  * Compute grounded cell fractions by splitting control volumes into triangles and
  * treating the flotation criterion as a linear function on each triangle.
  */
-void compute_grounded_cell_fraction(double ice_density,
-                                    double ocean_density,
+void compute_grounded_cell_fraction(double ice_density, double ocean_density,
                                     const array::Scalar1 &sea_level,
                                     const array::Scalar1 &ice_thickness,
-                                    const array::Scalar1 &bed_topography,
-                                    array::Scalar &result);
+                                    const array::Scalar1 &bed_topography, array::Scalar &result);
 
 } // end of namespace pism
 

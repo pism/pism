@@ -41,17 +41,18 @@ public:
   operator T() const {
     return m_value;
   }
-  const T* operator->() const {
+  const T *operator->() const {
     return &m_value;
   }
-  T* operator->() {
+  T *operator->() {
     return &m_value;
   }
-  bool operator==(const T& other) const {
+  bool operator==(const T &other) const {
     return m_value == other;
   }
+
 protected:
-  T    m_value;
+  T m_value;
   bool m_is_set;
   void set(T new_value, bool new_flag) {
     m_value  = new_value;

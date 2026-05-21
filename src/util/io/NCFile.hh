@@ -34,7 +34,7 @@ class DistributedGridInfo;
 namespace io {
 enum Mode : int;
 enum Type : int;
-}
+} // namespace io
 
 //! Input and output code (NetCDF wrappers, etc)
 namespace io {
@@ -183,7 +183,8 @@ protected:
 
   virtual void put_vara_text_impl(const std::string &variable_name,
                                   const std::vector<unsigned int> &start,
-                                  const std::vector<unsigned int> &count, const char *data) const = 0;
+                                  const std::vector<unsigned int> &count,
+                                  const char *data) const = 0;
 
   virtual void write_darray_impl(const std::string &variable_name,
                                  const grid::DistributedGridInfo &grid, unsigned int z_count,
@@ -224,13 +225,14 @@ protected:
   // misc
   virtual void set_fill_impl(int fillmode, int &old_modep) const = 0;
 
-  virtual void del_att_impl(const std::string &variable_name, const std::string &att_name) const = 0;
+  virtual void del_att_impl(const std::string &variable_name,
+                            const std::string &att_name) const = 0;
 
-protected:                      // data members
-
+protected: // data members
   MPI_Comm m_com;
   int m_file_id;
   std::string m_filename;
+
 private:
   mutable bool m_define_mode;
 };

@@ -16,41 +16,41 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <algorithm>
 #include <cmath>
 #include <cstring>
-#include <algorithm>
 #include <memory>
 #include <petscsys.h>
 
 #include "pism/icemodel/IceModel.hh"
 
-#include "pism/basalstrength/YieldStress.hh"
-#include "pism/frontretreat/util/IcebergRemover.hh"
-#include "pism/energy/BedThermalUnit.hh"
-#include "pism/hydrology/Hydrology.hh"
-#include "pism/stressbalance/StressBalance.hh"
-#include "pism/util/Grid.hh"
-#include "pism/util/Config.hh"
-#include "pism/util/Diagnostic.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/coupler/SeaLevel.hh"
-#include "pism/coupler/OceanModel.hh"
-#include "pism/coupler/SurfaceModel.hh"
-#include "pism/earth/BedDef.hh"
-#include "pism/util/pism_signal.h"
-#include "pism/util/Vars.hh"
-#include "pism/util/Profiling.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/age/AgeModel.hh"
 #include "pism/age/Isochrones.hh"
-#include "pism/energy/EnergyModel.hh"
-#include "pism/util/io/File.hh"
-#include "pism/util/array/Forcing.hh"
-#include "pism/fracturedensity/FractureDensity.hh"
-#include "pism/coupler/util/options.hh" // ForcingOptions
+#include "pism/basalstrength/YieldStress.hh"
+#include "pism/coupler/OceanModel.hh"
+#include "pism/coupler/SeaLevel.hh"
+#include "pism/coupler/SurfaceModel.hh"
 #include "pism/coupler/ocean/PyOceanModel.hh"
-#include "pism/util/io/SynchronousOutputWriter.hh"
+#include "pism/coupler/util/options.hh" // ForcingOptions
+#include "pism/earth/BedDef.hh"
+#include "pism/energy/BedThermalUnit.hh"
+#include "pism/energy/EnergyModel.hh"
+#include "pism/fracturedensity/FractureDensity.hh"
+#include "pism/frontretreat/util/IcebergRemover.hh"
+#include "pism/hydrology/Hydrology.hh"
+#include "pism/stressbalance/StressBalance.hh"
+#include "pism/util/Config.hh"
+#include "pism/util/Diagnostic.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/Profiling.hh"
+#include "pism/util/Vars.hh"
+#include "pism/util/array/Forcing.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/io/SynchronousOutputWriter.hh"
+#include "pism/util/pism_signal.h"
+#include "pism/util/pism_utilities.hh"
 
 #if (Pism_USE_YAC == 1)
 #include "pism/util/io/YacOutputWriter.hh"
@@ -90,15 +90,15 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
   m_ocean   = nullptr;
   m_beddef  = nullptr;
 
-  m_btu = nullptr;
+  m_btu          = nullptr;
   m_energy_model = nullptr;
 
   // Set global attributes:
   m_output_global_attributes["Conventions"] = "CF-1.6";
-  m_output_global_attributes["source"] = pism::version();
-  m_output_global_attributes["title"] = m_config->get_string("run_info.title");
+  m_output_global_attributes["source"]      = pism::version();
+  m_output_global_attributes["title"]       = m_config->get_string("run_info.title");
   m_output_global_attributes["institution"] = m_config->get_string("run_info.institution");
-  m_output_global_attributes["command"] = args_string();
+  m_output_global_attributes["command"]     = args_string();
 
   m_fracture = nullptr;
 
@@ -151,7 +151,7 @@ double IceModel::dt() const {
 }
 
 void IceModel::reset_counters() {
-  m_dt_TempAge       = 0.0;
+  m_dt_TempAge     = 0.0;
   m_dt             = 0.0;
   m_skip_countdown = 0;
 
@@ -268,7 +268,7 @@ void IceModel::allocate_storage() {
         .long_name("Mask specifying locations where ice thickness is held constant")
         .set_time_dependent(false)
         .set_output_type(io::PISM_INT);
-    m_ice_thickness_bc_mask.metadata()["flag_values"] = {0, 1};
+    m_ice_thickness_bc_mask.metadata()["flag_values"]   = { 0, 1 };
     m_ice_thickness_bc_mask.metadata()["flag_meanings"] = "no_data boundary_condition";
 
     m_ice_thickness_bc_mask.set(0.0);
@@ -305,10 +305,10 @@ void IceModel::enforce_consistency_of_geometry(ConsistencyFlag flag) {
   if (m_iceberg_remover and flag == REMOVE_ICEBERGS) {
     // The iceberg remover has to use the same mask as the stress balance code, hence the
     // stress-balance-related threshold here.
-    m_geometry.ensure_consistency(m_config->get_number("stress_balance.ice_free_thickness_standard"));
+    m_geometry.ensure_consistency(
+        m_config->get_number("stress_balance.ice_free_thickness_standard"));
 
-    m_iceberg_remover->update(m_ice_thickness_bc_mask,
-                              m_geometry.cell_type,
+    m_iceberg_remover->update(m_ice_thickness_bc_mask, m_geometry.cell_type,
                               m_geometry.ice_thickness);
     // The call above modifies ice thickness and updates the mask accordingly, but we re-compute the
     // mask (we need to use a different threshold).
@@ -320,8 +320,7 @@ void IceModel::enforce_consistency_of_geometry(ConsistencyFlag flag) {
 
   if (flag == REMOVE_ICEBERGS) {
     // clean up partially-filled cells that are not next to ice
-    array::AccessScope list{&m_geometry.ice_area_specific_volume,
-                                 &m_geometry.cell_type};
+    array::AccessScope list{ &m_geometry.ice_area_specific_volume, &m_geometry.cell_type };
 
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
@@ -372,12 +371,12 @@ energy::Inputs IceModel::energy_model_inputs() {
   result.surface_liquid_fraction  = &m_surface->liquid_water_fraction(); // surface model
   result.surface_temp             = &m_surface->temperature();           // surface model
 
-  result.volumetric_heating_rate  = &m_stress_balance->volumetric_strain_heating();
-  result.u3                       = &m_stress_balance->velocity_u();
-  result.v3                       = &m_stress_balance->velocity_v();
-  result.w3                       = &m_stress_balance->velocity_w();
+  result.volumetric_heating_rate = &m_stress_balance->volumetric_strain_heating();
+  result.u3                      = &m_stress_balance->velocity_u();
+  result.v3                      = &m_stress_balance->velocity_v();
+  result.w3                      = &m_stress_balance->velocity_w();
 
-  result.check();             // make sure all data members were set
+  result.check(); // make sure all data members were set
 
   return result;
 }
@@ -396,8 +395,7 @@ YieldStressInputs IceModel::yield_stress_inputs() {
 /*!
 During the time-step we perform the following actions:
  */
-double IceModel::step(bool do_mass_continuity,
-                      bool do_skip) {
+double IceModel::step(bool do_mass_continuity, bool do_skip) {
 
   m_step_counter++;
 
@@ -417,7 +415,7 @@ double IceModel::step(bool do_mass_continuity,
   // stability criterion; note *lots* of communication is avoided by skipping
   // SSA (and temp/age)
 
-  const bool updateAtDepth  = (m_skip_countdown == 0);
+  const bool updateAtDepth = (m_skip_countdown == 0);
 
   // Combine basal melt rate in grounded (computed during the energy
   // step) and floating (provided by an ocean model) areas.
@@ -425,10 +423,8 @@ double IceModel::step(bool do_mass_continuity,
   // Basal melt rate may be used by a stress balance model to compute vertical velocity of
   // ice.
   {
-    combine_basal_melt_rate(m_geometry,
-                            m_ocean->shelf_base_mass_flux(),
-                            m_energy_model->basal_melt_rate(),
-                            m_basal_melt_rate);
+    combine_basal_melt_rate(m_geometry, m_ocean->shelf_base_mass_flux(),
+                            m_energy_model->basal_melt_rate(), m_basal_melt_rate);
   }
 
   try {
@@ -450,7 +446,7 @@ double IceModel::step(bool do_mass_continuity,
 
   //! \li determine the time step according to a variety of stability criteria
   auto dt_info = max_timestep(m_skip_countdown);
-  double dt = dt_info.dt;
+  double dt    = dt_info.dt;
 
   m_adaptive_timestep_reason = dt_info.reason;
   m_skip_countdown           = dt_info.skip_counter;
@@ -529,17 +525,16 @@ double IceModel::step(bool do_mass_continuity,
       }
 
       try {
-        m_geometry_evolution->flow_step(m_geometry,
-                                        dt,
-                                        m_stress_balance->advective_velocity(),
+        m_geometry_evolution->flow_step(m_geometry, dt, m_stress_balance->advective_velocity(),
                                         m_stress_balance->diffusive_flux(),
                                         m_ice_thickness_bc_mask);
       } catch (RuntimeError &e) {
-        std::string output_file = save_state_on_error("_mass_transport_failed",
-                                                      {"flux_staggered", "flux_divergence"});
+        std::string output_file =
+            save_state_on_error("_mass_transport_failed", { "flux_staggered", "flux_divergence" });
 
-        e.add_context("performing a mass transport time step (dt=%f s). (Note: Model state was saved to '%s'.)",
-                      dt, output_file.c_str());
+        e.add_context(
+            "performing a mass transport time step (dt=%f s). (Note: Model state was saved to '%s'.)",
+            dt, output_file.c_str());
         throw;
       }
 
@@ -584,10 +579,8 @@ double IceModel::step(bool do_mass_continuity,
   if (do_mass_continuity) {
     // compute and apply effective surface and basal mass balance
 
-    m_geometry_evolution->source_term_step(m_geometry, dt,
-                                           m_ice_thickness_bc_mask,
-                                           m_surface->mass_flux(),
-                                           m_basal_melt_rate);
+    m_geometry_evolution->source_term_step(m_geometry, dt, m_ice_thickness_bc_mask,
+                                           m_surface->mass_flux(), m_basal_melt_rate);
     m_geometry_evolution->apply_mass_fluxes(m_geometry);
 
     // add removed icebergs to discharge due to calving
@@ -603,19 +596,14 @@ double IceModel::step(bool do_mass_continuity,
       enforce_consistency_of_geometry(REMOVE_ICEBERGS);
 
       bool add_values = true;
-      compute_geometry_change(m_geometry.ice_thickness,
-                              m_geometry.ice_area_specific_volume,
-                              old_H, old_Href,
-                              add_values,
-                              m_thickness_change.calving);
+      compute_geometry_change(m_geometry.ice_thickness, m_geometry.ice_area_specific_volume, old_H,
+                              old_Href, add_values, m_thickness_change.calving);
     }
   }
 
   if (m_isochrones) {
-    m_isochrones->update(current_time, dt,
-                         m_stress_balance->velocity_u(),
-                         m_stress_balance->velocity_v(),
-                         m_geometry.ice_thickness,
+    m_isochrones->update(current_time, dt, m_stress_balance->velocity_u(),
+                         m_stress_balance->velocity_v(), m_geometry.ice_thickness,
                          m_geometry_evolution->top_surface_mass_balance(),
                          m_geometry_evolution->bottom_surface_mass_balance());
   }
@@ -632,9 +620,7 @@ double IceModel::step(bool do_mass_continuity,
     int topg_state_counter = m_beddef->bed_elevation().state_counter();
 
     profiling.begin("bed_deformation");
-    m_beddef->update(m_geometry.ice_thickness,
-                     m_geometry.sea_level_elevation,
-                     current_time, dt);
+    m_beddef->update(m_geometry.ice_thickness, m_geometry.sea_level_elevation, current_time, dt);
     profiling.end("bed_deformation");
 
     m_new_bed_elevation = m_beddef->bed_elevation().state_counter() != topg_state_counter;
@@ -669,13 +655,14 @@ double IceModel::step(bool do_mass_continuity,
   if (max(m_geometry.ice_thickness) > m_grid->Lz()) {
     auto o_file = save_state_on_error("_max_thickness", {});
 
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Ice thickness exceeds the height of the computational box (%7.4f m).\n"
-                                  "The model state was saved to '%s'. To continue this simulation,\n"
-                                  "run with\n"
-                                  "-i %s -bootstrap -regrid_file %s -allow_extrapolation -Lz N [other options]\n"
-                                  "where N > %7.4f.",
-                                  m_grid->Lz(), o_file.c_str(), o_file.c_str(), o_file.c_str(), m_grid->Lz());
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION,
+        "Ice thickness exceeds the height of the computational box (%7.4f m).\n"
+        "The model state was saved to '%s'. To continue this simulation,\n"
+        "run with\n"
+        "-i %s -bootstrap -regrid_file %s -allow_extrapolation -Lz N [other options]\n"
+        "where N > %7.4f.",
+        m_grid->Lz(), o_file.c_str(), o_file.c_str(), o_file.c_str(), m_grid->Lz());
   }
 
   // end the flag line
@@ -752,8 +739,8 @@ IceModelTerminationReason IceModel::run() {
   const Profiling &profiling = m_ctx->profiling();
 
   bool do_mass_conserve = m_config->get_flag("geometry.update.enabled");
-  bool do_energy = set_member(m_config->get_string("energy.model"), {"cold", "enthalpy"});
-  bool do_skip = m_config->get_flag("time_stepping.skip.enabled");
+  bool do_energy        = set_member(m_config->get_string("energy.model"), { "cold", "enthalpy" });
+  bool do_skip          = m_config->get_flag("time_stepping.skip.enabled");
 
   // Enforce consistency *and* remove icebergs. During time-stepping we remove icebergs at
   // the end of the time step, so we need to ensure that ice geometry is "OK" before the
@@ -776,9 +763,9 @@ IceModelTerminationReason IceModel::run() {
 
   m_stdout_flags.erase(); // clear it out
   print_summary_line(true, do_energy, 0.0, 0.0, 0.0, 0.0, 0.0);
-  print_summary(do_energy, 0.0 /* time step length is not known yet */);  // report starting state
+  print_summary(do_energy, 0.0 /* time step length is not known yet */); // report starting state
 
-  m_t_TempAge = m_time->current();
+  m_t_TempAge  = m_time->current();
   m_dt_TempAge = 0.0;
 
   IceModelTerminationReason termination_reason = PISM_DONE;
@@ -788,7 +775,7 @@ IceModelTerminationReason IceModel::run() {
   profiling.stage_begin("time-stepping loop");
   while (m_time->current() < m_time->end()) {
 
-    m_stdout_flags.erase();  // clear it out
+    m_stdout_flags.erase(); // clear it out
 
     m_dt = step(do_mass_conserve, do_skip);
 
@@ -849,10 +836,10 @@ void IceModel::init(DiagnosticReport report_type) {
   {
     if (not m_config->get_flag("geometry.update.enabled") &&
         m_config->get_flag("time_stepping.skip.enabled")) {
-      m_log->message(2,
-                     "PISM WARNING: time_stepping.skip.enabled is 'true' and\n"
-                     "              geometry.update.enabled is 'false'\n"
-                     "              skipping time steps makes sense only with evolving geometry.\n");
+      m_log->message(
+          2, "PISM WARNING: time_stepping.skip.enabled is 'true' and\n"
+             "              geometry.update.enabled is 'false'\n"
+             "              skipping time steps makes sense only with evolving geometry.\n");
     }
   }
 
@@ -898,68 +885,68 @@ void IceModel::init(DiagnosticReport report_type) {
   profiling.end("initialization");
 }
 
-const Geometry& IceModel::geometry() const {
+const Geometry &IceModel::geometry() const {
   return m_geometry;
 }
 
-const GeometryEvolution& IceModel::geometry_evolution() const {
+const GeometryEvolution &IceModel::geometry_evolution() const {
   return *m_geometry_evolution;
 }
 
-const stressbalance::StressBalance* IceModel::stress_balance() const {
+const stressbalance::StressBalance *IceModel::stress_balance() const {
   return this->m_stress_balance.get();
 }
 
-const ocean::OceanModel* IceModel::ocean_model() const {
+const ocean::OceanModel *IceModel::ocean_model() const {
   return m_ocean.get();
 }
 
-const energy::BedThermalUnit* IceModel::bedrock_thermal_model() const {
+const energy::BedThermalUnit *IceModel::bedrock_thermal_model() const {
   return m_btu.get();
 }
 
-const energy::EnergyModel* IceModel::energy_balance_model() const {
+const energy::EnergyModel *IceModel::energy_balance_model() const {
   return m_energy_model.get();
 }
 
-const YieldStress* IceModel::basal_yield_stress_model() const {
+const YieldStress *IceModel::basal_yield_stress_model() const {
   return m_basal_yield_stress_model.get();
 }
 
-const bed::BedDef* IceModel::bed_deformation_model() const {
+const bed::BedDef *IceModel::bed_deformation_model() const {
   return m_beddef.get();
 }
 
 /*!
  * Return thickness change due to calving (over the last time step).
  */
-const array::Scalar& IceModel::calving() const {
+const array::Scalar &IceModel::calving() const {
   return m_thickness_change.calving;
 }
 
 /*!
  * Return thickness change due to frontal melt (over the last time step).
  */
-const array::Scalar& IceModel::frontal_melt() const {
+const array::Scalar &IceModel::frontal_melt() const {
   return m_thickness_change.frontal_melt;
 }
 
 /*!
  * Return thickness change due to forced retreat (over the last time step).
  */
-const array::Scalar& IceModel::forced_retreat() const {
+const array::Scalar &IceModel::forced_retreat() const {
   return m_thickness_change.forced_retreat;
 }
 
 IceModel::ThicknessChanges::ThicknessChanges(const std::shared_ptr<const Grid> &grid)
-  : calving(grid, "thickness_change_due_to_calving"),
-    frontal_melt(grid, "thickness_change_due_to_frontal_melt"),
-    forced_retreat(grid, "thickness_change_due_to_forced_retreat") {
+    : calving(grid, "thickness_change_due_to_calving"),
+      frontal_melt(grid, "thickness_change_due_to_frontal_melt"),
+      forced_retreat(grid, "thickness_change_due_to_forced_retreat") {
   // empty
 }
 
 void IceModel::set_python_ocean_model(std::shared_ptr<ocean::PyOceanModel> model) {
-  m_ocean = std::make_shared<ocean::PyOceanModelAdapter>(m_grid, model);
+  m_ocean                    = std::make_shared<ocean::PyOceanModelAdapter>(m_grid, model);
   m_submodels["ocean model"] = m_ocean.get();
 }
 

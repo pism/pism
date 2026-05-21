@@ -27,7 +27,7 @@ namespace pism {
 namespace array {
 class Array3D;
 class Scalar;
-}
+} // namespace array
 
 namespace energy {
 
@@ -42,9 +42,8 @@ namespace energy {
  * @param[in] G upward basal heat flux, in `W / meter^2`
  * @param[in] ice_k thermal conductivity of ice
  */
-double ice_temperature_guess(EnthalpyConverter &EC,
-                             double H, double z, double T_surface,
-                             double G, double ice_k);
+double ice_temperature_guess(EnthalpyConverter &EC, double H, double z, double T_surface, double G,
+                             double ice_k);
 
 /*!
  * A heuristic formula for the temperature distribution within a column of ice. Used during
@@ -60,8 +59,7 @@ double ice_temperature_guess(EnthalpyConverter &EC,
  *              ice specific heat capacity
  * @param[in] SMB surface mass balance in `m / second`
  */
-double ice_temperature_guess_smb(EnthalpyConverter &EC,
-                                 double H, double z, double T_surface,
+double ice_temperature_guess_smb(EnthalpyConverter &EC, double H, double z, double T_surface,
                                  double G, double ice_k, double K, double SMB);
 
 } // end of namespace energy

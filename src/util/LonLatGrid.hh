@@ -20,9 +20,9 @@
 #ifndef PISM_LONLATGRID_H
 #define PISM_LONLATGRID_H
 
+#include <cmath>   // M_PI
+#include <cstddef> // size_t
 #include <vector>
-#include <cmath>                // M_PI
-#include <cstddef>              // size_t
 
 #include "pism/util/LonLatCalculator.hh"
 

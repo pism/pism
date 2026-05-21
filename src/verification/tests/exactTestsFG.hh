@@ -42,8 +42,7 @@ ELB 9/12/05;  05/12/06;  10/14/06;  5/30/08
 */
 
 struct TestFGParameters {
-  TestFGParameters(int Mz)
-    : T(Mz), U(Mz), w(Mz), Sig(Mz), Sigc(Mz) {
+  TestFGParameters(int Mz) : T(Mz), U(Mz), w(Mz), Sig(Mz), Sigc(Mz) {
     // empty
   }
 

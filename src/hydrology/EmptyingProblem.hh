@@ -52,22 +52,18 @@ public:
   DiagnosticList diagnostics() const;
 
 protected:
-
   virtual void compute_raw_potential(const array::Scalar &ice_thickness,
                                      const array::Scalar &ice_bottom_surface,
                                      array::Scalar &result) const;
 
   void compute_potential(const array::Scalar &ice_thickness,
-                         const array::Scalar &ice_bottom_surface,
-                         const array::Scalar &domain_mask,
+                         const array::Scalar &ice_bottom_surface, const array::Scalar &domain_mask,
                          array::Scalar1 &result);
 
-  void compute_velocity(const array::Scalar &hydraulic_potential,
-                        const array::Scalar1 &mask,
+  void compute_velocity(const array::Scalar &hydraulic_potential, const array::Scalar1 &mask,
                         array::Staggered &result) const;
 
-  void compute_mask(const array::CellType &cell_type,
-                    const array::Scalar *no_model_mask,
+  void compute_mask(const array::CellType &cell_type, const array::Scalar *no_model_mask,
                     array::Scalar &result) const;
 
   array::Scalar1 m_potential;

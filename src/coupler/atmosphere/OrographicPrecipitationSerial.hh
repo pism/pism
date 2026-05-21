@@ -19,8 +19,8 @@
 #ifndef OROGRAPHICPRECIPITATIONSERIAL_H
 #define OROGRAPHICPRECIPITATIONSERIAL_H
 
-#include <vector>
 #include <fftw3.h>
+#include <vector>
 
 #include "pism/util/petscwrappers/Vec.hh"
 
@@ -34,10 +34,8 @@ namespace atmosphere {
 //! SmithBarstad2004], [@ref SmithBarstadBonneau2005].
 class OrographicPrecipitationSerial {
 public:
-  OrographicPrecipitationSerial(const Config &config,
-                                int Mx, int My,
-                                double dx, double dy,
-                                int Nx, int Ny);
+  OrographicPrecipitationSerial(const Config &config, int Mx, int My, double dx, double dy, int Nx,
+                                int Ny);
   ~OrographicPrecipitationSerial();
 
   Vec precipitation() const;

@@ -31,7 +31,14 @@ namespace pism {
  * in `start` and `count` arrays -- this is why they have consecutive values
  * starting from 0.
  */
-enum AxisType : int { T_AXIS = 0, X_AXIS = 1, Y_AXIS = 2, Z_AXIS = 3, UNKNOWN_AXIS = 4, EXP_ID_AXIS = 5 };
+enum AxisType : int {
+  T_AXIS       = 0,
+  X_AXIS       = 1,
+  Y_AXIS       = 2,
+  Z_AXIS       = 3,
+  UNKNOWN_AXIS = 4,
+  EXP_ID_AXIS  = 5
+};
 
 AxisType axis_type_from_string(const std::string &input);
 
@@ -44,13 +51,13 @@ namespace io {
 
 // This is a subset of NetCDF data-types.
 enum Type : int {
-  PISM_NAT    = 0,              /* NAT = 'Not A Type' (c.f. NaN) */
-  PISM_BYTE   = 1,              /* signed 1 byte integer */
-  PISM_CHAR   = 2,              /* ISO/ASCII character */
-  PISM_SHORT  = 3,              /* signed 2 byte integer */
-  PISM_INT    = 4,              /* signed 4 byte integer */
-  PISM_FLOAT  = 5,              /* single precision floating point number */
-  PISM_DOUBLE = 6               /* double precision floating point number */
+  PISM_NAT    = 0, /* NAT = 'Not A Type' (c.f. NaN) */
+  PISM_BYTE   = 1, /* signed 1 byte integer */
+  PISM_CHAR   = 2, /* ISO/ASCII character */
+  PISM_SHORT  = 3, /* signed 2 byte integer */
+  PISM_INT    = 4, /* signed 4 byte integer */
+  PISM_FLOAT  = 5, /* single precision floating point number */
+  PISM_DOUBLE = 6  /* double precision floating point number */
 };
 
 enum Backend : int {
@@ -87,7 +94,6 @@ enum Fill_Mode : int { PISM_FILL = 0, PISM_NOFILL = 0x100 };
  */
 class Default {
 public:
-
   /*!
    * No default value: stop if the variable was not found.
    */

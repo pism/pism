@@ -17,11 +17,11 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 static char help[] =
-  "\nSSA_TESTCFBC\n"
-  "  Testing program for PISM's implementations of the SSA.\n"
-  "  Does a time-independent calculation.  Does not run IceModel or a derived\n"
-  "  class thereof. Uses the van der Veen flow-line shelf geometry. Also may be\n"
-  "  used in a PISM software (regression) test.\n\n";
+    "\nSSA_TESTCFBC\n"
+    "  Testing program for PISM's implementations of the SSA.\n"
+    "  Does a time-independent calculation.  Does not run IceModel or a derived\n"
+    "  class thereof. Uses the van der Veen flow-line shelf geometry. Also may be\n"
+    "  used in a PISM software (regression) test.\n\n";
 
 #include <petsc.h>
 
@@ -36,13 +36,13 @@ namespace stressbalance {
 
 // thickness profile in the van der Veen solution
 static double H_exact(double V0, double H0, double C, double x) {
-  const double Q0 = V0*H0;
-  return pow(4 * C / Q0 * x + 1/pow(H0, 4), -0.25);
+  const double Q0 = V0 * H0;
+  return pow(4 * C / Q0 * x + 1 / pow(H0, 4), -0.25);
 }
 
 // velocity profile; corresponds to constant flux
 static double u_exact(double V0, double H0, double C, double x) {
-  const double Q0 = V0*H0;
+  const double Q0 = V0 * H0;
   return Q0 / H_exact(V0, H0, C, x);
 }
 
@@ -50,12 +50,11 @@ std::shared_ptr<Grid> ssa_test_cfbc_grid(std::shared_ptr<Context> ctx, int Mx, i
   return SSATestCase::grid(ctx, Mx, My, 250e3, 250e3, grid::CELL_CENTER, grid::Y_PERIODIC);
 }
 
-class SSATestCaseCFBC: public SSATestCase {
+class SSATestCaseCFBC : public SSATestCase {
 public:
-  SSATestCaseCFBC(std::shared_ptr<SSA> ssa)
-    : SSATestCase(ssa) {
+  SSATestCaseCFBC(std::shared_ptr<SSA> ssa) : SSATestCase(ssa) {
     m_V0 = units::convert(m_sys, 300.0, "m year^-1", "m second^-1");
-    m_H0 = 600.0;                 // meters
+    m_H0 = 600.0; // meters
     m_C  = 2.45e-18;
 
     EnthalpyConverter EC(*m_config);
@@ -69,17 +68,17 @@ protected:
   void exactSolution(int i, int j, double x, double y, double *u, double *v);
 
   double m_V0, //!< grounding line vertically-averaged velocity
-    m_H0,      //!< grounding line thickness (meters)
-    m_C;       //!< "typical constant ice parameter"
+      m_H0,    //!< grounding line thickness (meters)
+      m_C;     //!< "typical constant ice parameter"
 };
 
 void SSATestCaseCFBC::initializeSSACoefficients() {
 
-  m_tauc.set(0.0);    // irrelevant
+  m_tauc.set(0.0);                       // irrelevant
   m_geometry.bed_elevation.set(-1000.0); // assures shelf is floating
 
-  array::AccessScope list{&m_geometry.ice_thickness,
-      &m_geometry.ice_surface_elevation, &m_bc_mask, &m_bc_values, &m_geometry.cell_type};
+  array::AccessScope list{ &m_geometry.ice_thickness, &m_geometry.ice_surface_elevation, &m_bc_mask,
+                           &m_bc_values, &m_geometry.cell_type };
 
   const double x_min = m_grid->x(0);
 
@@ -96,10 +95,10 @@ void SSATestCaseCFBC::initializeSSACoefficients() {
 
     if (i == 0) {
       m_bc_mask(i, j)   = 1;
-      m_bc_values(i, j) = {m_V0, 0.0};
+      m_bc_values(i, j) = { m_V0, 0.0 };
     } else {
       m_bc_mask(i, j)   = 0;
-      m_bc_values(i, j) = {0.0, 0.0};
+      m_bc_values(i, j) = { 0.0, 0.0 };
     }
   }
 
@@ -110,9 +109,8 @@ void SSATestCaseCFBC::initializeSSACoefficients() {
   m_bc_values.update_ghosts();
 }
 
-void SSATestCaseCFBC::exactSolution(int i, int /*j*/,
-                                    double x, double /*y*/,
-                                    double *u, double *v) {
+void SSATestCaseCFBC::exactSolution(int i, int /*j*/, double x, double /*y*/, double *u,
+                                    double *v) {
   const double x_min = m_grid->x(0);
 
   if (i != (int)m_grid->Mx() - 1) {
@@ -140,12 +138,12 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
     std::shared_ptr<Context> ctx = context_from_options(com, "ssa_test_cfbc");
-    auto config = ctx->config();
+    auto config                  = ctx->config();
 
     std::string usage = "\n"
-      "usage of SSA_TEST_CFBC:\n"
-      "  run ssa_test_cfbc -Mx <number> -My <number>\n"
-      "\n";
+                        "usage of SSA_TEST_CFBC:\n"
+                        "  run ssa_test_cfbc -Mx <number> -My <number>\n"
+                        "\n";
 
     bool stop = maybe_show_usage(*ctx->log(), "ssa_test_cfbc", usage);
 
@@ -157,7 +155,7 @@ int main(int argc, char *argv[]) {
     unsigned int Mx = config->get_number("grid.Mx");
     unsigned int My = config->get_number("grid.My");
 
-    auto method = config->get_string("stress_balance.ssa.method");
+    auto method      = config->get_string("stress_balance.ssa.method");
     auto output_file = config->get_string("output.file");
 
     bool write_output = config->get_string("output.size") != "none";
@@ -179,8 +177,7 @@ int main(int argc, char *argv[]) {
     if (write_output) {
       testcase.write(output_file);
     }
-  }
-  catch (...) {
+  } catch (...) {
     handle_fatal_errors(com);
     return 1;
   }

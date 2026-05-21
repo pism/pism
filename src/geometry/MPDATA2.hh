@@ -21,8 +21,8 @@
 #define PISM_MPDATA_2D_H
 
 #include "pism/util/array/Scalar.hh"
-#include "pism/util/array/Vector.hh"
 #include "pism/util/array/Staggered.hh"
+#include "pism/util/array/Vector.hh"
 
 namespace pism {
 
@@ -36,13 +36,10 @@ class MPDATA2 {
 public:
   MPDATA2(std::shared_ptr<const Grid> grid, int N);
 
-  void update(double dt,
-              const array::CellType &cell_type,
-              const array::Scalar &x,
-              const array::Vector &velocity,
-              bool nonoscillatory = false);
+  void update(double dt, const array::CellType &cell_type, const array::Scalar &x,
+              const array::Vector &velocity, bool nonoscillatory = false);
 
-  const array::Scalar& x() const;
+  const array::Scalar &x() const;
 
 private:
   // interface velocity (on the staggered grid; ghosted)

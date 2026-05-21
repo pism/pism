@@ -34,8 +34,7 @@ public:
 protected:
   virtual void restart_impl(const File &input_file, int record);
 
-  virtual void bootstrap_impl(const File &input_file,
-                              const array::Scalar &ice_thickness,
+  virtual void bootstrap_impl(const File &input_file, const array::Scalar &ice_thickness,
                               const array::Scalar &surface_temperature,
                               const array::Scalar &climatic_mass_balance,
                               const array::Scalar &basal_heat_flux);

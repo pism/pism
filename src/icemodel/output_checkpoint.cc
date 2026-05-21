@@ -19,9 +19,9 @@
 
 #include "pism/icemodel/IceModel.hh"
 
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"
 #include "pism/util/io/io_helpers.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -34,7 +34,7 @@ void IceModel::init_checkpoints() {
     m_checkpoint_filename = filename_add_suffix(m_output_filename, "_checkpoint", "");
   }
 
-  m_checkpoint_vars = output_variables(m_config->get_string("output.checkpoint.size"));
+  m_checkpoint_vars      = output_variables(m_config->get_string("output.checkpoint.size"));
   m_last_checkpoint_time = 0.0;
 
   {
@@ -68,9 +68,9 @@ bool IceModel::write_checkpoint() {
 
   // create a history string:
 
-  m_log->message(2,
-                 "  [%s] Saving a checkpoint to '%s' (%1.3f hours after the beginning of the run)\n",
-                 timestamp(m_grid->com).c_str(), m_checkpoint_filename.c_str(), wall_clock_hours);
+  m_log->message(
+      2, "  [%s] Saving a checkpoint to '%s' (%1.3f hours after the beginning of the run)\n",
+      timestamp(m_grid->com).c_str(), m_checkpoint_filename.c_str(), wall_clock_hours);
 
   double checkpoint_start_time = get_time(m_grid->com);
   profiling.begin("io.checkpoint");
@@ -101,10 +101,8 @@ bool IceModel::write_checkpoint() {
   // Also flush time-series:
   scalar_diagnostics_flush_buffers();
 
-  m_log->message(2,
-                 "  [%s] Done saving a checkpoint in %f seconds (%f minutes).\n",
-                 timestamp(m_grid->com).c_str(),
-                 checkpoint_end_time - checkpoint_start_time,
+  m_log->message(2, "  [%s] Done saving a checkpoint in %f seconds (%f minutes).\n",
+                 timestamp(m_grid->com).c_str(), checkpoint_end_time - checkpoint_start_time,
                  (checkpoint_end_time - checkpoint_start_time) / 60.0);
 
   return m_config->get_flag("output.checkpoint.exit");

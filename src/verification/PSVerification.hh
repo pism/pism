@@ -31,6 +31,7 @@ class Verification : public PSFormulas {
 public:
   Verification(std::shared_ptr<const Grid> g, std::shared_ptr<EnthalpyConverter> EC, int test);
   ~Verification() = default;
+
 private:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
@@ -52,11 +53,10 @@ private:
   // both here and in IceCompModel).
   static const double secpera, ablationRateOutside;
 
-  static const double ST;      // K m^-1;  surface temperature gradient: T_s = ST * r + Tmin
-  static const double Tmin;    // K;       minimum temperature (at center)
-  static const double LforFG;  // m;  exact radius of tests F&G ice sheet
-  static const double ApforG;  // m;  magnitude A_p of annular perturbation for test G;
-
+  static const double ST;     // K m^-1;  surface temperature gradient: T_s = ST * r + Tmin
+  static const double Tmin;   // K;       minimum temperature (at center)
+  static const double LforFG; // m;  exact radius of tests F&G ice sheet
+  static const double ApforG; // m;  magnitude A_p of annular perturbation for test G;
 };
 
 } // end of namespace surface

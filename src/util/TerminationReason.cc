@@ -22,11 +22,11 @@ namespace pism {
 
 const char *TerminationReason::sm_indent = "  ";
 
-KSPTerminationReason::KSPTerminationReason(KSPConvergedReason r)  {
+KSPTerminationReason::KSPTerminationReason(KSPConvergedReason r) {
   m_reason = r;
 }
 void KSPTerminationReason::get_description(std::ostream &desc, int indent_level) {
-  for (int i=0; i < indent_level; i++) {
+  for (int i = 0; i < indent_level; i++) {
     desc << sm_indent;
   }
   desc << KSPConvergedReasons[m_reason];
@@ -35,15 +35,15 @@ void KSPTerminationReason::get_description(std::ostream &desc, int indent_level)
 SNESTerminationReason::SNESTerminationReason(SNESConvergedReason r) {
   m_reason = r;
 }
-void SNESTerminationReason::get_description(std::ostream &desc,int indent_level) {
-  for (int i=0; i < indent_level; i++) {
+void SNESTerminationReason::get_description(std::ostream &desc, int indent_level) {
+  for (int i = 0; i < indent_level; i++) {
     desc << sm_indent;
   }
   desc << SNESConvergedReasons[m_reason];
 }
 
-void GenericTerminationReason::get_description(std::ostream &desc,int indent_level) {
-  for (int i=0; i < indent_level; i++) {
+void GenericTerminationReason::get_description(std::ostream &desc, int indent_level) {
+  for (int i = 0; i < indent_level; i++) {
     desc << sm_indent;
   }
   desc << m_description;

@@ -94,48 +94,55 @@ PetscErrorCode setup_level(DM dm, int mg_levels) {
 
   // Create a 3D DMDA and a global Vec, then stash them in dm.
   {
-    DM  da;
+    DM da;
     Vec parameters;
     int dof = 1;
-#if PETSC_VERSION_LT(3,10,0)
-    ierr = DMDAGetReducedDMDA(dm, dof, &da); CHKERRQ(ierr);
+#if PETSC_VERSION_LT(3, 10, 0)
+    ierr = DMDAGetReducedDMDA(dm, dof, &da);
+    CHKERRQ(ierr);
 #else
-    ierr = DMDACreateCompatibleDMDA(dm, dof, &da); CHKERRQ(ierr);
+    ierr = DMDACreateCompatibleDMDA(dm, dof, &da);
+    CHKERRQ(ierr);
 #endif
 
-    ierr = DMSetUp(da); CHKERRQ(ierr);
+    ierr = DMSetUp(da);
+    CHKERRQ(ierr);
 
-    ierr = DMCreateGlobalVector(da, &parameters); CHKERRQ(ierr);
+    ierr = DMCreateGlobalVector(da, &parameters);
+    CHKERRQ(ierr);
 
-    ierr = PetscObjectCompose((PetscObject)dm, "3D_DM", (PetscObject)da); CHKERRQ(ierr);
-    ierr = PetscObjectCompose((PetscObject)dm, "3D_DM_data", (PetscObject)parameters); CHKERRQ(ierr);
+    ierr = PetscObjectCompose((PetscObject)dm, "3D_DM", (PetscObject)da);
+    CHKERRQ(ierr);
+    ierr = PetscObjectCompose((PetscObject)dm, "3D_DM_data", (PetscObject)parameters);
+    CHKERRQ(ierr);
 
-    ierr = DMDestroy(&da); CHKERRQ(ierr);
+    ierr = DMDestroy(&da);
+    CHKERRQ(ierr);
 
-    ierr = VecDestroy(&parameters); CHKERRQ(ierr);
+    ierr = VecDestroy(&parameters);
+    CHKERRQ(ierr);
   }
 
   // get coarsening level
   PetscInt level = 0;
-  ierr = DMGetCoarsenLevel(dm, &level); CHKERRQ(ierr);
+  ierr           = DMGetCoarsenLevel(dm, &level);
+  CHKERRQ(ierr);
 
   // report
   {
     MPI_Comm comm;
-    ierr = PetscObjectGetComm((PetscObject)dm, &comm); CHKERRQ(ierr);
+    ierr = PetscObjectGetComm((PetscObject)dm, &comm);
+    CHKERRQ(ierr);
 
     DMDALocalInfo info;
-    ierr = DMDAGetLocalInfo(dm, &info); CHKERRQ(ierr);
+    ierr = DMDAGetLocalInfo(dm, &info);
+    CHKERRQ(ierr);
     info = grid_transpose(info);
 
-    int
-      Mx = info.mx,
-      My = info.my,
-      Mz = info.mz;
-    ierr = PetscPrintf(comm,
-                       "Blatter grid level %d: %3d x %3d x %3d (%8d) nodes\n",
-                       (mg_levels - 1) - static_cast<int>(level),
-                       Mx, My, Mz, Mx * My * Mz); CHKERRQ(ierr);
+    int Mx = info.mx, My = info.my, Mz = info.mz;
+    ierr = PetscPrintf(comm, "Blatter grid level %d: %3d x %3d x %3d (%8d) nodes\n",
+                       (mg_levels - 1) - static_cast<int>(level), Mx, My, Mz, Mx * My * Mz);
+    CHKERRQ(ierr);
   }
   return 0;
 }
@@ -155,40 +162,48 @@ PetscErrorCode create_restriction(DM fine, DM coarse, const char *dm_name) {
   Mat mat;
   Vec scale;
 
-  std::string
-    prefix = dm_name,
-    mat_name = prefix + "_restriction",
-    vec_name = prefix + "_scaling";
+  std::string prefix = dm_name, mat_name = prefix + "_restriction", vec_name = prefix + "_scaling";
 
   /* Get the DM for parameters from the fine grid DM */
-  ierr = PetscObjectQuery((PetscObject)fine, dm_name, (PetscObject *)&da_fine); CHKERRQ(ierr);
+  ierr = PetscObjectQuery((PetscObject)fine, dm_name, (PetscObject *)&da_fine);
+  CHKERRQ(ierr);
   if (!da_fine) {
-#if PETSC_VERSION_LT(3,17,0)
-    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "No %s composed with given DMDA", dm_name); // LCOV_EXCL_LINE
+#if PETSC_VERSION_LT(3, 17, 0)
+    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "No %s composed with given DMDA",
+             dm_name); // LCOV_EXCL_LINE
 #else
-    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "No %s composed with given DMDA", dm_name); // LCOV_EXCL_LINE
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "No %s composed with given DMDA",
+            dm_name); // LCOV_EXCL_LINE
 #endif
   }
 
   /* Get the DM for parameters from the coarse grid DM */
-  ierr = PetscObjectQuery((PetscObject)coarse, dm_name, (PetscObject *)&da_coarse); CHKERRQ(ierr);
+  ierr = PetscObjectQuery((PetscObject)coarse, dm_name, (PetscObject *)&da_coarse);
+  CHKERRQ(ierr);
   if (!da_coarse) {
-#if PETSC_VERSION_LT(3,17,0)
-    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "No %s composed with given DMDA", dm_name); // LCOV_EXCL_LINE
+#if PETSC_VERSION_LT(3, 17, 0)
+    SETERRQ1(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "No %s composed with given DMDA",
+             dm_name); // LCOV_EXCL_LINE
 #else
-    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "No %s composed with given DMDA", dm_name); // LCOV_EXCL_LINE
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "No %s composed with given DMDA",
+            dm_name); // LCOV_EXCL_LINE
 #endif
   }
 
   /* call DMCreateInterpolation */
-  ierr = DMCreateInterpolation(da_coarse, da_fine, &mat, &scale); CHKERRQ(ierr);
+  ierr = DMCreateInterpolation(da_coarse, da_fine, &mat, &scale);
+  CHKERRQ(ierr);
 
   /* attach to the fine grid DM */
-  ierr = PetscObjectCompose((PetscObject)fine, vec_name.c_str(), (PetscObject)scale); CHKERRQ(ierr);
-  ierr = VecDestroy(&scale); CHKERRQ(ierr);
+  ierr = PetscObjectCompose((PetscObject)fine, vec_name.c_str(), (PetscObject)scale);
+  CHKERRQ(ierr);
+  ierr = VecDestroy(&scale);
+  CHKERRQ(ierr);
 
-  ierr = PetscObjectCompose((PetscObject)fine, mat_name.c_str(), (PetscObject)mat); CHKERRQ(ierr);
-  ierr = MatDestroy(&mat); CHKERRQ(ierr);
+  ierr = PetscObjectCompose((PetscObject)fine, mat_name.c_str(), (PetscObject)mat);
+  CHKERRQ(ierr);
+  ierr = MatDestroy(&mat);
+  CHKERRQ(ierr);
 
   return 0;
 }
@@ -204,51 +219,62 @@ PetscErrorCode restrict_data(DM fine, DM coarse, const char *dm_name) {
   DM da_fine, da_coarse;
   Mat mat;
 
-  std::string
-    prefix = dm_name,
-    mat_name = prefix + "_restriction",
-    scaling_name = prefix + "_scaling",
-    vec_name = prefix + "_data";
+  std::string prefix = dm_name, mat_name = prefix + "_restriction",
+              scaling_name = prefix + "_scaling", vec_name = prefix + "_data";
 
   /* get the restriction matrix from the fine grid DM */
-  ierr = PetscObjectQuery((PetscObject)fine, mat_name.c_str(), (PetscObject *)&mat); CHKERRQ(ierr);
+  ierr = PetscObjectQuery((PetscObject)fine, mat_name.c_str(), (PetscObject *)&mat);
+  CHKERRQ(ierr);
   if (!mat) {
-    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Failed to get the restriction matrix"); // LCOV_EXCL_LINE
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
+            "Failed to get the restriction matrix"); // LCOV_EXCL_LINE
   }
 
   /* get the scaling vector from the fine grid DM */
-  ierr = PetscObjectQuery((PetscObject)fine, scaling_name.c_str(), (PetscObject *)&scaling); CHKERRQ(ierr);
+  ierr = PetscObjectQuery((PetscObject)fine, scaling_name.c_str(), (PetscObject *)&scaling);
+  CHKERRQ(ierr);
   if (!scaling) {
-    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Failed to get the scaling vector"); // LCOV_EXCL_LINE
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
+            "Failed to get the scaling vector"); // LCOV_EXCL_LINE
   }
 
   /* get the DMDA from the fine grid DM */
-  ierr = PetscObjectQuery((PetscObject)fine, dm_name, (PetscObject *)&da_fine); CHKERRQ(ierr);
+  ierr = PetscObjectQuery((PetscObject)fine, dm_name, (PetscObject *)&da_fine);
+  CHKERRQ(ierr);
   if (!da_fine) {
-    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Failed to get the fine grid DM"); // LCOV_EXCL_LINE
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
+            "Failed to get the fine grid DM"); // LCOV_EXCL_LINE
   }
 
   /* get the storage vector from the fine grid DM */
-  ierr = PetscObjectQuery((PetscObject)fine, vec_name.c_str(), (PetscObject *)&X_fine); CHKERRQ(ierr);
+  ierr = PetscObjectQuery((PetscObject)fine, vec_name.c_str(), (PetscObject *)&X_fine);
+  CHKERRQ(ierr);
   if (!X_fine) {
-    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Failed to get the fine grid Vec"); // LCOV_EXCL_LINE
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
+            "Failed to get the fine grid Vec"); // LCOV_EXCL_LINE
   }
 
   /* get the DMDA from the coarse grid DM */
-  ierr = PetscObjectQuery((PetscObject)coarse, dm_name, (PetscObject *)&da_coarse); CHKERRQ(ierr);
+  ierr = PetscObjectQuery((PetscObject)coarse, dm_name, (PetscObject *)&da_coarse);
+  CHKERRQ(ierr);
   if (!da_coarse) {
-    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Failed to get the coarse grid DM"); // LCOV_EXCL_LINE
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
+            "Failed to get the coarse grid DM"); // LCOV_EXCL_LINE
   }
 
   /* get the storage vector from the coarse grid DM */
-  ierr = PetscObjectQuery((PetscObject)coarse, vec_name.c_str(), (PetscObject *)&X_coarse); CHKERRQ(ierr);
+  ierr = PetscObjectQuery((PetscObject)coarse, vec_name.c_str(), (PetscObject *)&X_coarse);
+  CHKERRQ(ierr);
   if (!X_coarse) {
-    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG, "Failed to get the coarse grid Vec"); // LCOV_EXCL_LINE
+    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_WRONG,
+            "Failed to get the coarse grid Vec"); // LCOV_EXCL_LINE
   }
 
-  ierr = MatRestrict(mat, X_fine, X_coarse); CHKERRQ(ierr);
+  ierr = MatRestrict(mat, X_fine, X_coarse);
+  CHKERRQ(ierr);
 
-  ierr = VecPointwiseMult(X_coarse, X_coarse, scaling); CHKERRQ(ierr);
+  ierr = VecPointwiseMult(X_coarse, X_coarse, scaling);
+  CHKERRQ(ierr);
 
   return 0;
 }

@@ -21,8 +21,8 @@
 
 #include <memory>
 
-#include "pism/coupler/surface/DEBMSimplePointwise.hh"
 #include "pism/coupler/SurfaceModel.hh"
+#include "pism/coupler/surface/DEBMSimplePointwise.hh"
 
 namespace pism {
 namespace surface {
@@ -38,8 +38,7 @@ namespace surface {
 */
 class DEBMSimple : public SurfaceModel {
 public:
-  DEBMSimple(std::shared_ptr<const Grid> g,
-             std::shared_ptr<atmosphere::AtmosphereModel> input);
+  DEBMSimple(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere::AtmosphereModel> input);
   virtual ~DEBMSimple() = default;
 
   // diagnostics (for the last time step)
@@ -59,7 +58,8 @@ public:
   const array::Scalar &surface_albedo() const;
   const array::Scalar &atmosphere_transmissivity() const;
 
-  const DEBMSimplePointwise& pointwise_model() const;
+  const DEBMSimplePointwise &pointwise_model() const;
+
 private:
   virtual void init_impl(const Geometry &geometry);
   virtual void update_impl(const Geometry &geometry, double t, double dt);

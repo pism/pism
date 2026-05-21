@@ -23,9 +23,8 @@
 
 namespace pism {
 namespace frontalmelt {
-  
-class DischargeGiven : public FrontalMelt
-{
+
+class DischargeGiven : public FrontalMelt {
 public:
   DischargeGiven(std::shared_ptr<const Grid> g);
   virtual ~DischargeGiven() = default;
@@ -37,7 +36,7 @@ private:
 
   void update_impl(const FrontalMeltInputs &inputs, double t, double dt);
 
-  const array::Scalar& frontal_melt_rate_impl() const;
+  const array::Scalar &frontal_melt_rate_impl() const;
 
   MaxTimestep max_timestep_impl(double t) const;
 

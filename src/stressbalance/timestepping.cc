@@ -18,13 +18,13 @@
  */
 
 #include "pism/stressbalance/timestepping.hh"
+#include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/array/Array3D.hh"
-#include "pism/util/array/Scalar.hh"
 #include "pism/util/array/CellType.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/array/Vector.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/Context.hh"
 #include <limits>
 #include <vector>
 
@@ -43,19 +43,16 @@ Computes the maximum magnitude of the components \f$u,v,w\f$ of the 3D velocity.
 Under BOMBPROOF there is no CFL condition for the vertical advection.
 The maximum vertical velocity is computed but it does not affect the output.
  */
-CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
-                            const array::CellType &cell_type,
-                            const array::Scalar1 *no_model_mask,
-                            const array::Array3D &u3,
-                            const array::Array3D &v3,
-                            const array::Array3D &w3) {
+CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness, const array::CellType &cell_type,
+                            const array::Scalar1 *no_model_mask, const array::Array3D &u3,
+                            const array::Array3D &v3, const array::Array3D &w3) {
 
-  auto grid = ice_thickness.grid();
+  auto grid   = ice_thickness.grid();
   auto config = grid->ctx()->config();
 
   double dt_max = config->get_number("time_stepping.maximum_time_step", "seconds");
 
-  array::AccessScope list{&ice_thickness, &u3, &v3, &w3, &cell_type};
+  array::AccessScope list{ &ice_thickness, &u3, &v3, &w3, &cell_type };
 
   bool has_no_model_mask;
   if (no_model_mask != nullptr) {
@@ -64,11 +61,9 @@ CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
   } else {
     has_no_model_mask = false;
   }
-  
+
   // update global max of abs of velocities for CFL; only velocities under surface
-  const double
-    one_over_dx = 1.0 / grid->dx(),
-    one_over_dy = 1.0 / grid->dy();
+  const double one_over_dx = 1.0 / grid->dx(), one_over_dy = 1.0 / grid->dy();
 
   double u_max = 0.0, v_max = 0.0, w_max = 0.0;
   ParallelSection loop(grid->com);
@@ -82,20 +77,15 @@ CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
           is_modeled = false;
         }
       }
-      
+
       if ((cell_type.icy(i, j)) && is_modeled) {
-        const int ks = grid->kBelowHeight(ice_thickness(i, j));
-        const double
-          *u = u3.get_column(i, j),
-          *v = v3.get_column(i, j),
-          *w = w3.get_column(i, j);
+        const int ks    = grid->kBelowHeight(ice_thickness(i, j));
+        const double *u = u3.get_column(i, j), *v = v3.get_column(i, j), *w = w3.get_column(i, j);
 
         for (int k = 0; k <= ks; ++k) {
-          const double
-            u_abs = fabs(u[k]),
-            v_abs = fabs(v[k]);
-          u_max = std::max(u_max, u_abs);
-          v_max = std::max(v_max, v_abs);
+          const double u_abs = fabs(u[k]), v_abs = fabs(v[k]);
+          u_max              = std::max(u_max, u_abs);
+          v_max              = std::max(v_max, v_abs);
           const double denom = fabs(u_abs * one_over_dx) + fabs(v_abs * one_over_dy);
           // note: use std::numeric_limits<double>::min() to avoid FP overflow when
           // computing the inverse in 1.0 / denom
@@ -116,11 +106,11 @@ CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
 
   CFLData result;
 
-  std::vector<double> data = {u_max, v_max, w_max}, tmp(3, 0.0);
+  std::vector<double> data = { u_max, v_max, w_max }, tmp(3, 0.0);
   GlobalMax(grid->com, data.data(), tmp.data(), 3);
-  result.u_max = tmp[0];
-  result.v_max = tmp[1];
-  result.w_max = tmp[2];
+  result.u_max  = tmp[0];
+  result.v_max  = tmp[1];
+  result.w_max  = tmp[2];
   result.dt_max = MaxTimestep(GlobalMin(grid->com, dt_max));
 
   return result;
@@ -136,21 +126,17 @@ CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
   That is, because the map-plane mass continuity is advective in the
   sliding case we have a CFL condition.
  */
-CFLData max_timestep_cfl_2d(const array::Scalar &ice_thickness,
-                            const array::CellType &cell_type,
-                            const array::Scalar1 *no_model_mask,
-                            const array::Vector &velocity) {
+CFLData max_timestep_cfl_2d(const array::Scalar &ice_thickness, const array::CellType &cell_type,
+                            const array::Scalar1 *no_model_mask, const array::Vector &velocity) {
 
-  auto grid = ice_thickness.grid();
+  auto grid   = ice_thickness.grid();
   auto config = grid->ctx()->config();
 
   double dt_max = config->get_number("time_stepping.maximum_time_step", "seconds");
 
-  const double
-    dx = grid->dx(),
-    dy = grid->dy();
+  const double dx = grid->dx(), dy = grid->dy();
 
-  array::AccessScope list{&velocity, &cell_type};
+  array::AccessScope list{ &velocity, &cell_type };
 
   bool has_no_model_mask;
   if (no_model_mask != nullptr) {
@@ -159,7 +145,7 @@ CFLData max_timestep_cfl_2d(const array::Scalar &ice_thickness,
   } else {
     has_no_model_mask = false;
   }
-  
+
   double u_max = 0.0, v_max = 0.0;
   for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
@@ -170,11 +156,9 @@ CFLData max_timestep_cfl_2d(const array::Scalar &ice_thickness,
         is_modeled = false;
       }
     }
-      
+
     if ((cell_type.icy(i, j)) && is_modeled) {
-      const double
-        u_abs = fabs(velocity(i, j).u),
-        v_abs = fabs(velocity(i, j).v);
+      const double u_abs = fabs(velocity(i, j).u), v_abs = fabs(velocity(i, j).v);
 
       u_max = std::max(u_max, u_abs);
       v_max = std::max(v_max, v_abs);
@@ -188,11 +172,11 @@ CFLData max_timestep_cfl_2d(const array::Scalar &ice_thickness,
 
   CFLData result;
 
-  std::vector<double> data = {u_max, v_max}, tmp(2, 0.0);
+  std::vector<double> data = { u_max, v_max }, tmp(2, 0.0);
   GlobalMax(grid->com, data.data(), tmp.data(), 2);
-  result.u_max = tmp[0];
-  result.v_max = tmp[1];
-  result.w_max = 0.0;
+  result.u_max  = tmp[0];
+  result.v_max  = tmp[1];
+  result.w_max  = 0.0;
   result.dt_max = MaxTimestep(GlobalMin(grid->com, dt_max));
 
   return result;

@@ -332,28 +332,27 @@ IPTaoTikhonovProblem<ForwardProblem>::IPTaoTikhonovProblem(
   m_grad = std::make_shared<DesignVec>(m_grid, "gradient");
 }
 
-template<class ForwardProblem>
+template <class ForwardProblem>
 IPTaoTikhonovProblem<ForwardProblem>::~IPTaoTikhonovProblem() {
   // empty
 }
 
-template<class ForwardProblem>
+template <class ForwardProblem>
 void IPTaoTikhonovProblem<ForwardProblem>::connect(Tao tao) {
-  typedef taoutil::TaoObjGradCallback<IPTaoTikhonovProblem<ForwardProblem>,
-                             &IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient> ObjGradCallback; 
+  typedef taoutil::TaoObjGradCallback<
+      IPTaoTikhonovProblem<ForwardProblem>,
+      &IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient>
+      ObjGradCallback;
 
-  ObjGradCallback::connect(tao,*this);
+  ObjGradCallback::connect(tao, *this);
 
-  taoutil::TaoMonitorCallback< IPTaoTikhonovProblem<ForwardProblem> >::connect(tao,*this);
+  taoutil::TaoMonitorCallback<IPTaoTikhonovProblem<ForwardProblem> >::connect(tao, *this);
 
-  taoutil::TaoConvergenceCallback< IPTaoTikhonovProblem<ForwardProblem> >::connect(tao,*this);
+  taoutil::TaoConvergenceCallback<IPTaoTikhonovProblem<ForwardProblem> >::connect(tao, *this);
 
-  double
-    gatol = PETSC_DEFAULT,
-    grtol = PETSC_DEFAULT,
-    gttol = PETSC_DEFAULT;
+  double gatol = PETSC_DEFAULT, grtol = PETSC_DEFAULT, gttol = PETSC_DEFAULT;
 
-#if PETSC_VERSION_LT(3,7,0)
+#if PETSC_VERSION_LT(3, 7, 0)
   double fatol = 1e-10, frtol = 1e-20;
   PetscErrorCode ierr = TaoSetTolerances(tao, fatol, frtol, gatol, grtol, gttol);
   PISM_CHK(ierr, "TaoSetTolerances");
@@ -363,46 +362,45 @@ void IPTaoTikhonovProblem<ForwardProblem>::connect(Tao tao) {
 #endif
 }
 
-template<class ForwardProblem>
+template <class ForwardProblem>
 void IPTaoTikhonovProblem<ForwardProblem>::monitorTao(Tao tao) {
   PetscInt its;
   TaoGetSolutionStatus(tao, &its, NULL, NULL, NULL, NULL, NULL);
 
   int nListeners = m_listeners.size();
-  for (int k=0; k<nListeners; k++) {
-    m_listeners[k]->iteration(*this, m_eta,
-                              its, m_val_design, m_val_state,
-                              m_d, m_d_diff, m_grad_design,
-                              m_forward.solution(), m_u_diff, m_grad_state,
-                              m_grad);
+  for (int k = 0; k < nListeners; k++) {
+    m_listeners[k]->iteration(*this, m_eta, its, m_val_design, m_val_state, m_d, m_d_diff,
+                              m_grad_design, m_forward.solution(), m_u_diff, m_grad_state, m_grad);
   }
 }
 
-template<class ForwardProblem> void IPTaoTikhonovProblem<ForwardProblem>::convergenceTest(Tao tao) {
+template <class ForwardProblem>
+void IPTaoTikhonovProblem<ForwardProblem>::convergenceTest(Tao tao) {
   double designNorm, stateNorm, sumNorm;
   double dWeight, sWeight;
-  dWeight = 1/m_eta;
+  dWeight = 1 / m_eta;
   sWeight = 1;
-  
+
   designNorm = m_grad_design->norm(NORM_2)[0];
   stateNorm  = m_grad_state->norm(NORM_2)[0];
   sumNorm    = m_grad->norm(NORM_2)[0];
 
-  designNorm *= dWeight;    
-  stateNorm  *= sWeight;
-  
+  designNorm *= dWeight;
+  stateNorm *= sWeight;
+
   if (sumNorm < m_tikhonov_atol) {
     TaoSetConvergedReason(tao, TAO_CONVERGED_GATOL);
-  } else if (sumNorm < m_tikhonov_rtol*std::max(designNorm,stateNorm)) {
+  } else if (sumNorm < m_tikhonov_rtol * std::max(designNorm, stateNorm)) {
     TaoSetConvergedReason(tao, TAO_CONVERGED_USER);
   } else {
     TaoDefaultConvergenceTest(tao, NULL);
   }
 }
 
-template<class ForwardProblem>
+template <class ForwardProblem>
 void IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient(Tao tao, Vec x,
-                                                                        double *value, Vec gradient) {
+                                                                        double *value,
+                                                                        Vec gradient) {
   PetscErrorCode ierr;
   // Variable 'x' has no ghosts.  We need ghosts for computation with the design variable.
   {
@@ -418,7 +416,8 @@ void IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient(Tao tao,
     auto log = m_grid->ctx()->log();
     log->message(2,
                  "IPTaoTikhonovProblem::evaluateObjectiveAndGradient"
-                 " failure in forward solve\n%s\n", reason->description().c_str());
+                 " failure in forward solve\n%s\n",
+                 reason->description().c_str());
     ierr = TaoSetConvergedReason(tao, TAO_DIVERGED_USER);
     PISM_CHK(ierr, "TaoSetConvergedReason");
     return;
@@ -447,7 +446,7 @@ void IPTaoTikhonovProblem<ForwardProblem>::evaluateObjectiveAndGradient(Tao tao,
   m_stateFunctional.valueAt(*m_u_diff, &valState);
 
   m_val_design = valDesign;
-  m_val_state = valState;
+  m_val_state  = valState;
 
   *value = valDesign / m_eta + valState;
 }

@@ -30,19 +30,18 @@ public:
   Elevation(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::AtmosphereModel> input);
 
 protected:
+  virtual const array::Scalar &accumulation_impl() const;
+  virtual const array::Scalar &melt_impl() const;
+  virtual const array::Scalar &runoff_impl() const;
 
-  virtual const array::Scalar& accumulation_impl() const;
-  virtual const array::Scalar& melt_impl() const;
-  virtual const array::Scalar& runoff_impl() const;
-  
 private:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
   MaxTimestep max_timestep_impl(double t) const;
 
-  const array::Scalar& mass_flux_impl() const;
-  const array::Scalar& temperature_impl() const;
+  const array::Scalar &mass_flux_impl() const;
+  const array::Scalar &temperature_impl() const;
 
   void compute_mass_flux(const array::Scalar &surface, array::Scalar &result) const;
   void compute_temperature(const array::Scalar &surface, array::Scalar &result) const;

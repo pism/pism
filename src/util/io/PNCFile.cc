@@ -16,9 +16,9 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <cstring> // memset
 #include <pnetcdf.h>
 #include <sstream>
-#include <cstring>              // memset
 
 #include "pism/util/io/PNCFile.hh"
 
@@ -30,8 +30,7 @@
 namespace pism {
 namespace io {
 
-PNCFile::PNCFile(MPI_Comm c)
-  : NCFile(c) {
+PNCFile::PNCFile(MPI_Comm c) : NCFile(c) {
   MPI_Info_create(&m_mpi_info);
 }
 
@@ -184,8 +183,8 @@ void PNCFile::put_vara_double_impl(const std::string &variable_name,
   check(PISM_ERROR_LOCATION, stat);
 
   for (int j = 0; j < ndims; ++j) {
-    nc_start[j]  = start[j];
-    nc_count[j]  = count[j];
+    nc_start[j] = start[j];
+    nc_count[j] = count[j];
   }
 
   stat = ncmpi_put_vara_double_all(m_file_id, varid, nc_start.data(), nc_count.data(), op);
@@ -440,22 +439,20 @@ void PNCFile::init_hints() {
       // printf("Setting MPI I/O hint \"%s\" to \"%s\"...\n",
       //        words[0].c_str(), words[1].c_str());
 
-      MPI_Info_set(m_mpi_info,
-                   const_cast<char*>(words[0].c_str()),
-                   const_cast<char*>(words[1].c_str()));
+      MPI_Info_set(m_mpi_info, const_cast<char *>(words[0].c_str()),
+                   const_cast<char *>(words[1].c_str()));
     } else {
       int rank = 0;
       MPI_Comm_rank(m_com, &rank);
       if (rank == 0) {
-        printf("PISM WARNING: invalid MPI I/O hint: %s. Ignoring it...\n",
-               hint.c_str());
+        printf("PISM WARNING: invalid MPI I/O hint: %s. Ignoring it...\n", hint.c_str());
       }
     }
   }
 }
 
 void PNCFile::set_compression_level_impl(int level) const {
-  (void) level;
+  (void)level;
   // NetCDF-3 does not support compression.
 }
 

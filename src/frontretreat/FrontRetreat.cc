@@ -18,20 +18,18 @@
  */
 #include "pism/frontretreat/FrontRetreat.hh"
 
-#include "pism/util/array/CellType.hh"
-#include "pism/util/MaxTimestep.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/geometry/part_grid_threshold_thickness.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/geometry/part_grid_threshold_thickness.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/array/CellType.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
 FrontRetreat::FrontRetreat(std::shared_ptr<const Grid> g)
-  : Component(g),
-    m_cell_type(m_grid, "cell_type"),
-    m_tmp(m_grid, "temporary_storage") {
+    : Component(g), m_cell_type(m_grid, "cell_type"), m_tmp(m_grid, "temporary_storage") {
 
   m_tmp.metadata(0).long_name("additional mass loss at points near the front").units("m");
   m_cell_type.metadata(0).long_name("cell type mask");
@@ -44,7 +42,7 @@ FrontRetreat::FrontRetreat(std::shared_ptr<const Grid> g)
 void FrontRetreat::compute_modified_mask(const array::CellType1 &input,
                                          array::CellType1 &output) const {
 
-  array::AccessScope list{&input, &output};
+  array::AccessScope list{ &input, &output };
 
   const int Mx = m_grid->Mx();
   const int My = m_grid->My();
@@ -74,32 +72,28 @@ MaxTimestep FrontRetreat::max_timestep(const array::CellType1 &cell_type,
                                        const array::Scalar &retreat_rate) const {
 
   auto grid = retreat_rate.grid();
-  auto sys = grid->ctx()->unit_system();
+  auto sys  = grid->ctx()->unit_system();
 
   using units::convert;
 
   double dt_min = m_config->get_number("geometry.front_retreat.minimum_time_step", "seconds");
 
-  double
-    retreat_rate_max  = 0.0,
-    retreat_rate_mean = 0.0;
+  double retreat_rate_max = 0.0, retreat_rate_mean = 0.0;
   int N_cells = 0;
 
-  array::AccessScope list{&cell_type, &bc_mask, &retreat_rate};
+  array::AccessScope list{ &cell_type, &bc_mask, &retreat_rate };
 
   for (auto pt : grid->points()) {
     const int i = pt.i(), j = pt.j();
 
-    if (cell_type.ice_free_ocean(i, j) and
-        cell_type.next_to_ice(i, j) and
-        bc_mask(i, j) < 0.5) {
+    if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_ice(i, j) and bc_mask(i, j) < 0.5) {
       // NB: this condition has to match the one in update_geometry()
 
       const double C = retreat_rate(i, j);
 
-      N_cells           += 1;
+      N_cells += 1;
       retreat_rate_mean += C;
-      retreat_rate_max   = std::max(C, retreat_rate_max);
+      retreat_rate_max = std::max(C, retreat_rate_max);
     }
   }
 
@@ -113,7 +107,7 @@ MaxTimestep FrontRetreat::max_timestep(const array::CellType1 &cell_type,
     retreat_rate_mean = 0.0;
   }
 
-  double denom = retreat_rate_max / grid->dx();
+  double denom         = retreat_rate_max / grid->dx();
   const double epsilon = convert(sys, 0.001 / (grid->dx() + grid->dy()), "seconds", "years");
 
   double dt = 1.0 / (denom + epsilon);
@@ -123,8 +117,7 @@ MaxTimestep FrontRetreat::max_timestep(const array::CellType1 &cell_type,
                  "                   mean rate    = %.2f m/year over %d cells\n",
                  convert(m_sys, retreat_rate_max, "m second-1", "m year-1"),
                  convert(m_sys, dt, "seconds", "years"),
-                 convert(m_sys, retreat_rate_mean, "m second-1", "m year-1"),
-                 N_cells);
+                 convert(m_sys, retreat_rate_mean, "m second-1", "m year-1"), N_cells);
 
   return MaxTimestep(std::max(dt, dt_min), "front_retreat");
 }
@@ -140,15 +133,12 @@ MaxTimestep FrontRetreat::max_timestep(const array::CellType1 &cell_type,
  * shelf calving fronts, others may apply at grounded termini but not at ice shelves,
  * etc).
  */
-void FrontRetreat::update_geometry(double dt,
-                                   const Geometry &geometry,
-                                   const array::Scalar1 &bc_mask,
-                                   const array::Scalar &retreat_rate,
-                                   array::Scalar &Href,
-                                   array::Scalar1 &ice_thickness) {
+void FrontRetreat::update_geometry(double dt, const Geometry &geometry,
+                                   const array::Scalar1 &bc_mask, const array::Scalar &retreat_rate,
+                                   array::Scalar &Href, array::Scalar1 &ice_thickness) {
 
-  const array::Scalar1 &bed = geometry.bed_elevation;
-  const array::Scalar1 &sea_level = geometry.sea_level_elevation;
+  const array::Scalar1 &bed               = geometry.bed_elevation;
+  const array::Scalar1 &sea_level         = geometry.sea_level_elevation;
   const array::Scalar1 &surface_elevation = geometry.ice_surface_elevation;
 
   if (m_config->get_flag("geometry.front_retreat.wrap_around")) {
@@ -163,29 +153,24 @@ void FrontRetreat::update_geometry(double dt,
 
   m_tmp.set(0.0);
 
-  array::AccessScope list{&ice_thickness, &bc_mask,
-      &bed, &sea_level, &m_cell_type, &Href, &m_tmp, &retreat_rate,
-      &surface_elevation};
+  array::AccessScope list{ &ice_thickness, &bc_mask, &bed,          &sea_level,        &m_cell_type,
+                           &Href,          &m_tmp,   &retreat_rate, &surface_elevation };
 
   // Step 1: Apply the computed horizontal retreat rate:
   for (auto pt : m_grid->points()) {
     const int i = pt.i(), j = pt.j();
 
     // apply retreat rate at the margin (i.e. to partially-filled cells) only
-    if (m_cell_type.ice_free_ocean(i, j) and
-        m_cell_type.next_to_ice(i, j) and
+    if (m_cell_type.ice_free_ocean(i, j) and m_cell_type.next_to_ice(i, j) and
         bc_mask(i, j) < 0.5) {
       // NB: this condition has to match the one in max_timestep()
 
-      const double
-        rate     = retreat_rate(i, j),
-        Href_old = Href(i, j);
+      const double rate = retreat_rate(i, j), Href_old = Href(i, j);
 
       // Compute the number of floating neighbors and the neighbor-averaged ice thickness:
-      double H_threshold = part_grid_threshold_thickness(m_cell_type.star_int(i, j),
-                                                         ice_thickness.star(i, j),
-                                                         surface_elevation.star(i, j),
-                                                         bed(i, j));
+      double H_threshold =
+          part_grid_threshold_thickness(m_cell_type.star_int(i, j), ice_thickness.star(i, j),
+                                        surface_elevation.star(i, j), bed(i, j));
 
       // Calculate mass loss with respect to the associated ice thickness and the grid size:
       const double Href_change = -dt * rate * H_threshold / dx; // in m
@@ -207,19 +192,16 @@ void FrontRetreat::update_geometry(double dt,
           auto M  = m_cell_type.star(i, j);
           auto BC = bc_mask.star_int(i, j);
 
-          auto
-            b  = bed.star(i, j),
-            sl = sea_level.star(i, j);
+          auto b = bed.star(i, j), sl = sea_level.star(i, j);
 
-          for (auto d : {North, East, South, West}) {
-            int m = M[d];
+          for (auto d : { North, East, South, West }) {
+            int m  = M[d];
             int bc = BC[d];
 
             // note: this is where the modified cell type mask is used to prevent
             // wrap-around
-            if (bc == 0 and     // distribute to regular (*not* Dirichlet B.C.) neighbors only
-                (mask::floating_ice(m) or
-                 (mask::grounded_ice(m) and b[d] < sl[d]))) {
+            if (bc == 0 and // distribute to regular (*not* Dirichlet B.C.) neighbors only
+                (mask::floating_ice(m) or (mask::grounded_ice(m) and b[d] < sl[d]))) {
               N += 1;
             }
           }
@@ -234,7 +216,7 @@ void FrontRetreat::update_geometry(double dt,
       }
 
     } // end of "if ice free ocean next to ice and not a BC location "
-  }   // end of loop over grid points
+  } // end of loop over grid points
 
   // Step 2: update ice thickness and Href in neighboring cells if we need to propagate mass losses.
   m_tmp.update_ghosts();
@@ -247,11 +229,11 @@ void FrontRetreat::update_geometry(double dt,
         (m_cell_type.floating_ice(i, j) or
          (m_cell_type.grounded_ice(i, j) and bed(i, j) < sea_level(i, j)))) {
 
-      const double delta_H = (m_tmp(i + 1, j) + m_tmp(i - 1, j) +
-                              m_tmp(i, j + 1) + m_tmp(i, j - 1));
+      const double delta_H =
+          (m_tmp(i + 1, j) + m_tmp(i - 1, j) + m_tmp(i, j + 1) + m_tmp(i, j - 1));
 
       if (delta_H < 0.0) {
-        Href(i, j) = ice_thickness(i, j) + delta_H; // in m
+        Href(i, j)          = ice_thickness(i, j) + delta_H; // in m
         ice_thickness(i, j) = 0.0;
       }
 

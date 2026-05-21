@@ -20,17 +20,17 @@
 #ifndef _PISM_CONFIG_H_
 #define _PISM_CONFIG_H_
 
+#include <map>
 #include <memory>
 #include <set>
-#include <map>
 #include <string>
+#include <utility> // std::pair
 #include <vector>
-#include <utility>              // std::pair
 
-#include <mpi.h>                // MPI_Comm
+#include <mpi.h> // MPI_Comm
 
-#include "pism/util/VariableMetadata.hh"
 #include "pism/util/Units.hh"
+#include "pism/util/VariableMetadata.hh"
 
 namespace pism {
 
@@ -49,7 +49,7 @@ class Logger;
  *   parameter as set by the user. This affects future `set_...()` calls using the `DEFAULT` flag
  *   value and results of `parameters_set_by_user()`.
  */
-enum ConfigSettingFlag {CONFIG_DEFAULT = 0, CONFIG_FORCE = 1, CONFIG_USER = 2};
+enum ConfigSettingFlag { CONFIG_DEFAULT = 0, CONFIG_FORCE = 1, CONFIG_USER = 2 };
 
 
 //! A class for storing and accessing PISM configuration flags and parameters.
@@ -67,7 +67,7 @@ public:
    *    necessary to be able to get the current value of a parameter to be used as the default when
    *    processing a command-line option.
    */
-  enum UseFlag {REMEMBER_THIS_USE = 0, FORGET_THIS_USE = 1};
+  enum UseFlag { REMEMBER_THIS_USE = 0, FORGET_THIS_USE = 1 };
 
   //! Maximum length of the JSON string (for writing to output files)
   static int max_length;
@@ -78,8 +78,8 @@ public:
   // Use `realpath()` to resolve relative file names.
   void resolve_filenames();
 
-  const std::set<std::string>& parameters_set_by_user() const;
-  const std::set<std::string>& parameters_used() const;
+  const std::set<std::string> &parameters_set_by_user() const;
+  const std::set<std::string> &parameters_used() const;
 
   void read(MPI_Comm com, const std::string &filename);
   std::string filename() const;
@@ -113,7 +113,8 @@ public:
   Strings all_strings() const;
 
   std::string get_string(const std::string &name, UseFlag flag = REMEMBER_THIS_USE) const;
-  void set_string(const std::string &name, const std::string &value, ConfigSettingFlag flag = CONFIG_FORCE);
+  void set_string(const std::string &name, const std::string &value,
+                  ConfigSettingFlag flag = CONFIG_FORCE);
 
   // flags
   typedef std::map<std::string, bool> Flags;
@@ -121,8 +122,8 @@ public:
 
   std::set<std::string> keys() const;
 
-  bool get_flag(const std::string& name, UseFlag flag = REMEMBER_THIS_USE) const;
-  void set_flag(const std::string& name, bool value, ConfigSettingFlag flag = CONFIG_FORCE);
+  bool get_flag(const std::string &name, UseFlag flag = REMEMBER_THIS_USE) const;
+  void set_flag(const std::string &name, bool value, ConfigSettingFlag flag = CONFIG_FORCE);
 
   std::string doc(const std::string &parameter) const;
   std::string units(const std::string &parameter) const;
@@ -141,28 +142,29 @@ protected:
 
   virtual bool is_set_impl(const std::string &name) const = 0;
 
-  virtual Doubles all_doubles_impl() const = 0;
-  virtual double get_number_impl(const std::string &name) const = 0;
+  virtual Doubles all_doubles_impl() const                                    = 0;
+  virtual double get_number_impl(const std::string &name) const               = 0;
   virtual std::vector<double> get_numbers_impl(const std::string &name) const = 0;
 
-  virtual void set_number_impl(const std::string &name, double value) = 0;
-  virtual void set_numbers_impl(const std::string &name,
-                                const std::vector<double> &values) = 0;
+  virtual void set_number_impl(const std::string &name, double value)                       = 0;
+  virtual void set_numbers_impl(const std::string &name, const std::vector<double> &values) = 0;
 
-  virtual Strings all_strings_impl() const = 0;
-  virtual std::string get_string_impl(const std::string &name) const = 0;
+  virtual Strings all_strings_impl() const                                        = 0;
+  virtual std::string get_string_impl(const std::string &name) const              = 0;
   virtual void set_string_impl(const std::string &name, const std::string &value) = 0;
 
   virtual Flags all_flags_impl() const = 0;
 
-  virtual bool get_flag_impl(const std::string& name) const = 0;
-  virtual void set_flag_impl(const std::string& name, bool value) = 0;
+  virtual bool get_flag_impl(const std::string &name) const       = 0;
+  virtual void set_flag_impl(const std::string &name, bool value) = 0;
+
 private:
   struct Impl;
   Impl *m_impl;
 };
 
-std::shared_ptr<Config> config_from_options(MPI_Comm com, std::shared_ptr<units::System> unit_system);
+std::shared_ptr<Config> config_from_options(MPI_Comm com,
+                                            std::shared_ptr<units::System> unit_system);
 
 //! Set configuration parameters using command-line options.
 void set_config_from_options(Config &config);
@@ -171,28 +173,25 @@ void set_config_from_options(Config &config);
 void set_parameter_from_options(Config &config, const std::string &name);
 
 //! Set one flag parameter using command-line options.
-void set_flag_from_option(Config &config,
-                          const std::string &option,const std::string &parameter);
+void set_flag_from_option(Config &config, const std::string &option, const std::string &parameter);
 
 //! Set one scalar parameter using command-line options.
-void set_number_from_option(Config &config,
-                            const std::string &option, const std::string &parameter);
+void set_number_from_option(Config &config, const std::string &option,
+                            const std::string &parameter);
 
 //! Set one free-form string parameter using command-line options.
-void set_string_from_option(Config &config,
-                            const std::string &option, const std::string &parameter);
+void set_string_from_option(Config &config, const std::string &option,
+                            const std::string &parameter);
 
 //! Set one keyword parameter using command-line options.
-void set_keyword_from_option(Config &config,
-                             const std::string &option, const std::string &parameter,
-                             const std::string &choices);
+void set_keyword_from_option(Config &config, const std::string &option,
+                             const std::string &parameter, const std::string &choices);
 
 //! Report configuration parameters to `stdout`.
 void print_config(const Logger &log, int verbosity_threshhold, const Config &config);
 
 //! Report unused configuration parameters to `stdout`.
-void print_unused_parameters(const Logger &log, int verbosity_threshhold,
-                             const Config &config);
+void print_unused_parameters(const Logger &log, int verbosity_threshhold, const Config &config);
 
 VariableMetadata config_metadata(const Config &config);
 

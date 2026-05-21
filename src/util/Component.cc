@@ -19,17 +19,17 @@
 #include <cassert>
 
 #include "pism/util/Component.hh"
-#include "pism/util/Profiling.hh"
-#include "pism/util/io/File.hh"
-#include "pism/util/Grid.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/VariableMetadata.hh"
 #include "pism/util/Config.hh"
-#include "pism/util/MaxTimestep.hh"
-#include "pism/util/Time.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/Profiling.hh"
+#include "pism/util/Time.hh"
+#include "pism/util/VariableMetadata.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -131,7 +131,7 @@ std::set<VariableMetadata> Component::state_impl() const {
 
 /*! @brief The default (empty implementation). */
 void Component::write_state_impl(const OutputFile &output) const {
-  (void) output;
+  (void)output;
 }
 
 /**
@@ -164,10 +164,8 @@ void Component::regrid(const std::string &module_name, array::Array &variable,
   if (((not regrid_vars.empty()) and set_member(m["short_name"], regrid_vars)) or
       (regrid_vars.empty() and flag == REGRID_WITHOUT_REGRID_VARS)) {
 
-    m_log->message(2,
-               "  %s: regridding '%s' from file '%s' ...\n",
-               module_name.c_str(),
-               m.get_string("short_name").c_str(), regrid_file.c_str());
+    m_log->message(2, "  %s: regridding '%s' from file '%s' ...\n", module_name.c_str(),
+                   m.get_string("short_name").c_str(), regrid_file.c_str());
 
     variable.regrid(regrid_file, io::Default::Nil());
   }
@@ -178,7 +176,7 @@ MaxTimestep Component::max_timestep(double t) const {
 }
 
 MaxTimestep Component::max_timestep_impl(double t) const {
-  (void) t;
+  (void)t;
   return MaxTimestep();
 }
 

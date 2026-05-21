@@ -36,23 +36,24 @@ Vec::Vec(::Vec v) {
 
 Vec::~Vec() {
   if (m_value != NULL) {
-    PetscErrorCode ierr = VecDestroy(&m_value); CHKERRCONTINUE(ierr);
+    PetscErrorCode ierr = VecDestroy(&m_value);
+    CHKERRCONTINUE(ierr);
   }
 }
 
 // Wrapper around VecGetArray / VecRestoreArray
 
-VecArray::VecArray(::Vec v)
-  : m_v(v), m_array(NULL) {
+VecArray::VecArray(::Vec v) : m_v(v), m_array(NULL) {
   PetscErrorCode ierr = VecGetArray(m_v, &m_array);
   PISM_CHK(ierr, "VecGetArray");
 }
 
 VecArray::~VecArray() {
-  PetscErrorCode ierr = VecRestoreArray(m_v, &m_array); CHKERRCONTINUE(ierr);
+  PetscErrorCode ierr = VecRestoreArray(m_v, &m_array);
+  CHKERRCONTINUE(ierr);
 }
 
-double* VecArray::get() {
+double *VecArray::get() {
   return m_array;
 }
 
@@ -65,51 +66,52 @@ VecArray2D::VecArray2D(::Vec vec, int Mx, int My)
 }
 
 VecArray2D::VecArray2D(::Vec vec, int Mx, int My, int i0, int j0)
-  : m_Mx(Mx), m_My(My), m_i_offset(i0), m_j_offset(j0), m_v(vec) {
+    : m_Mx(Mx), m_My(My), m_i_offset(i0), m_j_offset(j0), m_v(vec) {
   PetscErrorCode ierr = VecGetArray2d(m_v, m_My, m_Mx, 0, 0, &m_array);
   PISM_CHK(ierr, "VecGetArray2d");
 }
 
 VecArray2D::~VecArray2D() {
-  PetscErrorCode ierr = VecRestoreArray2d(m_v, m_My, m_Mx, 0, 0, &m_array); CHKERRCONTINUE(ierr);
+  PetscErrorCode ierr = VecRestoreArray2d(m_v, m_My, m_Mx, 0, 0, &m_array);
+  CHKERRCONTINUE(ierr);
 }
 
 // Wrapper around DMDAVecGetArray / DMDAVecRestoreArray
 
-DMDAVecArray::DMDAVecArray(std::shared_ptr<DM> dm, ::Vec v)
-  : m_dm(dm), m_v(v) {
+DMDAVecArray::DMDAVecArray(std::shared_ptr<DM> dm, ::Vec v) : m_dm(dm), m_v(v) {
   PetscErrorCode ierr = DMDAVecGetArray(*m_dm, m_v, &m_array);
   PISM_CHK(ierr, "DMDAVecGetArray");
 }
 
 DMDAVecArray::~DMDAVecArray() {
-  PetscErrorCode ierr = DMDAVecRestoreArray(*m_dm, m_v, &m_array); CHKERRCONTINUE(ierr);
+  PetscErrorCode ierr = DMDAVecRestoreArray(*m_dm, m_v, &m_array);
+  CHKERRCONTINUE(ierr);
 }
 
-void* DMDAVecArray::get() {
+void *DMDAVecArray::get() {
   return m_array;
 }
 
 // Wrapper around DMDAVecGetArrayDOF / DMDAVecRestoreArrayDOF
 
-DMDAVecArrayDOF::DMDAVecArrayDOF(std::shared_ptr<DM> dm, ::Vec v)
-  : m_dm(dm), m_v(v) {
+DMDAVecArrayDOF::DMDAVecArrayDOF(std::shared_ptr<DM> dm, ::Vec v) : m_dm(dm), m_v(v) {
   PetscErrorCode ierr = DMDAVecGetArrayDOF(*m_dm, m_v, &m_array);
   PISM_CHK(ierr, "DMDAVecGetArrayDOF");
 }
 
 DMDAVecArrayDOF::~DMDAVecArrayDOF() {
-  PetscErrorCode ierr = DMDAVecRestoreArrayDOF(*m_dm, m_v, &m_array); CHKERRCONTINUE(ierr);
+  PetscErrorCode ierr = DMDAVecRestoreArrayDOF(*m_dm, m_v, &m_array);
+  CHKERRCONTINUE(ierr);
 }
 
-void* DMDAVecArrayDOF::get() {
+void *DMDAVecArrayDOF::get() {
   return m_array;
 }
 
 // Wrapper around DMGetGlobalVector / DMRestoreGlobalVector
 
 TemporaryGlobalVec::TemporaryGlobalVec(std::shared_ptr<DM> dm) {
-  m_dm = dm;
+  m_dm                = dm;
   PetscErrorCode ierr = DMGetGlobalVector(*m_dm, &m_value);
   PISM_CHK(ierr, "DMGetGlobalVector");
 }
@@ -120,7 +122,8 @@ TemporaryGlobalVec::~TemporaryGlobalVec() {
   // can set m_value to NULL and turn the destructor of the base class
   // (Vec) into a no-op.
   if (m_value != NULL) {
-    PetscErrorCode ierr = DMRestoreGlobalVector(*m_dm, &m_value); CHKERRCONTINUE(ierr);
+    PetscErrorCode ierr = DMRestoreGlobalVector(*m_dm, &m_value);
+    CHKERRCONTINUE(ierr);
     m_value = NULL;
   }
 }

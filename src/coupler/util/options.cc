@@ -19,17 +19,16 @@
 
 #include "pism/coupler/util/options.hh"
 
-#include "pism/util/Context.hh"
-#include "pism/util/Config.hh"
-#include "pism/util/Logger.hh"
 #include "pism/util/Component.hh"
+#include "pism/util/Config.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/Logger.hh"
 
 namespace pism {
 
-ForcingOptions::ForcingOptions(const Context &ctx,
-                               const std::string &prefix) {
+ForcingOptions::ForcingOptions(const Context &ctx, const std::string &prefix) {
 
-  const Logger &log = *ctx.log();
+  const Logger &log    = *ctx.log();
   const Config &config = *ctx.config();
 
   {
@@ -37,14 +36,11 @@ ForcingOptions::ForcingOptions(const Context &ctx,
 
     if (not file.empty()) {
       this->filename = file;
-      log.message(2,
-                  "  - Reading boundary conditions from '%s'...\n",
-                  file.c_str());
+      log.message(2, "  - Reading boundary conditions from '%s'...\n", file.c_str());
     } else {
       this->filename = process_input_options(ctx.com(), ctx.config()).filename;
 
-      log.message(2,
-                  "  - Option %s.file is not set. Trying the input file '%s'...\n",
+      log.message(2, "  - Option %s.file is not set. Trying the input file '%s'...\n",
                   prefix.c_str(), this->filename.c_str());
     }
 

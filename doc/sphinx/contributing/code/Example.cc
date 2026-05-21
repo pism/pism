@@ -1,16 +1,15 @@
 #include "Example.hh"
 
-#include "base/util/PISMConfigInterface.hh"
 #include "base/util/Grid.hh"
-#include "base/util/pism_options.hh"
 #include "base/util/MaxTimestep.hh"
+#include "base/util/PISMConfigInterface.hh"
+#include "base/util/pism_options.hh"
 #include <memory>
 
 namespace pism {
 namespace ocean {
 
-Example::Example(std::shared_ptr<const Grid> g)
-  : OceanModel(g) {
+Example::Example(std::shared_ptr<const Grid> g) : OceanModel(g) {
 
   // assume that input.forcing.buffer_size is big enough
   m_shelf_melt_rate.create(m_grid, "shelf_base_melt_rate",
@@ -42,8 +41,7 @@ void Example::init_impl() {
   options::String input_file("-ocean_example_file", "Shelf melt rate input file.");
 
   if (input_file.is_set()) {
-    m_log->message(2, "  Reading shelf base melt rate from %s...\n",
-                   input_file->c_str());
+    m_log->message(2, "  Reading shelf base melt rate from %s...\n", input_file->c_str());
 
     m_shelf_melt_rate.init(input_file, 0.0, 0.0);
   } else {
@@ -75,5 +73,5 @@ void Example::shelf_base_mass_flux_impl(array::Scalar &result) const {
   result.copy_from(m_shelf_melt_rate);
 }
 
-} // end of namespape ocean
+} // namespace ocean
 } // end of namespace pism

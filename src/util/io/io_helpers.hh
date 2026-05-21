@@ -20,11 +20,11 @@
 #ifndef PISM_IO_HELPERS_H
 #define PISM_IO_HELPERS_H
 
-#include <set>
 #include <memory>
+#include <mpi.h>
+#include <set>
 #include <string>
 #include <vector>
-#include <mpi.h>
 
 namespace pism {
 
@@ -41,7 +41,7 @@ class Logger;
 namespace grid {
 class InputGridInfo;
 class DistributedGridInfo;
-}
+} // namespace grid
 
 class LocalInterpCtx;
 
@@ -49,24 +49,18 @@ class OutputFile;
 
 namespace io {
 
-std::string time_dimension(std::shared_ptr<units::System> unit_system,
-                           const File &file,
+std::string time_dimension(std::shared_ptr<units::System> unit_system, const File &file,
                            const std::string &variable_name);
 
 void check_input_grid(const grid::InputGridInfo &input_grid,
-                      const grid::DistributedGridInfo& internal_grid,
-                      const std::vector<double> &internal_z_levels,
-                      bool allow_extrapolation);
+                      const grid::DistributedGridInfo &internal_grid,
+                      const std::vector<double> &internal_z_levels, bool allow_extrapolation);
 
-void regrid_spatial_variable(const VariableMetadata &variable,
-                             const Grid& internal_grid,
-                             const LocalInterpCtx &lic,
-                             const File &file,
-                             const Logger &log,
+void regrid_spatial_variable(const VariableMetadata &variable, const Grid &internal_grid,
+                             const LocalInterpCtx &lic, const File &file, const Logger &log,
                              double *output);
 
-void read_spatial_variable(const VariableMetadata &variable,
-                           const Grid& grid, const File &file,
+void read_spatial_variable(const VariableMetadata &variable, const Grid &grid, const File &file,
                            unsigned int time, double *output);
 
 std::vector<double> read_1d_variable(const File &file, const std::string &name,
@@ -89,10 +83,8 @@ void read_time_info(std::shared_ptr<units::System> unit_system, const File &file
 VariableMetadata read_attributes(const File &file, const std::string &variable_name,
                                  std::shared_ptr<units::System> unit_system);
 
-void define_variables(const OutputFile &file,
-                      const std::set<VariableMetadata> &variables,
-                      const VariableMetadata &mapping,
-                      bool use_internal_units);
+void define_variables(const OutputFile &file, const std::set<VariableMetadata> &variables,
+                      const VariableMetadata &mapping, bool use_internal_units);
 
 // writing utilities
 

@@ -21,9 +21,9 @@
 
 #include "pism/util/Mask.hh"
 
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/array/Vector.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace array {
@@ -40,7 +40,7 @@ Staggered::Staggered(std::shared_ptr<const Grid> grid, const std::string &name,
 }
 
 void Staggered::copy_from(const Staggered &input) {
-  array::AccessScope list {this, &input};
+  array::AccessScope list{ this, &input };
   // FIXME: this should be simplified
 
   ParallelSection loop(grid()->com);
@@ -66,9 +66,9 @@ Staggered1::Staggered1(std::shared_ptr<const Grid> grid, const std::string &name
   // empty
 }
 
-std::array<double,2> absmax(const array::Staggered &input) {
+std::array<double, 2> absmax(const array::Staggered &input) {
 
-  double z[2] = {0.0, 0.0};
+  double z[2] = { 0.0, 0.0 };
 
   array::AccessScope list(input);
   for (auto p : input.grid()->points()) {
@@ -81,26 +81,23 @@ std::array<double,2> absmax(const array::Staggered &input) {
   double result[2];
   GlobalMax(input.grid()->com, z, result, 2);
 
-  return {result[0], result[1]};
+  return { result[0], result[1] };
 }
 
-void staggered_to_regular(const array::CellType1 &cell_type,
-                          const array::Staggered1 &input,
-                          bool include_floating_ice,
-                          array::Scalar &result) {
+void staggered_to_regular(const array::CellType1 &cell_type, const array::Staggered1 &input,
+                          bool include_floating_ice, array::Scalar &result) {
 
   using mask::grounded_ice;
   using mask::icy;
 
   auto grid = result.grid();
 
-  array::AccessScope list{&cell_type, &input, &result};
+  array::AccessScope list{ &cell_type, &input, &result };
 
   for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
-    if (cell_type.grounded_ice(i, j) or
-        (include_floating_ice and cell_type.icy(i, j))) {
+    if (cell_type.grounded_ice(i, j) or (include_floating_ice and cell_type.icy(i, j))) {
       auto M = cell_type.star_int(i, j);
       auto F = input.star(i, j);
 
@@ -128,10 +125,8 @@ void staggered_to_regular(const array::CellType1 &cell_type,
   }
 }
 
-void staggered_to_regular(const array::CellType1 &cell_type,
-                          const array::Staggered1 &input,
-                          bool include_floating_ice,
-                          array::Vector &result) {
+void staggered_to_regular(const array::CellType1 &cell_type, const array::Staggered1 &input,
+                          bool include_floating_ice, array::Vector &result) {
 
   using mask::grounded_ice;
   using mask::icy;
@@ -141,7 +136,7 @@ void staggered_to_regular(const array::CellType1 &cell_type,
 
   auto grid = result.grid();
 
-  array::AccessScope list{&cell_type, &input, &result};
+  array::AccessScope list{ &cell_type, &input, &result };
 
   for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();

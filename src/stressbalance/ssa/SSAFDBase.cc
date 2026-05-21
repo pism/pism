@@ -49,16 +49,14 @@ SSAFDBase::SSAFDBase(std::shared_ptr<const Grid> grid, bool regional_mode)
       .long_name("vertically-averaged ice hardness")
       .set_units_without_validation(pism::printf("Pa s^(1/%f)", m_flow_law->exponent()));
 
-  m_nuH.metadata(0)
-      .long_name("ice thickness times effective viscosity")
-      .units("Pa s m");
+  m_nuH.metadata(0).long_name("ice thickness times effective viscosity").units("Pa s m");
 
   // grounded_dragging_floating integer mask
-  m_cell_type.metadata(0)
-      .long_name("ice-type (ice-free/grounded/floating/ocean) integer mask");
-  m_cell_type.metadata()["flag_values"]   = { MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING,
-                                         MASK_ICE_FREE_OCEAN };
-  m_cell_type.metadata()["flag_meanings"] = "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
+  m_cell_type.metadata(0).long_name("ice-type (ice-free/grounded/floating/ocean) integer mask");
+  m_cell_type.metadata()["flag_values"] = { MASK_ICE_FREE_BEDROCK, MASK_GROUNDED, MASK_FLOATING,
+                                            MASK_ICE_FREE_OCEAN };
+  m_cell_type.metadata()["flag_meanings"] =
+      "ice_free_bedrock grounded_ice floating_ice ice_free_ocean";
 
   m_taud.metadata(0)
       .long_name("X-component of the driving shear stress at the base of ice")
@@ -770,7 +768,7 @@ void SSAFDBase::fd_operator(const Geometry &geometry, const array::Scalar *bc_ma
           } // end of the else clause following "if (bedrock_boundary)"
           // NOLINTEND(readability-braces-around-statements)
         } // end of "if (is_marginal(i, j, bedrock_boundary))"
-      }   // end of "if (use_cfbc)"
+      } // end of "if (use_cfbc)"
 
       /* begin Maxima-generated code */
       const double dx2 = dx * dx, dy2 = dy * dy, d4 = 4 * dx * dy, d2 = 2 * dx * dy;
@@ -856,13 +854,13 @@ void SSAFDBase::fd_operator(const Geometry &geometry, const array::Scalar *bc_ma
         case MASK_FLOATING: {
           const Vector2d &v = velocity(i, j);
           double scaling    = sub_gl ? grounded_fraction(i, j) : 0.0;
-          beta = scaling * basal_sliding_law->drag(basal_yield_stress(i, j), v.u, v.v);
+          beta              = scaling * basal_sliding_law->drag(basal_yield_stress(i, j), v.u, v.v);
           break;
         }
         case MASK_GROUNDED: {
           const Vector2d &v = velocity(i, j);
           double scaling    = sub_gl ? grounded_fraction(i, j) : 1.0;
-          beta = scaling * basal_sliding_law->drag(basal_yield_stress(i, j), v.u, v.v);
+          beta              = scaling * basal_sliding_law->drag(basal_yield_stress(i, j), v.u, v.v);
           break;
         }
         case MASK_ICE_FREE_OCEAN:
@@ -930,13 +928,13 @@ void SSAFDBase::fd_operator(const Geometry &geometry, const array::Scalar *bc_ma
 
       // compute the matrix-vector product
       if (Ax != nullptr) {
-        Vector2d sum{0.0, 0.0};
+        Vector2d sum{ 0.0, 0.0 };
         for (int k = 0; k < n_nonzeros; ++k) {
           const Vector2d &v = velocity(I[k], J[k]);
           double u_or_v     = v.u * (1 - C[k]) + v.v * C[k];
           sum += Vector2d{ eq1[k], eq2[k] } * u_or_v;
         }
-        Ax[j][i] = sum;         // STORAGE_ORDER
+        Ax[j][i] = sum; // STORAGE_ORDER
       }
 
       // set matrix values
@@ -1026,7 +1024,7 @@ void SSAFDBase::compute_average_ice_hardness(const array::Scalar1 &ice_thickness
         result(i, j, o) = rheology::averaged_hardness(*m_flow_law, H, m_grid->kBelowHeight(H),
                                                       m_grid->z().data(), E.data());
       } // o
-    }   // loop over points
+    } // loop over points
   } catch (...) {
     loop.failed();
   }
@@ -1050,13 +1048,9 @@ void SSAFDBase::adjust_driving_stress(const array::Scalar &ice_thickness,
   };
 
 
-  double
-    dx = m_grid->dx(),
-    dy = m_grid->dy();
+  double dx = m_grid->dx(), dy = m_grid->dy();
 
-  int
-    Mx = m_grid->Mx(),
-    My = m_grid->My();
+  int Mx = m_grid->Mx(), My = m_grid->My();
 
   array::AccessScope list{ &driving_stress, &cell_type, no_model_mask, &surface_elevation,
                            &ice_thickness };
@@ -1078,15 +1072,14 @@ void SSAFDBase::adjust_driving_stress(const array::Scalar &ice_thickness,
       continue;
     }
 
-    auto h = surface_elevation.star(i, j);
+    auto h  = surface_elevation.star(i, j);
     auto CT = cell_type.star_int(i, j);
 
     // x-derivative
     double h_x = 0.0;
     {
-      double
-        west = static_cast<double>(M.w == 1 and i > 0),
-        east = static_cast<double>(M.e == 1 and i < Mx - 1);
+      double west = static_cast<double>(M.w == 1 and i > 0),
+             east = static_cast<double>(M.e == 1 and i < Mx - 1);
 
       // don't use differences spanning "cliffs"
       west *= weight(CT.c, CT.w, h.c, h.w);
@@ -1102,9 +1095,8 @@ void SSAFDBase::adjust_driving_stress(const array::Scalar &ice_thickness,
     // y-derivative
     double h_y = 0.0;
     {
-      double
-        south = static_cast<double>(M.s == 1 and j > 0),
-        north = static_cast<double>(M.n == 1 and j < My - 1);
+      double south = static_cast<double>(M.s == 1 and j > 0),
+             north = static_cast<double>(M.n == 1 and j < My - 1);
 
       // don't use differences spanning "cliffs"
       south *= weight(CT.c, CT.s, h.c, h.s);
@@ -1117,7 +1109,7 @@ void SSAFDBase::adjust_driving_stress(const array::Scalar &ice_thickness,
       }
     }
 
-    driving_stress(i, j) = - pressure * Vector2d(h_x, h_y);
+    driving_stress(i, j) = -pressure * Vector2d(h_x, h_y);
   } // end of the loop over grid points
 }
 
@@ -1144,10 +1136,8 @@ void SSAFDBase::initialize_iterations(const Inputs &inputs) {
                          m_taud); // output
 
   if (m_regional_mode) {
-    adjust_driving_stress(*inputs.no_model_ice_thickness,
-                          *inputs.no_model_surface_elevation,
-                          m_cell_type,
-                          inputs.no_model_mask, m_taud);
+    adjust_driving_stress(*inputs.no_model_ice_thickness, *inputs.no_model_surface_elevation,
+                          m_cell_type, inputs.no_model_mask, m_taud);
   }
 
   compute_average_ice_hardness(inputs.geometry->ice_thickness, *inputs.enthalpy, m_cell_type,
@@ -1265,9 +1255,9 @@ thinner than a certain minimum. See SSAStrengthExtension and compare how this
 issue is handled when -cfbc is set.
 */
 void SSAFDBase::compute_nuH_everywhere(const array::Scalar1 &ice_thickness,
-                                   const pism::Vector2d *const *velocity,
-                                   const array::Staggered &hardness, double nuH_regularization,
-                                   array::Staggered &result) {
+                                       const pism::Vector2d *const *velocity,
+                                       const array::Staggered &hardness, double nuH_regularization,
+                                       array::Staggered &result) {
 
   auto uv = [&velocity](int i, int j) { return velocity[j][i]; };
 
@@ -1281,11 +1271,7 @@ void SSAFDBase::compute_nuH_everywhere(const array::Scalar1 &ice_thickness,
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
-    const int
-      E = i + 1,
-      W = i - 1,
-      N = j + 1,
-      S = j - 1;
+    const int E = i + 1, W = i - 1, N = j + 1, S = j - 1;
 
     stencils::Box<Vector2d> V{ uv(i, j), uv(i, N), uv(W, N), uv(W, j), uv(W, S),
                                uv(i, S), uv(E, S), uv(E, j), uv(E, N) };
@@ -1326,7 +1312,7 @@ void SSAFDBase::compute_nuH_everywhere(const array::Scalar1 &ice_thickness,
       // We ensure that nuH is bounded below by a positive constant.
       result(i, j, o) += nuH_regularization;
     } // o-loop
-  }   // i,j-loop
+  } // i,j-loop
 }
 
 /**
@@ -1349,10 +1335,11 @@ void SSAFDBase::compute_nuH_everywhere(const array::Scalar1 &ice_thickness,
  *
  * @return 0 on success
  */
-void SSAFDBase::compute_nuH_cfbc(const array::Scalar1 &ice_thickness, const array::CellType2 &cell_type,
-                             const pism::Vector2d* const* velocity,
-                             const array::Staggered &hardness,
-                             double nuH_regularization, array::Staggered &result) {
+void SSAFDBase::compute_nuH_cfbc(const array::Scalar1 &ice_thickness,
+                                 const array::CellType2 &cell_type,
+                                 const pism::Vector2d *const *velocity,
+                                 const array::Staggered &hardness, double nuH_regularization,
+                                 array::Staggered &result) {
 
   double n_glen                 = m_flow_law->exponent(),
          nu_enhancement_scaling = 1.0 / pow(m_e_factor, 1.0 / n_glen);
@@ -1508,15 +1495,11 @@ void SSAFDBase::compute_residual(const Inputs &inputs, const pism::Vector2d *con
     compute_nuH(inputs.geometry->ice_thickness, m_cell_type, velocity, m_hardness,
                 m_config->get_number("stress_balance.ssa.epsilon"), m_nuH);
 
-    fd_operator(*inputs.geometry,
-                inputs.bc_mask,
-                m_bc_scaling,
-                *inputs.basal_yield_stress,
-                m_basal_sliding_law,
-                velocity, m_nuH, m_cell_type, nullptr, result);
+    fd_operator(*inputs.geometry, inputs.bc_mask, m_bc_scaling, *inputs.basal_yield_stress,
+                m_basal_sliding_law, velocity, m_nuH, m_cell_type, nullptr, result);
   }
 
-  array::AccessScope scope{&m_rhs};
+  array::AccessScope scope{ &m_rhs };
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
@@ -1616,7 +1599,7 @@ public:
 
 protected:
   virtual std::shared_ptr<array::Array> compute_impl() const {
-    auto result = allocate<array::Scalar>("taud_mag");
+    auto result         = allocate<array::Scalar>("taud_mag");
     result->metadata(0) = m_vars[0];
 
     compute_magnitude(model->driving_stress(), *result);
@@ -1629,9 +1612,9 @@ DiagnosticList SSAFDBase::spatial_diagnostics_impl() const {
   DiagnosticList result = ShallowStressBalance::spatial_diagnostics_impl();
 
   // replace these diagnostics
-  result["taud"] = Diagnostic::Ptr(new SSAFD_taud(this));
+  result["taud"]     = Diagnostic::Ptr(new SSAFD_taud(this));
   result["taud_mag"] = Diagnostic::Ptr(new SSAFD_taud_mag(this));
-  result["nuH"] = Diagnostic::Ptr(new SSAFD_nuH(this));
+  result["nuH"]      = Diagnostic::Ptr(new SSAFD_nuH(this));
 
   return result;
 }

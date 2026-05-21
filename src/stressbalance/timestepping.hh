@@ -49,22 +49,17 @@ struct CFLData {
  * does *not* use the w component of the velocity field in the computation of the max. time step.
  * The maximum of the speed along the z axis is computed for reporting.
  */
-CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
-                            const array::CellType &cell_type,
-                            const array::Scalar1 *no_model_mask,
-                            const array::Array3D &u3,
-                            const array::Array3D &v3,
-                            const array::Array3D &w3);
+CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness, const array::CellType &cell_type,
+                            const array::Scalar1 *no_model_mask, const array::Array3D &u3,
+                            const array::Array3D &v3, const array::Array3D &w3);
 
 /*! @brief Compute the max. time step according to the CFL condition (within the ice, 2D). */
 /*!
  * Returns the maximum time step along with maximum speeds along x and y directions within the
  * ice.
  */
-CFLData max_timestep_cfl_2d(const array::Scalar &ice_thickness,
-                            const array::CellType &cell_type,
-                            const array::Scalar1 *no_model_mask,
-                            const array::Vector &velocity);
+CFLData max_timestep_cfl_2d(const array::Scalar &ice_thickness, const array::CellType &cell_type,
+                            const array::Scalar1 *no_model_mask, const array::Vector &velocity);
 
 /*!
  * Compute the max. time step according to the max. diffusivity of the SIA flow

@@ -22,8 +22,7 @@
 #define __exactTestM_h 1
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /*
@@ -46,14 +45,13 @@ extern "C"
 */
 
 struct TestMParameters {
-  int error_code;         /* GSL_SUCCESS = 0 if successful */
-  double alpha;           /* (m s^-1;  always positive) */
-  double Drr;             /* = alpha'(r) (s^-1; radial strain rate) */
+  int error_code; /* GSL_SUCCESS = 0 if successful */
+  double alpha;   /* (m s^-1;  always positive) */
+  double Drr;     /* = alpha'(r) (s^-1; radial strain rate) */
 };
 
-struct TestMParameters exactM(double r,
-                              double EPS_ABS, double EPS_REL, int ode_method);
-   /* input    : r                             (m;   r >= 0)
+struct TestMParameters exactM(double r, double EPS_ABS, double EPS_REL, int ode_method);
+/* input    : r                             (m;   r >= 0)
       numerical: EPS_ABS                       (=1.0e-12 recommended)
                  EPS_REL                       (=0.0     recommended)
                  ode_method                    (=1       recommended; =Runge-Kutta-Cash-Karp)
@@ -64,5 +62,4 @@ struct TestMParameters exactM(double r,
 }
 #endif
 
-#endif  /* __exactTestM_h */
-
+#endif /* __exactTestM_h */

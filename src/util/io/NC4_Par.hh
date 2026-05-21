@@ -24,12 +24,13 @@
 namespace pism {
 namespace io {
 
-class NC4_Par : public NC4File
-{
+class NC4_Par : public NC4File {
 public:
-  NC4_Par(MPI_Comm c)
-    : NC4File(c, 0) {}
-  virtual ~NC4_Par() {}
+  NC4_Par(MPI_Comm c) : NC4File(c, 0) {
+  }
+  virtual ~NC4_Par() {
+  }
+
 protected:
   // open/create/close
   virtual void open_impl(const std::string &filename, io::Mode mode);

@@ -38,23 +38,22 @@ namespace inverse {
   the values of \f$\tau_c\f$ will be constrained by the config variables \a inverse.ssa.hardav_min
   and \a inverse.ssa.hardav_max.
 */
-class IP_SSAHardavTaoTikhonovProblem: public IPTaoTikhonovProblem<IP_SSAHardavForwardProblem> {
+class IP_SSAHardavTaoTikhonovProblem : public IPTaoTikhonovProblem<IP_SSAHardavForwardProblem> {
 public:
-
-  IP_SSAHardavTaoTikhonovProblem(IP_SSAHardavForwardProblem &forward, 
-                                  IP_SSAHardavTaoTikhonovProblem::DesignVec &d0, 
-                                  IP_SSAHardavTaoTikhonovProblem::StateVec &u_obs, double eta, 
-                                  IPFunctional<IP_SSAHardavTaoTikhonovProblem::DesignVec>&designFunctional, 
-                                  IPFunctional<IP_SSAHardavTaoTikhonovProblem::StateVec>&stateFunctional) :
-    IPTaoTikhonovProblem<IP_SSAHardavForwardProblem>(forward,d0,u_obs,eta,designFunctional,stateFunctional) {};
+  IP_SSAHardavTaoTikhonovProblem(
+      IP_SSAHardavForwardProblem &forward, IP_SSAHardavTaoTikhonovProblem::DesignVec &d0,
+      IP_SSAHardavTaoTikhonovProblem::StateVec &u_obs, double eta,
+      IPFunctional<IP_SSAHardavTaoTikhonovProblem::DesignVec> &designFunctional,
+      IPFunctional<IP_SSAHardavTaoTikhonovProblem::StateVec> &stateFunctional)
+      : IPTaoTikhonovProblem<IP_SSAHardavForwardProblem>(forward, d0, u_obs, eta, designFunctional,
+                                                         stateFunctional) {};
 
   virtual ~IP_SSAHardavTaoTikhonovProblem() {};
 
   virtual void connect(Tao tao);
 
   //! Callback to TAO to set bounds on \f$\tau_c\f$ for constrained minimization algorithms.
-  virtual void getVariableBounds(Tao tao, Vec lo, Vec hi); 
-
+  virtual void getVariableBounds(Tao tao, Vec lo, Vec hi);
 };
 
 } // end of namespace inverse

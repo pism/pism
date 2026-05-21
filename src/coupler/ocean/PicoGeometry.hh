@@ -39,8 +39,7 @@ public:
   virtual ~PicoGeometry() = default;
 
   void init();
-  void update(const array::Scalar &bed_elevation,
-              const array::CellType1 &cell_type);
+  void update(const array::Scalar &bed_elevation, const array::CellType1 &cell_type);
 
   const array::Scalar &continental_shelf_mask() const;
   const array::Scalar &box_mask() const;
@@ -51,50 +50,39 @@ public:
   enum IceRiseMask { OCEAN = 0, RISE = 1, CONTINENTAL = 2, FLOATING = 3 };
 
 private:
-  void compute_ice_rises(const array::CellType &cell_type,
-                         bool exclude_ice_rises, array::Scalar &result);
+  void compute_ice_rises(const array::CellType &cell_type, bool exclude_ice_rises,
+                         array::Scalar &result);
   void compute_lakes(const array::CellType &cell_type, array::Scalar &result);
   void compute_ocean_mask(const array::CellType &cell_type, array::Scalar &result);
   void compute_continental_shelf_mask(const array::Scalar &bed_elevation,
                                       const array::Scalar &ice_rise_mask,
-                                      double bed_elevation_threshold,
-                                      array::Scalar &result);
-  void compute_ice_shelf_mask(const array::Scalar &ice_rise_mask,
-                              const array::Scalar &lake_mask,
+                                      double bed_elevation_threshold, array::Scalar &result);
+  void compute_ice_shelf_mask(const array::Scalar &ice_rise_mask, const array::Scalar &lake_mask,
                               array::Scalar &result);
 
   std::vector<std::set<int> > basin_neighbors(const array::CellType1 &cell_type,
-                                               const array::Scalar1 &basin_mask);
+                                              const array::Scalar1 &basin_mask);
 
   void identify_calving_front_connection(const array::CellType1 &cell_type,
                                          const array::Scalar &basin_mask,
-                                         const array::Scalar &shelf_mask,
-                                         int n_shelves,
+                                         const array::Scalar &shelf_mask, int n_shelves,
                                          std::vector<int> &most_shelf_cells_in_basin,
                                          std::vector<int> &cfs_in_basins_per_shelf);
 
-  void split_ice_shelves(const array::CellType &cell_type,
-                         const array::Scalar &basin_mask,
+  void split_ice_shelves(const array::CellType &cell_type, const array::Scalar &basin_mask,
                          const std::vector<std::set<int> > &basin_neighbors,
                          const std::vector<int> &most_shelf_cells_in_basin,
-                         const std::vector<int> &cfs_in_basins_per_shelf,
-                         int n_shelves,
+                         const std::vector<int> &cfs_in_basins_per_shelf, int n_shelves,
                          array::Scalar &shelf_mask);
- 
-  void compute_distances_cf(const array::Scalar1 &ocean_mask,
-                            const array::Scalar &ice_rises,
-                            bool exclude_ice_rises,
-                            array::Scalar1 &result);
 
-  void compute_distances_gl(const array::Scalar &ocean_mask,
-                            const array::Scalar1 &ice_rises,
-                            bool exclude_ice_rises,
-                            array::Scalar1 &result);
+  void compute_distances_cf(const array::Scalar1 &ocean_mask, const array::Scalar &ice_rises,
+                            bool exclude_ice_rises, array::Scalar1 &result);
 
-  void compute_box_mask(const array::Scalar &D_gl,
-                        const array::Scalar &D_cf,
-                        const array::Scalar &shelf_mask,
-                        int max_number_of_boxes,
+  void compute_distances_gl(const array::Scalar &ocean_mask, const array::Scalar1 &ice_rises,
+                            bool exclude_ice_rises, array::Scalar1 &result);
+
+  void compute_box_mask(const array::Scalar &D_gl, const array::Scalar &D_cf,
+                        const array::Scalar &shelf_mask, int max_number_of_boxes,
                         array::Scalar &result);
 
   void relabel_by_size(array::Scalar &mask);

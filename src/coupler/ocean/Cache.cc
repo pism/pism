@@ -17,24 +17,23 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <algorithm>            // std::min
+#include <algorithm> // std::min
 #include <cassert>
 #include <cmath>
 
 #include "pism/coupler/ocean/Cache.hh"
 #include "pism/util/Grid.hh"
+#include "pism/util/Logger.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace ocean {
 
-Cache::Cache(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in)
-  : OceanModel(g, in) {
+Cache::Cache(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in) : OceanModel(g, in) {
 
-  m_next_update_time = time().current();
+  m_next_update_time      = time().current();
   m_update_interval_years = m_config->get_number("ocean.cache.update_interval", "seconds");
 
   // use the current year length (according to the selected calendar) to convert update
@@ -42,9 +41,9 @@ Cache::Cache(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in)
   m_update_interval_years = time().convert_time_interval(m_update_interval_years, "years");
 
   if (m_update_interval_years <= 0.0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "ocean.cache.update_interval has to be strictly positive (got %f)",
-                                  m_update_interval_years);
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION, "ocean.cache.update_interval has to be strictly positive (got %f)",
+        m_update_interval_years);
   }
 
   {
@@ -57,8 +56,7 @@ Cache::Cache(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in)
 void Cache::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);
 
-  m_log->message(2,
-                 "* Initializing the 'caching' ocean model modifier...\n");
+  m_log->message(2, "* Initializing the 'caching' ocean model modifier...\n");
 
   m_next_update_time = time().current();
 }
@@ -66,23 +64,19 @@ void Cache::init_impl(const Geometry &geometry) {
 void Cache::update_impl(const Inputs &inputs, double t, double dt) {
   // ignore dt and always use 1 year long time-steps when updating
   // an input model
-  (void) dt;
+  (void)dt;
 
   double time_resolution = m_config->get_number("time_stepping.resolution", "seconds");
 
-  if (t >= m_next_update_time or
-      fabs(t - m_next_update_time) < time_resolution) {
+  if (t >= m_next_update_time or fabs(t - m_next_update_time) < time_resolution) {
 
-    double
-      one_year_from_now = time().increment_date(t, 1.0),
-      update_dt         = one_year_from_now - t;
+    double one_year_from_now = time().increment_date(t, 1.0), update_dt = one_year_from_now - t;
 
     assert(update_dt > 0.0);
 
     m_input_model->update(inputs, t, update_dt);
 
-    m_next_update_time = time().increment_date(m_next_update_time,
-                                                               m_update_interval_years);
+    m_next_update_time = time().increment_date(m_next_update_time, m_update_interval_years);
 
     m_water_column_pressure->copy_from(m_input_model->average_water_column_pressure());
 
@@ -100,8 +94,8 @@ MaxTimestep Cache::max_timestep_impl(double t) const {
   // if we got very close to the next update time, set time step
   // length to the interval between updates
   if (dt < time_resolution) {
-    double update_time_after_next = time().increment_date(m_next_update_time,
-                                                                m_update_interval_years);
+    double update_time_after_next =
+        time().increment_date(m_next_update_time, m_update_interval_years);
 
     dt = update_time_after_next - m_next_update_time;
     assert(dt > 0.0);
@@ -117,15 +111,15 @@ MaxTimestep Cache::max_timestep_impl(double t) const {
   }
 }
 
-const array::Scalar& Cache::shelf_base_temperature_impl() const {
+const array::Scalar &Cache::shelf_base_temperature_impl() const {
   return *m_shelf_base_temperature;
 }
 
-const array::Scalar& Cache::shelf_base_mass_flux_impl() const {
+const array::Scalar &Cache::shelf_base_mass_flux_impl() const {
   return *m_shelf_base_mass_flux;
 }
 
-const array::Scalar& Cache::average_water_column_pressure_impl() const {
+const array::Scalar &Cache::average_water_column_pressure_impl() const {
   return *m_water_column_pressure;
 }
 

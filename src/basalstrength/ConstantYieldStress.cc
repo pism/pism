@@ -25,8 +25,7 @@
 
 namespace pism {
 
-ConstantYieldStress::ConstantYieldStress(std::shared_ptr<const Grid> grid)
-  : YieldStress(grid) {
+ConstantYieldStress::ConstantYieldStress(std::shared_ptr<const Grid> grid) : YieldStress(grid) {
 
   m_name = "constant yield stress model";
 }
@@ -37,9 +36,8 @@ void ConstantYieldStress::restart_impl(const File &input_file, int record) {
   regrid(name(), m_basal_yield_stress);
 }
 
-void ConstantYieldStress::bootstrap_impl(const File &input_file,
-                                         const YieldStressInputs &inputs) {
-  (void) inputs;
+void ConstantYieldStress::bootstrap_impl(const File &input_file, const YieldStressInputs &inputs) {
+  (void)inputs;
 
   double tauc = m_config->get_number("basal_yield_stress.constant.value");
   m_basal_yield_stress.regrid(input_file, io::Default(tauc));
@@ -48,7 +46,7 @@ void ConstantYieldStress::bootstrap_impl(const File &input_file,
 }
 
 void ConstantYieldStress::init_impl(const YieldStressInputs &inputs) {
-  (void) inputs;
+  (void)inputs;
 
   double tauc = m_config->get_number("basal_yield_stress.constant.value");
   // Set the constant value.
@@ -58,15 +56,14 @@ void ConstantYieldStress::init_impl(const YieldStressInputs &inputs) {
 }
 
 MaxTimestep ConstantYieldStress::max_timestep_impl(double t) const {
-  (void) t;
+  (void)t;
   return MaxTimestep(name());
 }
 
-void ConstantYieldStress::update_impl(const YieldStressInputs &inputs,
-                                      double t, double dt) {
-  (void) inputs;
-  (void) t;
-  (void) dt;
+void ConstantYieldStress::update_impl(const YieldStressInputs &inputs, double t, double dt) {
+  (void)inputs;
+  (void)t;
+  (void)dt;
   // empty
 }
 

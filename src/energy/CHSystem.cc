@@ -16,16 +16,16 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#include <algorithm>            // std::max
+#include <algorithm> // std::max
 
 #include "pism/energy/CHSystem.hh"
 #include "pism/energy/enthSystem.hh"
 #include "pism/energy/utilities.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/EnthalpyConverter.hh"
+#include "pism/util/Logger.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace energy {
@@ -74,8 +74,7 @@ void CHSystem::restart_impl(const File &input_file, int record) {
   regrid_enthalpy();
 }
 
-void CHSystem::bootstrap_impl(const File &input_file,
-                              const array::Scalar &ice_thickness,
+void CHSystem::bootstrap_impl(const File &input_file, const array::Scalar &ice_thickness,
                               const array::Scalar &surface_temperature,
                               const array::Scalar &climatic_mass_balance,
                               const array::Scalar &basal_heat_flux) {
@@ -97,7 +96,7 @@ void CHSystem::initialize_impl(const array::Scalar &basal_melt_rate,
                                const array::Scalar &surface_temperature,
                                const array::Scalar &climatic_mass_balance,
                                const array::Scalar &basal_heat_flux) {
-  (void) basal_melt_rate;
+  (void)basal_melt_rate;
 
   m_log->message(2, "* Bootstrapping the cryo-hydrologic warming model...\n");
 
@@ -116,27 +115,23 @@ void CHSystem::initialize_impl(const array::Scalar &basal_melt_rate,
 */
 void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
   // current time does not matter here
-  (void) t;
+  (void)t;
 
   auto EC = m_grid->ctx()->enthalpy_converter();
 
   inputs.check();
 
   // give them names that are a bit shorter...
-  const array::Array3D
-    &volumetric_heat = *inputs.volumetric_heating_rate,
-    &u3              = *inputs.u3,
-    &v3              = *inputs.v3,
-    &w3              = *inputs.w3;
+  const array::Array3D &volumetric_heat = *inputs.volumetric_heating_rate, &u3 = *inputs.u3,
+                       &v3 = *inputs.v3, &w3 = *inputs.w3;
 
   const auto &cell_type = *inputs.cell_type;
 
-  const array::Scalar
-    &basal_frictional_heating = *inputs.basal_frictional_heating,
-    &basal_heat_flux          = *inputs.basal_heat_flux,
-    &surface_liquid_fraction  = *inputs.surface_liquid_fraction,
-    &shelf_base_temp          = *inputs.shelf_base_temp,
-    &ice_surface_temp         = *inputs.surface_temp;
+  const array::Scalar &basal_frictional_heating = *inputs.basal_frictional_heating,
+                      &basal_heat_flux          = *inputs.basal_heat_flux,
+                      &surface_liquid_fraction  = *inputs.surface_liquid_fraction,
+                      &shelf_base_temp          = *inputs.shelf_base_temp,
+                      &ice_surface_temp         = *inputs.surface_temp;
 
   const array::Scalar1 &ice_thickness = *inputs.ice_thickness;
 
@@ -144,21 +139,30 @@ void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
                                *m_config, m_ice_enthalpy, u3, v3, w3, volumetric_heat, EC);
 
   const size_t Mz_fine = system.z().size();
-  const double dz = system.dz();
+  const double dz      = system.dz();
   std::vector<double> Enthnew(Mz_fine); // new enthalpy in column
 
-  array::AccessScope list{&ice_surface_temp, &shelf_base_temp, &surface_liquid_fraction,
-      &ice_thickness, &basal_frictional_heating, &basal_heat_flux,
-      &cell_type, &u3, &v3, &w3, &volumetric_heat, &m_ice_enthalpy,
-      &m_work};
+  array::AccessScope list{ &ice_surface_temp,
+                           &shelf_base_temp,
+                           &surface_liquid_fraction,
+                           &ice_thickness,
+                           &basal_frictional_heating,
+                           &basal_heat_flux,
+                           &cell_type,
+                           &u3,
+                           &v3,
+                           &w3,
+                           &volumetric_heat,
+                           &m_ice_enthalpy,
+                           &m_work };
 
-  double
-    margin_threshold = m_config->get_number("energy.margin_ice_thickness_limit"),
-    T_pm = m_config->get_number("constants.fresh_water.melting_point_temperature"),
-    residual_water_fraction = m_config->get_number("energy.ch_warming.residual_water_fraction");
+  double margin_threshold = m_config->get_number("energy.margin_ice_thickness_limit"),
+         T_pm             = m_config->get_number("constants.fresh_water.melting_point_temperature"),
+         residual_water_fraction =
+             m_config->get_number("energy.ch_warming.residual_water_fraction");
 
   const std::vector<double> &z = m_ice_enthalpy.levels();
-  const unsigned int Mz = z.size();
+  const unsigned int Mz        = z.size();
 
   ParallelSection loop(m_grid->com);
   try {
@@ -173,27 +177,20 @@ void CHSystem::update_impl(double t, double dt, const Inputs &inputs) {
 
         double *column = m_work.get_column(i, j);
         for (unsigned int k = 0; k < Mz; ++k) {
-          double
-            depth = std::max(H - z[k], 0.0),
-            P     = EC->pressure(depth);
-            column[k] = EC->enthalpy(EC->melting_temperature(P),
-                                     residual_water_fraction,
-                                     P);
+          double depth = std::max(H - z[k], 0.0), P = EC->pressure(depth);
+          column[k] = EC->enthalpy(EC->melting_temperature(P), residual_water_fraction, P);
         }
         continue;
       }
 
       // enthalpy and pressures at top of ice
-      const double
-        depth_ks = H - system.ks() * dz,
-        p_ks     = EC->pressure(depth_ks); // FIXME issue #15
+      const double depth_ks = H - system.ks() * dz,
+                   p_ks     = EC->pressure(depth_ks); // FIXME issue #15
 
-      const double Enth_ks = EC->enthalpy_permissive(ice_surface_temp(i, j),
-                                                     surface_liquid_fraction(i, j), p_ks);
+      const double Enth_ks =
+          EC->enthalpy_permissive(ice_surface_temp(i, j), surface_liquid_fraction(i, j), p_ks);
 
-      system.init(i, j,
-                  marginal(ice_thickness, i, j, margin_threshold),
-                  H);
+      system.init(i, j, marginal(ice_thickness, i, j, margin_threshold), H);
 
       const bool ice_free_column = (system.ks() == 0);
 
@@ -249,12 +246,9 @@ void CHSystem::write_state_impl(const OutputFile &output) const {
  * where `k` is the thermal conductivity of ice and `R` us the average spacing of
  * channels in the cryo-hydrologic system.
  */
-void cryo_hydrologic_warming_flux(double k,
-                                  double R,
-                                  const array::Scalar &ice_thickness,
+void cryo_hydrologic_warming_flux(double k, double R, const array::Scalar &ice_thickness,
                                   const array::Array3D &ice_enthalpy,
-                                  const array::Array3D &ch_enthalpy,
-                                  array::Array3D &result) {
+                                  const array::Array3D &ch_enthalpy, array::Array3D &result) {
 
   auto grid = result.grid();
 
@@ -263,7 +257,7 @@ void cryo_hydrologic_warming_flux(double k,
 
   auto EC = grid->ctx()->enthalpy_converter();
 
-  array::AccessScope access{&ice_thickness, &ice_enthalpy, &ch_enthalpy, &result};
+  array::AccessScope access{ &ice_thickness, &ice_enthalpy, &ch_enthalpy, &result };
 
   double C = k / (R * R);
 
@@ -272,19 +266,15 @@ void cryo_hydrologic_warming_flux(double k,
     for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
-      const double
-        *E_ch   = ch_enthalpy.get_column(i, j),
-        *E_ice  = ice_enthalpy.get_column(i, j);
+      const double *E_ch = ch_enthalpy.get_column(i, j), *E_ice = ice_enthalpy.get_column(i, j);
       double *Q = result.get_column(i, j);
 
       for (unsigned int m = 0; m < Mz; ++m) {
-        double
-          depth = ice_thickness(i, j) - z[m];
+        double depth = ice_thickness(i, j) - z[m];
 
         if (depth > 0.0) {
           double P = EC->pressure(depth);
-          Q[m] = std::max(C * (EC->temperature(E_ch[m], P) - EC->temperature(E_ice[m], P)),
-                          0.0);
+          Q[m] = std::max(C * (EC->temperature(E_ch[m], P) - EC->temperature(E_ice[m], P)), 0.0);
         } else {
           Q[m] = 0.0;
         }
@@ -297,7 +287,7 @@ void cryo_hydrologic_warming_flux(double k,
 }
 
 DiagnosticList CHSystem::spatial_diagnostics_impl() const {
-  return {{"ch_enthalpy", Diagnostic::wrap(m_ice_enthalpy)}};
+  return { { "ch_enthalpy", Diagnostic::wrap(m_ice_enthalpy) } };
 }
 
 

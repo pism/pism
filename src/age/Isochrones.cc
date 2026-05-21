@@ -18,26 +18,26 @@
  */
 
 #include <algorithm>
-#include <cassert>              // assert
-#include <cstddef>              // size_t
-#include <gsl/gsl_interp.h>     // gsl_interp_bsearch()
-#include <memory>               // std::shared_ptr
+#include <cassert>          // assert
+#include <cstddef>          // size_t
+#include <gsl/gsl_interp.h> // gsl_interp_bsearch()
+#include <memory>           // std::shared_ptr
 #include <string>
 #include <vector>
 
 #include "pism/age/Isochrones.hh"
+#include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/Interpolation1D.hh"
+#include "pism/util/Logger.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Time.hh"
-#include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/array/Array3D.hh"
 #include "pism/util/array/Scalar.hh"
-#include "pism/util/Interpolation1D.hh"
-#include "pism/util/petscwrappers/Vec.hh"
-#include "pism/util/Logger.hh"
-#include "pism/util/io/LocalInterpCtx.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/io/LocalInterpCtx.hh"
 #include "pism/util/io/io_helpers.hh"
+#include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 
@@ -46,8 +46,8 @@ static const char *layer_thickness_variable_name = "isochronal_layer_thickness";
 static const char *deposition_time_variable_name = "deposition_time";
 static const char *isochrone_depth_variable_name = "isochrone_depth";
 
-static const char *times_parameter = "isochrones.deposition_times";
-static const char *N_max_parameter = "isochrones.max_n_layers";
+static const char *times_parameter  = "isochrones.deposition_times";
+static const char *N_max_parameter  = "isochrones.max_n_layers";
 static const char *N_boot_parameter = "isochrones.bootstrapping.n_layers";
 
 
@@ -95,10 +95,7 @@ static std::shared_ptr<array::Array3D> allocate_layer_thickness(std::shared_ptr<
       pism::printf("times for isochrones in '%s'; earliest deposition times for layers in '%s'",
                    isochrone_depth_variable_name, layer_thickness_variable_name);
   auto &z = result->metadata(0).dimension("z");
-  z.clear()
-    .set_name(deposition_time_variable_name)
-    .long_name(z_description)
-    .units(time->units());
+  z.clear().set_name(deposition_time_variable_name).long_name(z_description).units(time->units());
 
   z["calendar"] = time->calendar();
 
@@ -214,10 +211,10 @@ std::vector<double> deposition_times(const Config &config, const Time &time) {
 
     auto N_deposition_times = deposition_times.size();
     if (N_deposition_times == 0) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "'%s' = '%s' has no times within the modeled time span [%s, %s]",
-                                    times_parameter, requested_times.c_str(),
-                                    time.date(time.start()).c_str(), time.date(time.end()).c_str());
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION, "'%s' = '%s' has no times within the modeled time span [%s, %s]",
+          times_parameter, requested_times.c_str(), time.date(time.start()).c_str(),
+          time.date(time.end()).c_str());
     }
 
     if ((int)N_deposition_times > N_max) {
@@ -273,9 +270,7 @@ static std::shared_ptr<array::Array3D> regrid_layer_thickness(std::shared_ptr<co
   }
 
   petsc::VecArray tmp(result->vec());
-  io::regrid_spatial_variable(metadata, *grid, lic, file,
-                              *grid->ctx()->log(),
-                              tmp.get());
+  io::regrid_spatial_variable(metadata, *grid, lic, file, *grid->ctx()->log(), tmp.get());
 
   return result;
 }
@@ -376,7 +371,7 @@ Isochrones::Isochrones(std::shared_ptr<const Grid> grid,
   m_layer_thickness = details::allocate_layer_thickness(m_grid, { time->current() });
   m_tmp             = m_layer_thickness->duplicate(array::WITH_GHOSTS);
 
-  auto n_layers = details::n_active_layers(m_layer_thickness->levels(), time->start());
+  auto n_layers     = details::n_active_layers(m_layer_thickness->levels(), time->start());
   m_top_layer_index = n_layers > 0 ? n_layers - 1 : 0;
 }
 
@@ -424,10 +419,10 @@ void Isochrones::bootstrap(const array::Scalar &ice_thickness) {
 
     if (N_bootstrap + (int)N_deposition_times > N_max) {
       auto times = m_config->get_string(times_parameter);
-      throw RuntimeError::formatted(
-          PISM_ERROR_LOCATION,
-          "%s (%d) + %s (%d) exceeds the allowed maximum (%s = %d)", N_boot_parameter,
-          (int)N_bootstrap, times_parameter, (int)N_deposition_times, N_max_parameter, (int)N_max);
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "%s (%d) + %s (%d) exceeds the allowed maximum (%s = %d)",
+                                    N_boot_parameter, (int)N_bootstrap, times_parameter,
+                                    (int)N_deposition_times, N_max_parameter, (int)N_max);
     }
 
     if (N_bootstrap > 0) {
@@ -793,7 +788,7 @@ MaxTimestep Isochrones::max_timestep_deposition_times(double t) const {
  * We are saving layer thicknesses, deposition times, and the number of active layers.
  */
 std::set<VariableMetadata> Isochrones::state_impl() const {
-  return array::metadata({m_layer_thickness.get()});
+  return array::metadata({ m_layer_thickness.get() });
 }
 
 /*!

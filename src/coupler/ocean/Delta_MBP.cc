@@ -18,20 +18,17 @@
  */
 
 #include "pism/coupler/ocean/Delta_MBP.hh"
-#include "pism/util/ScalarForcing.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/ScalarForcing.hh"
 
 namespace pism {
 namespace ocean {
 
 Delta_MBP::Delta_MBP(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in)
-  : OceanModel(g, in) {
+    : OceanModel(g, in) {
 
-  m_forcing.reset(new ScalarForcing(*g->ctx(),
-                                    "ocean.delta_MBP",
-                                    "delta_MBP",
-                                    "Pa", "Pa",
+  m_forcing.reset(new ScalarForcing(*g->ctx(), "ocean.delta_MBP", "delta_MBP", "Pa", "Pa",
                                     "melange back pressure"));
 
   m_water_column_pressure = allocate_water_column_pressure(g);
@@ -45,8 +42,7 @@ void Delta_MBP::init_impl(const Geometry &geometry) {
 
   m_input_model->init(geometry);
 
-  m_log->message(2,
-                 "* Initializing melange back pressure forcing using scalar offsets...\n");
+  m_log->message(2, "* Initializing melange back pressure forcing using scalar offsets...\n");
 }
 
 void Delta_MBP::update_impl(const Inputs &inputs, double t, double dt) {
@@ -54,14 +50,13 @@ void Delta_MBP::update_impl(const Inputs &inputs, double t, double dt) {
 
   const auto &geometry = *inputs.geometry;
 
-  double
-    melange_thickness = m_config->get_number("ocean.delta_MBP.melange_thickness"),
-    dP_melange        = m_forcing->value(t + 0.5 * dt);
+  double melange_thickness = m_config->get_number("ocean.delta_MBP.melange_thickness"),
+         dP_melange        = m_forcing->value(t + 0.5 * dt);
 
   const auto &P = m_input_model->average_water_column_pressure();
   const auto &H = geometry.ice_thickness;
-  auto &P_new = *m_water_column_pressure;
-  array::AccessScope list{&P, &H, &P_new};
+  auto &P_new   = *m_water_column_pressure;
+  array::AccessScope list{ &P, &H, &P_new };
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
@@ -72,7 +67,7 @@ void Delta_MBP::update_impl(const Inputs &inputs, double t, double dt) {
   }
 }
 
-const array::Scalar& Delta_MBP::average_water_column_pressure_impl() const {
+const array::Scalar &Delta_MBP::average_water_column_pressure_impl() const {
   return *m_water_column_pressure;
 }
 

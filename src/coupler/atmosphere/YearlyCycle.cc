@@ -20,23 +20,23 @@
 // Implementation of the atmosphere model using constant-in-time precipitation
 // and a cosine yearly cycle for near-surface air temperatures.
 
-#include <gsl/gsl_math.h>       // M_PI
+#include <gsl/gsl_math.h> // M_PI
 
 #include "pism/coupler/atmosphere/YearlyCycle.hh"
-#include "pism/util/Time.hh"
-#include "pism/util/Grid.hh"
 #include "pism/util/Config.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/Time.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace atmosphere {
 
 YearlyCycle::YearlyCycle(std::shared_ptr<const Grid> g)
-  : AtmosphereModel(g),
-    m_air_temp_mean_annual(m_grid, "air_temp_mean_annual"),
-    m_air_temp_mean_summer(m_grid, "air_temp_mean_summer"),
-    m_precipitation(m_grid, "precipitation") {
+    : AtmosphereModel(g),
+      m_air_temp_mean_annual(m_grid, "air_temp_mean_annual"),
+      m_air_temp_mean_summer(m_grid, "air_temp_mean_summer"),
+      m_precipitation(m_grid, "precipitation") {
 
   m_snow_temp_summer_day = m_config->get_number("atmosphere.fausto_air_temp.summer_peak_day");
 
@@ -62,7 +62,7 @@ YearlyCycle::YearlyCycle(std::shared_ptr<const Grid> g)
 
 //! Reads in the precipitation data from the input file.
 void YearlyCycle::init_impl(const Geometry &geometry) {
-  (void) geometry;
+  (void)geometry;
 
   InputOptions opts = process_input_options(m_grid->com, m_config);
   init_internal(opts.filename, opts.type == INIT_BOOTSTRAP, opts.record);
@@ -73,9 +73,9 @@ void YearlyCycle::init_internal(const std::string &input_filename, bool do_regri
                                 unsigned int start) {
   // read precipitation rate from file
   m_log->message(2,
-             "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
-             "      from %s ... \n",
-             input_filename.c_str());
+                 "    reading mean annual ice-equivalent precipitation rate 'precipitation'\n"
+                 "      from %s ... \n",
+                 input_filename.c_str());
   if (do_regrid == true) {
     m_precipitation.regrid(input_filename, io::Default::Nil()); // fails if not found!
   } else {
@@ -92,24 +92,23 @@ void YearlyCycle::write_state_impl(const OutputFile &output) const {
 }
 
 //! Copies the stored precipitation field into result.
-const array::Scalar& YearlyCycle::precipitation_impl() const {
+const array::Scalar &YearlyCycle::precipitation_impl() const {
   return m_precipitation;
 }
 
 //! Copies the stored mean annual near-surface air temperature field into result.
-const array::Scalar& YearlyCycle::air_temperature_impl() const {
+const array::Scalar &YearlyCycle::air_temperature_impl() const {
   return m_air_temp_mean_annual;
 }
 
 //! Copies the stored mean summer near-surface air temperature field into result.
-const array::Scalar& YearlyCycle::mean_summer_temp() const {
+const array::Scalar &YearlyCycle::mean_summer_temp() const {
   return m_air_temp_mean_summer;
 }
 
 void YearlyCycle::init_timeseries_impl(const std::vector<double> &ts) const {
   // constants related to the standard yearly cycle
-  const double
-    summerday_fraction = time().day_of_the_year_to_year_fraction(m_snow_temp_summer_day);
+  const double summerday_fraction = time().day_of_the_year_to_year_fraction(m_snow_temp_summer_day);
 
   size_t N = ts.size();
 
@@ -118,7 +117,7 @@ void YearlyCycle::init_timeseries_impl(const std::vector<double> &ts) const {
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
     double tk = time().year_fraction(ts[k]) - summerday_fraction;
 
-    m_ts_times[k] = ts[k];
+    m_ts_times[k]     = ts[k];
     m_cosine_cycle[k] = cos(2.0 * M_PI * tk);
   }
 }
@@ -126,14 +125,15 @@ void YearlyCycle::init_timeseries_impl(const std::vector<double> &ts) const {
 void YearlyCycle::precip_time_series_impl(int i, int j, std::vector<double> &result) const {
   result.resize(m_ts_times.size());
   for (unsigned int k = 0; k < m_ts_times.size(); k++) {
-    result[k] = m_precipitation(i,j);
+    result[k] = m_precipitation(i, j);
   }
 }
 
 void YearlyCycle::temp_time_series_impl(int i, int j, std::vector<double> &result) const {
   result.resize(m_ts_times.size());
   for (unsigned int k = 0; k < m_ts_times.size(); ++k) {
-    result[k] = m_air_temp_mean_annual(i,j) + (m_air_temp_mean_summer(i,j) - m_air_temp_mean_annual(i,j)) * m_cosine_cycle[k];
+    result[k] = m_air_temp_mean_annual(i, j) +
+                (m_air_temp_mean_summer(i, j) - m_air_temp_mean_annual(i, j)) * m_cosine_cycle[k];
   }
 }
 
@@ -152,8 +152,7 @@ void YearlyCycle::end_pointwise_access_impl() const {
 namespace diagnostics {
 
 /*! @brief Mean summer near-surface air temperature. */
-class MeanSummerTemperature : public Diag<YearlyCycle>
-{
+class MeanSummerTemperature : public Diag<YearlyCycle> {
 public:
   MeanSummerTemperature(const YearlyCycle *m) : Diag<YearlyCycle>(m) {
     m_vars = { { m_sys, "air_temp_mean_summer", *m_grid } };

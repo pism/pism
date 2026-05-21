@@ -18,25 +18,22 @@
 
 #include "pism/coupler/atmosphere/Delta_P.hh"
 
-#include "pism/util/Config.hh"
-#include "pism/util/ScalarForcing.hh"
 #include "pism/coupler/util/options.hh"
-#include "pism/util/array/Forcing.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/ScalarForcing.hh"
+#include "pism/util/array/Forcing.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace atmosphere {
 
 Delta_P::Delta_P(std::shared_ptr<const Grid> grid, std::shared_ptr<AtmosphereModel> in)
-  : AtmosphereModel(grid, std::move(in)) {
+    : AtmosphereModel(grid, std::move(in)) {
 
-  std::string
-    prefix         = "atmosphere.delta_P",
-    variable_name  = "delta_P",
-    long_name      = "precipitation offsets",
-    units          = "kg m^-2 second^-1",
-    external_units = "kg m^-2 year^-1";
+  std::string prefix = "atmosphere.delta_P", variable_name = "delta_P",
+              long_name = "precipitation offsets", units = "kg m^-2 second^-1",
+              external_units = "kg m^-2 year^-1";
 
   ForcingOptions opt(*m_grid->ctx(), prefix);
 
@@ -48,25 +45,17 @@ Delta_P::Delta_P(std::shared_ptr<const Grid> grid, std::shared_ptr<AtmosphereMod
   bool scalar = input.dimensions(variable_name).size() == 1;
 
   if (scalar) {
-    m_1d_offsets.reset(new ScalarForcing(*grid->ctx(),
-                                         prefix,
-                                         variable_name,
-                                         units, external_units,
-                                         long_name));
+    m_1d_offsets.reset(
+        new ScalarForcing(*grid->ctx(), prefix, variable_name, units, external_units, long_name));
   } else {
     auto buffer_size = m_config->get_number("input.forcing.buffer_size");
 
-    m_2d_offsets = std::make_shared<array::Forcing>(m_grid,
-                                                    input,
-                                                    variable_name,
-                                                    "", // no standard name
-                                                    static_cast<unsigned int>(buffer_size),
-                                                    opt.periodic);
+    m_2d_offsets =
+        std::make_shared<array::Forcing>(m_grid, input, variable_name,
+                                         "", // no standard name
+                                         static_cast<unsigned int>(buffer_size), opt.periodic);
 
-    m_2d_offsets->metadata()
-        .long_name(long_name)
-        .units(units)
-        .output_units(external_units);
+    m_2d_offsets->metadata().long_name(long_name).units(units).output_units(external_units);
   }
 
   m_precipitation = allocate_precipitation(grid);
@@ -75,14 +64,12 @@ Delta_P::Delta_P(std::shared_ptr<const Grid> grid, std::shared_ptr<AtmosphereMod
 void Delta_P::init_impl(const Geometry &geometry) {
   m_input_model->init(geometry);
 
-  m_log->message(2,
-                 "* Initializing precipitation forcing using scalar offsets...\n");
+  m_log->message(2, "* Initializing precipitation forcing using scalar offsets...\n");
 
   if (m_2d_offsets) {
     ForcingOptions opt(*m_grid->ctx(), "atmosphere.delta_P");
     m_2d_offsets->init(opt.filename, opt.periodic);
   }
-
 }
 
 void Delta_P::init_timeseries_impl(const std::vector<double> &ts) const {
@@ -133,7 +120,7 @@ void Delta_P::update_impl(const Geometry &geometry, double t, double dt) {
   }
 }
 
-const array::Scalar& Delta_P::precipitation_impl() const {
+const array::Scalar &Delta_P::precipitation_impl() const {
   return *m_precipitation;
 }
 

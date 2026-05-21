@@ -19,8 +19,8 @@
 #ifndef __localMassBalance_hh
 #define __localMassBalance_hh
 
-#include "pism/util/array/Scalar.hh"  // only needed for FaustoGrevePDDObject
 #include "pism/util/Config.hh"
+#include "pism/util/array/Scalar.hh" // only needed for FaustoGrevePDDObject
 
 namespace pism {
 namespace surface {
@@ -53,7 +53,6 @@ namespace surface {
 */
 class LocalMassBalance {
 public:
-
   //! A struct which holds degree day factors.
   /*!
     Degree day factors convert positive degree days (=PDDs) into amount of melt.
@@ -77,10 +76,8 @@ public:
   //! Count positive degree days (PDDs).  Returned value in units of K day.
   /*! Inputs T[0],...,T[N-1] are temperatures (K) at times t, t+dt_series, ..., t+(N-1)dt_series.
     Inputs `t`, `dt_series` are in seconds.  */
-  virtual void get_PDDs(double dt_series,
-                        const std::vector<double> &S,
-                        const std::vector<double> &T,
-                        std::vector<double> &PDDs) = 0;
+  virtual void get_PDDs(double dt_series, const std::vector<double> &S,
+                        const std::vector<double> &T, std::vector<double> &PDDs) = 0;
 
   /*! Remove rain from precipitation. */
   virtual void get_snow_accumulation(const std::vector<double> &T,
@@ -106,12 +103,8 @@ public:
    * @param[in] old_snow_depth snow depth [ice equivalent meters]
    * @param[in] accumulation total solid (snow) accumulation during the time-step [ice equivalent meters]
    */
-  virtual Changes step(const DegreeDayFactors &ddf,
-                       double PDDs,
-                       double ice_thickness,
-                       double old_firn_depth,
-                       double old_snow_depth,
-                       double accumulation) = 0;
+  virtual Changes step(const DegreeDayFactors &ddf, double PDDs, double ice_thickness,
+                       double old_firn_depth, double old_snow_depth, double accumulation) = 0;
 
 protected:
   std::string m_method;
@@ -132,23 +125,17 @@ class PDDMassBalance : public LocalMassBalance {
 
 public:
   PDDMassBalance(std::shared_ptr<const Config> config, units::System::Ptr system);
-  virtual ~PDDMassBalance() {}
+  virtual ~PDDMassBalance() {
+  }
 
   virtual unsigned int get_timeseries_length(double dt);
-  virtual void get_PDDs(double dt_series,
-                        const std::vector<double> &S,
-                        const std::vector<double> &T,
-                        std::vector<double> &PDDs);
+  virtual void get_PDDs(double dt_series, const std::vector<double> &S,
+                        const std::vector<double> &T, std::vector<double> &PDDs);
 
-  void get_snow_accumulation(const std::vector<double> &T,
-                             std::vector<double> &precip_rate);
+  void get_snow_accumulation(const std::vector<double> &T, std::vector<double> &precip_rate);
 
-  Changes step(const DegreeDayFactors &ddf,
-               double PDDs,
-               double ice_thickness,
-               double firn_depth,
-               double snow_depth,
-               double accumulation);
+  Changes step(const DegreeDayFactors &ddf, double PDDs, double ice_thickness, double firn_depth,
+               double snow_depth, double accumulation);
 
 protected:
   //! interpret all the precipitation as snow (no rain)
@@ -178,20 +165,16 @@ protected:
 */
 class PDDrandMassBalance : public PDDMassBalance {
 public:
+  enum Kind { NOT_REPEATABLE = 0, REPEATABLE = 1 };
 
-  enum Kind {NOT_REPEATABLE = 0, REPEATABLE = 1};
-
-  PDDrandMassBalance(std::shared_ptr<const Config> config,
-                     units::System::Ptr system,
-                     Kind kind);
+  PDDrandMassBalance(std::shared_ptr<const Config> config, units::System::Ptr system, Kind kind);
   virtual ~PDDrandMassBalance();
 
   virtual unsigned int get_timeseries_length(double dt);
 
-  virtual void get_PDDs(double dt_series,
-                        const std::vector<double> &S,
-                        const std::vector<double> &T,
-                        std::vector<double> &PDDs);
+  virtual void get_PDDs(double dt_series, const std::vector<double> &S,
+                        const std::vector<double> &T, std::vector<double> &PDDs);
+
 protected:
   struct Impl;
   Impl *m_impl;
@@ -218,8 +201,7 @@ public:
   FaustoGrevePDDObject(std::shared_ptr<const Grid> g);
   virtual ~FaustoGrevePDDObject() = default;
 
-  void update_temp_mj(const array::Scalar &surfelev,
-                      const array::Scalar &lat,
+  void update_temp_mj(const array::Scalar &surfelev, const array::Scalar &lat,
                       const array::Scalar &lon);
 
   /*! If this method is called, it is assumed that i,j is in the ownership range

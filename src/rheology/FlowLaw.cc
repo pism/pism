@@ -18,12 +18,12 @@
 
 #include "pism/rheology/FlowLaw.hh"
 
-#include <petsc.h>
 #include <limits>
+#include <petsc.h>
 
 #include "pism/util/EnthalpyConverter.hh"
-#include "pism/util/array/Scalar.hh"
 #include "pism/util/array/Array3D.hh"
+#include "pism/util/array/Scalar.hh"
 
 #include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
@@ -33,34 +33,32 @@
 namespace pism {
 namespace rheology {
 
-FlowLaw::FlowLaw(double exponent, const Config &config,
-                 std::shared_ptr<EnthalpyConverter> ec)
-  : m_EC(ec) {
+FlowLaw::FlowLaw(double exponent, const Config &config, std::shared_ptr<EnthalpyConverter> ec)
+    : m_EC(ec) {
 
   if (not m_EC) {
     throw RuntimeError(PISM_ERROR_LOCATION, "EC is NULL in FlowLaw::FlowLaw()");
   }
 
-  auto rho = config.get_number("constants.ice.density");
-  auto standard_gravity   = config.get_number("constants.standard_gravity");
+  auto rho              = config.get_number("constants.ice.density");
+  auto standard_gravity = config.get_number("constants.standard_gravity");
 
   m_ideal_gas_constant = config.get_number("constants.ideal_gas_constant");
 
-  m_rho_g              = rho * standard_gravity;
-  m_beta_CC_grad       = config.get_number("constants.ice.beta_Clausius_Clapeyron") * m_rho_g;
-  m_n                  = exponent;
-  m_viscosity_power    = (1.0 - m_n) / (2.0 * m_n);
-  m_hardness_power     = -1.0 / m_n;
+  m_rho_g           = rho * standard_gravity;
+  m_beta_CC_grad    = config.get_number("constants.ice.beta_Clausius_Clapeyron") * m_rho_g;
+  m_n               = exponent;
+  m_viscosity_power = (1.0 - m_n) / (2.0 * m_n);
+  m_hardness_power  = -1.0 / m_n;
 
-  m_A_cold = config.get_number("flow_law.Paterson_Budd.A_cold");
-  m_A_warm = config.get_number("flow_law.Paterson_Budd.A_warm");
-  m_Q_cold = config.get_number("flow_law.Paterson_Budd.Q_cold");
-  m_Q_warm = config.get_number("flow_law.Paterson_Budd.Q_warm");
+  m_A_cold    = config.get_number("flow_law.Paterson_Budd.A_cold");
+  m_A_warm    = config.get_number("flow_law.Paterson_Budd.A_warm");
+  m_Q_cold    = config.get_number("flow_law.Paterson_Budd.Q_cold");
+  m_Q_warm    = config.get_number("flow_law.Paterson_Budd.Q_warm");
   m_crit_temp = config.get_number("flow_law.Paterson_Budd.T_critical");
 
-  double
-    schoofLen = config.get_number("flow_law.Schoof_regularizing_length", "m"),
-    schoofVel = config.get_number("flow_law.Schoof_regularizing_velocity", "m second-1");
+  double schoofLen = config.get_number("flow_law.Schoof_regularizing_length", "m"),
+         schoofVel = config.get_number("flow_law.Schoof_regularizing_velocity", "m second-1");
 
   m_schoofReg = PetscSqr(schoofVel / schoofLen);
 }
@@ -87,25 +85,21 @@ double FlowLaw::softness_paterson_budd(double T_pa) const {
 }
 
 //! The flow law itself.
-double FlowLaw::flow(double stress, double enthalpy,
-                     double pressure, double grain_size) const {
+double FlowLaw::flow(double stress, double enthalpy, double pressure, double grain_size) const {
   return this->flow_impl(stress, enthalpy, pressure, grain_size);
 }
 
-double FlowLaw::flow_impl(double stress, double enthalpy,
-                          double pressure, double /* gs */) const {
-  return softness(enthalpy, pressure) * pow(stress, m_n-1);
+double FlowLaw::flow_impl(double stress, double enthalpy, double pressure, double /* gs */) const {
+  return softness(enthalpy, pressure) * pow(stress, m_n - 1);
 }
 
-void FlowLaw::flow_n(const double *stress, const double *enthalpy,
-                     const double *pressure, const double *grainsize,
-                     unsigned int n, double *result) const {
+void FlowLaw::flow_n(const double *stress, const double *enthalpy, const double *pressure,
+                     const double *grainsize, unsigned int n, double *result) const {
   this->flow_n_impl(stress, enthalpy, pressure, grainsize, n, result);
 }
 
-void FlowLaw::flow_n_impl(const double *stress, const double *enthalpy,
-                          const double *pressure, const double *grainsize,
-                          unsigned int n, double *result) const {
+void FlowLaw::flow_n_impl(const double *stress, const double *enthalpy, const double *pressure,
+                          const double *grainsize, unsigned int n, double *result) const {
   for (unsigned int k = 0; k < n; ++k) {
     result[k] = this->flow(stress[k], enthalpy[k], pressure[k], grainsize[k]);
   }
@@ -120,13 +114,13 @@ double FlowLaw::hardness(double E, double p) const {
   return this->hardness_impl(E, p);
 }
 
-void FlowLaw::hardness_n(const double *enthalpy, const double *pressure,
-                         unsigned int n, double *result) const {
+void FlowLaw::hardness_n(const double *enthalpy, const double *pressure, unsigned int n,
+                         double *result) const {
   this->hardness_n_impl(enthalpy, pressure, n, result);
 }
 
-void FlowLaw::hardness_n_impl(const double *enthalpy, const double *pressure,
-                              unsigned int n, double *result) const {
+void FlowLaw::hardness_n_impl(const double *enthalpy, const double *pressure, unsigned int n,
+                              double *result) const {
   for (unsigned int k = 0; k < n; ++k) {
     result[k] = this->hardness(enthalpy[k], pressure[k]);
   }
@@ -167,15 +161,13 @@ double FlowLaw::hardness_impl(double E, double p) const {
  * \param[out] nu effective viscosity
  * \param[out] dnu derivative of \f$ \nu \f$ with respect to \f$ \gamma \f$
  */
-void FlowLaw::effective_viscosity(double hardness, double gamma,
-                                  double *nu, double *dnu) const {
+void FlowLaw::effective_viscosity(double hardness, double gamma, double *nu, double *dnu) const {
   effective_viscosity(hardness, gamma, m_schoofReg, nu, dnu);
 }
 
-void FlowLaw::effective_viscosity(double hardness, double gamma, double eps,
-                                  double *nu, double *dnu) const {
-  const double
-    my_nu = 0.5 * hardness * pow(eps + gamma, m_viscosity_power);
+void FlowLaw::effective_viscosity(double hardness, double gamma, double eps, double *nu,
+                                  double *dnu) const {
+  const double my_nu = 0.5 * hardness * pow(eps + gamma, m_viscosity_power);
 
   if (PetscLikely(nu != NULL)) {
     *nu = my_nu;
@@ -186,14 +178,12 @@ void FlowLaw::effective_viscosity(double hardness, double gamma, double eps,
   }
 }
 
-void averaged_hardness_vec(const FlowLaw &ice,
-                           const array::Scalar &thickness,
-                           const array::Array3D  &enthalpy,
-                           array::Scalar &result) {
+void averaged_hardness_vec(const FlowLaw &ice, const array::Scalar &thickness,
+                           const array::Array3D &enthalpy, array::Scalar &result) {
 
   const Grid &grid = *thickness.grid();
 
-  array::AccessScope list{&thickness, &result, &enthalpy};
+  array::AccessScope list{ &thickness, &result, &enthalpy };
 
   ParallelSection loop(grid.com);
   try {
@@ -201,10 +191,9 @@ void averaged_hardness_vec(const FlowLaw &ice,
       const int i = p.i(), j = p.j();
 
       // Evaluate column integrals in flow law at every quadrature point's column
-      double H = thickness(i,j);
+      double H                 = thickness(i, j);
       const double *enthColumn = enthalpy.get_column(i, j);
-      result(i,j) = averaged_hardness(ice, H, grid.kBelowHeight(H),
-                                      grid.z().data(), enthColumn);
+      result(i, j) = averaged_hardness(ice, H, grid.kBelowHeight(H), grid.z().data(), enthColumn);
     }
   } catch (...) {
     loop.failed();
@@ -218,30 +207,24 @@ void averaged_hardness_vec(const FlowLaw &ice,
 /*!
  * See comment for hardness(). Note `E[0], ..., E[kbelowH]` must be valid.
  */
-double averaged_hardness(const FlowLaw &ice,
-                         double thickness,
-                         unsigned int kbelowH,
-                         const double *zlevels,
-                         const double *enthalpy) {
+double averaged_hardness(const FlowLaw &ice, double thickness, unsigned int kbelowH,
+                         const double *zlevels, const double *enthalpy) {
   double B = 0;
 
   const auto &EC = *ice.EC();
 
   // Use trapezoidal rule to integrate from 0 to zlevels[kbelowH]:
   if (kbelowH > 0) {
-    double
-      p0 = EC.pressure(thickness),
-      E0 = enthalpy[0],
-      h0 = ice.hardness(E0, p0); // ice hardness at the left endpoint
+    double p0 = EC.pressure(thickness), E0 = enthalpy[0],
+           h0 = ice.hardness(E0, p0); // ice hardness at the left endpoint
 
-    for (unsigned int i = 1; i <= kbelowH; ++i) { // note the "1" and the "<="
-      const double
-        p1 = EC.pressure(thickness - zlevels[i]), // pressure at the right endpoint
-        E1 = enthalpy[i], // enthalpy at the right endpoint
-        h1 = ice.hardness(E1, p1); // ice hardness at the right endpoint
+    for (unsigned int i = 1; i <= kbelowH; ++i) {            // note the "1" and the "<="
+      const double p1 = EC.pressure(thickness - zlevels[i]), // pressure at the right endpoint
+          E1          = enthalpy[i],                         // enthalpy at the right endpoint
+          h1          = ice.hardness(E1, p1);                // ice hardness at the right endpoint
 
       // The trapezoid rule sans the "1/2":
-      B += (zlevels[i] - zlevels[i-1]) * (h0 + h1);
+      B += (zlevels[i] - zlevels[i - 1]) * (h0 + h1);
 
       h0 = h1;
     }
@@ -252,9 +235,7 @@ double averaged_hardness(const FlowLaw &ice,
 
   // use the "rectangle method" to integrate from
   // zlevels[kbelowH] to thickness:
-  double
-    depth = thickness - zlevels[kbelowH],
-    p = EC.pressure(depth);
+  double depth = thickness - zlevels[kbelowH], p = EC.pressure(depth);
 
   B += depth * ice.hardness(enthalpy[kbelowH], p);
 
@@ -269,9 +250,9 @@ double averaged_hardness(const FlowLaw &ice,
 }
 
 bool FlowLawUsesGrainSize(const FlowLaw &flow_law) {
-  static const double gs[] = {1e-4, 1e-3, 1e-2, 1}, s=1e4, E=400000, p=1e6;
+  static const double gs[] = { 1e-4, 1e-3, 1e-2, 1 }, s = 1e4, E = 400000, p = 1e6;
   double ref = flow_law.flow(s, E, p, gs[0]);
-  for (int i=1; i<4; i++) {
+  for (int i = 1; i < 4; i++) {
     if (flow_law.flow(s, E, p, gs[i]) != ref) {
       return true;
     }

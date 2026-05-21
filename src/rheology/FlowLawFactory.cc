@@ -23,13 +23,13 @@
 #include "pism/util/Config.hh"
 #include "pism/util/error_handling.hh"
 
+#include "pism/rheology/GPBLD.hh"
+#include "pism/rheology/GoldsbyKohlstedt.hh"
+#include "pism/rheology/Hooke.hh"
 #include "pism/rheology/IsothermalGlen.hh"
 #include "pism/rheology/PatersonBudd.hh"
-#include "pism/rheology/GPBLD.hh"
-#include "pism/rheology/Hooke.hh"
 #include "pism/rheology/PatersonBuddCold.hh"
 #include "pism/rheology/PatersonBuddWarm.hh"
-#include "pism/rheology/GoldsbyKohlstedt.hh"
 
 namespace pism {
 namespace rheology {
@@ -66,7 +66,7 @@ FlowLaw *create_goldsby_kohlstedt(double exponent, const Config &config, ECPtr E
 
 FlowLawFactory::FlowLawFactory(std::shared_ptr<const Config> conf,
                                std::shared_ptr<EnthalpyConverter> EC)
-  : m_config(conf), m_EC(EC) {
+    : m_config(conf), m_EC(EC) {
 
   m_flow_laws = { { ICE_ISOTHERMAL_GLEN, create_isothermal_glen },
                   { ICE_PB, create_pb },

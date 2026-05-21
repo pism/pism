@@ -22,8 +22,7 @@
 #define __exactTestN_h 1
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /*
@@ -49,16 +48,16 @@ struct TestNConstants exactNConstants(void);
 
 struct TestNParameters {
   int error_code;
-  double H;               /* (m; ice thickness) */
-  double h_x;             /* (; surface slope) */
-  double u;               /* (m s-1; ice horizontal velocity) */
-  double M;               /* (m s-1; surface mass balance) */
-  double B;               /* (Pa s^(1/3); ice hardness) */
-  double beta;            /* (Pa s m-1; linear sliding coefficient) */
+  double H;    /* (m; ice thickness) */
+  double h_x;  /* (; surface slope) */
+  double u;    /* (m s-1; ice horizontal velocity) */
+  double M;    /* (m s-1; surface mass balance) */
+  double B;    /* (Pa s^(1/3); ice hardness) */
+  double beta; /* (Pa s m-1; linear sliding coefficient) */
 };
 
 struct TestNParameters exactN(double x);
-   /* input    : x                   (m; 0.0 <= x <= L0)
+/* input    : x                   (m; 0.0 <= x <= L0)
 
       Assumes n = 3.
       
@@ -107,5 +106,4 @@ struct TestNParameters exactN(double x);
 }
 #endif
 
-#endif  /* __exactTestN_h */
-
+#endif /* __exactTestN_h */

@@ -27,9 +27,9 @@
 #endif
 #include <netcdf.h>
 
+#include "pism/util/error_handling.hh"
 #include "pism/util/io/pism_type_conversion.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/error_handling.hh"
 
 namespace pism {
 namespace io {
@@ -42,7 +42,7 @@ static void check(const ErrorLocation &where, int return_code) {
 }
 
 NC4File::NC4File(MPI_Comm c, unsigned int compression_level)
-  : NCFile(c), m_compression_level(compression_level) {
+    : NCFile(c), m_compression_level(compression_level) {
   // empty
 }
 
@@ -50,22 +50,26 @@ NC4File::NC4File(MPI_Comm c, unsigned int compression_level)
 
 void NC4File::sync_impl() const {
 
-  int stat = nc_sync(m_file_id); check(PISM_ERROR_LOCATION, stat);
+  int stat = nc_sync(m_file_id);
+  check(PISM_ERROR_LOCATION, stat);
 }
 
 void NC4File::close_impl() {
-  int stat = nc_close(m_file_id); check(PISM_ERROR_LOCATION, stat);
+  int stat = nc_close(m_file_id);
+  check(PISM_ERROR_LOCATION, stat);
 
   m_file_id = -1;
 }
 
 // redef/enddef
 void NC4File::enddef_impl() const {
-  int stat = nc_enddef(m_file_id); check(PISM_ERROR_LOCATION, stat);
+  int stat = nc_enddef(m_file_id);
+  check(PISM_ERROR_LOCATION, stat);
 }
 
 void NC4File::redef_impl() const {
-  int stat = nc_redef(m_file_id); check(PISM_ERROR_LOCATION, stat);
+  int stat = nc_redef(m_file_id);
+  check(PISM_ERROR_LOCATION, stat);
 }
 
 // dim
@@ -95,7 +99,8 @@ void NC4File::inq_dimlen_impl(const std::string &dimension_name, unsigned int &r
   int stat = nc_inq_dimid(m_file_id, dimension_name.c_str(), &dimid);
   check(PISM_ERROR_LOCATION, stat);
 
-  stat = nc_inq_dimlen(m_file_id, dimid, &len); check(PISM_ERROR_LOCATION, stat);
+  stat = nc_inq_dimlen(m_file_id, dimid, &len);
+  check(PISM_ERROR_LOCATION, stat);
 
   result = static_cast<unsigned int>(len);
 }
@@ -104,27 +109,29 @@ void NC4File::inq_unlimdim_impl(std::string &result) const {
   int dimid = -1;
   std::vector<char> dimname(NC_MAX_NAME + 1, 0);
 
-  int stat = nc_inq_unlimdim(m_file_id, &dimid); check(PISM_ERROR_LOCATION, stat);
+  int stat = nc_inq_unlimdim(m_file_id, &dimid);
+  check(PISM_ERROR_LOCATION, stat);
 
   if (dimid == -1) {
     result.clear();
   } else {
-    stat = nc_inq_dimname(m_file_id, dimid, dimname.data()); check(PISM_ERROR_LOCATION, stat);
+    stat = nc_inq_dimname(m_file_id, dimid, dimname.data());
+    check(PISM_ERROR_LOCATION, stat);
 
     result = dimname.data();
   }
 }
 
 // var
-void NC4File::def_var_impl(const std::string &name,
-                           io::Type nctype,
+void NC4File::def_var_impl(const std::string &name, io::Type nctype,
                            const std::vector<std::string> &dims) const {
   std::vector<int> dimids;
   int stat = 0, varid = -1;
 
   for (auto d : dims) {
     int dimid = -1;
-    stat = nc_inq_dimid(m_file_id, d.c_str(), &dimid); check(PISM_ERROR_LOCATION, stat);
+    stat      = nc_inq_dimid(m_file_id, d.c_str(), &dimid);
+    check(PISM_ERROR_LOCATION, stat);
     dimids.push_back(dimid);
   }
 
@@ -134,7 +141,8 @@ void NC4File::def_var_impl(const std::string &name,
 
   // Compress 2D and 3D variables
   if (m_compression_level > 0 and dims.size() > 1) {
-    stat = nc_inq_varid(m_file_id, name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
+    stat = nc_inq_varid(m_file_id, name.c_str(), &varid);
+    check(PISM_ERROR_LOCATION, stat);
     stat = nc_def_var_deflate(m_file_id, varid, 0, 1, m_compression_level);
 
     // The NetCDF version used by PISM may not support compression.
@@ -147,7 +155,7 @@ void NC4File::def_var_impl(const std::string &name,
 }
 
 void NC4File::def_var_chunking_impl(const std::string &name,
-                                   std::vector<size_t> &dimensions) const {
+                                    std::vector<size_t> &dimensions) const {
   int stat = 0, varid = 0;
 
   stat = nc_inq_varid(m_file_id, name.c_str(), &varid);
@@ -158,20 +166,15 @@ void NC4File::def_var_chunking_impl(const std::string &name,
 }
 
 void NC4File::get_vara_double_impl(const std::string &variable_name,
-                                  const std::vector<unsigned int> &start,
-                                  const std::vector<unsigned int> &count,
-                                  double *op) const {
-  return this->get_put_var_double(variable_name,
-                                  start, count, op,
-                                  true /*get*/);
+                                   const std::vector<unsigned int> &start,
+                                   const std::vector<unsigned int> &count, double *op) const {
+  return this->get_put_var_double(variable_name, start, count, op, true /*get*/);
 }
 
 void NC4File::put_vara_double_impl(const std::string &variable_name,
-                                  const std::vector<unsigned int> &start,
-                                  const std::vector<unsigned int> &count,
-                                  const double *op) const {
-  return this->get_put_var_double(variable_name,
-                                  start, count, const_cast<double*>(op),
+                                   const std::vector<unsigned int> &start,
+                                   const std::vector<unsigned int> &count, const double *op) const {
+  return this->get_put_var_double(variable_name, start, count, const_cast<double *>(op),
                                   false /*put*/);
 }
 
@@ -196,16 +199,20 @@ void NC4File::put_vara_text_impl(const std::string &variable_name,
 }
 
 void NC4File::inq_nvars_impl(int &result) const {
-  int stat = nc_inq_nvars(m_file_id, &result); check(PISM_ERROR_LOCATION, stat);
+  int stat = nc_inq_nvars(m_file_id, &result);
+  check(PISM_ERROR_LOCATION, stat);
 }
 
-void NC4File::inq_vardimid_impl(const std::string &variable_name, std::vector<std::string> &result) const {
+void NC4File::inq_vardimid_impl(const std::string &variable_name,
+                                std::vector<std::string> &result) const {
   int ndims = 0, varid = -1;
   std::vector<int> dimids;
 
-  int stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
+  int stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid);
+  check(PISM_ERROR_LOCATION, stat);
 
-  stat = nc_inq_varndims(m_file_id, varid, &ndims); check(PISM_ERROR_LOCATION, stat);
+  stat = nc_inq_varndims(m_file_id, varid, &ndims);
+  check(PISM_ERROR_LOCATION, stat);
 
   if (ndims == 0) {
     result.clear();
@@ -215,12 +222,14 @@ void NC4File::inq_vardimid_impl(const std::string &variable_name, std::vector<st
   result.resize(ndims);
   dimids.resize(ndims);
 
-  stat = nc_inq_vardimid(m_file_id, varid, dimids.data()); check(PISM_ERROR_LOCATION, stat);
+  stat = nc_inq_vardimid(m_file_id, varid, dimids.data());
+  check(PISM_ERROR_LOCATION, stat);
 
   for (int k = 0; k < ndims; ++k) {
     std::vector<char> name(NC_MAX_NAME + 1, 0);
 
-    stat = nc_inq_dimname(m_file_id, dimids[k], name.data()); check(PISM_ERROR_LOCATION, stat);
+    stat = nc_inq_dimname(m_file_id, dimids[k], name.data());
+    check(PISM_ERROR_LOCATION, stat);
 
     result[k] = name.data();
   }
@@ -232,7 +241,7 @@ int NC4File::get_varid(const std::string &variable_name) const {
   }
 
   int result = 0;
-  int stat = nc_inq_varid(m_file_id, variable_name.c_str(), &result);
+  int stat   = nc_inq_varid(m_file_id, variable_name.c_str(), &result);
   check(PISM_ERROR_LOCATION, stat);
 
   return result;
@@ -262,14 +271,13 @@ void NC4File::inq_varname_impl(unsigned int j, std::string &result) const {
 
 // att
 
-void NC4File::get_att_double_impl(const std::string &variable_name,
-                                  const std::string &att_name,
+void NC4File::get_att_double_impl(const std::string &variable_name, const std::string &att_name,
                                   std::vector<double> &result) const {
   int varid = get_varid(variable_name);
 
   // Read the attribute length:
   size_t attlen = 0;
-  int stat = nc_inq_attlen(m_file_id, varid, att_name.c_str(), &attlen);
+  int stat      = nc_inq_attlen(m_file_id, varid, att_name.c_str(), &attlen);
 
   int len = 0;
   if (stat == NC_NOERR) {
@@ -294,10 +302,9 @@ void NC4File::get_att_double_impl(const std::string &variable_name,
 }
 
 // Get a text (character array) attribute on rank 0.
-static void get_att_text(int ncid, int varid, const std::string &att_name,
-                         std::string &result) {
+static void get_att_text(int ncid, int varid, const std::string &att_name, std::string &result) {
   size_t attlen = 0;
-  int stat = nc_inq_attlen(ncid, varid, att_name.c_str(), &attlen);
+  int stat      = nc_inq_attlen(ncid, varid, att_name.c_str(), &attlen);
   if (stat != NC_NOERR) {
     result = "";
     return;
@@ -311,16 +318,15 @@ static void get_att_text(int ncid, int varid, const std::string &att_name,
 
 // Get a string attribute on rank 0. In "string array" attributes array elements are
 // concatenated using "," as the separator.
-static void get_att_string(int ncid, int varid, const std::string &att_name,
-                           std::string &result) {
+static void get_att_string(int ncid, int varid, const std::string &att_name, std::string &result) {
   size_t attlen = 0;
-  int stat = nc_inq_attlen(ncid, varid, att_name.c_str(), &attlen);
+  int stat      = nc_inq_attlen(ncid, varid, att_name.c_str(), &attlen);
   if (stat != NC_NOERR) {
     result = "";
     return;
   }
 
-  std::vector<char*> buffer(attlen + 1, 0);
+  std::vector<char *> buffer(attlen + 1, 0);
   stat = nc_get_att_string(ncid, varid, att_name.c_str(), buffer.data());
   if (stat == NC_NOERR) {
     std::vector<std::string> strings(attlen);
@@ -335,8 +341,8 @@ static void get_att_string(int ncid, int varid, const std::string &att_name,
   check(PISM_ERROR_LOCATION, stat);
 }
 
-void NC4File::get_att_text_impl(const std::string &variable_name,
-                               const std::string &att_name, std::string &result) const {
+void NC4File::get_att_text_impl(const std::string &variable_name, const std::string &att_name,
+                                std::string &result) const {
   int varid = get_varid(variable_name);
 
   nc_type nctype;
@@ -362,25 +368,21 @@ void NC4File::del_att_impl(const std::string &variable_name, const std::string &
   check(PISM_ERROR_LOCATION, stat);
 }
 
-void NC4File::put_att_double_impl(const std::string &variable_name,
-                                  const std::string &att_name,
-                                  io::Type xtype,
-                                  const std::vector<double> &data) const {
-  int stat = nc_put_att_double(m_file_id, get_varid(variable_name), att_name.c_str(),
-                               xtype, data.size(), data.data());
+void NC4File::put_att_double_impl(const std::string &variable_name, const std::string &att_name,
+                                  io::Type xtype, const std::vector<double> &data) const {
+  int stat = nc_put_att_double(m_file_id, get_varid(variable_name), att_name.c_str(), xtype,
+                               data.size(), data.data());
   check(PISM_ERROR_LOCATION, stat);
 }
 
-void NC4File::put_att_text_impl(const std::string &variable_name,
-                                const std::string &att_name,
+void NC4File::put_att_text_impl(const std::string &variable_name, const std::string &att_name,
                                 const std::string &value) const {
-  int stat = nc_put_att_text(m_file_id, get_varid(variable_name), att_name.c_str(),
-                             value.size(), value.c_str());
+  int stat = nc_put_att_text(m_file_id, get_varid(variable_name), att_name.c_str(), value.size(),
+                             value.c_str());
   check(PISM_ERROR_LOCATION, stat);
 }
 
-void NC4File::inq_attname_impl(const std::string &variable_name,
-                               unsigned int n,
+void NC4File::inq_attname_impl(const std::string &variable_name, unsigned int n,
                                std::string &result) const {
   std::vector<char> name(NC_MAX_NAME + 1, 0);
   int stat = nc_inq_attname(m_file_id, get_varid(variable_name), n, name.data());
@@ -389,11 +391,10 @@ void NC4File::inq_attname_impl(const std::string &variable_name,
   result = name.data();
 }
 
-void NC4File::inq_atttype_impl(const std::string &variable_name,
-                               const std::string &att_name,
+void NC4File::inq_atttype_impl(const std::string &variable_name, const std::string &att_name,
                                io::Type &result) const {
   nc_type tmp = NC_NAT;
-  int stat = nc_inq_atttype(m_file_id, get_varid(variable_name), att_name.c_str(), &tmp);
+  int stat    = nc_inq_atttype(m_file_id, get_varid(variable_name), att_name.c_str(), &tmp);
 
   if (stat == NC_ENOTATT) {
     tmp = NC_NAT;
@@ -407,7 +408,8 @@ void NC4File::inq_atttype_impl(const std::string &variable_name,
 // misc
 
 void NC4File::set_fill_impl(int fillmode, int &old_modep) const {
-  int stat = nc_set_fill(m_file_id, fillmode, &old_modep); check(PISM_ERROR_LOCATION, stat);
+  int stat = nc_set_fill(m_file_id, fillmode, &old_modep);
+  check(PISM_ERROR_LOCATION, stat);
 }
 
 void NC4File::set_access_mode(int /*unused*/) const {
@@ -415,19 +417,19 @@ void NC4File::set_access_mode(int /*unused*/) const {
 }
 
 void NC4File::get_put_var_double(const std::string &variable_name,
-                                const std::vector<unsigned int> &start,
-                                const std::vector<unsigned int> &count,
-                                double *op,
-                                bool get) const {
+                                 const std::vector<unsigned int> &start,
+                                 const std::vector<unsigned int> &count, double *op,
+                                 bool get) const {
   int stat, varid, ndims = static_cast<int>(start.size());
 
   std::vector<size_t> nc_start(ndims), nc_count(ndims);
 
-  stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid); check(PISM_ERROR_LOCATION, stat);
+  stat = nc_inq_varid(m_file_id, variable_name.c_str(), &varid);
+  check(PISM_ERROR_LOCATION, stat);
 
   for (int j = 0; j < ndims; ++j) {
-    nc_start[j]  = start[j];
-    nc_count[j]  = count[j];
+    nc_start[j] = start[j];
+    nc_count[j] = count[j];
   }
 
   {

@@ -17,26 +17,24 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <cassert>
 #include <cstddef>
 #include <gsl/gsl_interp.h>
-#include <cassert>
 
 #include "pism/util/Interpolation1D.hh"
 #include "pism/util/error_handling.hh"
 
 namespace pism {
 
-Interpolation1D::Interpolation1D(InterpolationType type,
-                             const std::vector<double> &input_x,
-                             const std::vector<double> &output_x)
-  : Interpolation1D(type, input_x.data(), input_x.size(),
-                  output_x.data(), output_x.size()) {
+Interpolation1D::Interpolation1D(InterpolationType type, const std::vector<double> &input_x,
+                                 const std::vector<double> &output_x)
+    : Interpolation1D(type, input_x.data(), input_x.size(), output_x.data(), output_x.size()) {
   // empty
 }
 
-Interpolation1D::Interpolation1D(InterpolationType type,
-                             const double *input_x, unsigned int input_x_size,
-                             const double *output_x, unsigned int output_x_size) {
+Interpolation1D::Interpolation1D(InterpolationType type, const double *input_x,
+                                 unsigned int input_x_size, const double *output_x,
+                                 unsigned int output_x_size) {
 
   // the trivial case (the code below requires input_x_size >= 2)
   if (input_x_size < 2) {
@@ -56,9 +54,8 @@ Interpolation1D::Interpolation1D(InterpolationType type,
   // input grid points have to be stored in the increasing order
   for (unsigned int i = 0; i < input_x_size - 1; ++i) {
     if (input_x[i] >= input_x[i + 1]) {
-      throw RuntimeError(PISM_ERROR_LOCATION,
-                         "an input grid for interpolation has to be "
-                         "strictly increasing");
+      throw RuntimeError(PISM_ERROR_LOCATION, "an input grid for interpolation has to be "
+                                              "strictly increasing");
     }
   }
 
@@ -88,7 +85,7 @@ Interpolation1D::Interpolation1D(InterpolationType type,
  * @param[in] output_x_size number of points in the output grid
  */
 void Interpolation1D::init_linear(const double *input_x, unsigned int input_x_size,
-                                const double *output_x, unsigned int output_x_size) {
+                                  const double *output_x, unsigned int output_x_size) {
   assert(input_x_size >= 2);
 
   m_left.resize(output_x_size);
@@ -101,9 +98,7 @@ void Interpolation1D::init_linear(const double *input_x, unsigned int input_x_si
 
     // note: use "input_x_size" instead of "input_x_size - 1" to support extrapolation on
     // the right
-    size_t
-      L = gsl_interp_bsearch(input_x, x, 0, input_x_size),
-      R = L + 1;
+    size_t L = gsl_interp_bsearch(input_x, x, 0, input_x_size), R = L + 1;
 
     double alpha = 0.0;
     if (x >= input_x[L] and R < input_x_size) {
@@ -112,7 +107,7 @@ void Interpolation1D::init_linear(const double *input_x, unsigned int input_x_si
     } else {
       // extrapolation
       alpha = 0.0;
-      R = L;
+      R     = L;
     }
 
     assert(L < input_x_size);
@@ -125,15 +120,15 @@ void Interpolation1D::init_linear(const double *input_x, unsigned int input_x_si
   }
 }
 
-const std::vector<int>& Interpolation1D::left() const {
+const std::vector<int> &Interpolation1D::left() const {
   return m_left;
 }
 
-const std::vector<int>& Interpolation1D::right() const {
+const std::vector<int> &Interpolation1D::right() const {
   return m_right;
 }
 
-const std::vector<double>& Interpolation1D::alpha() const {
+const std::vector<double> &Interpolation1D::alpha() const {
   return m_alpha;
 }
 
@@ -164,15 +159,13 @@ std::vector<double> Interpolation1D::interpolate(const std::vector<double> &inpu
 void Interpolation1D::interpolate(const double *input, double *output) const {
   size_t n = m_alpha.size();
   for (size_t k = 0; k < n; ++k) {
-    const int
-      L = m_left[k],
-      R = m_right[k];
+    const int L = m_left[k], R = m_right[k];
     output[k] = input[L] + m_alpha[k] * (input[R] - input[L]);
   }
 }
 
 void Interpolation1D::init_nearest(const double *input_x, unsigned int input_x_size,
-                                 const double *output_x, unsigned int output_x_size) {
+                                   const double *output_x, unsigned int output_x_size) {
 
   init_linear(input_x, input_x_size, output_x, output_x_size);
 
@@ -185,7 +178,7 @@ void Interpolation1D::init_nearest(const double *input_x, unsigned int input_x_s
  * Input grid `input_x` corresponds to *left* end-points of intervals.
  */
 void Interpolation1D::init_piecewise_constant(const double *input_x, unsigned int input_x_size,
-                                            const double *output_x, unsigned int output_x_size) {
+                                              const double *output_x, unsigned int output_x_size) {
   assert(input_x_size >= 2);
 
   m_left.resize(output_x_size);
@@ -199,7 +192,7 @@ void Interpolation1D::init_piecewise_constant(const double *input_x, unsigned in
     // the right
     size_t L = gsl_interp_bsearch(input_x, output_x[i], 0, input_x_size);
 
-    m_left[i] = static_cast<int>(L);
+    m_left[i]  = static_cast<int>(L);
     m_right[i] = static_cast<int>(L);
     m_alpha[i] = 0.0;
 
@@ -209,16 +202,13 @@ void Interpolation1D::init_piecewise_constant(const double *input_x, unsigned in
   }
 }
 
-static std::map<size_t, double> weights_piecewise_constant(const double *x,
-                                                           size_t x_size,
-                                                           double a,
+static std::map<size_t, double> weights_piecewise_constant(const double *x, size_t x_size, double a,
                                                            double b) {
 
-  size_t
-    al = gsl_interp_bsearch(x, a, 0, x_size),
-    ar = (a >= x[al] and al + 1 < x_size) ? al + 1 : al,
-    bl = gsl_interp_bsearch(x, b, 0, x_size),
-    br = (b >= x[bl] and bl + 1 < x_size) ? bl + 1 : bl;
+  size_t al = gsl_interp_bsearch(x, a, 0, x_size),
+         ar = (a >= x[al] and al + 1 < x_size) ? al + 1 : al,
+         bl = gsl_interp_bsearch(x, b, 0, x_size),
+         br = (b >= x[bl] and bl + 1 < x_size) ? bl + 1 : bl;
 
   std::map<size_t, double> result;
 
@@ -241,20 +231,16 @@ static std::map<size_t, double> weights_piecewise_constant(const double *x,
   return result;
 }
 
-static std::map<size_t, double> weights_piecewise_linear(const double *x,
-                                                         size_t x_size,
-                                                         double a,
+static std::map<size_t, double> weights_piecewise_linear(const double *x, size_t x_size, double a,
                                                          double b) {
 
-  size_t
-    al = gsl_interp_bsearch(x, a, 0, x_size),
-    ar = (a >= x[al] and al + 1 < x_size) ? al + 1 : al,
-    bl = gsl_interp_bsearch(x, b, 0, x_size),
-    br = (b >= x[bl] and bl + 1 < x_size) ? bl + 1 : bl;
+  size_t al = gsl_interp_bsearch(x, a, 0, x_size),
+         ar = (a >= x[al] and al + 1 < x_size) ? al + 1 : al,
+         bl = gsl_interp_bsearch(x, b, 0, x_size),
+         br = (b >= x[bl] and bl + 1 < x_size) ? bl + 1 : bl;
 
-  double
-    alpha_a = (al == ar) ? 0.0 : (a - x[al]) / (x[ar] - x[al]),
-    alpha_b = (bl == br) ? 0.0 : (b - x[bl]) / (x[br] - x[bl]);
+  double alpha_a = (al == ar) ? 0.0 : (a - x[al]) / (x[ar] - x[al]),
+         alpha_b = (bl == br) ? 0.0 : (b - x[bl]) / (x[br] - x[bl]);
 
   std::map<size_t, double> result;
 
@@ -270,9 +256,7 @@ static std::map<size_t, double> weights_piecewise_linear(const double *x,
 
     // intermediate intervals
     for (size_t k = ar; k < bl; ++k) {
-      size_t
-        L = k,
-        R = k + 1;
+      size_t L = k, R = k + 1;
       result[L] += 0.5 * (x[R] - x[L]);
       result[R] += 0.5 * (x[R] - x[L]);
     }
@@ -306,25 +290,18 @@ static std::map<size_t, double> weights_piecewise_linear(const double *x,
  * }
  * ```
  */
-std::map<size_t, double> integration_weights(const double *x,
-                                             size_t x_size,
-                                             InterpolationType type,
-                                             double a,
-                                             double b) {
+std::map<size_t, double> integration_weights(const double *x, size_t x_size, InterpolationType type,
+                                             double a, double b) {
 
   if (a >= b) {
-    throw RuntimeError(PISM_ERROR_LOCATION,
-                       "invalid integration interval (a >= b)");
+    throw RuntimeError(PISM_ERROR_LOCATION, "invalid integration interval (a >= b)");
   }
 
   if (type != LINEAR and type != PIECEWISE_CONSTANT) {
-    throw RuntimeError(PISM_ERROR_LOCATION,
-                       "unsupported interpolation type");
+    throw RuntimeError(PISM_ERROR_LOCATION, "unsupported interpolation type");
   }
 
-  auto weights = (type == LINEAR) ?
-    weights_piecewise_linear :
-    weights_piecewise_constant;
+  auto weights = (type == LINEAR) ? weights_piecewise_linear : weights_piecewise_constant;
 
   size_t N  = x_size - 1;
   double t0 = x[0];
@@ -332,12 +309,12 @@ std::map<size_t, double> integration_weights(const double *x,
 
   // both points are to the left of [t0, t1]
   if (b <= t0) {
-    return {{0, b - a}};
+    return { { 0, b - a } };
   }
 
   // both points are to the right of [t0, t1]
   if (a >= t1) {
-    return {{N, b - a}};
+    return { { N, b - a } };
   }
 
   // a is to the left of [t0, t1]
@@ -358,10 +335,8 @@ std::map<size_t, double> integration_weights(const double *x,
   return weights(x, x_size, a, b);
 }
 
-std::map<size_t, double> integration_weights(const std::vector<double> &x,
-                                             InterpolationType type,
-                                             double a,
-                                             double b) {
+std::map<size_t, double> integration_weights(const std::vector<double> &x, InterpolationType type,
+                                             double a, double b) {
   return integration_weights(x.data(), x.size(), type, a, b);
 }
 

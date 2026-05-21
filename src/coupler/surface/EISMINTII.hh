@@ -32,6 +32,7 @@ class EISMINTII : public PSFormulas {
 public:
   EISMINTII(std::shared_ptr<const Grid> g, int experiment);
   ~EISMINTII() = default;
+
 protected:
   void init_impl(const Geometry &geometry);
   virtual MaxTimestep max_timestep_impl(double t) const;

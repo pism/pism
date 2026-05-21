@@ -19,10 +19,10 @@
 #include <cmath>
 #include <petsc.h>
 
-#include "pism/util/array/Scalar.hh"
 #include "pism/inverse/IPDesignVariableParameterization.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
 
@@ -38,7 +38,7 @@ parameters that are follow the naming convention \a design_param_foo_*.
 \param config          The config file to read the scale parameters from.
 \param design_var_name The associated name of the design variable, e.g. 'tauc' or 'hardav'
 */
-void IPDesignVariableParameterization::set_scales(const Config & config,
+void IPDesignVariableParameterization::set_scales(const Config &config,
                                                   const std::string &design_var_name) {
   std::string key("inverse.design.param_");
   key += design_var_name;
@@ -48,11 +48,10 @@ void IPDesignVariableParameterization::set_scales(const Config & config,
 
 //! Transforms a vector of \f$\zeta\f$ values to a vector of \f$d\f$ values.
 void IPDesignVariableParameterization::convertToDesignVariable(array::Scalar &zeta,
-                                                               array::Scalar &d,
-                                                               bool communicate) {
+                                                               array::Scalar &d, bool communicate) {
   PetscErrorCode ierr;
 
-  array::AccessScope list{&zeta, &d};
+  array::AccessScope list{ &zeta, &d };
 
   const Grid &grid = *zeta.grid();
 
@@ -63,9 +62,8 @@ void IPDesignVariableParameterization::convertToDesignVariable(array::Scalar &ze
 
       this->toDesignVariable(zeta(i, j), &d(i, j), NULL);
       if (std::isnan(d(i, j))) {
-        ierr = PetscPrintf(PETSC_COMM_WORLD,
-                           "made a d nan zeta = %g d = %g\n",
-                           zeta(i, j), d(i, j));
+        ierr =
+            PetscPrintf(PETSC_COMM_WORLD, "made a d nan zeta = %g d = %g\n", zeta(i, j), d(i, j));
         PISM_CHK(ierr, "PetscPrintf");
       }
     }
@@ -79,12 +77,12 @@ void IPDesignVariableParameterization::convertToDesignVariable(array::Scalar &ze
   }
 }
 
-  //! Transforms a vector of \f$d\f$ values to a vector of \f$\zeta\f$ values.
+//! Transforms a vector of \f$d\f$ values to a vector of \f$\zeta\f$ values.
 void IPDesignVariableParameterization::convertFromDesignVariable(array::Scalar &d,
                                                                  array::Scalar &zeta,
                                                                  bool communicate) {
   PetscErrorCode ierr;
-  array::AccessScope list{&zeta, &d};
+  array::AccessScope list{ &zeta, &d };
 
   const Grid &grid = *zeta.grid();
 
@@ -95,9 +93,8 @@ void IPDesignVariableParameterization::convertFromDesignVariable(array::Scalar &
 
       this->fromDesignVariable(d(i, j), &zeta(i, j));
       if (std::isnan(zeta(i, j))) {
-        ierr = PetscPrintf(PETSC_COMM_WORLD,
-                           "made a zeta nan d = %g zeta = %g\n",
-                           d(i, j), zeta(i, j));
+        ierr = PetscPrintf(PETSC_COMM_WORLD, "made a zeta nan d = %g zeta = %g\n", d(i, j),
+                           zeta(i, j));
         PISM_CHK(ierr, "PetscPrintf");
       }
     }
@@ -111,10 +108,9 @@ void IPDesignVariableParameterization::convertFromDesignVariable(array::Scalar &
   }
 }
 
-void IPDesignVariableParamIdent::toDesignVariable(double p, double *value,
-                                                  double *derivative) {
+void IPDesignVariableParamIdent::toDesignVariable(double p, double *value, double *derivative) {
   if (value != NULL) {
-    *value = m_d_scale*p;
+    *value = m_d_scale * p;
   }
   if (derivative != NULL) {
     *derivative = m_d_scale;
@@ -126,13 +122,12 @@ void IPDesignVariableParamIdent::fromDesignVariable(double d, double *OUTPUT) {
 }
 
 
-void IPDesignVariableParamSquare::toDesignVariable(double p, double *value,
-                                                   double *derivative) {
+void IPDesignVariableParamSquare::toDesignVariable(double p, double *value, double *derivative) {
   if (value != NULL) {
-    *value = m_d_scale*p*p;
+    *value = m_d_scale * p * p;
   }
   if (derivative != NULL) {
-    *derivative = m_d_scale*2*p;
+    *derivative = m_d_scale * 2 * p;
   }
 }
 
@@ -143,7 +138,8 @@ void IPDesignVariableParamSquare::fromDesignVariable(double d, double *OUTPUT) {
   *OUTPUT = sqrt(d / m_d_scale);
 }
 
-void IPDesignVariableParamExp::set_scales(const Config &config, const std::string &design_var_name) {
+void IPDesignVariableParamExp::set_scales(const Config &config,
+                                          const std::string &design_var_name) {
   IPDesignVariableParameterization::set_scales(config, design_var_name);
 
   std::string key("inverse.design.param_");
@@ -152,14 +148,13 @@ void IPDesignVariableParamExp::set_scales(const Config &config, const std::strin
   m_d_eps = config.get_number(key);
 }
 
-void IPDesignVariableParamExp::toDesignVariable(double p, double *value,
-                                           double *derivative) {
+void IPDesignVariableParamExp::toDesignVariable(double p, double *value, double *derivative) {
   if (value != NULL) {
-    *value = m_d_scale*exp(p);
+    *value = m_d_scale * exp(p);
   }
 
   if (derivative != NULL) {
-    *derivative = m_d_scale*exp(p);
+    *derivative = m_d_scale * exp(p);
   }
 }
 
@@ -178,21 +173,20 @@ void IPDesignVariableParamTruncatedIdent::set_scales(const Config &config,
   auto key = pism::printf("inverse.design.param_trunc_%s0", design_var_name.c_str());
 
   double d0 = config.get_number(key);
-  m_d0_sq = d0*d0 / (m_d_scale*m_d_scale);
+  m_d0_sq   = d0 * d0 / (m_d_scale * m_d_scale);
 
-  key = pism::printf("inverse.design.param_%s_eps", design_var_name.c_str());
+  key     = pism::printf("inverse.design.param_%s_eps", design_var_name.c_str());
   m_d_eps = config.get_number(key);
 }
 
-void IPDesignVariableParamTruncatedIdent::toDesignVariable(double p,
-                                                           double *value,
+void IPDesignVariableParamTruncatedIdent::toDesignVariable(double p, double *value,
                                                            double *derivative) {
-  double alpha = sqrt(p*p + 4*m_d0_sq);
+  double alpha = sqrt(p * p + 4 * m_d0_sq);
   if (value != NULL) {
-    *value = m_d_scale*(p + alpha)*0.5;
+    *value = m_d_scale * (p + alpha) * 0.5;
   }
   if (derivative != NULL) {
-    *derivative = m_d_scale*(1 + p / alpha)*0.5;
+    *derivative = m_d_scale * (1 + p / alpha) * 0.5;
   }
 }
 
@@ -202,7 +196,7 @@ void IPDesignVariableParamTruncatedIdent::fromDesignVariable(double d, double *O
   }
 
   double d_dimensionless = d / m_d_scale;
-  *OUTPUT = d_dimensionless - m_d0_sq / d_dimensionless;
+  *OUTPUT                = d_dimensionless - m_d0_sq / d_dimensionless;
 }
 
 } // end of namespace inverse

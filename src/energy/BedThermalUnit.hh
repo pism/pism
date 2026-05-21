@@ -37,8 +37,8 @@ struct BTUGrid {
   BTUGrid(std::shared_ptr<const Context> ctx);
   static BTUGrid FromOptions(std::shared_ptr<const Context> ctx);
 
-  unsigned int Mbz;             // number of vertical levels
-  double Lbz;                   // depth of the bed thermal layer
+  unsigned int Mbz; // number of vertical levels
+  double Lbz;       // depth of the bed thermal layer
 };
 
 //! Given the temperature of the top of the bedrock, for the duration of one time-step, provides upward geothermal flux at that interface at the end of the time-step.
@@ -100,7 +100,6 @@ struct BTUGrid {
 */
 class BedThermalUnit : public Component {
 public:
-
   static std::shared_ptr<BedThermalUnit> FromOptions(std::shared_ptr<const Grid> g,
                                                      std::shared_ptr<const Context> ctx);
 
@@ -111,13 +110,12 @@ public:
   void init(const InputOptions &opts);
 
   //! Return the upward heat flux through the top surface of the bedrock thermal layer.
-  const array::Scalar& flux_through_top_surface() const;
+  const array::Scalar &flux_through_top_surface() const;
 
   //! Return the upward heat flux through the bottom surface of the bedrock thermal layer.
-  const array::Scalar& flux_through_bottom_surface() const;
+  const array::Scalar &flux_through_bottom_surface() const;
 
-  void update(const array::Scalar &bedrock_top_temperature,
-              double t, double dt);
+  void update(const array::Scalar &bedrock_top_temperature, double t, double dt);
 
   double vertical_spacing() const;
   double depth() const;
@@ -129,12 +127,11 @@ protected:
 
   virtual void init_impl(const InputOptions &opts);
 
-  virtual void update_impl(const array::Scalar &bedrock_top_temperature,
-                           double t, double dt) = 0;
+  virtual void update_impl(const array::Scalar &bedrock_top_temperature, double t, double dt) = 0;
 
   virtual double vertical_spacing_impl() const = 0;
-  virtual double depth_impl() const = 0;
-  virtual unsigned int Mz_impl() const = 0;
+  virtual double depth_impl() const            = 0;
+  virtual unsigned int Mz_impl() const         = 0;
 
   virtual std::set<VariableMetadata> state_impl() const;
   virtual void write_state_impl(const OutputFile &output) const;
@@ -151,6 +148,7 @@ protected:
 class BTU_geothermal_flux_at_ground_level : public Diag<BedThermalUnit> {
 public:
   BTU_geothermal_flux_at_ground_level(const BedThermalUnit *m);
+
 protected:
   virtual std::shared_ptr<array::Array> compute_impl() const;
 };
@@ -159,4 +157,3 @@ protected:
 } // end of namespace pism
 
 #endif /* _PISMBEDTHERMALUNIT_H_ */
-

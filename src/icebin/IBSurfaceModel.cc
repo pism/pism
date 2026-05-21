@@ -16,10 +16,10 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "pism/util/MaxTimestep.hh"
-#include "pism/util/io/File.hh"
 #include "pism/icebin/IBSurfaceModel.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/io/File.hh"
 
 namespace pism {
 namespace icebin {
@@ -58,7 +58,7 @@ void IBSurfaceModel::init_impl(const Geometry &geometry) {
   m_log->message(2, "* Initializing the IceBin interface surface model IBSurfaceModel.\n"
                     "  IceBin changes its state when surface conditions change.\n");
 
-  for (auto *v : {&massxfer, &enthxfer, &deltah, &ice_top_bc_temp, &ice_top_bc_wc}) {
+  for (auto *v : { &massxfer, &enthxfer, &deltah, &ice_top_bc_temp, &ice_top_bc_wc }) {
     v->set(0.0);
   }
 }
@@ -91,15 +91,15 @@ const array::Scalar &IBSurfaceModel::temperature_impl() const {
   return ice_top_bc_temp;
 }
 
-const array::Scalar& IBSurfaceModel::accumulation_impl() const {
+const array::Scalar &IBSurfaceModel::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const array::Scalar& IBSurfaceModel::melt_impl() const {
+const array::Scalar &IBSurfaceModel::melt_impl() const {
   return *m_melt;
 }
 
-const array::Scalar& IBSurfaceModel::runoff_impl() const {
+const array::Scalar &IBSurfaceModel::runoff_impl() const {
   return *m_runoff;
 }
 

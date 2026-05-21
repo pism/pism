@@ -28,9 +28,9 @@
 
 #include <gsl/gsl_interp.h>
 
-#include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/Interpolation1D.hh"
 #include "pism/util/VariableMetadata.hh"
+#include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 namespace array {
@@ -41,8 +41,8 @@ struct Array::Impl {
 
     da.reset();
 
-    da_stencil_width = 1;
-    dof = 1;
+    da_stencil_width     = 1;
+    dof                  = 1;
     begin_access_use_dof = false;
 
     ghosted = true;
@@ -53,7 +53,7 @@ struct Array::Impl {
 
     zlevels = {};
 
-    state_counter = 0;
+    state_counter      = 0;
     interpolation_type = LINEAR;
 
     bsearch_accel = nullptr;
@@ -95,7 +95,7 @@ struct Array::Impl {
 
   //! Map plane viewers. It is a map because a temporary Array can be used to view
   //! different quantities
-  std::map<std::string,std::shared_ptr<petsc::Viewer> > map_viewers;
+  std::map<std::string, std::shared_ptr<petsc::Viewer> > map_viewers;
 
   // used in begin_access() and end_access()
   int access_counter;

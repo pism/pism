@@ -36,30 +36,22 @@ public:
 private:
   void init_2d_parameters(const Inputs &inputs);
 
-  bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I);
+  bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex &I);
 
   Vector2d u_bc(double x, double y, double z) const;
 
-  void residual_source_term(const fem::Q1Element3 &element,
-                            const double *surface,
-                            const double *bed,
-                            Vector2d *residual);
+  void residual_source_term(const fem::Q1Element3 &element, const double *surface,
+                            const double *bed, Vector2d *residual);
 
-  void residual_surface(const fem::Q1Element3 &element,
-                        const fem::Q1Element3Face &face,
+  void residual_surface(const fem::Q1Element3 &element, const fem::Q1Element3Face &face,
                         Vector2d *residual);
 
-  void residual_basal(const fem::Q1Element3 &element,
-                      const fem::Q1Element3Face &face,
-                      const double *tauc_nodal,
-                      const double *f_nodal,
-                      const Vector2d *u_nodal,
+  void residual_basal(const fem::Q1Element3 &element, const fem::Q1Element3Face &face,
+                      const double *tauc_nodal, const double *f_nodal, const Vector2d *u_nodal,
                       Vector2d *residual);
 
-  void jacobian_basal(const fem::Q1Element3Face &face,
-                      const double *tauc_nodal,
-                      const double *f_nodal,
-                      const Vector2d *u_nodal,
+  void jacobian_basal(const fem::Q1Element3Face &face, const double *tauc_nodal,
+                      const double *f_nodal, const Vector2d *u_nodal,
                       double K[2 * fem::q13d::n_chi][2 * fem::q13d::n_chi]);
   double m_B;
   double m_g;

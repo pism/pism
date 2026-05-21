@@ -16,14 +16,14 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#include <cassert>              // assert
-#include <cmath>                // std::sqrt()
+#include <cassert> // assert
+#include <cmath>   // std::sqrt()
 
-#include "pism/util/fem/Element.hh"
-#include "pism/util/fem/Quadrature.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/error_handling.hh"
+#include "pism/util/fem/Element.hh"
+#include "pism/util/fem/Quadrature.hh"
 #include "pism/util/petscwrappers/DM.hh"
 
 namespace pism {
@@ -38,19 +38,17 @@ static double det(const double a[3][3]) {
 
 //! Cross product of two 3D vectors
 static Vector3 cross(const Vector3 &a, const Vector3 &b) {
-  return {a.y * b.z - a.z * b.y,
-          a.z * b.x - a.x * b.z,
-          a.x * b.y - a.y * b.x};
+  return { a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x };
 }
 
 // extract a row of a 3x3 matrix
 static Vector3 row(const double A[3][3], size_t k) {
-  return {A[k][0], A[k][1], A[k][2]};
+  return { A[k][0], A[k][1], A[k][2] };
 }
 
 // extract a column of a 3x3 matrix
 static Vector3 column(const double A[3][3], size_t k) {
-  return {A[0][k], A[1][k], A[2][k]};
+  return { A[0][k], A[1][k], A[2][k] };
 }
 
 // dot product of a vector and a [dx, dy, dz] vector in Germ
@@ -64,17 +62,10 @@ static void invert(const double A[3][3], double result[3][3]) {
 
   assert(det_A != 0.0);
 
-  Vector3
-    x0 = column(A, 0),
-    x1 = column(A, 1),
-    x2 = column(A, 2),
-    a  = cross(x1, x2),
-    b  = cross(x2, x0),
-    c  = cross(x0, x1);
+  Vector3 x0 = column(A, 0), x1 = column(A, 1), x2 = column(A, 2), a = cross(x1, x2),
+          b = cross(x2, x0), c = cross(x0, x1);
 
-  double A_cofactor[3][3] = {{a.x, a.y, a.z},
-                             {b.x, b.y, b.z},
-                             {c.x, c.y, c.z}};
+  double A_cofactor[3][3] = { { a.x, a.y, a.z }, { b.x, b.y, b.z }, { c.x, c.y, c.z } };
 
   // inverse(A) = 1/det(A) * transpose(A_cofactor)
   for (int i = 0; i < 3; ++i) {
@@ -88,10 +79,7 @@ static void invert(const double A[3][3], double result[3][3]) {
 //! Compute derivatives with respect to x,y using J^{-1} and derivatives with respect to xi, eta.
 static Germ multiply(const double A[3][3], const Germ &v) {
   // FIXME: something is not right here
-  return {v.val,
-          dot(row(A, 0), v),
-          dot(row(A, 1), v),
-          dot(row(A, 2), v)};
+  return { v.val, dot(row(A, 0), v), dot(row(A, 1), v), dot(row(A, 2), v) };
 }
 
 static void set_to_identity(double A[3][3]) {
@@ -107,16 +95,14 @@ static void set_to_identity(double A[3][3]) {
 }
 
 Element::Element(const Grid &grid, int Nq, int n_chi, int block_size)
-  : m_n_chi(n_chi),
-    m_Nq(Nq),
-    m_block_size(block_size) {
+    : m_n_chi(n_chi), m_Nq(Nq), m_block_size(block_size) {
 
   assert(m_n_chi > 0);
   assert(m_Nq >= 1);
   assert(m_block_size >= 1);
 
   // get sub-domain information from the grid:
-  auto da = grid.get_dm(1, 0);  // dof = 1, stencil_width = 0
+  auto da             = grid.get_dm(1, 0); // dof = 1, stencil_width = 0
   PetscErrorCode ierr = DMDAGetLocalInfo(*da, &m_grid);
   if (ierr != 0) {
     throw std::runtime_error("Failed to allocate an Element instance");
@@ -130,9 +116,7 @@ Element::Element(const Grid &grid, int Nq, int n_chi, int block_size)
 }
 
 Element::Element(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_size)
-  : m_n_chi(n_chi),
-    m_Nq(Nq),
-    m_block_size(block_size) {
+    : m_n_chi(n_chi), m_Nq(Nq), m_block_size(block_size) {
 
   assert(m_n_chi > 0);
   assert(m_Nq >= 1);
@@ -150,11 +134,8 @@ Element::Element(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_si
 //! Initialize shape function values and quadrature weights of a 2D physical element.
 /** Assumes that the Jacobian does not depend on coordinates of the current quadrature point.
  */
-void Element::initialize(const double J[3][3],
-                         ShapeFunction f,
-                         unsigned int n_chi,
-                         const std::vector<QuadPoint>& points,
-                         const std::vector<double>& W) {
+void Element::initialize(const double J[3][3], ShapeFunction f, unsigned int n_chi,
+                         const std::vector<QuadPoint> &points, const std::vector<double> &W) {
 
   double J_inv[3][3];
   invert(J, J_inv);
@@ -173,20 +154,18 @@ void Element::initialize(const double J[3][3],
 }
 
 Element2::Element2(const Grid &grid, int Nq, int n_chi, int block_size)
-  : Element(grid, Nq, n_chi, block_size) {
+    : Element(grid, Nq, n_chi, block_size) {
   // empty
 }
 
 Element2::Element2(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_size)
-  : Element(grid_info, Nq, n_chi, block_size) {
+    : Element(grid_info, Nq, n_chi, block_size) {
   // empty
 }
 
 void Element2::nodal_values(const array::Scalar &x_global, int *result) const {
   for (unsigned int k = 0; k < m_n_chi; ++k) {
-    const int
-      ii = m_i + m_i_offset[k],
-      jj = m_j + m_j_offset[k];
+    const int ii = m_i + m_i_offset[k], jj = m_j + m_j_offset[k];
     result[k] = floor(x_global(ii, jj) + 0.5);
   }
 }
@@ -209,8 +188,8 @@ void Element2::reset(int i, int j) {
   for (unsigned int k = 0; k < m_n_chi; k++) {
     int pism_i = 0, pism_j = 0;
     local_to_global(k, pism_i, pism_j);
-    if (pism_i < m_grid.xs or m_grid.xs + m_grid.xm - 1 < pism_i or
-        pism_j < m_grid.ys or m_grid.ys + m_grid.ym - 1 < pism_j) {
+    if (pism_i < m_grid.xs or m_grid.xs + m_grid.xm - 1 < pism_i or pism_j < m_grid.ys or
+        m_grid.ys + m_grid.ym - 1 < pism_j) {
       mark_row_invalid(k);
     }
   }
@@ -239,26 +218,24 @@ void Element::mark_col_invalid(unsigned int k) {
  *  should be.)
  */
 void Element::add_contribution(const double *K, Mat J) const {
-  PetscErrorCode ierr = MatSetValuesBlockedStencil(J,
-                                                   m_block_size, m_row.data(),
-                                                   m_block_size, m_col.data(),
-                                                   K, ADD_VALUES);
+  PetscErrorCode ierr = MatSetValuesBlockedStencil(J, m_block_size, m_row.data(), m_block_size,
+                                                   m_col.data(), K, ADD_VALUES);
   PISM_CHK(ierr, "MatSetValuesBlockedStencil");
 }
 
 Q1Element2::Q1Element2(const Grid &grid, const Quadrature &quadrature)
-  : Element2(grid, quadrature.weights().size(), q1::n_chi, q1::n_chi) {
+    : Element2(grid, quadrature.weights().size(), q1::n_chi, q1::n_chi) {
 
   double dx = grid.dx();
   double dy = grid.dy();
 
-  m_i_offset = {0, 1, 1, 0};
-  m_j_offset = {0, 0, 1, 1};
+  m_i_offset = { 0, 1, 1, 0 };
+  m_j_offset = { 0, 0, 1, 1 };
 
   // south, east, north, west
-  m_normals = {{0.0, -1.0}, {1.0, 0.0}, {0.0, 1.0}, {-1.0, 0.0}};
+  m_normals = { { 0.0, -1.0 }, { 1.0, 0.0 }, { 0.0, 1.0 }, { -1.0, 0.0 } };
 
-  m_side_lengths = {dx, dy, dx, dy};
+  m_side_lengths = { dx, dy, dx, dy };
 
   // compute the Jacobian
 
@@ -274,19 +251,17 @@ Q1Element2::Q1Element2(const Grid &grid, const Quadrature &quadrature)
   reset(0, 0);
 }
 
-Q1Element2::Q1Element2(const DMDALocalInfo &grid_info,
-                       double dx,
-                       double dy,
+Q1Element2::Q1Element2(const DMDALocalInfo &grid_info, double dx, double dy,
                        const Quadrature &quadrature)
-  : Element2(grid_info, quadrature.weights().size(), q1::n_chi, q1::n_chi) {
+    : Element2(grid_info, quadrature.weights().size(), q1::n_chi, q1::n_chi) {
 
-  m_i_offset = {0, 1, 1, 0};
-  m_j_offset = {0, 0, 1, 1};
+  m_i_offset = { 0, 1, 1, 0 };
+  m_j_offset = { 0, 0, 1, 1 };
 
   // south, east, north, west
-  m_normals = {{0.0, -1.0}, {1.0, 0.0}, {0.0, 1.0}, {-1.0, 0.0}};
+  m_normals = { { 0.0, -1.0 }, { 1.0, 0.0 }, { 0.0, 1.0 }, { -1.0, 0.0 } };
 
-  m_side_lengths = {dx, dy, dx, dy};
+  m_side_lengths = { dx, dy, dx, dy };
 
   // compute the Jacobian
 
@@ -303,23 +278,21 @@ Q1Element2::Q1Element2(const DMDALocalInfo &grid_info,
 }
 
 P1Element2::P1Element2(const Grid &grid, const Quadrature &quadrature, int type)
-  : Element2(grid, quadrature.weights().size(), p1::n_chi, q1::n_chi) {
+    : Element2(grid, quadrature.weights().size(), p1::n_chi, q1::n_chi) {
 
   double dx = grid.dx();
   double dy = grid.dy();
 
   // outward pointing normals for all sides of a Q1 element with sides aligned with X and
   // Y axes
-  const Vector2d
-    n01( 0.0, -1.0),  // south
-    n12( 1.0,  0.0),  // east
-    n23( 0.0,  1.0),  // north
-    n30(-1.0,  0.0);  // west
+  const Vector2d n01(0.0, -1.0), // south
+      n12(1.0, 0.0),             // east
+      n23(0.0, 1.0),             // north
+      n30(-1.0, 0.0);            // west
 
   // "diagonal" sides
-  Vector2d
-    n13( 1.0, dx / dy), // 1-3 diagonal, outward for element 0
-    n20(-1.0, dx / dy); // 2-0 diagonal, outward for element 1
+  Vector2d n13(1.0, dx / dy), // 1-3 diagonal, outward for element 0
+      n20(-1.0, dx / dy);     // 2-0 diagonal, outward for element 1
 
   // normalize
   n13 /= n13.magnitude();
@@ -327,34 +300,34 @@ P1Element2::P1Element2(const Grid &grid, const Quadrature &quadrature, int type)
 
   // coordinates of nodes of a Q1 element this P1 element is embedded in (up to
   // translation)
-  Vector2d p[] = {{0, 0}, {dx, 0}, {dx, dy}, {0, dy}};
+  Vector2d p[] = { { 0, 0 }, { dx, 0 }, { dx, dy }, { 0, dy } };
   std::vector<Vector2d> pts;
 
   switch (type) {
   case 0:
-    m_i_offset = {0, 1, 0};
-    m_j_offset = {0, 0, 1};
-    m_normals = {n01, n13, n30};
-    pts = {p[0], p[1], p[3]};
+    m_i_offset = { 0, 1, 0 };
+    m_j_offset = { 0, 0, 1 };
+    m_normals  = { n01, n13, n30 };
+    pts        = { p[0], p[1], p[3] };
     break;
   case 1:
-    m_i_offset = {1, 1, 0};
-    m_j_offset = {0, 1, 0};
-    m_normals = {n12, n20, n01};
-    pts = {p[1], p[2], p[0]};
+    m_i_offset = { 1, 1, 0 };
+    m_j_offset = { 0, 1, 0 };
+    m_normals  = { n12, n20, n01 };
+    pts        = { p[1], p[2], p[0] };
     break;
   case 2:
-    m_i_offset = {1, 0, 1};
-    m_j_offset = {1, 1, 0};
-    m_normals = {n23, -1.0 * n13, n12};
-    pts = {p[2], p[3], p[1]};
+    m_i_offset = { 1, 0, 1 };
+    m_j_offset = { 1, 1, 0 };
+    m_normals  = { n23, -1.0 * n13, n12 };
+    pts        = { p[2], p[3], p[1] };
     break;
   case 3:
   default:
-    m_i_offset = {0, 0, 1};
-    m_j_offset = {1, 0, 1};
-    m_normals = {n30, -1.0 * n20, n23};
-    pts = {p[3], p[0], p[2]};
+    m_i_offset = { 0, 0, 1 };
+    m_j_offset = { 1, 0, 1 };
+    m_normals  = { n30, -1.0 * n20, n23 };
+    pts        = { p[3], p[0], p[2] };
     break;
   }
 
@@ -383,38 +356,34 @@ P1Element2::P1Element2(const Grid &grid, const Quadrature &quadrature, int type)
 }
 
 Element3::Element3(const DMDALocalInfo &grid_info, int Nq, int n_chi, int block_size)
-  : Element(grid_info, Nq, n_chi, block_size) {
+    : Element(grid_info, Nq, n_chi, block_size) {
   m_i = 0;
   m_j = 0;
   m_k = 0;
 }
 
 Element3::Element3(const Grid &grid, int Nq, int n_chi, int block_size)
-  : Element(grid, Nq, n_chi, block_size) {
+    : Element(grid, Nq, n_chi, block_size) {
   m_i = 0;
   m_j = 0;
   m_k = 0;
 }
 
-Q1Element3::Q1Element3(const DMDALocalInfo &grid_info,
-                       const Quadrature &quadrature,
-                       double dx,
-                       double dy,
-                       double x_min,
-                       double y_min)
-  : Element3(grid_info, quadrature.weights().size(), q13d::n_chi, q13d::n_chi),
-    m_dx(dx),
-    m_dy(dy),
-    m_x_min(x_min),
-    m_y_min(y_min),
-    m_points(quadrature.points()),
-    m_w(quadrature.weights()) {
+Q1Element3::Q1Element3(const DMDALocalInfo &grid_info, const Quadrature &quadrature, double dx,
+                       double dy, double x_min, double y_min)
+    : Element3(grid_info, quadrature.weights().size(), q13d::n_chi, q13d::n_chi),
+      m_dx(dx),
+      m_dy(dy),
+      m_x_min(x_min),
+      m_y_min(y_min),
+      m_points(quadrature.points()),
+      m_w(quadrature.weights()) {
 
   m_weights.resize(m_Nq);
 
-  m_i_offset = {0, 1, 1, 0, 0, 1, 1, 0};
-  m_j_offset = {0, 0, 1, 1, 0, 0, 1, 1};
-  m_k_offset = {0, 0, 0, 0, 1, 1, 1, 1};
+  m_i_offset = { 0, 1, 1, 0, 0, 1, 1, 0 };
+  m_j_offset = { 0, 0, 1, 1, 0, 0, 1, 1 };
+  m_k_offset = { 0, 0, 0, 0, 1, 1, 1, 1 };
 
   // store values of shape functions on the reference element
   m_chi.resize(m_Nq * m_n_chi);
@@ -427,17 +396,17 @@ Q1Element3::Q1Element3(const DMDALocalInfo &grid_info,
 }
 
 Q1Element3::Q1Element3(const Grid &grid, const Quadrature &quadrature)
-  : Element3(grid, quadrature.weights().size(), q13d::n_chi, q13d::n_chi),
-    m_dx(grid.dx()),
-    m_dy(grid.dy()),
-    m_points(quadrature.points()),
-    m_w(quadrature.weights()) {
+    : Element3(grid, quadrature.weights().size(), q13d::n_chi, q13d::n_chi),
+      m_dx(grid.dx()),
+      m_dy(grid.dy()),
+      m_points(quadrature.points()),
+      m_w(quadrature.weights()) {
 
   m_weights.resize(m_Nq);
 
-  m_i_offset = {0, 1, 1, 0, 0, 1, 1, 0};
-  m_j_offset = {0, 0, 1, 1, 0, 0, 1, 1};
-  m_k_offset = {0, 0, 0, 0, 1, 1, 1, 1};
+  m_i_offset = { 0, 1, 1, 0, 0, 1, 1, 0 };
+  m_j_offset = { 0, 0, 1, 1, 0, 0, 1, 1 };
+  m_k_offset = { 0, 0, 0, 0, 1, 1, 1, 1 };
 
   // store values of shape functions on the reference element
   m_chi.resize(m_Nq * m_n_chi);
@@ -480,8 +449,8 @@ void Q1Element3::reset(int i, int j, int k, const double *z) {
   // Mark rows that we don't own as invalid:
   for (unsigned int n = 0; n < m_n_chi; n++) {
     auto I = local_to_global(n);
-    if (I.i < m_grid.xs or m_grid.xs + m_grid.xm - 1 < I.i or
-        I.j < m_grid.ys or m_grid.ys + m_grid.ym - 1 < I.j) {
+    if (I.i < m_grid.xs or m_grid.xs + m_grid.xm - 1 < I.i or I.j < m_grid.ys or
+        m_grid.ys + m_grid.ym - 1 < I.j) {
       mark_row_invalid(n);
     }
   }
@@ -489,7 +458,7 @@ void Q1Element3::reset(int i, int j, int k, const double *z) {
   // Compute J^{-1} and use it to compute m_germs and m_weights:
   for (unsigned int q = 0; q < m_Nq; q++) {
 
-    Vector3 dz{0.0, 0.0, 0.0};
+    Vector3 dz{ 0.0, 0.0, 0.0 };
     for (unsigned int n = 0; n < m_n_chi; ++n) {
       auto &chi = m_chi[q * m_n_chi + n];
       dz.x += chi.dx * z[n];
@@ -497,17 +466,15 @@ void Q1Element3::reset(int i, int j, int k, const double *z) {
       dz.z += chi.dz * z[n];
     }
 
-    double J[3][3] = {{m_dx / 2.0,        0.0, dz.x},
-                      {       0.0, m_dy / 2.0, dz.y},
-                      {       0.0,        0.0, dz.z}};
+    double J[3][3] = { { m_dx / 2.0, 0.0, dz.x }, { 0.0, m_dy / 2.0, dz.y }, { 0.0, 0.0, dz.z } };
 
     double J_det = J[0][0] * J[1][1] * J[2][2];
 
     assert(J_det != 0.0);
 
-    double J_inv[3][3] = {{1.0 / J[0][0],           0.0, -J[0][2] / (J[0][0] * J[2][2])},
-                          {0.0,           1.0 / J[1][1], -J[1][2] / (J[1][1] * J[2][2])},
-                          {0.0,                     0.0,                 1.0 / J[2][2]}};
+    double J_inv[3][3] = { { 1.0 / J[0][0], 0.0, -J[0][2] / (J[0][0] * J[2][2]) },
+                           { 0.0, 1.0 / J[1][1], -J[1][2] / (J[1][1] * J[2][2]) },
+                           { 0.0, 0.0, 1.0 / J[2][2] } };
 
     m_weights[q] = J_det * m_w[q];
 
@@ -515,21 +482,22 @@ void Q1Element3::reset(int i, int j, int k, const double *z) {
       auto &chi = m_chi[q * m_n_chi + n];
       // FIXME: I should be able to use multiply() defined above, but there must be a bug
       // there...
-      m_germs[q * m_n_chi + n] = {chi.val,
-                                  J_inv[0][0] * chi.dx + J_inv[0][1] * chi.dy + J_inv[0][2] * chi.dz,
-                                  J_inv[1][0] * chi.dx + J_inv[1][1] * chi.dy + J_inv[1][2] * chi.dz,
-                                  J_inv[2][0] * chi.dx + J_inv[2][1] * chi.dy + J_inv[2][2] * chi.dz};
+      m_germs[q * m_n_chi + n] = {
+        chi.val, J_inv[0][0] * chi.dx + J_inv[0][1] * chi.dy + J_inv[0][2] * chi.dz,
+        J_inv[1][0] * chi.dx + J_inv[1][1] * chi.dy + J_inv[1][2] * chi.dz,
+        J_inv[2][0] * chi.dx + J_inv[2][1] * chi.dy + J_inv[2][2] * chi.dz
+      };
     }
   }
 }
 
 Q1Element3Face::Q1Element3Face(double dx, double dy, const Quadrature &quadrature)
-  : m_dx(dx),
-    m_dy(dy),
-    m_points(quadrature.points()),
-    m_w(quadrature.weights()),
-    m_n_chi(q13d::n_chi),
-    m_Nq(m_w.size()) {
+    : m_dx(dx),
+      m_dy(dy),
+      m_points(quadrature.points()),
+      m_w(quadrature.weights()),
+      m_n_chi(q13d::n_chi),
+      m_Nq(m_w.size()) {
 
   // Note: here I set m_n_chi to q13d::n_chi (8) while each face has only four basis
   // functions that are not zero on it. One could make evaluate() cheaper by omitting
@@ -552,27 +520,27 @@ void Q1Element3Face::reset(int face, const double *z) {
     // face 0 is parameterized by (s, t) -> [-1, s, t].
     switch (face) {
     case fem::q13d::FACE_LEFT:
-      P = {-1.0, pt.xi, pt.eta};
+      P = { -1.0, pt.xi, pt.eta };
       break;
     case fem::q13d::FACE_RIGHT:
-      P = { 1.0, pt.xi, pt.eta};
+      P = { 1.0, pt.xi, pt.eta };
       break;
     case fem::q13d::FACE_FRONT:
-      P = {pt.xi, -1.0, pt.eta};
+      P = { pt.xi, -1.0, pt.eta };
       break;
     case fem::q13d::FACE_BACK:
-      P = {pt.xi,  1.0, pt.eta};
+      P = { pt.xi, 1.0, pt.eta };
       break;
     case fem::q13d::FACE_BOTTOM:
-      P = {pt.xi, pt.eta, -1.0};
+      P = { pt.xi, pt.eta, -1.0 };
       break;
     case fem::q13d::FACE_TOP:
-      P = {pt.xi, pt.eta,  1.0};
+      P = { pt.xi, pt.eta, 1.0 };
       break;
     }
 
     // Compute dz/dxi, dz/deta and dz/dzeta.
-    Vector3 dz{0.0, 0.0, 0.0};
+    Vector3 dz{ 0.0, 0.0, 0.0 };
     for (unsigned int n = 0; n < m_n_chi; ++n) {
       // Note: chi(n, point) for a particular face does not depend on the element geometry
       // and could be computed in advance (in the constructor). On the other hand, I
@@ -600,27 +568,22 @@ void Q1Element3Face::reset(int face, const double *z) {
     case fem::q13d::FACE_LEFT:
     case fem::q13d::FACE_RIGHT:
       m_weights[q] *= 0.5 * m_dy * dz.z;
-      m_normals[q] = {sign, 0.0, 0.0};
+      m_normals[q] = { sign, 0.0, 0.0 };
       break;
     case fem::q13d::FACE_FRONT:
     case fem::q13d::FACE_BACK:
       m_weights[q] *= 0.5 * m_dx * dz.z;
-      m_normals[q] = {0.0, sign, 0.0};
+      m_normals[q] = { 0.0, sign, 0.0 };
       break;
     case fem::q13d::FACE_BOTTOM:
-    case fem::q13d::FACE_TOP:
-      {
-        double
-          a =  0.5 * m_dy * dz.x,
-          b =  0.5 * m_dx * dz.y,
-          c = 0.25 * m_dx * m_dy,
-          M = std::sqrt(a * a + b * b + c * c);
-        m_weights[q] *= M;
+    case fem::q13d::FACE_TOP: {
+      double a = 0.5 * m_dy * dz.x, b = 0.5 * m_dx * dz.y, c = 0.25 * m_dx * m_dy,
+             M = std::sqrt(a * a + b * b + c * c);
+      m_weights[q] *= M;
 
-        M *= sign;
-        m_normals[q] = {a / M, b / M, c / M};
-      }
-      break;
+      M *= sign;
+      m_normals[q] = { a / M, b / M, c / M };
+    } break;
     }
   } // end of the loop over quadrature points
 }

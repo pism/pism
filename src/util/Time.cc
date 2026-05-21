@@ -16,9 +16,9 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+#include <cassert> // assert
 #include <cmath>
-#include <cassert>              // assert
-#include <cstring>              // strlen()
+#include <cstring> // strlen()
 #include <limits>
 
 #include "pism/util/Time.hh"
@@ -26,21 +26,19 @@
 #include "pism/external/calcalcs/calcalcs.h"
 
 #include "pism/util/Config.hh"
+#include "pism/util/Logger.hh"
 #include "pism/util/VariableMetadata.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/io/io_helpers.hh"
-#include "pism/util/Logger.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/io/io_helpers.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
 //! Get the reference date from a file.
-static std::string reference_date_from_file(const File &file,
-                                            const std::string &time_name,
-                                            const std::string &default_value,
-                                            bool stop_on_error) {
+static std::string reference_date_from_file(const File &file, const std::string &time_name,
+                                            const std::string &default_value, bool stop_on_error) {
 
   if (file.variable_exists(time_name)) {
     std::string time_units = file.read_text_attribute(time_name, "units");
@@ -57,29 +55,23 @@ static std::string reference_date_from_file(const File &file,
 
         throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                       "%s:units = \"%s\" in '%s' does not contain a reference date",
-                                      time_name.c_str(),
-                                      time_units.c_str(),
-                                      file.name().c_str());
+                                      time_name.c_str(), time_units.c_str(), file.name().c_str());
       }
     } else if (stop_on_error) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "the '%s' variable in '%s' has no units",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "the '%s' variable in '%s' has no units",
                                     time_name.c_str(), file.name().c_str());
     }
   } else if (stop_on_error) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "'%s' variable is not present in '%s'.",
-                                    time_name.c_str(), file.name().c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "'%s' variable is not present in '%s'.",
+                                  time_name.c_str(), file.name().c_str());
   }
 
   return default_value;
 }
 
 //! Get the calendar name from a file.
-static std::string calendar_from_file(const File &file,
-                                      const std::string &time_name,
-                                      const std::string &default_value,
-                                      bool stop_on_error) {
+static std::string calendar_from_file(const File &file, const std::string &time_name,
+                                      const std::string &default_value, bool stop_on_error) {
 
   if (file.variable_exists(time_name)) {
     std::string calendar_name = file.read_text_attribute(time_name, "calendar");
@@ -95,8 +87,7 @@ static std::string calendar_from_file(const File &file,
     }
 
   } else if (stop_on_error) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "'%s' variable is not present in '%s'.",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "'%s' variable is not present in '%s'.",
                                   time_name.c_str(), file.name().c_str());
   }
 
@@ -106,9 +97,7 @@ static std::string calendar_from_file(const File &file,
 /*!
  * Get the reference date from a file or the configuration parameter.
  */
-static std::string reference_date(const File *input_file,
-                                  const Config &config,
-                                  const Logger &log) {
+static std::string reference_date(const File *input_file, const Config &config, const Logger &log) {
 
   auto default_reference_date = config.get_string("time.reference_date");
 
@@ -125,7 +114,8 @@ static std::string reference_date(const File *input_file,
 
     // Bootstrapping: use the configuration parameter and warn about mismatches
     bool stop_on_error = false;
-    auto ref_date = reference_date_from_file(*input_file, time, default_reference_date, stop_on_error);
+    auto ref_date =
+        reference_date_from_file(*input_file, time, default_reference_date, stop_on_error);
 
     if (ref_date != default_reference_date) {
       log.message(2,
@@ -143,9 +133,7 @@ static std::string reference_date(const File *input_file,
 /*!
  * Get the calendar name from a file or a configuration parameter.
  */
-static std::string calendar(const File *input_file,
-                            const Config &config,
-                            const Logger &log) {
+static std::string calendar(const File *input_file, const Config &config, const Logger &log) {
   auto default_calendar = config.get_string("time.calendar");
 
   if (input_file != nullptr) {
@@ -161,7 +149,7 @@ static std::string calendar(const File *input_file,
 
     // Bootstrapping: use the configuration parameter and warn about mismatches
     bool stop_on_error = false;
-    auto calendar = calendar_from_file(*input_file, time, default_calendar, stop_on_error);
+    auto calendar      = calendar_from_file(*input_file, time, default_calendar, stop_on_error);
 
     if (calendar != default_calendar) {
       log.message(2,
@@ -179,9 +167,8 @@ static std::string calendar(const File *input_file,
 /*!
  * Increment the date corresponding to `T` by `years` years.
  */
-static double increment_date(const units::Unit &time_units,
-                             const std::string &calendar,
-                             double T, double years) {
+static double increment_date(const units::Unit &time_units, const std::string &calendar, double T,
+                             double years) {
 
   double whole_years_double = std::floor(years);
   if (whole_years_double > std::numeric_limits<int>::max() or
@@ -191,8 +178,8 @@ static double increment_date(const units::Unit &time_units,
                                   whole_years_double);
   }
 
-  int whole_years = static_cast<int>(whole_years_double);
-  double year_fraction = years - whole_years;
+  int whole_years         = static_cast<int>(whole_years_double);
+  double year_fraction    = years - whole_years;
   const double day_length = 86400.0;
 
   // Get the date corresponding to time T:
@@ -248,15 +235,13 @@ static double increment_date(const units::Unit &time_units,
  * - a number with units attached ("1 day", etc) interpreted as time since the reference
  *   date in `time_units`
  */
-static double parse_date(const std::string &input,
-                         const units::Unit &time_units,
+static double parse_date(const std::string &input, const units::Unit &time_units,
                          const std::string &calendar) {
 
   std::string spec = string_strip(input);
 
   if (spec.empty()) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "got an empty date specification: '%s'",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "got an empty date specification: '%s'",
                                   input.c_str());
   }
 
@@ -264,11 +249,12 @@ static double parse_date(const std::string &input,
   // empty tokens separated by "-", so "-1000-1-1" will produce ["1000", "1", "1"].
   bool year_is_negative = (spec[0] == '-');
 
-  if (year_is_negative and not set_member(calendar, {"365_day", "360_day", "noleap"})) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "negative dates such as '%s' are not allowed with the '%s' calendar.\n"
-                                  "Please submit a bug report if this is a problem.",
-                                  spec.c_str(), calendar.c_str());
+  if (year_is_negative and not set_member(calendar, { "365_day", "360_day", "noleap" })) {
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION,
+        "negative dates such as '%s' are not allowed with the '%s' calendar.\n"
+        "Please submit a bug report if this is a problem.",
+        spec.c_str(), calendar.c_str());
   }
 
   auto parts = split(spec, '-');
@@ -279,17 +265,13 @@ static double parse_date(const std::string &input,
       try {
         long int n = parse_integer(p);
 
-        if (n > std::numeric_limits<int>::max() or
-            n < std::numeric_limits<int>::min()) {
-          throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                        "%ld does not fit in an 'int'",
-                                        n);
+        if (n > std::numeric_limits<int>::max() or n < std::numeric_limits<int>::min()) {
+          throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%ld does not fit in an 'int'", n);
         }
 
         numbers.push_back(static_cast<int>(n));
       } catch (RuntimeError &e) {
-        e.add_context("parsing a date specification %s",
-                      spec.c_str());
+        e.add_context("parsing a date specification %s", spec.c_str());
         throw;
       }
     }
@@ -302,23 +284,21 @@ static double parse_date(const std::string &input,
     {
       calcalcs_cal *cal = ccs_init_calendar(calendar.c_str());
       if (cal == NULL) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                      "calendar string '%s' is invalid",
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "calendar string '%s' is invalid",
                                       calendar.c_str());
       }
 
-      int dummy = 0;
+      int dummy   = 0;
       int errcode = ccs_date2jday(cal, numbers[0], numbers[1], numbers[2], &dummy);
       if (errcode != 0) {
         ccs_free_calendar(cal);
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                      "date %s is invalid in the %s calendar",
+        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "date %s is invalid in the %s calendar",
                                       spec.c_str(), calendar.c_str());
       }
       ccs_free_calendar(cal);
     }
 
-    units::DateTime d{numbers[0], numbers[1], numbers[2], 0, 0, 0.0};
+    units::DateTime d{ numbers[0], numbers[1], numbers[2], 0, 0, 0.0 };
 
     return time_units.time(d, calendar);
   } // end of the block processing dates written as Y-M-D
@@ -327,7 +307,7 @@ static double parse_date(const std::string &input,
   try {
     // check if strtod() can parse it:
     char *endptr = NULL;
-    double t = strtod(spec.c_str(), &endptr);
+    double t     = strtod(spec.c_str(), &endptr);
     if (*endptr == '\0') {
       // strtod() parsed it successfully: assume that it is in years. This will return
       // time in seconds.
@@ -346,11 +326,8 @@ static double parse_date(const std::string &input,
 /*!
  * Return the start time.
  */
-static double start_time(const Config &config,
-                         const File *file,
-                         const std::string &reference_date,
-                         const std::string &calendar,
-                         const units::Unit &time_units) {
+static double start_time(const Config &config, const File *file, const std::string &reference_date,
+                         const std::string &calendar, const units::Unit &time_units) {
 
   auto time_start = config.get_string("time.start");
 
@@ -376,9 +353,9 @@ static double start_time(const Config &config,
   }
 
   if (ref_date != reference_date) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "reference date in '%s' (%s) does not match the selected date (%s)",
-                                  file->name().c_str(), ref_date.c_str(), reference_date.c_str());
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION, "reference date in '%s' (%s) does not match the selected date (%s)",
+        file->name().c_str(), ref_date.c_str(), reference_date.c_str());
   }
 
   // FIXME: it would make sense to get the length of the time dimension and read the last
@@ -392,9 +369,7 @@ static double start_time(const Config &config,
   return 0.0;
 }
 
-static double end_time(const Config &config,
-                       double time_start,
-                       const std::string &calendar,
+static double end_time(const Config &config, double time_start, const std::string &calendar,
                        const units::Unit &time_units) {
   auto time_end = config.get_string("time.end");
 
@@ -427,8 +402,8 @@ double Time::seconds_to_years(double input) const {
 void Time::init_calendar(const std::string &calendar_string) {
 
   if (not pism_is_valid_calendar_name(calendar_string)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "unsupported calendar: %s", calendar_string.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "unsupported calendar: %s",
+                                  calendar_string.c_str());
   }
 
   m_calendar_string = calendar_string;
@@ -436,7 +411,7 @@ void Time::init_calendar(const std::string &calendar_string) {
   double seconds_per_day = convert(m_unit_system, 1.0, "day", "seconds");
   if (calendar_string == "360_day") {
     m_year_length = 360 * seconds_per_day;
-  } else if (set_member(calendar_string, {"365_day", "noleap"})) {
+  } else if (set_member(calendar_string, { "365_day", "noleap" })) {
     m_year_length = 365 * seconds_per_day;
   } else {
     // use the ~365.2524-day year
@@ -485,7 +460,7 @@ VariableMetadata Time::metadata(bool with_bounds) const {
     auto bounds_name = variable_name() + "_bounds";
     result["bounds"] = bounds_name;
   }
-  
+
   return result;
 }
 
@@ -512,8 +487,7 @@ void Time::step(double delta_t) {
 
   // If we are less than m_t_eps seconds from the end of the run, reset
   // m_time_in_seconds to avoid taking a very small (and useless) time step.
-  if (m_run_end > m_time_in_seconds and
-      m_run_end - m_time_in_seconds < m_t_eps) {
+  if (m_run_end > m_time_in_seconds and m_run_end - m_time_in_seconds < m_t_eps) {
     m_time_in_seconds = m_run_end;
   }
 }
@@ -524,7 +498,7 @@ std::string Time::run_length() const {
 
 double Time::day_of_the_year_to_year_fraction(unsigned int day) const {
   const double sperd = 86400.0;
-  return (sperd / m_year_length) * (double) day;
+  return (sperd / m_year_length) * (double)day;
 }
 
 std::vector<double> Time::parse_times(const std::string &spec) const {
@@ -546,8 +520,8 @@ std::vector<double> Time::parse_list(const std::string &spec) const {
       result.emplace_back(parse_date(s, m_time_units, m_calendar_string));
     }
   } catch (RuntimeError &e) {
-      e.add_context("parsing a list of dates %s", spec.c_str());
-      throw;
+    e.add_context("parsing a list of dates %s", spec.c_str());
+    throw;
   }
 
   return result;
@@ -563,19 +537,19 @@ auto Time::parse_interval_length(const std::string &spec) const -> Interval {
 
   // check if it is a keyword
   if (spec == "hourly") {
-    return {3600.0, SIMPLE};
+    return { 3600.0, SIMPLE };
   }
 
   if (spec == "daily") {
-    return {86400.0, SIMPLE};
+    return { 86400.0, SIMPLE };
   }
 
   if (spec == "monthly") {
-    return {1.0, MONTHLY};
+    return { 1.0, MONTHLY };
   }
 
   if (spec == "yearly") {
-    return {1.0, YEARLY};
+    return { 1.0, YEARLY };
   }
 
   if (not m_simple_calendar) {
@@ -598,7 +572,7 @@ auto Time::parse_interval_length(const std::string &spec) const -> Interval {
     if (units::are_convertible(tmp, seconds)) {
       units::Converter c(tmp, seconds);
 
-      return {c(1.0), SIMPLE};
+      return { c(1.0), SIMPLE };
     }
 
     if (units::are_convertible(tmp, one)) {
@@ -606,33 +580,31 @@ auto Time::parse_interval_length(const std::string &spec) const -> Interval {
 
       // convert from years to seconds without using UDUNITS-2 (this
       // way we handle 360-day and 365-day years correctly)
-      return {years_to_seconds(c(1.0)), SIMPLE};
+      return { years_to_seconds(c(1.0)), SIMPLE };
     }
   } catch (RuntimeError &e) {
     e.add_context("processing interval length " + spec);
     throw;
   }
 
-  throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                "interval length '%s' is invalid", spec.c_str());
+  throw RuntimeError::formatted(PISM_ERROR_LOCATION, "interval length '%s' is invalid",
+                                spec.c_str());
 }
 
 
 std::vector<double> Time::parse_range(const std::string &spec) const {
-  double
-    time_start   = m_run_start,
-    time_end     = m_run_end;
+  double time_start = m_run_start, time_end = m_run_end;
 
-  Interval I{0.0, SIMPLE};
+  Interval I{ 0.0, SIMPLE };
 
   if (spec == "hourly") {
-    I = {3600.0, SIMPLE};
+    I = { 3600.0, SIMPLE };
   } else if (spec == "daily") {
-    I = {86400.0, SIMPLE};
+    I = { 86400.0, SIMPLE };
   } else if (spec == "monthly") {
-    I = {1.0, MONTHLY};
+    I = { 1.0, MONTHLY };
   } else if (spec == "yearly") {
-    I = {1.0, YEARLY};
+    I = { 1.0, YEARLY };
   } else {
 
     auto parts = pism::split(spec, ':');
@@ -645,9 +617,10 @@ std::vector<double> Time::parse_range(const std::string &spec) const {
       I          = parse_interval_length(parts[1]);
       time_end   = parse_date(parts[2], m_time_units, m_calendar_string);
     } else {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "a time range must consist of exactly 3 parts separated by colons (got '%s').",
-                                    spec.c_str());
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "a time range must consist of exactly 3 parts separated by colons (got '%s').",
+          spec.c_str());
     }
   }
 
@@ -670,15 +643,17 @@ std::vector<double> Time::parse_range(const std::string &spec) const {
 void Time::compute_times_simple(double time_start, double delta, double time_end,
                                 std::vector<double> &result) const {
   if (time_start >= time_end) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "a >= b in time range a:dt:b (got a = %s, b = %s)",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "a >= b in time range a:dt:b (got a = %s, b = %s)",
                                   this->date(time_start).c_str(), this->date(time_end).c_str());
   }
 
   if (delta <= 0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "dt <= 0 in time range a:dt:b (got dt = %f seconds)", delta);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "dt <= 0 in time range a:dt:b (got dt = %f seconds)", delta);
   }
 
-  int k = 0;
+  int k    = 0;
   double t = time_start;
 
   result.clear();
@@ -692,7 +667,7 @@ void Time::compute_times_simple(double time_start, double delta, double time_end
 }
 
 double Time::convert_time_interval(double T, const std::string &units) const {
-  if (set_member(units, {"year", "years", "yr", "a"})) {
+  if (set_member(units, { "year", "years", "yr", "a" })) {
     return this->seconds_to_years(T); // uses year length here
   }
   return convert(m_unit_system, T, "seconds", units);
@@ -705,13 +680,11 @@ double Time::convert_time_interval(double T, const std::string &units) const {
 
   for more details about supported calendars.
  */
-Time::Time(MPI_Comm com,
-           std::shared_ptr<const Config> config,
-           const Logger &log,
+Time::Time(MPI_Comm com, std::shared_ptr<const Config> config, const Logger &log,
            units::System::Ptr unit_system)
-  : m_config(config),
-    m_unit_system(unit_system),
-    m_time_units(unit_system, "seconds since 1-1-1") {
+    : m_config(config),
+      m_unit_system(unit_system),
+      m_time_units(unit_system, "seconds since 1-1-1") {
 
   m_variable_name = config->get_string("time.dimension_name");
 
@@ -737,36 +710,26 @@ Time::Time(MPI_Comm com,
 
   m_calendar_string = ::pism::calendar(file.get(), *config, log);
   init_calendar(m_calendar_string);
-  m_simple_calendar = set_member(m_calendar_string, {"360_day", "365_day", "no_leap"});
+  m_simple_calendar = set_member(m_calendar_string, { "360_day", "365_day", "no_leap" });
 
-  m_run_start = start_time(*config,
-                           file.get(),
-                           ref_date,
-                           m_calendar_string,
-                           m_time_units);
+  m_run_start = start_time(*config, file.get(), ref_date, m_calendar_string, m_time_units);
 
-  m_run_end = end_time(*config,
-                       m_run_start,
-                       m_calendar_string,
-                       m_time_units);
+  m_run_end = end_time(*config, m_run_start, m_calendar_string, m_time_units);
 
   if (m_run_start > m_run_end) {
     auto start = date(m_run_start);
-    auto end = date(m_run_end);
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Negative run length. Start: %s, end: %s.",
+    auto end   = date(m_run_end);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Negative run length. Start: %s, end: %s.",
                                   start.c_str(), end.c_str());
   }
 
   m_time_in_seconds = m_run_start;
 
-  auto time_file = config->get_string("time.file");
+  auto time_file    = config->get_string("time.file");
   bool continue_run = config->get_flag("time.file.continue");
 
   if (not time_file.empty()) {
-    log.message(2,
-                "* Setting time from '%s'...\n",
-                time_file.c_str());
+    log.message(2, "* Setting time from '%s'...\n", time_file.c_str());
     init_from_file(com, time_file, log, not continue_run);
   }
 }
@@ -782,9 +745,7 @@ Time::Time(MPI_Comm com,
  *
  * This allows running PISM for the duration of the available forcing.
  */
-void Time::init_from_file(MPI_Comm com,
-                          const std::string &filename,
-                          const Logger &log,
+void Time::init_from_file(MPI_Comm com, const std::string &filename, const Logger &log,
                           bool set_start_time) {
   try {
     std::string time_name = m_config->get_string("time.dimension_name");
@@ -800,10 +761,8 @@ void Time::init_from_file(MPI_Comm com,
     // Set the reference date of internal units.
     {
       bool stop_on_error = true;
-      std::string date_string = reference_date_from_file(file,
-                                                         time_name,
-                                                         "irrelevant (not used)",
-                                                         stop_on_error);
+      std::string date_string =
+          reference_date_from_file(file, time_name, "irrelevant (not used)", stop_on_error);
       m_time_units = units::Unit(m_unit_system, "seconds since " + date_string);
     }
 
@@ -836,7 +795,7 @@ double Time::year_fraction(double T) const {
 
   auto D = m_time_units.date(T, m_calendar_string);
 
-  units::DateTime D2{D.year, 1, 1, 0, 0, 0.0};
+  units::DateTime D2{ D.year, 1, 1, 0, 0, 0.0 };
 
   auto year_start = m_time_units.time(D2, m_calendar_string);
 
@@ -851,14 +810,13 @@ std::string Time::date(double T) const {
 
   double hour = date.hour + date.minute / 60.0 + date.second / 3600.0;
 
-  return pism::printf("%04d-%02d-%02d %06.3fh",
-                      date.year, date.month, date.day, hour);
+  return pism::printf("%04d-%02d-%02d %06.3fh", date.year, date.month, date.day, hour);
 }
 
 double Time::calendar_year_start(double T) const {
   auto D = m_time_units.date(T, m_calendar_string);
 
-  units::DateTime D2{D.year, 1, 1, 0, 0, 0.0};
+  units::DateTime D2{ D.year, 1, 1, 0, 0, 0.0 };
 
   return m_time_units.time(D2, m_calendar_string);
 }
@@ -876,7 +834,7 @@ void Time::compute_times_monthly(std::vector<double> &result) const {
   auto date = m_time_units.date(time, m_calendar_string);
 
   // beginning of the current month
-  units::DateTime d{date.year, date.month, 1, 0, 0, 0.0};
+  units::DateTime d{ date.year, date.month, 1, 0, 0, 0.0 };
 
   result.clear();
   while (true) {
@@ -892,8 +850,8 @@ void Time::compute_times_monthly(std::vector<double> &result) const {
     }
 
     if (d.month == 12) {
-      d.year  += 1;
-      d.month  = 1;
+      d.year += 1;
+      d.month = 1;
     } else {
       d.month += 1;
     }
@@ -906,7 +864,7 @@ void Time::compute_times_yearly(std::vector<double> &result) const {
   // get the date corresponding to the current time
   auto date = m_time_units.date(time, m_calendar_string);
 
-  units::DateTime d{date.year, 1, 1, 0, 0, 0.0};
+  units::DateTime d{ date.year, 1, 1, 0, 0, 0.0 };
 
   result.clear();
   while (true) {
@@ -925,8 +883,7 @@ void Time::compute_times_yearly(std::vector<double> &result) const {
   }
 }
 
-void Time::compute_times(double time_start, double time_end,
-                         const Interval &interval,
+void Time::compute_times(double time_start, double time_end, const Interval &interval,
                          std::vector<double> &result) const {
   switch (interval.type) {
   case SIMPLE:
@@ -946,23 +903,19 @@ void Time::compute_times(double time_start, double time_end,
  *
  * Returns silently if it is, otherwise throws an exception with an error message.
  */
-void check_forcing_duration(const Time &time,
-                            double forcing_start,
-                            double forcing_end) {
+void check_forcing_duration(const Time &time, double forcing_start, double forcing_end) {
 
   double run_start = time.start();
-  double run_end = time.end();
+  double run_end   = time.end();
 
-  if (not (run_start >= forcing_start and
-           run_end <= forcing_end)) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "A time-dependent forcing has to span the whole length of the simulation\n"
-                                  "  Run time:     [%s, %s]\n"
-                                  "  Forcing data: [%s, %s]",
-                                  time.date(run_start).c_str(),
-                                  time.date(run_end).c_str(),
-                                  time.date(forcing_start).c_str(),
-                                  time.date(forcing_end).c_str());
+  if (not(run_start >= forcing_start and run_end <= forcing_end)) {
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION,
+        "A time-dependent forcing has to span the whole length of the simulation\n"
+        "  Run time:     [%s, %s]\n"
+        "  Forcing data: [%s, %s]",
+        time.date(run_start).c_str(), time.date(run_end).c_str(), time.date(forcing_start).c_str(),
+        time.date(forcing_end).c_str());
   }
 }
 

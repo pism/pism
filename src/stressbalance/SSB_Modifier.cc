@@ -17,23 +17,23 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/stressbalance/SSB_Modifier.hh"
-#include "pism/rheology/FlowLawFactory.hh"
 #include "pism/rheology/FlowLaw.hh"
-#include "pism/util/Grid.hh"
-#include "pism/util/Config.hh"
+#include "pism/rheology/FlowLawFactory.hh"
 #include "pism/stressbalance/StressBalance.hh"
-#include "pism/util/array/Vector.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/array/Vector.hh"
 
 namespace pism {
 namespace stressbalance {
 
 SSB_Modifier::SSB_Modifier(std::shared_ptr<const Grid> g)
-  : Component(g),
-    m_EC(g->ctx()->enthalpy_converter()),
-    m_diffusive_flux(m_grid, "diffusive_flux"),
-    m_u(m_grid, "uvel", array::WITH_GHOSTS, m_grid->z()),
-    m_v(m_grid, "vvel", array::WITH_GHOSTS, m_grid->z()) {
+    : Component(g),
+      m_EC(g->ctx()->enthalpy_converter()),
+      m_diffusive_flux(m_grid, "diffusive_flux"),
+      m_u(m_grid, "uvel", array::WITH_GHOSTS, m_grid->z()),
+      m_v(m_grid, "vvel", array::WITH_GHOSTS, m_grid->z()) {
   m_D_max = 0.0;
 
   m_u.metadata(0)
@@ -56,7 +56,7 @@ SSB_Modifier::SSB_Modifier(std::shared_ptr<const Grid> g)
 void SSB_Modifier::init() {
 }
 
-const array::Staggered& SSB_Modifier::diffusive_flux() {
+const array::Staggered &SSB_Modifier::diffusive_flux() {
   return m_diffusive_flux;
 }
 
@@ -65,11 +65,11 @@ double SSB_Modifier::max_diffusivity() const {
   return m_D_max;
 }
 
-const array::Array3D& SSB_Modifier::velocity_u() const {
+const array::Array3D &SSB_Modifier::velocity_u() const {
   return m_u;
 }
 
-const array::Array3D& SSB_Modifier::velocity_v() const {
+const array::Array3D &SSB_Modifier::velocity_v() const {
   return m_v;
 }
 
@@ -85,8 +85,7 @@ void ConstantInColumn::init() {
   SSB_Modifier::init();
 }
 
-ConstantInColumn::ConstantInColumn(std::shared_ptr<const Grid> g)
-  : SSB_Modifier(g) {
+ConstantInColumn::ConstantInColumn(std::shared_ptr<const Grid> g) : SSB_Modifier(g) {
   rheology::FlowLawFactory ice_factory(m_config, m_EC);
 
   m_flow_law = ice_factory.create(m_config->get_string("stress_balance.sia.flow_law"),
@@ -103,24 +102,23 @@ ConstantInColumn::ConstantInColumn(std::shared_ptr<const Grid> g)
  * - maximum diffusivity
  * - strain heating (strain_heating)
  */
-void ConstantInColumn::update(const array::Vector &sliding_velocity,
-                              const Inputs &inputs,
+void ConstantInColumn::update(const array::Vector &sliding_velocity, const Inputs &inputs,
                               bool full_update) {
 
-  (void) inputs;
+  (void)inputs;
 
   if (not full_update) {
     return;
   }
 
   // horizontal velocity and its maximum:
-  array::AccessScope list{&m_u, &m_v, &sliding_velocity};
+  array::AccessScope list{ &m_u, &m_v, &sliding_velocity };
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
-    m_u.set_column(i,j, sliding_velocity(i,j).u);
-    m_v.set_column(i,j, sliding_velocity(i,j).v);
+    m_u.set_column(i, j, sliding_velocity(i, j).u);
+    m_v.set_column(i, j, sliding_velocity(i, j).v);
   }
 
   // Communicate to get ghosts (needed to compute w):

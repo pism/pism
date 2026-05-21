@@ -62,6 +62,7 @@ public:
   void set_min_thickness(double my_min_thickness);
   double get_notional_strength() const;
   double get_min_thickness() const;
+
 private:
   double m_min_thickness, m_constant_nu;
 };
@@ -106,6 +107,7 @@ public:
   virtual void update(const Inputs &inputs, bool full_update);
 
   virtual std::string stdout_report() const;
+
 protected:
   virtual std::set<VariableMetadata> state_impl() const;
   virtual void write_state_impl(const OutputFile &output) const;
@@ -114,8 +116,7 @@ protected:
 
   virtual void solve(const Inputs &inputs) = 0;
 
-  void extrapolate_velocity(const array::CellType1 &cell_type,
-                            array::Vector1 &velocity) const;
+  void extrapolate_velocity(const array::CellType1 &cell_type, array::Vector1 &velocity) const;
 
   std::string m_stdout_ssa;
 

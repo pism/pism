@@ -17,17 +17,17 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/coupler/ocean/Anomaly.hh"
-#include "pism/util/Grid.hh"
 #include "pism/coupler/util/options.hh"
-#include "pism/util/array/Forcing.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/array/Forcing.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace ocean {
 
 Anomaly::Anomaly(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in)
-  : OceanModel(g, in) {
+    : OceanModel(g, in) {
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.anomaly");
 
@@ -36,12 +36,10 @@ Anomaly::Anomaly(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in)
 
     File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    m_shelf_base_mass_flux_anomaly = std::make_shared<array::Forcing>(m_grid,
-                                                                  file,
-                                                                  "shelf_base_mass_flux_anomaly",
-                                                                  "", // no standard name
-                                                                  buffer_size,
-                                                                  opt.periodic);
+    m_shelf_base_mass_flux_anomaly =
+        std::make_shared<array::Forcing>(m_grid, file, "shelf_base_mass_flux_anomaly",
+                                         "", // no standard name
+                                         buffer_size, opt.periodic);
   }
 
   m_shelf_base_mass_flux_anomaly->metadata(0)
@@ -50,8 +48,6 @@ Anomaly::Anomaly(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in)
       .output_units("kg m^-2 year^-1");
 
   m_shelf_base_mass_flux = allocate_shelf_base_mass_flux(g);
-
-
 }
 
 void Anomaly::init_impl(const Geometry &geometry) {
@@ -60,13 +56,11 @@ void Anomaly::init_impl(const Geometry &geometry) {
     m_input_model->init(geometry);
   }
 
-  m_log->message(2,
-                 "* Initializing the '-ocean ...,anomaly' modifier...\n");
+  m_log->message(2, "* Initializing the '-ocean ...,anomaly' modifier...\n");
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.anomaly");
 
-  m_log->message(2,
-                 "    reading anomalies from %s ...\n", opt.filename.c_str());
+  m_log->message(2, "    reading anomalies from %s ...\n", opt.filename.c_str());
 
   m_shelf_base_mass_flux_anomaly->init(opt.filename, opt.periodic);
 }
@@ -79,7 +73,7 @@ void Anomaly::update_impl(const Inputs &inputs, double t, double dt) {
   m_shelf_base_mass_flux_anomaly->average(t, dt);
 
   m_input_model->shelf_base_mass_flux().add(1.0, *m_shelf_base_mass_flux_anomaly,
-                                 *m_shelf_base_mass_flux);
+                                            *m_shelf_base_mass_flux);
 }
 
 const array::Scalar &Anomaly::shelf_base_mass_flux_impl() const {

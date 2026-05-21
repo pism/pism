@@ -34,10 +34,12 @@ Profiling::Profiling() {
 
 //! Enable PETSc logging.
 void Profiling::start() const {
-#if PETSC_VERSION_LT(3,20,0)
-  PetscErrorCode ierr = PetscLogAllBegin(); PISM_CHK(ierr, "PetscLogAllBegin");
+#if PETSC_VERSION_LT(3, 20, 0)
+  PetscErrorCode ierr = PetscLogAllBegin();
+  PISM_CHK(ierr, "PetscLogAllBegin");
 #else
-  PetscErrorCode ierr = PetscLogDefaultBegin(); PISM_CHK(ierr, "PetscLogAllBegin");
+  PetscErrorCode ierr = PetscLogDefaultBegin();
+  PISM_CHK(ierr, "PetscLogAllBegin");
 #endif
 }
 
@@ -62,7 +64,8 @@ void Profiling::report(const std::string &filename) const {
   PISM_CHK(ierr, "PetscViewerSetUp");
 
   ierr = PetscLogView(log_viewer);
-  PISM_CHK(ierr, "PetscLogView"); PISM_CHK(ierr, "PetscLogView");
+  PISM_CHK(ierr, "PetscLogView");
+  PISM_CHK(ierr, "PetscLogView");
 
   ierr = PetscViewerPopFormat(log_viewer);
   PISM_CHK(ierr, "PetscViewerPopFormat");
@@ -72,7 +75,7 @@ void Profiling::report(const std::string &filename) const {
 }
 
 
-void Profiling::begin(const char * name) const {
+void Profiling::begin(const char *name) const {
   PetscLogEvent event = 0;
   PetscErrorCode ierr;
 
@@ -88,19 +91,18 @@ void Profiling::begin(const char * name) const {
   PISM_CHK(ierr, "PetscLogEventBegin");
 }
 
-void Profiling::end(const char * name) const {
+void Profiling::end(const char *name) const {
 
   if (m_events.find(name) == m_events.end()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "cannot end event \"%s\" because it was not started",
-                                  name);
+                                  "cannot end event \"%s\" because it was not started", name);
   }
 
   PetscErrorCode ierr = PetscLogEventEnd(m_events[name], 0, 0, 0, 0);
   PISM_CHK(ierr, "PetscLogEventEnd");
 }
 
-void Profiling::stage_begin(const char * name) const {
+void Profiling::stage_begin(const char *name) const {
   PetscLogStage stage = 0;
   PetscErrorCode ierr;
 
@@ -116,8 +118,8 @@ void Profiling::stage_begin(const char * name) const {
   PISM_CHK(ierr, "PetscLogStagePush");
 }
 
-void Profiling::stage_end(const char * name) const {
-  (void) name;
+void Profiling::stage_end(const char *name) const {
+  (void)name;
   PetscErrorCode ierr = PetscLogStagePop();
   PISM_CHK(ierr, "PetscLogStagePop");
 }

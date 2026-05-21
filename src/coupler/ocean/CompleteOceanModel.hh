@@ -38,9 +38,10 @@ public:
   CompleteOceanModel(std::shared_ptr<const Grid> g);
 
   virtual ~CompleteOceanModel() = default;
+
 protected:
-  virtual const array::Scalar& shelf_base_temperature_impl() const;
-  virtual const array::Scalar& shelf_base_mass_flux_impl() const;
+  virtual const array::Scalar &shelf_base_temperature_impl() const;
+  virtual const array::Scalar &shelf_base_mass_flux_impl() const;
   // getter for average_water_column_pressure is inherited from OceanModel
 
   // storage for average_water_column_pressure is inherited from OceanModel

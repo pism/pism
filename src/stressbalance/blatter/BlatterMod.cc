@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <algorithm>           // std::min, std::max
+#include <algorithm> // std::min, std::max
 
 #include "pism/stressbalance/blatter/BlatterMod.hh"
 
@@ -25,14 +25,13 @@
 
 #include "pism/geometry/Geometry.hh"
 #include "pism/stressbalance/StressBalance.hh" // Inputs
-#include "pism/util/pism_utilities.hh" // GlobalMax
+#include "pism/util/pism_utilities.hh"         // GlobalMax
 
 namespace pism {
 namespace stressbalance {
 
 BlatterMod::BlatterMod(std::shared_ptr<Blatter> solver)
-  : SSB_Modifier(solver->grid()),
-    m_solver(solver) {
+    : SSB_Modifier(solver->grid()), m_solver(solver) {
 
   rheology::FlowLawFactory ice_factory(m_config, m_EC);
   ice_factory.remove(ICE_GOLDSBY_KOHLSTEDT);
@@ -51,18 +50,16 @@ void BlatterMod::init() {
  *
  * - estimates the maximum diffusivity used to compute the time step restriction
  */
-void BlatterMod::update(const array::Vector &sliding_velocity,
-                        const Inputs &inputs,
+void BlatterMod::update(const array::Vector &sliding_velocity, const Inputs &inputs,
                         bool full_update) {
-  (void) sliding_velocity;
-  (void) full_update;
+  (void)sliding_velocity;
+  (void)full_update;
 
   // transfer velocity onto the PISM vertical grid, setting m_u and m_v
   transfer(inputs.geometry->ice_thickness);
 
   // estimate max diffusivity to use in adaptive time stepping
-  compute_max_diffusivity(m_solver->velocity(),
-                          inputs.geometry->ice_thickness,
+  compute_max_diffusivity(m_solver->velocity(), inputs.geometry->ice_thickness,
                           inputs.geometry->ice_surface_elevation);
 
   m_diffusive_flux.set(0.0);
@@ -79,9 +76,9 @@ void BlatterMod::transfer(const array::Scalar &ice_thickness) {
   auto v_sigma = m_solver->velocity_v_sigma();
 
   const auto &zlevels = m_u.levels();
-  int Mz = zlevels.size();
+  int Mz              = zlevels.size();
 
-  array::AccessScope list{&m_u, &m_v, u_sigma.get(), v_sigma.get(), &ice_thickness};
+  array::AccessScope list{ &m_u, &m_v, u_sigma.get(), v_sigma.get(), &ice_thickness };
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
@@ -115,11 +112,9 @@ void BlatterMod::compute_max_diffusivity(const array::Vector &velocity,
                                          const array::Scalar &ice_thickness,
                                          const array::Scalar1 &surface) {
   const double eps = 1e-3;
-  double
-    dx = m_grid->dx(),
-    dy = m_grid->dy();
+  double dx = m_grid->dx(), dy = m_grid->dy();
 
-  array::AccessScope list{&velocity, &ice_thickness, &surface};
+  array::AccessScope list{ &velocity, &ice_thickness, &surface };
 
   m_D_max = 0.0;
   for (auto p : m_grid->points()) {
@@ -129,8 +124,7 @@ void BlatterMod::compute_max_diffusivity(const array::Vector &velocity,
     auto H = ice_thickness(i, j);
 
     if (H > 0.0) {
-      Vector2d grad_h = {(h.e - h.w) / (2.0 * dx),
-                        (h.n - h.s) / (2.0 * dy)};
+      Vector2d grad_h = { (h.e - h.w) / (2.0 * dx), (h.n - h.s) / (2.0 * dy) };
 
       double D = H * velocity(i, j).magnitude() / (grad_h.magnitude() + eps);
 

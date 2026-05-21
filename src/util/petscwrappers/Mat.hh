@@ -26,7 +26,7 @@
 
 namespace pism {
 namespace petsc {
-class Mat : public Wrapper< ::Mat > {
+class Mat : public Wrapper< ::Mat> {
 public:
   Mat();
   Mat(::Mat m);

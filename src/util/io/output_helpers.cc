@@ -19,20 +19,18 @@
 
 #include <set>
 
-#include "pism/util/error_handling.hh"
-#include "pism/util/io/io_helpers.hh"
-#include "pism/util/VariableMetadata.hh"
-#include "pism/util/io/OutputWriter.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/Config.hh"
+#include "pism/util/VariableMetadata.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/OutputWriter.hh"
+#include "pism/util/io/io_helpers.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace io {
 
-void define_variables(const OutputFile &file,
-                      const std::set<VariableMetadata> &variables,
-                      const VariableMetadata &mapping,
-                      bool use_internal_units) {
+void define_variables(const OutputFile &file, const std::set<VariableMetadata> &variables,
+                      const VariableMetadata &mapping, bool use_internal_units) {
 
   std::string mapping_variable_name{};
   if (mapping.has_attributes()) {
@@ -49,7 +47,7 @@ void define_variables(const OutputFile &file,
       file.append_history(var["history"]);
 
       // clear the history attribute
-      auto tmp = var;
+      auto tmp       = var;
       tmp["history"] = "";
       file.set_global_attributes(tmp.all_strings(), tmp.all_doubles());
 

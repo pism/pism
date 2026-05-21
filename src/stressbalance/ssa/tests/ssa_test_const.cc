@@ -29,12 +29,11 @@
  */
 
 #include <memory>
-static char help[] =
-  "\nSSA_TEST_CONST\n"
-  "  Testing program for the finite element implementation of the SSA.\n"
-  "  Does a time-independent calculation.  Does not run IceModel or a derived\n"
-  "  class thereof.Also may be used in a PISM\n"
-  "  software (regression) test.\n\n";
+static char help[] = "\nSSA_TEST_CONST\n"
+                     "  Testing program for the finite element implementation of the SSA.\n"
+                     "  Does a time-independent calculation.  Does not run IceModel or a derived\n"
+                     "  class thereof.Also may be used in a PISM\n"
+                     "  software (regression) test.\n\n";
 
 #include <cmath>
 
@@ -42,14 +41,14 @@ static char help[] =
 #include "pism/stressbalance/ssa/SSAFD.hh"
 #include "pism/stressbalance/ssa/SSAFEM.hh"
 #include "pism/stressbalance/ssa/tests/SSATestCase.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/Mask.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/petscwrappers/PetscInitializer.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/pism_options.hh"
+#include "pism/util/pism_utilities.hh"
 #include "pism/verification/tests/exactTestsIJ.h"
 
 namespace pism {
@@ -59,8 +58,7 @@ std::shared_ptr<Grid> ssa_test_const_grid(std::shared_ptr<Context> ctx, int Mx, 
   return SSATestCase::grid(ctx, Mx, My, 50e3, 50e3, grid::CELL_CORNER, grid::NOT_PERIODIC);
 }
 
-class SSATestCaseConst: public SSATestCase
-{
+class SSATestCaseConst : public SSATestCase {
 public:
   SSATestCaseConst(std::shared_ptr<Context> ctx, std::shared_ptr<SSA> ssa) : SSATestCase(ssa) {
     m_L     = units::convert(m_sys, 50.0, "km", "m"); // 50km half-width
@@ -70,7 +68,7 @@ public:
     m_tauc0 = 1.e4; // Pa
 
     auto config = ctx->config();
-    m_basal_q = config->get_number("basal_resistance.pseudo_plastic.q");
+    m_basal_q   = config->get_number("basal_resistance.pseudo_plastic.q");
   };
 
 protected:
@@ -90,29 +88,29 @@ void SSATestCaseConst::initializeSSACoefficients() {
 
   // Force linear rheology
   m_ssa->strength_extension->set_notional_strength(m_nu0 * m_H0);
-  m_ssa->strength_extension->set_min_thickness(0.5*m_H0);
+  m_ssa->strength_extension->set_min_thickness(0.5 * m_H0);
 
   // Set constant thickness, tauc
   m_bc_mask.set(0);
   m_geometry.ice_thickness.set(m_H0);
   m_tauc.set(m_tauc0);
 
-  array::AccessScope list{&m_bc_values, &m_bc_mask,
-      &m_geometry.bed_elevation, &m_geometry.ice_surface_elevation};
+  array::AccessScope list{ &m_bc_values, &m_bc_mask, &m_geometry.bed_elevation,
+                           &m_geometry.ice_surface_elevation };
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double u, v;
-    const double x = m_grid->x(i), y=m_grid->y(j);
+    const double x = m_grid->x(i), y = m_grid->y(j);
 
-    m_geometry.bed_elevation(i, j) = -x*(m_dhdx);
+    m_geometry.bed_elevation(i, j)         = -x * (m_dhdx);
     m_geometry.ice_surface_elevation(i, j) = m_geometry.bed_elevation(i, j) + m_H0;
 
-    bool edge = ((j == 0) || (j == (int)m_grid->My() - 1) ||
-                 (i == 0) || (i == (int)m_grid->Mx() - 1));
+    bool edge =
+        ((j == 0) || (j == (int)m_grid->My() - 1) || (i == 0) || (i == (int)m_grid->Mx() - 1));
     if (edge) {
-      m_bc_mask(i,j) = 1;
+      m_bc_mask(i, j) = 1;
       exactSolution(i, j, x, y, &u, &v);
       m_bc_values(i, j).u = u;
       m_bc_values(i, j).v = v;
@@ -126,15 +124,15 @@ void SSATestCaseConst::initializeSSACoefficients() {
 }
 
 
-void SSATestCaseConst::exactSolution(int /*i*/, int /*j*/,
-                                     double /*x*/, double /*y*/,
-                                     double *u, double *v) {
+void SSATestCaseConst::exactSolution(int /*i*/, int /*j*/, double /*x*/, double /*y*/, double *u,
+                                     double *v) {
   double earth_grav = m_config->get_number("constants.standard_gravity"),
-    tauc_threshold_velocity = m_config->get_number("basal_resistance.pseudo_plastic.u_threshold",
-                                                   "m second-1"),
-    ice_rho = m_config->get_number("constants.ice.density");
+         tauc_threshold_velocity =
+             m_config->get_number("basal_resistance.pseudo_plastic.u_threshold", "m second-1"),
+         ice_rho = m_config->get_number("constants.ice.density");
 
-  *u = pow(ice_rho * earth_grav * m_H0 * m_dhdx / m_tauc0, 1./m_basal_q)*tauc_threshold_velocity;
+  *u =
+      pow(ice_rho * earth_grav * m_H0 * m_dhdx / m_tauc0, 1. / m_basal_q) * tauc_threshold_velocity;
   *v = 0;
 }
 
@@ -146,7 +144,7 @@ int main(int argc, char *argv[]) {
   using namespace pism;
   using namespace pism::stressbalance;
 
-  MPI_Comm com = MPI_COMM_WORLD;  // won't be used except for rank,size
+  MPI_Comm com = MPI_COMM_WORLD; // won't be used except for rank,size
   petsc::Initializer petsc(argc, argv, help);
 
   com = PETSC_COMM_WORLD;
@@ -154,12 +152,12 @@ int main(int argc, char *argv[]) {
   /* This explicit scoping forces destructors to be called before PetscFinalize() */
   try {
     std::shared_ptr<Context> ctx = context_from_options(com, "ssa_test_const");
-    auto config = ctx->config();
+    auto config                  = ctx->config();
 
     std::string usage = "\n"
-      "usage of SSA_TEST_CONST:\n"
-      "  run ssa_test_const -Mx <number> -My <number> -ssa_method <fd|fem>\n"
-      "\n";
+                        "usage of SSA_TEST_CONST:\n"
+                        "  run ssa_test_const -Mx <number> -My <number> -ssa_method <fd|fem>\n"
+                        "\n";
 
     bool stop = maybe_show_usage(*ctx->log(), "ssa_test_const", usage);
 
@@ -173,7 +171,7 @@ int main(int argc, char *argv[]) {
 
     double basal_q = 1.0;
 
-    auto method = config->get_string("stress_balance.ssa.method");
+    auto method      = config->get_string("stress_balance.ssa.method");
     auto output_file = config->get_string("output.file");
 
     bool write_output = config->get_string("output.size") != "none";
@@ -195,8 +193,7 @@ int main(int argc, char *argv[]) {
     if (write_output) {
       testcase.write(output_file);
     }
-  }
-  catch (...) {
+  } catch (...) {
     handle_fatal_errors(com);
     return 1;
   }

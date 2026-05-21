@@ -26,7 +26,7 @@
 
 namespace pism {
 namespace petsc {
-class Tao : public Wrapper< ::Tao > {
+class Tao : public Wrapper< ::Tao> {
 public:
   Tao();
   Tao(::Tao m);

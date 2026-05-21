@@ -38,8 +38,7 @@ static void check(const ErrorLocation &where, int return_code) {
   }
 }
 
-NC4_Serial::NC4_Serial(MPI_Comm c)
-  : NC_Serial(c), m_compression_level(0) {
+NC4_Serial::NC4_Serial(MPI_Comm c) : NC_Serial(c), m_compression_level(0) {
   // empty
 }
 
@@ -61,8 +60,7 @@ void NC4_Serial::set_compression_level_impl(int level) const {
   m_compression_level = pism::clip(level, 0, 9);
 }
 
-void NC4_Serial::def_var_impl(const std::string &name,
-                              io::Type nctype,
+void NC4_Serial::def_var_impl(const std::string &name, io::Type nctype,
                               const std::vector<std::string> &dims) const {
 
   // use the parent class to define the variable

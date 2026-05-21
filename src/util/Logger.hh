@@ -19,14 +19,14 @@
 #ifndef _LOGGER_H_
 #define _LOGGER_H_
 
-#include <string>
 #include <memory>
+#include <string>
 
 #include <mpi.h>
 
 namespace pism {
 
-typedef enum {WARNING=1, DEBUG2=2, DEBUG3=3, TRACE=4} LoggerLevel;
+typedef enum { WARNING = 1, DEBUG2 = 2, DEBUG3 = 3, TRACE = 4 } LoggerLevel;
 
 //! A basic logging class.
 /**
@@ -69,15 +69,17 @@ public:
   void disable() const;
   //! (Re-)enable the logger.
   void enable() const;
+
 protected:
   //! Do the hard work. Override this in a derived class to customize.
   virtual void message_impl(const char buffer[]) const;
   virtual void error_impl(const char buffer[]) const;
-  private:
+
+private:
   struct Impl;
   Impl *m_impl;
-  Logger(const Logger&);
-  Logger & operator=(const Logger &);
+  Logger(const Logger &);
+  Logger &operator=(const Logger &);
 };
 
 //! A logger that accumulates messages and reports them as a string.
@@ -89,9 +91,11 @@ public:
   void reset();
 
   std::string get() const;
+
 protected:
   virtual void message_impl(const char buffer[]) const;
   virtual void error_impl(const char buffer[]) const;
+
 private:
   struct Impl;
   Impl *m_impl;

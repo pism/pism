@@ -20,19 +20,19 @@
 #include "pism/coupler/atmosphere/Factory.hh"
 
 // atmosphere models:
-#include "pism/coupler/atmosphere/GivenClimate.hh"
-#include "pism/coupler/atmosphere/ElevationChange.hh"
-#include "pism/coupler/atmosphere/SeariseGreenland.hh"
-#include "pism/coupler/atmosphere/Delta_T.hh"
-#include "pism/coupler/atmosphere/Delta_P.hh"
-#include "pism/coupler/atmosphere/Frac_P.hh"
-#include "pism/coupler/atmosphere/PrecipitationScaling.hh"
-#include "pism/coupler/atmosphere/PIK.hh"
 #include "pism/coupler/atmosphere/Anomaly.hh"
 #include "pism/coupler/atmosphere/CosineYearlyCycle.hh"
-#include "pism/coupler/atmosphere/WeatherStation.hh"
-#include "pism/coupler/atmosphere/Uniform.hh"
+#include "pism/coupler/atmosphere/Delta_P.hh"
+#include "pism/coupler/atmosphere/Delta_T.hh"
+#include "pism/coupler/atmosphere/ElevationChange.hh"
+#include "pism/coupler/atmosphere/Frac_P.hh"
+#include "pism/coupler/atmosphere/GivenClimate.hh"
 #include "pism/coupler/atmosphere/OrographicPrecipitation.hh"
+#include "pism/coupler/atmosphere/PIK.hh"
+#include "pism/coupler/atmosphere/PrecipitationScaling.hh"
+#include "pism/coupler/atmosphere/SeariseGreenland.hh"
+#include "pism/coupler/atmosphere/Uniform.hh"
+#include "pism/coupler/atmosphere/WeatherStation.hh"
 
 namespace pism {
 namespace atmosphere {
@@ -40,7 +40,7 @@ namespace atmosphere {
 // Atmosphere
 
 Factory::Factory(std::shared_ptr<const Grid> g)
-  : PCFactory<AtmosphereModel>(g, "atmosphere.models") {
+    : PCFactory<AtmosphereModel>(g, "atmosphere.models") {
 
   add_model<PIK>("pik");
   add_model<Given>("given");

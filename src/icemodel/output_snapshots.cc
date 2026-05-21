@@ -20,9 +20,9 @@
 
 #include "pism/icemodel/IceModel.hh"
 
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/Profiling.hh"
 #include "pism/util/io/io_helpers.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
@@ -35,8 +35,7 @@ MaxTimestep IceModel::snapshots_max_timestep(double my_t) {
 
   double eps = m_config->get_number("time_stepping.resolution");
 
-  return reporting_max_timestep(m_snapshot_times, my_t, eps,
-                                "reporting (-save_times)");
+  return reporting_max_timestep(m_snapshot_times, my_t, eps, "reporting (-save_times)");
 }
 
 //! Initializes the snapshot-saving mechanism.
@@ -58,7 +57,7 @@ void IceModel::init_snapshots() {
                          " to save snapshots.");
     }
 
-    if (not (filename_set and times_set)) {
+    if (not(filename_set and times_set)) {
       return;
     }
   }
@@ -88,17 +87,15 @@ void IceModel::init_snapshots() {
   }
 
   if (m_snapshot_times.empty()) {
-    throw RuntimeError(PISM_ERROR_LOCATION,
-                       "output.snapshot.times was set, but all requested times"
-                       " are outside of the modeled time interval");
+    throw RuntimeError(PISM_ERROR_LOCATION, "output.snapshot.times was set, but all requested times"
+                                            " are outside of the modeled time interval");
   }
 
   if (not m_split_snapshots and not ends_with(m_snapshots_filename, ".nc")) {
     m_log->message(2, "PISM WARNING: snapshots file name does not have the '.nc' suffix!\n");
   }
 
-  m_log->message(2, "saving model state snapshots to '%s%s'%s\n",
-                 m_snapshots_filename.c_str(),
+  m_log->message(2, "saving model state snapshots to '%s%s'%s\n", m_snapshots_filename.c_str(),
                  m_split_snapshots ? "+date.nc" : "",
                  m_snapshot_writer->is_async() ? " using asynchronous output" : "");
 
@@ -140,7 +137,7 @@ void IceModel::write_snapshot() {
   std::string filename;
   if (m_snapshot_file == nullptr) {
     if (m_split_snapshots) {
-      auto date_without_spaces  = replace_character(m_time->date(saving_after), ' ', '_');
+      auto date_without_spaces = replace_character(m_time->date(saving_after), ' ', '_');
       filename =
           pism::printf("%s_%s.nc", m_snapshots_filename.c_str(), date_without_spaces.c_str());
     } else {

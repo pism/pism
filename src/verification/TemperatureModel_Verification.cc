@@ -19,18 +19,18 @@
 
 #include "pism/verification/TemperatureModel_Verification.hh"
 
+#include "pism/energy/utilities.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/verification/tests/exactTestsFG.hh"
 #include "pism/verification/tests/exactTestK.h"
 #include "pism/verification/tests/exactTestO.h"
-#include "pism/energy/utilities.hh"
-#include "pism/util/Time.hh"
-#include "pism/util/Context.hh"
+#include "pism/verification/tests/exactTestsFG.hh"
 
 namespace pism {
 namespace energy {
 
-static const double ApforG = 200; // m
+static const double ApforG = 200;    // m
 static const double LforFG = 750000; // m
 static const double ST     = 1.67e-5;
 static const double Tmin   = 223.15; // K
@@ -52,7 +52,7 @@ void TemperatureModel_Verification::initialize_impl(const array::Scalar &basal_m
                                                     const array::Scalar &basal_heat_flux) {
 
   // ignore provided basal melt rate
-  (void) basal_melt_rate;
+  (void)basal_melt_rate;
 
   m_basal_melt_rate.set(0.0);
 
@@ -79,7 +79,7 @@ void TemperatureModel_Verification::initialize_impl(const array::Scalar &basal_m
 
 void TemperatureModel_Verification::initTestFG() {
 
-  array::AccessScope list{&m_ice_temperature};
+  array::AccessScope list{ &m_ice_temperature };
 
   const double time = m_testname == 'F' ? 0.0 : this->time().current();
   const double A    = m_testname == 'F' ? 0.0 : ApforG;

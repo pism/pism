@@ -20,9 +20,10 @@
 
 #include "pism/verification/tests/exactTestO.h"
 
-static const double beta_CC   = 7.9e-8; /* K Pa-1; Clausius-Clapeyron constant [@ref Luethi2002] */
-static const double T_triple  = 273.15; /* K; triple point of pure water */
-static const double L         = 3.34e5; /* J kg-1; latent heat of fusion for water [@ref AschwandenBlatter] */
+static const double beta_CC  = 7.9e-8; /* K Pa-1; Clausius-Clapeyron constant [@ref Luethi2002] */
+static const double T_triple = 273.15; /* K; triple point of pure water */
+static const double L =
+    3.34e5; /* J kg-1; latent heat of fusion for water [@ref AschwandenBlatter] */
 static const double grav      = 9.81;   /* m/s^2; accel of gravity */
 static const double rho_ICE   = 910.0;  /* kg/(m^3)  density of ice */
 static const double k_ICE     = 2.10;   /* J/(m K s) = W/(m K)  thermal conductivity of ice */
@@ -85,26 +86,26 @@ int exactO_old(double z, double *TT, double *Tm, double *qice, double *qbed, dou
 
   double P_base;
 
-  P_base = rho_ICE * grav * H0;     /* Pa; hydrostatic approximation to pressure
+  P_base = rho_ICE * grav * H0; /* Pa; hydrostatic approximation to pressure
                                        at base */
 
-  *Tm = T_triple - beta_CC * P_base;/* K; pressure-melting point at base */
+  *Tm = T_triple - beta_CC * P_base; /* K; pressure-melting point at base */
 
-  *qice = - k_ICE * (Ts - *Tm) / H0;/* J m-1 K-1 s-1 K m-1 = J m-2 s-1 = W m-2;
+  *qice = -k_ICE * (Ts - *Tm) / H0; /* J m-1 K-1 s-1 K m-1 = J m-2 s-1 = W m-2;
                                        equilibrium heat flux everywhere in ice */
 
-  *qbed = G;                        /* J m-2 s-1 = W m-2; equilibrium heat flux
+  *qbed = G; /* J m-2 s-1 = W m-2; equilibrium heat flux
                                        everywhere in bedrock */
 
-  *bmelt = (G - *qice) / (L * rho_ICE);/* J m-2 s-1 / (J kg-1 kg m-3) = m s-1;
+  *bmelt = (G - *qice) / (L * rho_ICE); /* J m-2 s-1 / (J kg-1 kg m-3) = m s-1;
                                           ice-equivalent basal melt rate */
 
   if (z > H0) {
-    *TT = Ts;                       /* K; in air above ice */
+    *TT = Ts; /* K; in air above ice */
   } else if (z >= 0.0) {
     *TT = *Tm + (Ts - *Tm) * (z / H0); /* in ice */
   } else {
-    *TT = *Tm - (G / k_BEDROCK) * z;   /* in bedrock */
+    *TT = *Tm - (G / k_BEDROCK) * z; /* in bedrock */
   }
   return 0;
 }

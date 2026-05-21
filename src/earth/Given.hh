@@ -32,14 +32,13 @@ class Given : public BedDef {
 public:
   Given(std::shared_ptr<const Grid> grid);
   virtual ~Given() = default;
+
 protected:
   void init_impl(const InputOptions &opts, const array::Scalar &ice_thickness,
                  const array::Scalar &sea_level_elevation);
 
-  void bootstrap_impl(const array::Scalar &bed_elevation,
-                      const array::Scalar &bed_uplift,
-                      const array::Scalar &ice_thickness,
-                      const array::Scalar &sea_level_elevation);
+  void bootstrap_impl(const array::Scalar &bed_elevation, const array::Scalar &bed_uplift,
+                      const array::Scalar &ice_thickness, const array::Scalar &sea_level_elevation);
 
   void update_impl(const array::Scalar &load, double t, double dt);
 

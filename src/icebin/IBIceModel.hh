@@ -62,16 +62,15 @@ public:
   pism::array::Scalar elevmask_land;
 
 protected:
-
 public:
   virtual void accumulateFluxes_massContExplicitStep(
-    int i, int j,
-    double surface_mass_balance, // [m s-1] ice equivalent (from PISM)
-    double basal_melt_rate,      // [m s-1] ice equivalent
-    double divQ_SIA,             // [m s-1] ice equivalent
-    double divQ_SSA,             // [m s-1] ice equivalent
-    double Href_to_H_flux,       // [m s-1] ice equivalent
-    double nonneg_rule_flux);    // [m s-1] ice equivalent
+      int i, int j,
+      double surface_mass_balance, // [m s-1] ice equivalent (from PISM)
+      double basal_melt_rate,      // [m s-1] ice equivalent
+      double divQ_SIA,             // [m s-1] ice equivalent
+      double divQ_SSA,             // [m s-1] ice equivalent
+      double Href_to_H_flux,       // [m s-1] ice equivalent
+      double nonneg_rule_flux);    // [m s-1] ice equivalent
   virtual void massContExplicitStep(double dt);
 
 private:
@@ -85,7 +84,8 @@ public:
 
   void reset_rate();
 
-  std::unique_ptr<pism::File> pre_mass_nc; //!< Write variables every time massContPostHook() is called.
+  std::unique_ptr<pism::File>
+      pre_mass_nc; //!< Write variables every time massContPostHook() is called.
   std::unique_ptr<pism::File> post_mass_nc;
   std::unique_ptr<pism::File> pre_energy_nc;
   std::unique_ptr<pism::File> post_energy_nc;
@@ -129,7 +129,7 @@ public:
 
   void prepare_outputs(double time_s);
 
-  void dumpToFile(const std::string &filename) const ;
+  void dumpToFile(const std::string &filename) const;
 
   /** Read things out of the ice model that will be sent back BEFORE
     the first coupling timestep (eg, ice surface enthalpy) */

@@ -16,9 +16,9 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#include <cmath> // sqrt
-#include <cassert>              // assert
-#include <algorithm>            // std::min
+#include <algorithm> // std::min
+#include <cassert>   // assert
+#include <cmath>     // sqrt
 
 #include "pism/coupler/ocean/PicoPhysics.hh"
 
@@ -96,11 +96,8 @@ TocBox1 PicoPhysics::Toc_box1(double area, double T_star, double Soc_box0, doubl
 
   TocBox1 result = { false, 0.0 };
 
-  const double
-    g1 = area * m_gamma_T,
-    s1 = Soc_box0 / (m_nu * m_lambda),
-    p  = p_coeff(g1, s1),
-    q  = p * T_star;
+  const double g1 = area * m_gamma_T, s1 = Soc_box0 / (m_nu * m_lambda), p = p_coeff(g1, s1),
+               q = p * T_star;
 
   // This can only happen if T_star > 0.25*p, in particular T_star > 0 which can only
   // happen for values of Toc_box0 close to the local pressure melting point
@@ -117,7 +114,8 @@ TocBox1 PicoPhysics::Toc_box1(double area, double T_star, double Soc_box0, doubl
   return result;
 }
 
-double PicoPhysics::Toc(double area, double temperature, double T_star, double overturning, double salinity) const {
+double PicoPhysics::Toc(double area, double temperature, double T_star, double overturning,
+                        double salinity) const {
 
   double g1 = area * m_gamma_T;
   double g2 = g1 / (m_nu * m_lambda);
@@ -160,7 +158,8 @@ double PicoPhysics::melt_rate(double pm_point, double Toc) const {
 //! Beckmann & Goosse meltrate
 double PicoPhysics::melt_rate_beckmann_goosse(double pot_pm_point, double Toc) const {
   // in W/m^2
-  double heat_flux = m_meltFactor * m_sea_water_density * m_c_p_ocean * m_gamma_T * (Toc - pot_pm_point);
+  double heat_flux =
+      m_meltFactor * m_sea_water_density * m_c_p_ocean * m_gamma_T * (Toc - pot_pm_point);
   // in m s-1
   return heat_flux / (m_latentHeat * m_ice_density);
 }
@@ -168,7 +167,8 @@ double PicoPhysics::melt_rate_beckmann_goosse(double pot_pm_point, double Toc) c
 //! equation 3 in the PICO paper. See also equation 4.
 double PicoPhysics::overturning(double Soc_box0, double Soc, double Toc_box0, double Toc) const {
   // in m^3/s
-  return m_overturning_coeff * m_rho_star * (m_beta * (Soc_box0 - Soc) - m_alpha * (Toc_box0 - Toc));
+  return m_overturning_coeff * m_rho_star *
+         (m_beta * (Soc_box0 - Soc) - m_alpha * (Toc_box0 - Toc));
 }
 
 //! See equation A6 and lines before in PICO paper

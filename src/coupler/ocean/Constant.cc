@@ -18,30 +18,28 @@
 
 #include "pism/coupler/ocean/Constant.hh"
 
+#include "pism/geometry/Geometry.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/MaxTimestep.hh"
-#include "pism/geometry/Geometry.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace ocean {
 
-Constant::Constant(std::shared_ptr<const Grid> g)
-  : CompleteOceanModel(g) {
+Constant::Constant(std::shared_ptr<const Grid> g) : CompleteOceanModel(g) {
   // empty
 }
 
 void Constant::update_impl(const Inputs &inputs, double t, double dt) {
-  (void) t;
-  (void) dt;
+  (void)t;
+  (void)dt;
 
-  const double
-    melt_rate     = m_config->get_number("ocean.constant.melt_rate", "m second-1"),
-    ice_density   = m_config->get_number("constants.ice.density"),
-    water_density = m_config->get_number("constants.sea_water.density"),
-    g             = m_config->get_number("constants.standard_gravity"),
-    mass_flux     = melt_rate * ice_density;
+  const double melt_rate     = m_config->get_number("ocean.constant.melt_rate", "m second-1"),
+               ice_density   = m_config->get_number("constants.ice.density"),
+               water_density = m_config->get_number("constants.sea_water.density"),
+               g             = m_config->get_number("constants.standard_gravity"),
+               mass_flux     = melt_rate * ice_density;
 
   melting_point_temperature(inputs.geometry->ice_thickness, *m_shelf_base_temperature);
 
@@ -52,38 +50,35 @@ void Constant::update_impl(const Inputs &inputs, double t, double dt) {
 }
 
 void Constant::init_impl(const Geometry &geometry) {
-  (void) geometry;
+  (void)geometry;
 
   m_log->message(2, "* Initializing the constant ocean model...\n");
   m_log->message(2, "  Sub-shelf melt rate set to %f m/year.\n",
                  m_config->get_number("ocean.constant.melt_rate", "m year-1"));
 
-  double
-    ice_density   = m_config->get_number("constants.ice.density"),
-    water_density = m_config->get_number("constants.sea_water.density"),
-    g             = m_config->get_number("constants.standard_gravity");
+  double ice_density   = m_config->get_number("constants.ice.density"),
+         water_density = m_config->get_number("constants.sea_water.density"),
+         g             = m_config->get_number("constants.standard_gravity");
 
   compute_average_water_column_pressure(geometry, ice_density, water_density, g,
-                                           *m_water_column_pressure);
+                                        *m_water_column_pressure);
 }
 
 MaxTimestep Constant::max_timestep_impl(double t) const {
-  (void) t;
+  (void)t;
   return MaxTimestep("ocean constant");
 }
 
 /*!
  * Compute melting point temperature of ice at the depth `depth`.
  */
-void Constant::melting_point_temperature(const array::Scalar& depth,
-                                         array::Scalar &result) const {
-  const double
-    T0          = m_config->get_number("constants.fresh_water.melting_point_temperature"),
-    beta_CC     = m_config->get_number("constants.ice.beta_Clausius_Clapeyron"),
-    g           = m_config->get_number("constants.standard_gravity"),
-    ice_density = m_config->get_number("constants.ice.density");
+void Constant::melting_point_temperature(const array::Scalar &depth, array::Scalar &result) const {
+  const double T0      = m_config->get_number("constants.fresh_water.melting_point_temperature"),
+               beta_CC = m_config->get_number("constants.ice.beta_Clausius_Clapeyron"),
+               g       = m_config->get_number("constants.standard_gravity"),
+               ice_density = m_config->get_number("constants.ice.density");
 
-  array::AccessScope list{&depth, &result};
+  array::AccessScope list{ &depth, &result };
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
@@ -93,5 +88,5 @@ void Constant::melting_point_temperature(const array::Scalar& depth,
   }
 }
 
-} // end of namespape ocean
+} // namespace ocean
 } // end of namespace pism

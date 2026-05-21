@@ -76,5 +76,5 @@ double FrontalMeltPhysics::frontal_melt_from_ismip6(double h, double q_sg, doubl
   return (m_A * h * pow(q_sg, m_alpha) + m_B) * pow(TF, m_beta);
 }
 
-} // end of namespace frontalmeltmodel
+} // namespace frontalmelt
 } // end of namespace pism

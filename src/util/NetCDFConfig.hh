@@ -20,8 +20,8 @@
 #ifndef _PISM_NETCDF_CONFIG_H_
 #define _PISM_NETCDF_CONFIG_H_
 
-#include <string>
 #include <set>
+#include <string>
 
 #include "pism/util/Config.hh"
 #include "pism/util/VariableMetadata.hh"
@@ -47,8 +47,7 @@ protected:
   std::vector<double> get_numbers_impl(const std::string &name) const;
 
   void set_number_impl(const std::string &name, double value);
-  void set_numbers_impl(const std::string &name,
-                        const std::vector<double> &values);
+  void set_numbers_impl(const std::string &name, const std::vector<double> &values);
   // strings
   Strings all_strings_impl() const;
   std::string get_string_impl(const std::string &name) const;
@@ -56,8 +55,9 @@ protected:
 
   // flags
   Flags all_flags_impl() const;
-  bool get_flag_impl(const std::string& name) const;
-  void set_flag_impl(const std::string& name, bool value);
+  bool get_flag_impl(const std::string &name) const;
+  void set_flag_impl(const std::string &name, bool value);
+
 private:
   VariableMetadata m_data;
   //! @brief the name of the file this config database was initialized from

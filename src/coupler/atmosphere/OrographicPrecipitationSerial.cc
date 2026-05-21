@@ -18,10 +18,10 @@
 
 #include "pism/coupler/atmosphere/OrographicPrecipitationSerial.hh"
 
-#include <complex> // std::complex<double>, std::sqrt()
-#include <gsl/gsl_math.h> // M_PI
 #include <cassert>        // assert()
 #include <cmath>          // std::exp()
+#include <complex>        // std::complex<double>, std::sqrt()
+#include <gsl/gsl_math.h> // M_PI
 
 #include "pism/util/Config.hh"
 #include "pism/util/error_handling.hh"
@@ -40,11 +40,9 @@ namespace atmosphere {
  * @param[in] Nx extended grid size in the X direction
  * @param[in] Ny extended grid size in the Y direction
  */
-OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &config,
-                                                             int Mx, int My,
-                                                             double dx, double dy,
-                                                             int Nx, int Ny)
-  : m_Mx(Mx), m_My(My), m_Nx(Nx), m_Ny(Ny) {
+OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &config, int Mx, int My,
+                                                             double dx, double dy, int Nx, int Ny)
+    : m_Mx(Mx), m_My(My), m_Nx(Nx), m_Ny(Ny) {
 
   m_eps = 1.0e-18;
 
@@ -58,21 +56,23 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
   }
 
   {
-    m_background_precip_pre  = config.get_number("atmosphere.orographic_precipitation.background_precip_pre", "mm/s");
-    m_background_precip_post = config.get_number("atmosphere.orographic_precipitation.background_precip_post", "mm/s");
+    m_background_precip_pre =
+        config.get_number("atmosphere.orographic_precipitation.background_precip_pre", "mm/s");
+    m_background_precip_post =
+        config.get_number("atmosphere.orographic_precipitation.background_precip_post", "mm/s");
 
     m_precip_scale_factor = config.get_number("atmosphere.orographic_precipitation.scale_factor");
-    m_tau_c               = config.get_number("atmosphere.orographic_precipitation.conversion_time");
-    m_tau_f               = config.get_number("atmosphere.orographic_precipitation.fallout_time");
-    m_Hw                  = config.get_number("atmosphere.orographic_precipitation.water_vapor_scale_height");
-    m_Nm                  = config.get_number("atmosphere.orographic_precipitation.moist_stability_frequency");
-    m_wind_speed          = config.get_number("atmosphere.orographic_precipitation.wind_speed");
-    m_wind_direction      = config.get_number("atmosphere.orographic_precipitation.wind_direction");
-    m_gamma               = config.get_number("atmosphere.orographic_precipitation.lapse_rate");
-    m_Theta_m             = config.get_number("atmosphere.orographic_precipitation.moist_adiabatic_lapse_rate");
-    m_rho_Sref            = config.get_number("atmosphere.orographic_precipitation.reference_density");
-    m_latitude            = config.get_number("atmosphere.orographic_precipitation.coriolis_latitude");
-    m_truncate            = config.get_flag("atmosphere.orographic_precipitation.truncate");
+    m_tau_c = config.get_number("atmosphere.orographic_precipitation.conversion_time");
+    m_tau_f = config.get_number("atmosphere.orographic_precipitation.fallout_time");
+    m_Hw    = config.get_number("atmosphere.orographic_precipitation.water_vapor_scale_height");
+    m_Nm    = config.get_number("atmosphere.orographic_precipitation.moist_stability_frequency");
+    m_wind_speed     = config.get_number("atmosphere.orographic_precipitation.wind_speed");
+    m_wind_direction = config.get_number("atmosphere.orographic_precipitation.wind_direction");
+    m_gamma          = config.get_number("atmosphere.orographic_precipitation.lapse_rate");
+    m_Theta_m = config.get_number("atmosphere.orographic_precipitation.moist_adiabatic_lapse_rate");
+    m_rho_Sref = config.get_number("atmosphere.orographic_precipitation.reference_density");
+    m_latitude = config.get_number("atmosphere.orographic_precipitation.coriolis_latitude");
+    m_truncate = config.get_flag("atmosphere.orographic_precipitation.truncate");
 
 
     // derived constants
@@ -95,13 +95,13 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
     // FFTW arrays
     m_fftw_input  = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
     m_fftw_output = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
-    m_G_hat       = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * m_Nx *    m_Ny);
+    m_G_hat       = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * m_Nx * m_Ny);
 
     // FFTW plans
-    m_dft_forward = fftw_plan_dft_2d(m_Nx, m_Ny, m_fftw_input, m_fftw_output,
-                                     FFTW_FORWARD, FFTW_ESTIMATE);
-    m_dft_inverse = fftw_plan_dft_2d(m_Nx, m_Ny, m_fftw_input, m_fftw_output,
-                                     FFTW_BACKWARD, FFTW_ESTIMATE);
+    m_dft_forward =
+        fftw_plan_dft_2d(m_Nx, m_Ny, m_fftw_input, m_fftw_output, FFTW_FORWARD, FFTW_ESTIMATE);
+    m_dft_inverse =
+        fftw_plan_dft_2d(m_Nx, m_Ny, m_fftw_input, m_fftw_output, FFTW_BACKWARD, FFTW_ESTIMATE);
 
     // Note: FFTW is weird. If a malloc() call fails it will just call
     // abort() on you without giving you a chance to recover or tell the
@@ -114,26 +114,19 @@ OrographicPrecipitationSerial::OrographicPrecipitationSerial(const Config &confi
   // initialize the Gaussian filter
   {
     FFTWArray G_hat(m_G_hat, m_Nx, m_Ny);
-    double sigma = config.get_number("atmosphere.orographic_precipitation.smoothing_standard_deviation");
+    double sigma =
+        config.get_number("atmosphere.orographic_precipitation.smoothing_standard_deviation");
 
     if (sigma > 0.0) {
-      FFTWArray
-        fftw_output(m_fftw_output, m_Nx, m_Ny),
-        fftw_input(m_fftw_input, m_Nx, m_Ny);
+      FFTWArray fftw_output(m_fftw_output, m_Nx, m_Ny), fftw_input(m_fftw_input, m_Nx, m_Ny);
 
-      int
-        Nx2 = Nx / 2,
-        Ny2 = Ny / 2;
+      int Nx2 = Nx / 2, Ny2 = Ny / 2;
 
       double sum = 0.0;
       for (int i = 0; i < m_Nx; i++) {
         for (int j = 0; j < m_Ny; j++) {
-          int
-            p = i <= Nx2 ? i : m_Nx - i,
-            q = j <= Ny2 ? j : m_Ny - j;
-          double
-            x = p * dx,
-            y = q * dy;
+          int p = i <= Nx2 ? i : m_Nx - i, q = j <= Ny2 ? j : m_Ny - j;
+          double x = p * dx, y = q * dy;
 
           double G = std::exp(-0.5 * (x * x + y * y) / (sigma * sigma));
           sum += G;
@@ -204,20 +197,14 @@ void OrographicPrecipitationSerial::update(petsc::Vec &surface_elevation) {
   // Compute fft2(surface_elevation)
   {
     clear_fftw_array(m_fftw_input, m_Nx, m_Ny);
-    set_real_part(surface_elevation,
-                  1.0,
-                  m_Mx, m_My,
-                  m_Nx, m_Ny,
-                  m_i0_offset, m_j0_offset,
+    set_real_part(surface_elevation, 1.0, m_Mx, m_My, m_Nx, m_Ny, m_i0_offset, m_j0_offset,
                   m_fftw_input);
     fftw_execute(m_dft_forward);
   }
 
   {
-    FFTWArray
-      fftw_output(m_fftw_output, m_Nx, m_Ny),
-      fftw_input(m_fftw_input, m_Nx, m_Ny),
-      G_hat(m_G_hat, m_Nx, m_Ny);
+    FFTWArray fftw_output(m_fftw_output, m_Nx, m_Ny), fftw_input(m_fftw_input, m_Nx, m_Ny),
+        G_hat(m_G_hat, m_Nx, m_Ny);
 
     for (int i = 0; i < m_Nx; i++) {
       const double kx = m_kx[i];
@@ -258,8 +245,7 @@ void OrographicPrecipitationSerial::update(petsc::Vec &surface_elevation) {
         // See equation (49) in [@ref SmithBarstad2004] or equation (3) in [@ref
         // SmithBarstadBonneau2005].
         auto P_hat = h_hat * (m_Cw * I * sigma /
-                              ((1.0 - I * m * m_Hw + delta) *
-                               (1.0 + I * sigma * m_tau_c) *
+                              ((1.0 - I * m * m_Hw + delta) * (1.0 + I * sigma * m_tau_c) *
                                (1.0 + I * sigma * m_tau_f)));
         // Note: sigma, m_tau_c, and m_tau_f are purely real, so the second and the third
         // factors in the denominator are never zero.
@@ -275,12 +261,8 @@ void OrographicPrecipitationSerial::update(petsc::Vec &surface_elevation) {
   fftw_execute(m_dft_inverse);
 
   // get m_fftw_output and put it into m_precipitation
-  get_real_part(m_fftw_output,
-                1.0 / (m_Nx * m_Ny),
-                m_Mx, m_My,
-                m_Nx, m_Ny,
-                m_i0_offset, m_j0_offset,
-                m_precipitation);
+  get_real_part(m_fftw_output, 1.0 / (m_Nx * m_Ny), m_Mx, m_My, m_Nx, m_Ny, m_i0_offset,
+                m_j0_offset, m_precipitation);
 
   petsc::VecArray2D p(m_precipitation, m_Mx, m_My);
   for (int i = 0; i < m_Mx; i++) {

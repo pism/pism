@@ -18,58 +18,53 @@
 
 #include <cassert>
 
-#include "pism/util/Mask.hh"
 #include "pism/util/Grid.hh"
+#include "pism/util/Mask.hh"
 #include "pism/util/array/Scalar.hh"
 
 namespace pism {
 
-void GeometryCalculator::compute(const array::Scalar& sea_level,
-                                 const array::Scalar& bed,
-                                 const array::Scalar& thickness,
-                                 array::Scalar& out_mask,
-                                 array::Scalar& out_surface) const {
+void GeometryCalculator::compute(const array::Scalar &sea_level, const array::Scalar &bed,
+                                 const array::Scalar &thickness, array::Scalar &out_mask,
+                                 array::Scalar &out_surface) const {
   compute_mask(sea_level, bed, thickness, out_mask);
   compute_surface(sea_level, bed, thickness, out_surface);
 }
 
-void GeometryCalculator::compute_mask(const array::Scalar &sea_level,
-                                      const array::Scalar &bed,
-                                      const array::Scalar &thickness,
-                                      array::Scalar &result) const {
-  array::AccessScope list{&sea_level, &bed, &thickness, &result};
+void GeometryCalculator::compute_mask(const array::Scalar &sea_level, const array::Scalar &bed,
+                                      const array::Scalar &thickness, array::Scalar &result) const {
+  array::AccessScope list{ &sea_level, &bed, &thickness, &result };
 
   const Grid &grid = *bed.grid();
 
   const unsigned int stencil = result.stencil_width();
   assert(sea_level.stencil_width() >= stencil);
-  assert(bed.stencil_width()       >= stencil);
+  assert(bed.stencil_width() >= stencil);
   assert(thickness.stencil_width() >= stencil);
 
   for (auto p : grid.points_with_ghosts(stencil)) {
     const int i = p.i(), j = p.j();
 
-    result(i,j) = this->mask(sea_level(i, j), bed(i, j), thickness(i, j));
+    result(i, j) = this->mask(sea_level(i, j), bed(i, j), thickness(i, j));
   }
 }
 
-void GeometryCalculator::compute_surface(const array::Scalar &sea_level,
-                                         const array::Scalar &bed,
+void GeometryCalculator::compute_surface(const array::Scalar &sea_level, const array::Scalar &bed,
                                          const array::Scalar &thickness,
                                          array::Scalar &result) const {
-  array::AccessScope list{&sea_level, &bed, &thickness, &result};
+  array::AccessScope list{ &sea_level, &bed, &thickness, &result };
 
   const Grid &grid = *bed.grid();
 
   const unsigned int stencil = result.stencil_width();
   assert(sea_level.stencil_width() >= stencil);
-  assert(bed.stencil_width()       >= stencil);
+  assert(bed.stencil_width() >= stencil);
   assert(thickness.stencil_width() >= stencil);
 
   for (auto p : grid.points_with_ghosts(stencil)) {
     const int i = p.i(), j = p.j();
 
-    result(i,j) = this->surface(sea_level(i, j), bed(i, j), thickness(i, j));
+    result(i, j) = this->surface(sea_level(i, j), bed(i, j), thickness(i, j));
   }
 }
 

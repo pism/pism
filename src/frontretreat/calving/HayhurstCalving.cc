@@ -20,17 +20,15 @@
 #include "pism/frontretreat/calving/HayhurstCalving.hh"
 
 #include "pism/util/Grid.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/util/array/CellType.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/array/CellType.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 namespace calving {
 
 HayhurstCalving::HayhurstCalving(std::shared_ptr<const Grid> grid)
-  : Component(grid),
-    m_calving_rate(grid, "hayhurst_calving_rate")
-{
+    : Component(grid), m_calving_rate(grid, "hayhurst_calving_rate") {
   m_calving_rate.metadata(0)
       .long_name("horizontal calving rate due to Hayhurst calving")
       .units("m s^-1")
@@ -39,45 +37,39 @@ HayhurstCalving::HayhurstCalving(std::shared_ptr<const Grid> grid)
 
 void HayhurstCalving::init() {
 
-  m_log->message(2,
-                 "* Initializing the 'Hayhurst calving' mechanism...\n");
+  m_log->message(2, "* Initializing the 'Hayhurst calving' mechanism...\n");
 
-  m_B_tilde = m_config->get_number("calving.hayhurst_calving.B_tilde");
-  m_exponent_r = m_config->get_number("calving.hayhurst_calving.exponent_r");
+  m_B_tilde         = m_config->get_number("calving.hayhurst_calving.B_tilde");
+  m_exponent_r      = m_config->get_number("calving.hayhurst_calving.exponent_r");
   m_sigma_threshold = m_config->get_number("calving.hayhurst_calving.sigma_threshold", "Pa");
 
-  m_log->message(2,
-                 "  B tilde parameter: %3.3f MPa-%3.3f yr-1.\n", m_B_tilde, m_exponent_r);
-  m_log->message(2,
-                 "  Hayhurst calving threshold: %3.3f MPa.\n",
+  m_log->message(2, "  B tilde parameter: %3.3f MPa-%3.3f yr-1.\n", m_B_tilde, m_exponent_r);
+  m_log->message(2, "  Hayhurst calving threshold: %3.3f MPa.\n",
                  convert(m_sys, m_sigma_threshold, "Pa", "MPa"));
 
   if (fabs(m_grid->dx() - m_grid->dy()) / std::min(m_grid->dx(), m_grid->dy()) > 1e-2) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "-calving hayhurst_calving using a non-square grid cell is not implemented (yet);\n"
-                                  "dx = %f, dy = %f, relative difference = %f",
-                                  m_grid->dx(), m_grid->dy(),
-                                  fabs(m_grid->dx() - m_grid->dy()) / std::max(m_grid->dx(), m_grid->dy()));
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION,
+        "-calving hayhurst_calving using a non-square grid cell is not implemented (yet);\n"
+        "dx = %f, dy = %f, relative difference = %f",
+        m_grid->dx(), m_grid->dy(),
+        fabs(m_grid->dx() - m_grid->dy()) / std::max(m_grid->dx(), m_grid->dy()));
   }
-
 }
 
-void HayhurstCalving::update(const array::CellType1 &cell_type,
-                             const array::Scalar &ice_thickness,
-                             const array::Scalar &sea_level,
-                             const array::Scalar &bed_elevation) {
+void HayhurstCalving::update(const array::CellType1 &cell_type, const array::Scalar &ice_thickness,
+                             const array::Scalar &sea_level, const array::Scalar &bed_elevation) {
 
   using std::min;
 
-  const double
-    ice_density   = m_config->get_number("constants.ice.density"),
-    water_density = m_config->get_number("constants.sea_water.density"),
-    gravity       = m_config->get_number("constants.standard_gravity"),
-    // convert "Pa" to "MPa" and "m yr-1" to "m s-1"
-    unit_scaling  = pow(1e-6, m_exponent_r) * convert(m_sys, 1.0, "m year-1", "m second-1");
+  const double ice_density   = m_config->get_number("constants.ice.density"),
+               water_density = m_config->get_number("constants.sea_water.density"),
+               gravity       = m_config->get_number("constants.standard_gravity"),
+               // convert "Pa" to "MPa" and "m yr-1" to "m s-1"
+      unit_scaling = pow(1e-6, m_exponent_r) * convert(m_sys, 1.0, "m year-1", "m second-1");
 
-  array::AccessScope list{&ice_thickness, &cell_type, &m_calving_rate, &sea_level,
-                               &bed_elevation};
+  array::AccessScope list{ &ice_thickness, &cell_type, &m_calving_rate, &sea_level,
+                           &bed_elevation };
 
   for (auto pt : m_grid->points()) {
     const int i = pt.i(), j = pt.j();
@@ -100,8 +92,8 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
       if (omega > ice_density / water_density) {
         // ice at the front is floating
         double freeboard = (1.0 - ice_density / water_density) * H;
-        H = water_depth + freeboard;
-        omega = water_depth / H;
+        H                = water_depth + freeboard;
+        omega            = water_depth / H;
       }
 
       // [\ref Mercenier2018] maximum tensile stress approximation
@@ -111,13 +103,12 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
       sigma_0 = std::max(sigma_0, m_sigma_threshold);
 
       // [\ref Mercenier2018] equation 22
-      m_calving_rate(i, j) = (m_B_tilde * unit_scaling *
-                              (1.0 - pow(omega, 2.8)) *
+      m_calving_rate(i, j) = (m_B_tilde * unit_scaling * (1.0 - pow(omega, 2.8)) *
                               pow(sigma_0 - m_sigma_threshold, m_exponent_r) * H);
     } else { // end of "if (ice_free_ocean and next_to_floating)"
       m_calving_rate(i, j) = 0.0;
     }
-  }   // end of loop over grid points
+  } // end of loop over grid points
 
   // Set calving rate *near* grounded termini to the average of grounded icy
   // neighbors: front retreat code uses values at these locations (the rest is for
@@ -128,14 +119,14 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
-    if (cell_type.ice_free(i, j) and cell_type.next_to_ice(i, j) ) {
+    if (cell_type.ice_free(i, j) and cell_type.next_to_ice(i, j)) {
 
       auto R = m_calving_rate.star(i, j);
       auto M = cell_type.star(i, j);
 
-      int N = 0;
+      int N        = 0;
       double R_sum = 0.0;
-      for (auto d : {North, East, South, West}) {
+      for (auto d : { North, East, South, West }) {
         if (mask::icy(M[d])) {
           R_sum += R[d];
           N++;
@@ -154,7 +145,7 @@ const array::Scalar &HayhurstCalving::calving_rate() const {
 }
 
 DiagnosticList HayhurstCalving::spatial_diagnostics_impl() const {
-  return {{"hayhurst_calving_rate", Diagnostic::wrap(m_calving_rate)}};
+  return { { "hayhurst_calving_rate", Diagnostic::wrap(m_calving_rate) } };
 }
 
 } // end of namespace calving

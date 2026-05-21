@@ -46,7 +46,7 @@ void EnthalpyModel_Regional::bootstrap_impl(const File &input_file,
                                             const array::Scalar &basal_heat_flux) {
 
   EnthalpyModel::bootstrap_impl(input_file, ice_thickness, surface_temperature,
-                               climatic_mass_balance, basal_heat_flux);
+                                climatic_mass_balance, basal_heat_flux);
 
   m_basal_melt_rate_stored.copy_from(m_basal_melt_rate);
 }
@@ -57,18 +57,14 @@ void EnthalpyModel_Regional::initialize_impl(const array::Scalar &basal_melt_rat
                                              const array::Scalar &climatic_mass_balance,
                                              const array::Scalar &basal_heat_flux) {
 
-  EnthalpyModel::initialize_impl(basal_melt_rate,
-                                 ice_thickness,
-                                 surface_temperature,
-                                 climatic_mass_balance,
-                                 basal_heat_flux);
+  EnthalpyModel::initialize_impl(basal_melt_rate, ice_thickness, surface_temperature,
+                                 climatic_mass_balance, basal_heat_flux);
 
   m_basal_melt_rate_stored.copy_from(m_basal_melt_rate);
 }
 
 
-void EnthalpyModel_Regional::update_impl(double t, double dt,
-                                         const Inputs &inputs) {
+void EnthalpyModel_Regional::update_impl(double t, double dt, const Inputs &inputs) {
 
   unsigned int Mz = m_grid->Mz();
 
@@ -78,8 +74,8 @@ void EnthalpyModel_Regional::update_impl(double t, double dt,
 
   // The update_impl() call above sets m_work; ghosts are communicated
   // later (in EnergyModel::update()).
-  array::AccessScope list{&no_model_mask, &m_work, &m_ice_enthalpy,
-      &m_basal_melt_rate, &m_basal_melt_rate_stored};
+  array::AccessScope list{ &no_model_mask, &m_work, &m_ice_enthalpy, &m_basal_melt_rate,
+                           &m_basal_melt_rate_stored };
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();

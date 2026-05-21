@@ -48,9 +48,9 @@ private:
   void update_impl(const Inputs &inputs, double t, double dt);
   void init_impl(const Geometry &geometry);
 
-  const array::Scalar& shelf_base_temperature_impl() const;
-  const array::Scalar& shelf_base_mass_flux_impl() const;
-  const array::Scalar& average_water_column_pressure_impl() const;
+  const array::Scalar &shelf_base_temperature_impl() const;
+  const array::Scalar &shelf_base_mass_flux_impl() const;
+  const array::Scalar &average_water_column_pressure_impl() const;
 
   // storage for average_water_column_pressure is inherited from OceanModel
   std::shared_ptr<array::Scalar> m_shelf_base_temperature;

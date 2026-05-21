@@ -20,8 +20,8 @@
 #ifndef PISM_PROJECTION_H
 #define PISM_PROJECTION_H
 
-#include <string>
 #include <array>
+#include <string>
 
 #include "pism/util/Units.hh"
 #include "pism/util/VariableMetadata.hh"
@@ -32,7 +32,7 @@ class File;
 namespace array {
 class Array3D;
 class Scalar;
-}
+} // namespace array
 
 /*!
  * Return the string that describes a 2D grid present in a NetCDF file.
@@ -47,8 +47,8 @@ class Scalar;
  *
  * The output has the form "input_file.nc:y:x".
  */
-std::string grid_name(const File &file, const std::string &variable_name,
-                      units::System::Ptr sys, bool piecewise_constant);
+std::string grid_name(const File &file, const std::string &variable_name, units::System::Ptr sys,
+                      bool piecewise_constant);
 
 /*! @brief Convert a proj string with an EPSG code to a set of CF attributes. */
 /*!

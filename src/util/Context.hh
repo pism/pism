@@ -54,8 +54,8 @@ public:
   std::shared_ptr<const Config> config() const;
   std::shared_ptr<EnthalpyConverter> enthalpy_converter() const;
   std::shared_ptr<const Time> time() const;
-  const std::string& prefix() const;
-  const Profiling& profiling() const;
+  const std::string &prefix() const;
+  const Profiling &profiling() const;
 
   std::shared_ptr<const Logger> log() const;
   std::shared_ptr<Logger> log();
@@ -67,12 +67,11 @@ private:
   class Impl;
   Impl *m_impl;
   // disable copying and assignments
-  Context(const Context& other);
-  Context & operator=(const Context &);
+  Context(const Context &other);
+  Context &operator=(const Context &);
 };
 
-std::shared_ptr<Context> context_from_config(MPI_Comm com,
-                                             std::shared_ptr<Config> config,
+std::shared_ptr<Context> context_from_config(MPI_Comm com, std::shared_ptr<Config> config,
                                              const std::string &prefix);
 
 //! Create a default context using options.

@@ -18,33 +18,34 @@
 
 #include "pism/coupler/surface/Elevation.hh"
 
-#include "pism/util/Grid.hh"
+#include "pism/geometry/Geometry.hh"
 #include "pism/util/Config.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/MaxTimestep.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_options.hh"
-#include "pism/util/MaxTimestep.hh"
-#include "pism/geometry/Geometry.hh"
-#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace surface {
 
 ///// Elevation-dependent temperature and surface mass balance.
-Elevation::Elevation(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::AtmosphereModel> input)
-  : SurfaceModel(grid) {
-  (void) input;
+Elevation::Elevation(std::shared_ptr<const Grid> grid,
+                     std::shared_ptr<atmosphere::AtmosphereModel> input)
+    : SurfaceModel(grid) {
+  (void)input;
 
   m_temperature = allocate_temperature(grid);
   m_mass_flux   = allocate_mass_flux(grid);
 }
 
 void Elevation::init_impl(const Geometry &geometry) {
-  (void) geometry;
+  (void)geometry;
 
   bool limits_set = false;
 
-  m_log->message(2,
-                 "* Initializing the constant-in-time surface processes model Elevation. Setting...\n");
+  m_log->message(
+      2, "* Initializing the constant-in-time surface processes model Elevation. Setting...\n");
 
   {
     // ice surface temperature
@@ -86,57 +87,55 @@ void Elevation::init_impl(const Geometry &geometry) {
                  "     mass balance at  %.0f m a.s.l. = %.2f m year-1\n"
                  "     mass balance above %.0f m a.s.l. = %.2f m year-1\n"
                  "     equilibrium line altitude z_ELA = %.2f m a.s.l.\n",
-                 m_z_T_min, m_T_min,
-                 m_z_T_max, m_T_max,
-                 m_z_M_min, meter_per_year(m_M_limit_min),
-                 m_z_M_min, m_M_min,
-                 m_z_M_max, meter_per_year(m_M_max),
-                 m_z_M_max, meter_per_year(m_M_limit_max),
-                 m_z_ELA);
+                 m_z_T_min, m_T_min, m_z_T_max, m_T_max, m_z_M_min, meter_per_year(m_M_limit_min),
+                 m_z_M_min, m_M_min, m_z_M_max, meter_per_year(m_M_max), m_z_M_max,
+                 meter_per_year(m_M_limit_max), m_z_ELA);
 
   // parameterizing the ice surface temperature 'ice_surface_temp'
   m_log->message(2, "    - parameterizing the ice surface temperature 'ice_surface_temp' ... \n");
-  m_log->message(2,
-                 "      ice temperature at the ice surface (T = ice_surface_temp) is piecewise-linear function\n"
-                 "        of surface altitude (usurf):\n"
-                 "                 /  %2.2f K                            for            usurf < %.f m\n"
-                 "            T = |   %5.2f K + %5.3f * (usurf - %.f m) for   %.f m < usurf < %.f m\n"
-                 "                 \\  %5.2f K                            for   %.f m < usurf\n",
-                 m_T_min, m_z_T_min,
-                 m_T_min, (m_T_max-m_T_min)/(m_z_T_max-m_z_T_min), m_z_T_min, m_z_T_min, m_z_T_max,
-                 m_T_max, m_z_T_max);
+  m_log->message(
+      2,
+      "      ice temperature at the ice surface (T = ice_surface_temp) is piecewise-linear function\n"
+      "        of surface altitude (usurf):\n"
+      "                 /  %2.2f K                            for            usurf < %.f m\n"
+      "            T = |   %5.2f K + %5.3f * (usurf - %.f m) for   %.f m < usurf < %.f m\n"
+      "                 \\  %5.2f K                            for   %.f m < usurf\n",
+      m_T_min, m_z_T_min, m_T_min, (m_T_max - m_T_min) / (m_z_T_max - m_z_T_min), m_z_T_min,
+      m_z_T_min, m_z_T_max, m_T_max, m_z_T_max);
 
   // parameterizing the ice surface mass balance 'climatic_mass_balance'
-  m_log->message(2,
+  m_log->message(
+      2,
 
-                 "    - parameterizing the ice surface mass balance 'climatic_mass_balance' ... \n");
+      "    - parameterizing the ice surface mass balance 'climatic_mass_balance' ... \n");
 
   if (limits_set) {
-    m_log->message(2,
-                   "    - option '-climatic_mass_balance_limits' seen, limiting upper and lower bounds ... \n");
+    m_log->message(
+        2,
+        "    - option '-climatic_mass_balance_limits' seen, limiting upper and lower bounds ... \n");
   }
 
-  m_log->message(2,
-                 "      surface mass balance (M = climatic_mass_balance) is piecewise-linear function\n"
-                 "        of surface altitue (usurf):\n"
-                 "                  /  %5.2f m year-1                       for          usurf < %3.f m\n"
-                 "             M = |    %5.3f 1/a * (usurf-%.0f m)     for %3.f m < usurf < %3.f m\n"
-                 "                  \\   %5.3f 1/a * (usurf-%.0f m)     for %3.f m < usurf < %3.f m\n"
-                 "                   \\ %5.2f m year-1                       for %3.f m < usurf\n",
-                 meter_per_year(m_M_limit_min), m_z_M_min,
-                 meter_per_year(-m_M_min)/(m_z_ELA - m_z_M_min), m_z_ELA, m_z_M_min, m_z_ELA,
-                 meter_per_year(m_M_max)/(m_z_M_max - m_z_ELA), m_z_ELA, m_z_ELA, m_z_M_max,
-                 meter_per_year(m_M_limit_max), m_z_M_max);
+  m_log->message(
+      2,
+      "      surface mass balance (M = climatic_mass_balance) is piecewise-linear function\n"
+      "        of surface altitue (usurf):\n"
+      "                  /  %5.2f m year-1                       for          usurf < %3.f m\n"
+      "             M = |    %5.3f 1/a * (usurf-%.0f m)     for %3.f m < usurf < %3.f m\n"
+      "                  \\   %5.3f 1/a * (usurf-%.0f m)     for %3.f m < usurf < %3.f m\n"
+      "                   \\ %5.2f m year-1                       for %3.f m < usurf\n",
+      meter_per_year(m_M_limit_min), m_z_M_min, meter_per_year(-m_M_min) / (m_z_ELA - m_z_M_min),
+      m_z_ELA, m_z_M_min, m_z_ELA, meter_per_year(m_M_max) / (m_z_M_max - m_z_ELA), m_z_ELA,
+      m_z_ELA, m_z_M_max, meter_per_year(m_M_limit_max), m_z_M_max);
 }
 
 MaxTimestep Elevation::max_timestep_impl(double t) const {
-  (void) t;
+  (void)t;
   return MaxTimestep("surface 'elevation'");
 }
 
 void Elevation::update_impl(const Geometry &geometry, double t, double dt) {
-  (void) t;
-  (void) dt;
+  (void)t;
+  (void)dt;
 
   compute_mass_flux(geometry.ice_surface_elevation, *m_mass_flux);
   compute_temperature(geometry.ice_surface_elevation, *m_temperature);
@@ -144,7 +143,6 @@ void Elevation::update_impl(const Geometry &geometry, double t, double dt) {
   dummy_accumulation(*m_mass_flux, *m_accumulation);
   dummy_melt(*m_mass_flux, *m_melt);
   dummy_runoff(*m_mass_flux, *m_runoff);
-  
 }
 
 const array::Scalar &Elevation::mass_flux_impl() const {
@@ -166,12 +164,12 @@ const array::Scalar &Elevation::melt_impl() const {
 const array::Scalar &Elevation::runoff_impl() const {
   return *m_runoff;
 }
-  
-void Elevation::compute_mass_flux(const array::Scalar &surface, array::Scalar &result) const {
-  double dabdz = -m_M_min/(m_z_ELA - m_z_M_min);
-  double dacdz = m_M_max/(m_z_M_max - m_z_ELA);
 
-  array::AccessScope list{&result, &surface};
+void Elevation::compute_mass_flux(const array::Scalar &surface, array::Scalar &result) const {
+  double dabdz = -m_M_min / (m_z_ELA - m_z_M_min);
+  double dacdz = m_M_max / (m_z_M_max - m_z_ELA);
+
+  array::AccessScope list{ &result, &surface };
 
   ParallelSection loop(m_grid->com);
   try {
@@ -182,17 +180,13 @@ void Elevation::compute_mass_flux(const array::Scalar &surface, array::Scalar &r
 
       if (z < m_z_M_min) {
         result(i, j) = m_M_limit_min;
-      }
-      else if ((z >= m_z_M_min) and (z < m_z_ELA)) {
+      } else if ((z >= m_z_M_min) and (z < m_z_ELA)) {
         result(i, j) = dabdz * (z - m_z_ELA);
-      }
-      else if ((z >= m_z_ELA) and (z <= m_z_M_max)) {
+      } else if ((z >= m_z_ELA) and (z <= m_z_M_max)) {
         result(i, j) = dacdz * (z - m_z_ELA);
-      }
-      else if (z > m_z_M_max) {
+      } else if (z > m_z_M_max) {
         result(i, j) = m_M_limit_max;
-      }
-      else {
+      } else {
         throw RuntimeError(PISM_ERROR_LOCATION,
                            "Elevation::compute_mass_flux: HOW DID I GET HERE?");
       }
@@ -208,9 +202,9 @@ void Elevation::compute_mass_flux(const array::Scalar &surface, array::Scalar &r
 
 void Elevation::compute_temperature(const array::Scalar &surface, array::Scalar &result) const {
 
-  array::AccessScope list{&result, &surface};
+  array::AccessScope list{ &result, &surface };
 
-  double dTdz = (m_T_max - m_T_min)/(m_z_T_max - m_z_T_min);
+  double dTdz = (m_T_max - m_T_min) / (m_z_T_max - m_z_T_min);
   ParallelSection loop(m_grid->com);
   try {
     for (auto p : m_grid->points()) {
@@ -220,14 +214,11 @@ void Elevation::compute_temperature(const array::Scalar &surface, array::Scalar 
 
       if (z <= m_z_T_min) {
         result(i, j) = m_T_min;
-      }
-      else if ((z > m_z_T_min) and (z < m_z_T_max)) {
+      } else if ((z > m_z_T_min) and (z < m_z_T_max)) {
         result(i, j) = m_T_min + dTdz * (z - m_z_T_min);
-      }
-      else if (z >= m_z_T_max) {
+      } else if (z >= m_z_T_max) {
         result(i, j) = m_T_max;
-      }
-      else {
+      } else {
         throw RuntimeError(PISM_ERROR_LOCATION,
                            "Elevation::compute_temperature: HOW DID I GET HERE?");
       }

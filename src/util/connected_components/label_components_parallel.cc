@@ -17,12 +17,12 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "pism/util/connected_components/label_components.hh"
-#include "pism/util/connected_components/label_components_impl.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/array/Scalar.hh"
+#include "pism/util/connected_components/label_components.hh"
+#include "pism/util/connected_components/label_components_impl.hh"
 
-#include <cmath>  // pow, ceil, log10
+#include <cmath> // pow, ceil, log10
 #include <map>
 #include <mpi.h>
 #include <queue>
@@ -355,7 +355,7 @@ int first_label(const Grid &grid) {
 namespace connected_components {
 
 using Array = connected_components::details::PISMArray;
-using Mask = connected_components::details::Mask<Array>;
+using Mask  = connected_components::details::Mask<Array>;
 
 void label(array::Scalar1 &mask) {
 

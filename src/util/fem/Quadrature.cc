@@ -23,11 +23,11 @@
 namespace pism {
 namespace fem {
 
-const std::vector<QuadPoint>& Quadrature::points() const {
+const std::vector<QuadPoint> &Quadrature::points() const {
   return m_points;
 }
 
-const std::vector<double>& Quadrature::weights() const {
+const std::vector<double> &Quadrature::weights() const {
   return m_weights;
 }
 
@@ -40,18 +40,16 @@ const std::vector<double>& Quadrature::weights() const {
    @param[out] points resulting 2D quadrature points
    @param[out] weights resulting 2D quadrature weights
  */
-static void tensor_product_quadrature(unsigned int n,
-                                      const double *points1,
-                                      const double *weights1,
-                                      std::vector<QuadPoint>& points,
-                                      std::vector<double>& weights) {
+static void tensor_product_quadrature(unsigned int n, const double *points1, const double *weights1,
+                                      std::vector<QuadPoint> &points,
+                                      std::vector<double> &weights) {
   points.resize(n * n);
   weights.resize(n * n);
 
   unsigned int q = 0;
   for (unsigned int j = 0; j < n; ++j) {
     for (unsigned int i = 0; i < n; ++i) {
-      points[q] = {points1[i], points1[j], 0.0};
+      points[q]  = { points1[i], points1[j], 0.0 };
       weights[q] = weights1[i] * weights1[j];
 
       ++q;
@@ -63,54 +61,43 @@ Gaussian2::Gaussian2(double D) {
   // coordinates and weights of the 2-point 1D Gaussian quadrature
   double A = 1.0 / std::sqrt(3.0);
 
-  m_points  = {{-A, 0.0, 0.0}, {A, 0.0, 0.0}};
-  m_weights = {0.5 * D, 0.5 * D};
+  m_points  = { { -A, 0.0, 0.0 }, { A, 0.0, 0.0 } };
+  m_weights = { 0.5 * D, 0.5 * D };
 }
 
 //! One-point quadrature on a rectangle.
 Q1Quadrature1::Q1Quadrature1() {
-  m_points = {{0.0, 0.0, 0.0}};
-  m_weights = {4.0};
+  m_points  = { { 0.0, 0.0, 0.0 } };
+  m_weights = { 4.0 };
 }
 
 //! Two-by-two Gaussian quadrature on a rectangle.
 Q1Quadrature4::Q1Quadrature4() {
 
   // coordinates and weights of the 2-point 1D Gaussian quadrature
-  const double
-    A           = 1.0 / sqrt(3.0),
-    points2[2]  = {-A, A},
-    weights2[2] = {1.0, 1.0};
+  const double A = 1.0 / sqrt(3.0), points2[2] = { -A, A }, weights2[2] = { 1.0, 1.0 };
 
   tensor_product_quadrature(2, points2, weights2, m_points, m_weights);
 }
 
 Q1Quadrature9::Q1Quadrature9() {
-  const double
-    A         = 0.0,
-    B         = sqrt(0.6),
-    points3[3] = {-B, A, B};
+  const double A = 0.0, B = sqrt(0.6), points3[3] = { -B, A, B };
 
-  const double
-    w1         = 5.0 / 9.0,
-    w2         = 8.0 / 9.0,
-    weights3[3] = {w1, w2, w1};
+  const double w1 = 5.0 / 9.0, w2 = 8.0 / 9.0, weights3[3] = { w1, w2, w1 };
 
   tensor_product_quadrature(3, points3, weights3, m_points, m_weights);
 }
 
 Q1Quadrature16::Q1Quadrature16() {
-  const double
-    A          = sqrt(3.0 / 7.0 - (2.0 / 7.0) * sqrt(6.0 / 5.0)), // smaller magnitude
-    B          = sqrt(3.0 / 7.0 + (2.0 / 7.0) * sqrt(6.0 / 5.0)), // larger magnitude
-    points4[4] = {-B, -A, A, B};
+  const double A = sqrt(3.0 / 7.0 - (2.0 / 7.0) * sqrt(6.0 / 5.0)), // smaller magnitude
+      B          = sqrt(3.0 / 7.0 + (2.0 / 7.0) * sqrt(6.0 / 5.0)), // larger magnitude
+      points4[4] = { -B, -A, A, B };
 
   // The weights w_i for Gaussian quadrature on the reference element with these
   // quadrature points
-  const double
-    w1          = (18.0 + sqrt(30.0)) / 36.0, // larger
-    w2          = (18.0 - sqrt(30.0)) / 36.0, // smaller
-    weights4[4] = {w2, w1, w1, w2};
+  const double w1 = (18.0 + sqrt(30.0)) / 36.0, // larger
+      w2          = (18.0 - sqrt(30.0)) / 36.0, // smaller
+      weights4[4] = { w2, w1, w1, w2 };
 
   tensor_product_quadrature(4, points4, weights4, m_points, m_weights);
 }
@@ -123,7 +110,7 @@ Q1QuadratureN::Q1QuadratureN(unsigned int N) {
   std::vector<double> xi(N), w(N);
   const double dxi = 2.0 / N;
   for (unsigned int k = 0; k < N; ++k) {
-    xi[k] = -1.0 + dxi*(k + 0.5);
+    xi[k] = -1.0 + dxi * (k + 0.5);
     w[k]  = 2.0 / N;
   }
 
@@ -135,21 +122,19 @@ Q1QuadratureN::Q1QuadratureN(unsigned int N) {
  */
 P1Quadrature3::P1Quadrature3() {
 
-  const double
-    one_over_six   = 1.0 / 6.0,
-    two_over_three = 2.0 / 3.0;
+  const double one_over_six = 1.0 / 6.0, two_over_three = 2.0 / 3.0;
 
-  m_points = {{two_over_three, one_over_six, 0.0},
-              {one_over_six,   two_over_three, 0.0},
-              {one_over_six,   one_over_six, 0.0}};
+  m_points = { { two_over_three, one_over_six, 0.0 },
+               { one_over_six, two_over_three, 0.0 },
+               { one_over_six, one_over_six, 0.0 } };
 
-  m_weights = {one_over_six, one_over_six, one_over_six};
+  m_weights = { one_over_six, one_over_six, one_over_six };
 }
 
 Q13DQuadrature8::Q13DQuadrature8() {
-  double xis[8]   = {-1.0,  1.0,  1.0, -1.0, -1.0,  1.0, 1.0, -1.0};
-  double etas[8]  = {-1.0, -1.0,  1.0,  1.0, -1.0, -1.0, 1.0,  1.0};
-  double zetas[8] = {-1.0, -1.0, -1.0, -1.0,  1.0,  1.0, 1.0,  1.0};
+  double xis[8]   = { -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0 };
+  double etas[8]  = { -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0 };
+  double zetas[8] = { -1.0, -1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 1.0 };
 
   m_points.resize(8);
   m_weights.resize(8);
@@ -157,28 +142,26 @@ Q13DQuadrature8::Q13DQuadrature8() {
   double C = 1.0 / sqrt(3.0);
 
   for (int k = 0; k < 8; ++k) {
-    m_points[k] = {C * xis[k], C * etas[k], C * zetas[k]};
+    m_points[k]  = { C * xis[k], C * etas[k], C * zetas[k] };
     m_weights[k] = 1.0;
   }
 }
 
 Q13DQuadrature1::Q13DQuadrature1() {
-  m_points = {{0.0, 0.0, 0.0}};
-  m_weights = {8.0};
+  m_points  = { { 0.0, 0.0, 0.0 } };
+  m_weights = { 8.0 };
 }
 
 Q13DQuadrature64::Q13DQuadrature64() {
-  const double
-    A     = sqrt(3.0 / 7.0 - (2.0 / 7.0) * sqrt(6.0 / 5.0)), // smaller magnitude
-    B     = sqrt(3.0 / 7.0 + (2.0 / 7.0) * sqrt(6.0 / 5.0)), // larger magnitude
-    pt[4] = {-B, -A, A, B};
+  const double A = sqrt(3.0 / 7.0 - (2.0 / 7.0) * sqrt(6.0 / 5.0)), // smaller magnitude
+      B          = sqrt(3.0 / 7.0 + (2.0 / 7.0) * sqrt(6.0 / 5.0)), // larger magnitude
+      pt[4]      = { -B, -A, A, B };
 
   // The weights w_i for Gaussian quadrature on the reference element with these
   // quadrature points
-  const double
-    w1   = (18.0 + sqrt(30.0)) / 36.0, // larger
-    w2   = (18.0 - sqrt(30.0)) / 36.0, // smaller
-    w[4] = {w2, w1, w1, w2};
+  const double w1 = (18.0 + sqrt(30.0)) / 36.0, // larger
+      w2          = (18.0 - sqrt(30.0)) / 36.0, // smaller
+      w[4]        = { w2, w1, w1, w2 };
 
   m_points.resize(64);
   m_weights.resize(64);
@@ -186,7 +169,7 @@ Q13DQuadrature64::Q13DQuadrature64() {
   for (int i = 0; i < 4; ++i) {
     for (int j = 0; j < 4; ++j) {
       for (int k = 0; k < 4; ++k) {
-        m_points[q] = {pt[i], pt[j], pt[k]};
+        m_points[q]  = { pt[i], pt[j], pt[k] };
         m_weights[q] = w[i] * w[j] * w[k];
         ++q;
       }

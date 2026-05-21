@@ -17,28 +17,26 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <cmath>                // fabs
+#include <cmath> // fabs
 
 #include "pism/util/array/Scalar.hh"
 
 namespace pism {
 
-void lapse_rate_correction(const array::Scalar &surface,
-                           const array::Scalar &reference_surface,
-                           double lapse_rate,
-                           array::Scalar &result) {
+void lapse_rate_correction(const array::Scalar &surface, const array::Scalar &reference_surface,
+                           double lapse_rate, array::Scalar &result) {
   auto grid = result.grid();
 
   if (fabs(lapse_rate) < 1e-12) {
     return;
   }
 
-  array::AccessScope list{&surface, &reference_surface, &result};
+  array::AccessScope list{ &surface, &reference_surface, &result };
 
   for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
-    result(i, j) -= lapse_rate * (surface(i,j) - reference_surface(i, j));
+    result(i, j) -= lapse_rate * (surface(i, j) - reference_surface(i, j));
   }
 }
 

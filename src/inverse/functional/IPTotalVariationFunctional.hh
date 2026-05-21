@@ -33,13 +33,13 @@ namespace inverse {
 */
 class IPTotalVariationFunctional2S : public IPFunctional<array::Scalar> {
 public:
-  IPTotalVariationFunctional2S(std::shared_ptr<const Grid> grid, double c, double q, double eps, array::Scalar *dirichletLocations=NULL);
+  IPTotalVariationFunctional2S(std::shared_ptr<const Grid> grid, double c, double q, double eps,
+                               array::Scalar *dirichletLocations = NULL);
 
   virtual void valueAt(array::Scalar &x, double *OUTPUT);
   virtual void gradientAt(array::Scalar &x, array::Scalar &gradient);
 
 protected:
-
   array::Scalar *m_dirichletIndices;
   double m_c; // scale parameter.
   double m_lebesgue_exp;
@@ -48,7 +48,7 @@ protected:
 private:
   // Hide copy/assignment operations
   IPTotalVariationFunctional2S(IPTotalVariationFunctional2S const &);
-  IPTotalVariationFunctional2S & operator=(IPTotalVariationFunctional2S const &);
+  IPTotalVariationFunctional2S &operator=(IPTotalVariationFunctional2S const &);
 };
 
 } // end of namespace inverse

@@ -32,7 +32,8 @@ Tao::Tao(::Tao m) {
 
 Tao::~Tao() {
   if (m_value != NULL) {
-    PetscErrorCode ierr = TaoDestroy(&m_value); CHKERRCONTINUE(ierr);
+    PetscErrorCode ierr = TaoDestroy(&m_value);
+    CHKERRCONTINUE(ierr);
   }
 }
 

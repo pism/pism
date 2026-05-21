@@ -33,7 +33,7 @@ public:
   NullTransportHydrology(std::shared_ptr<const pism::Grid> grid);
   virtual ~NullTransportHydrology() = default;
 
-  void update_impl(double icet, double icedt, const hydrology::Inputs& inputs);
+  void update_impl(double icet, double icedt, const hydrology::Inputs &inputs);
 
 protected:
   pism::array::Scalar basal_runoff_sum; // Cumulative effective thickness of water removed from till

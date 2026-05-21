@@ -20,22 +20,23 @@
 #include "pism/energy/EnergyModel.hh"
 #include "pism/energy/utilities.hh"
 #include "pism/stressbalance/StressBalance.hh"
+#include "pism/util/Logger.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Profiling.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/Logger.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace energy {
 
 static void check_input(const array::Array *ptr, const char *name) {
   if (ptr == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "energy balance model input %s was not provided", name);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "energy balance model input %s was not provided", name);
   }
 }
 
@@ -49,23 +50,23 @@ Inputs::Inputs() {
   surface_temp             = NULL;
   till_water_thickness     = NULL;
 
-  volumetric_heating_rate  = NULL;
-  u3                       = NULL;
-  v3                       = NULL;
-  w3                       = NULL;
+  volumetric_heating_rate = NULL;
+  u3                      = NULL;
+  v3                      = NULL;
+  w3                      = NULL;
 
   no_model_mask = NULL;
 }
 
 void Inputs::check() const {
-  check_input(cell_type,                "cell_type");
+  check_input(cell_type, "cell_type");
   check_input(basal_frictional_heating, "basal_frictional_heating");
-  check_input(basal_heat_flux,          "basal_heat_flux");
-  check_input(ice_thickness,            "ice_thickness");
-  check_input(surface_liquid_fraction,  "surface_liquid_fraction");
-  check_input(shelf_base_temp,          "shelf_base_temp");
-  check_input(surface_temp,             "surface_temp");
-  check_input(till_water_thickness,     "till_water_thickness");
+  check_input(basal_heat_flux, "basal_heat_flux");
+  check_input(ice_thickness, "ice_thickness");
+  check_input(surface_liquid_fraction, "surface_liquid_fraction");
+  check_input(shelf_base_temp, "shelf_base_temp");
+  check_input(surface_temp, "surface_temp");
+  check_input(till_water_thickness, "till_water_thickness");
 
   check_input(volumetric_heating_rate, "volumetric_heating_rate");
   check_input(u3, "u3");
@@ -80,11 +81,11 @@ EnergyModelStats::EnergyModelStats() {
   liquified_ice_volume     = 0.0;
 }
 
-EnergyModelStats& EnergyModelStats::operator+=(const EnergyModelStats &other) {
-  bulge_counter            += other.bulge_counter;
+EnergyModelStats &EnergyModelStats::operator+=(const EnergyModelStats &other) {
+  bulge_counter += other.bulge_counter;
   reduced_accuracy_counter += other.reduced_accuracy_counter;
-  low_temperature_counter  += other.low_temperature_counter;
-  liquified_ice_volume     += other.liquified_ice_volume;
+  low_temperature_counter += other.low_temperature_counter;
+  liquified_ice_volume += other.liquified_ice_volume;
   return *this;
 }
 
@@ -178,14 +179,12 @@ void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int reco
       m_ice_enthalpy.set_name(enthalpy_metadata.get_name());
       m_ice_enthalpy.metadata() = enthalpy_metadata;
 
-      m_log->message(2,
-                     " - Computing enthalpy using ice temperature,"
-                     "  liquid water fraction and thickness...\n");
+      m_log->message(2, " - Computing enthalpy using ice temperature,"
+                        "  liquid water fraction and thickness...\n");
       compute_enthalpy(temp, liqfrac, ice_thickness, m_ice_enthalpy);
     } else {
-      m_log->message(2,
-                     " - Computing enthalpy using ice temperature and thickness "
-                     "and assuming zero liquid water fraction...\n");
+      m_log->message(2, " - Computing enthalpy using ice temperature and thickness "
+                        "and assuming zero liquid water fraction...\n");
       compute_enthalpy_cold(temp, ice_thickness, m_ice_enthalpy);
     }
   } else {
@@ -222,14 +221,12 @@ void EnergyModel::restart(const File &input_file, int record) {
   this->restart_impl(input_file, record);
 }
 
-void EnergyModel::bootstrap(const File &input_file,
-                            const array::Scalar &ice_thickness,
+void EnergyModel::bootstrap(const File &input_file, const array::Scalar &ice_thickness,
                             const array::Scalar &surface_temperature,
                             const array::Scalar &climatic_mass_balance,
                             const array::Scalar &basal_heat_flux) {
-  this->bootstrap_impl(input_file,
-                       ice_thickness, surface_temperature,
-                       climatic_mass_balance, basal_heat_flux);
+  this->bootstrap_impl(input_file, ice_thickness, surface_temperature, climatic_mass_balance,
+                       basal_heat_flux);
 }
 
 void EnergyModel::initialize(const array::Scalar &basal_melt_rate,
@@ -237,17 +234,14 @@ void EnergyModel::initialize(const array::Scalar &basal_melt_rate,
                              const array::Scalar &surface_temperature,
                              const array::Scalar &climatic_mass_balance,
                              const array::Scalar &basal_heat_flux) {
-  this->initialize_impl(basal_melt_rate,
-                        ice_thickness,
-                        surface_temperature,
-                        climatic_mass_balance,
+  this->initialize_impl(basal_melt_rate, ice_thickness, surface_temperature, climatic_mass_balance,
                         basal_heat_flux);
 }
 
 void EnergyModel::update(double t, double dt, const Inputs &inputs) {
   // reset standard out flags at the beginning of every time step
   m_stdout_flags = "";
-  m_stats = EnergyModelStats();
+  m_stats        = EnergyModelStats();
 
   profiling().begin("ice_energy");
   {
@@ -262,66 +256,67 @@ void EnergyModel::update(double t, double dt, const Inputs &inputs) {
   {
     m_stats.sum(m_grid->com);
 
-    if (m_stats.reduced_accuracy_counter > 0.0) { // count of when BOMBPROOF switches to lower accuracy
-      const double reduced_accuracy_percentage = 100.0 * (m_stats.reduced_accuracy_counter / (m_grid->Mx() * m_grid->My()));
+    if (m_stats.reduced_accuracy_counter >
+        0.0) { // count of when BOMBPROOF switches to lower accuracy
+      const double reduced_accuracy_percentage =
+          100.0 * (m_stats.reduced_accuracy_counter / (m_grid->Mx() * m_grid->My()));
       const double reporting_threshold = 5.0; // only report if above 5%
 
       if (reduced_accuracy_percentage > reporting_threshold and m_log->get_threshold() > 2) {
-        m_stdout_flags = (pism::printf("  [BPsacr=%.4f%%] ", reduced_accuracy_percentage) +
-                          m_stdout_flags);
+        m_stdout_flags =
+            (pism::printf("  [BPsacr=%.4f%%] ", reduced_accuracy_percentage) + m_stdout_flags);
       }
     }
 
     if (m_stats.bulge_counter > 0) {
       // count of when advection bulges are limited; frequently it is identically zero
-      m_stdout_flags = (pism::printf(" BULGE=%d ", m_stats.bulge_counter) +
-                        m_stdout_flags);
+      m_stdout_flags = (pism::printf(" BULGE=%d ", m_stats.bulge_counter) + m_stdout_flags);
     }
   }
 }
 
 MaxTimestep EnergyModel::max_timestep_impl(double t) const {
   // silence a compiler warning
-  (void) t;
+  (void)t;
 
   if (m_stress_balance == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "EnergyModel: no stress balance provided."
-                                  " Cannot compute max. time step.");
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "EnergyModel: no stress balance provided."
+                                                       " Cannot compute max. time step.");
   }
 
   return MaxTimestep(m_stress_balance->max_timestep_cfl_3d().dt_max.value(), "energy");
 }
 
-const std::string& EnergyModel::stdout_flags() const {
+const std::string &EnergyModel::stdout_flags() const {
   return m_stdout_flags;
 }
 
-const EnergyModelStats& EnergyModel::stats() const {
+const EnergyModelStats &EnergyModel::stats() const {
   return m_stats;
 }
 
-const array::Array3D & EnergyModel::enthalpy() const {
+const array::Array3D &EnergyModel::enthalpy() const {
   return m_ice_enthalpy;
 }
 
 /*! @brief Basal melt rate in grounded areas. (It is set to zero elsewhere.) */
-const array::Scalar & EnergyModel::basal_melt_rate() const {
+const array::Scalar &EnergyModel::basal_melt_rate() const {
   return m_basal_melt_rate;
 }
 
 /*! @brief Ice loss "flux" due to ice liquefaction. */
-class LiquifiedIceFlux : public TSDiag<TSFluxDiagnostic,EnergyModel> {
+class LiquifiedIceFlux : public TSDiag<TSFluxDiagnostic, EnergyModel> {
 public:
   LiquifiedIceFlux(const EnergyModel *m)
-    : TSDiag<TSFluxDiagnostic, EnergyModel>(m, "liquified_ice_flux") {
+      : TSDiag<TSFluxDiagnostic, EnergyModel>(m, "liquified_ice_flux") {
 
     set_units("m^3 / second", "m^3 / year");
     m_variable["long_name"] =
-      "rate of ice loss due to liquefaction, averaged over the reporting interval";
+        "rate of ice loss due to liquefaction, averaged over the reporting interval";
     m_variable["comment"]      = "positive means ice loss";
     m_variable["cell_methods"] = "time: mean";
   }
+
 protected:
   double compute() {
     // liquified ice volume during the last time step
@@ -331,17 +326,13 @@ protected:
 
 DiagnosticList EnergyModel::spatial_diagnostics_impl() const {
   DiagnosticList result;
-  result = {
-    {"enthalpy",                 Diagnostic::wrap(m_ice_enthalpy)},
-    {"basal_melt_rate_grounded", Diagnostic::wrap(m_basal_melt_rate)}
-  };
+  result = { { "enthalpy", Diagnostic::wrap(m_ice_enthalpy) },
+             { "basal_melt_rate_grounded", Diagnostic::wrap(m_basal_melt_rate) } };
   return result;
 }
 
 TSDiagnosticList EnergyModel::scalar_diagnostics_impl() const {
-  return {
-    {"liquified_ice_flux", TSDiagnostic::Ptr(new LiquifiedIceFlux(this))}
-  };
+  return { { "liquified_ice_flux", TSDiagnostic::Ptr(new LiquifiedIceFlux(this)) } };
 }
 
 } // end of namespace energy

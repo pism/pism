@@ -20,14 +20,15 @@
 #ifndef PISM_SNESPROBLEM_H
 #define PISM_SNESPROBLEM_H
 
-#include "pism/util/Grid.hh" // inline implementation in the header uses Grid
+#include "pism/util/Grid.hh"     // inline implementation in the header uses Grid
 #include "pism/util/Vector2d.hh" // to get Vector2
 #include "pism/util/petscwrappers/SNES.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 
 namespace pism {
 
-template<int DOF, class U> class SNESProblem {
+template <int DOF, class U>
+class SNESProblem {
 public:
   SNESProblem(std::shared_ptr<const Grid> g);
 
@@ -35,17 +36,15 @@ public:
 
   virtual void solve();
 
-  virtual const std::string& name();
+  virtual const std::string &name();
 
-  virtual Vec solution()
-  {
+  virtual Vec solution() {
     return m_X;
   }
 
 protected:
-
   virtual void compute_local_function(DMDALocalInfo *info, const U **xg, U **yg) = 0;
-  virtual void compute_local_jacobian(DMDALocalInfo *info, const U **x,  Mat B) = 0;
+  virtual void compute_local_jacobian(DMDALocalInfo *info, const U **x, Mat B)   = 0;
 
   std::shared_ptr<const Grid> m_grid;
 
@@ -54,61 +53,57 @@ protected:
   std::shared_ptr<petsc::DM> m_DA;
 
 private:
-
   struct CallbackData {
     DM da;
-    SNESProblem<DOF,U> *solver;
+    SNESProblem<DOF, U> *solver;
   };
 
   CallbackData m_callbackData;
 
-  static PetscErrorCode function_callback(DMDALocalInfo *info, const U **x, U **f,
-                                          CallbackData *);
-  static PetscErrorCode jacobian_callback(DMDALocalInfo *info, const U **x, Mat B,
-                                          CallbackData *);
+  static PetscErrorCode function_callback(DMDALocalInfo *info, const U **x, U **f, CallbackData *);
+  static PetscErrorCode jacobian_callback(DMDALocalInfo *info, const U **x, Mat B, CallbackData *);
 };
 
-typedef SNESProblem<1,double> SNESScalarProblem;
-typedef SNESProblem<2,Vector2d> SNESVectorProblem;
+typedef SNESProblem<1, double> SNESScalarProblem;
+typedef SNESProblem<2, Vector2d> SNESVectorProblem;
 
-template<int DOF, class U>
-PetscErrorCode SNESProblem<DOF,U>::function_callback(DMDALocalInfo *info,
-                                                     const U **x, U **f,
-                                                     SNESProblem<DOF,U>::CallbackData *cb) {
+template <int DOF, class U>
+PetscErrorCode SNESProblem<DOF, U>::function_callback(DMDALocalInfo *info, const U **x, U **f,
+                                                      SNESProblem<DOF, U>::CallbackData *cb) {
   try {
-    cb->solver->compute_local_function(info,x,f);
+    cb->solver->compute_local_function(info, x, f);
   } catch (...) {
-    MPI_Comm com = MPI_COMM_SELF;
-    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)cb->da, &com); CHKERRQ(ierr);
+    MPI_Comm com        = MPI_COMM_SELF;
+    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)cb->da, &com);
+    CHKERRQ(ierr);
     handle_fatal_errors(com);
     SETERRQ(com, 1, "A PISM callback failed");
   }
   return 0;
 }
 
-template<int DOF, class U>
-PetscErrorCode SNESProblem<DOF,U>::jacobian_callback(DMDALocalInfo *info,
-                                                     const U **x, Mat J,
-                                                     SNESProblem<DOF,U>::CallbackData *cb) {
+template <int DOF, class U>
+PetscErrorCode SNESProblem<DOF, U>::jacobian_callback(DMDALocalInfo *info, const U **x, Mat J,
+                                                      SNESProblem<DOF, U>::CallbackData *cb) {
   try {
     cb->solver->compute_local_jacobian(info, x, J);
   } catch (...) {
-    MPI_Comm com = MPI_COMM_SELF;
-    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)cb->da, &com); CHKERRQ(ierr);
+    MPI_Comm com        = MPI_COMM_SELF;
+    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)cb->da, &com);
+    CHKERRQ(ierr);
     handle_fatal_errors(com);
     SETERRQ(com, 1, "A PISM callback failed");
   }
   return 0;
 }
 
-template<int DOF, class U>
-SNESProblem<DOF, U>::SNESProblem(std::shared_ptr<const Grid> g)
-  : m_grid(g) {
+template <int DOF, class U>
+SNESProblem<DOF, U>::SNESProblem(std::shared_ptr<const Grid> g) : m_grid(g) {
 
   PetscErrorCode ierr;
 
-  int stencil_width=1;
-  m_DA = m_grid->get_dm(DOF, stencil_width);
+  int stencil_width = 1;
+  m_DA              = m_grid->get_dm(DOF, stencil_width);
 
   ierr = DMCreateGlobalVector(*m_DA, m_X.rawptr());
   PISM_CHK(ierr, "DMCreateGlobalVector");
@@ -117,23 +112,23 @@ SNESProblem<DOF, U>::SNESProblem(std::shared_ptr<const Grid> g)
   PISM_CHK(ierr, "SNESCreate");
 
   // Set the SNES callbacks to call into our compute_local_function and compute_local_jacobian
-  m_callbackData.da = *m_DA;
+  m_callbackData.da     = *m_DA;
   m_callbackData.solver = this;
 
   ierr = DMDASNESSetFunctionLocal(*m_DA, INSERT_VALUES,
-#if PETSC_VERSION_LT(3,21,0)
+#if PETSC_VERSION_LT(3, 21, 0)
                                   (DMDASNESFunction)SNESProblem<DOF, U>::function_callback,
 #else
-                                  (DMDASNESFunctionFn*)SNESProblem<DOF, U>::function_callback,
+                                  (DMDASNESFunctionFn *)SNESProblem<DOF, U>::function_callback,
 #endif
                                   &m_callbackData);
   PISM_CHK(ierr, "DMDASNESSetFunctionLocal");
 
   ierr = DMDASNESSetJacobianLocal(*m_DA,
-#if PETSC_VERSION_LT(3,21,0)
+#if PETSC_VERSION_LT(3, 21, 0)
                                   (DMDASNESJacobian)SNESProblem<DOF, U>::jacobian_callback,
 #else
-                                  (DMDASNESJacobianFn*)SNESProblem<DOF, U>::jacobian_callback,
+                                  (DMDASNESJacobianFn *)SNESProblem<DOF, U>::jacobian_callback,
 #endif
                                   &m_callbackData);
   PISM_CHK(ierr, "DMDASNESSetJacobianLocal");
@@ -151,33 +146,36 @@ SNESProblem<DOF, U>::SNESProblem(std::shared_ptr<const Grid> g)
   PISM_CHK(ierr, "SNESSetFromOptions");
 }
 
-template<int DOF, class U>
-SNESProblem<DOF,U>::~SNESProblem() {
+template <int DOF, class U>
+SNESProblem<DOF, U>::~SNESProblem() {
   // empty
 }
 
-template<int DOF, class U>
-const std::string& SNESProblem<DOF,U>::name() {
+template <int DOF, class U>
+const std::string &SNESProblem<DOF, U>::name() {
   return "UnnamedProblem";
 }
 
-template<int DOF, class U>
-void SNESProblem<DOF,U>::solve() {
+template <int DOF, class U>
+void SNESProblem<DOF, U>::solve() {
   PetscErrorCode ierr;
 
   // Solve:
-  ierr = SNESSolve(m_snes,NULL,m_X); PISM_CHK(ierr, "SNESSolve");
+  ierr = SNESSolve(m_snes, NULL, m_X);
+  PISM_CHK(ierr, "SNESSolve");
 
   // See if it worked.
   SNESConvergedReason reason;
-  ierr = SNESGetConvergedReason(m_snes, &reason); PISM_CHK(ierr, "SNESGetConvergedReason");
+  ierr = SNESGetConvergedReason(m_snes, &reason);
+  PISM_CHK(ierr, "SNESGetConvergedReason");
   if (reason < 0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "SNESProblem %s solve failed to converge (SNES reason %s)",
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "SNESProblem %s solve failed to converge (SNES reason %s)",
                                   name().c_str(), SNESConvergedReasons[reason]);
   }
 
-  m_grid->ctx()->log()->message(1, "SNESProblem %s converged (SNES reason %s)\n",
-                               name().c_str(), SNESConvergedReasons[reason]);
+  m_grid->ctx()->log()->message(1, "SNESProblem %s converged (SNES reason %s)\n", name().c_str(),
+                                SNESConvergedReasons[reason]);
 }
 
 } // end of namespace pism

@@ -17,7 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #ifndef __PISMOceanModel_hh
-#define __PISMOceanModel_hh
+#define PISMOceanModel_hh
 
 #include <memory>
 
@@ -48,15 +48,18 @@ public:
 
   void update(const Inputs &geometry, double t, double dt);
 
-  const array::Scalar& shelf_base_temperature() const;
-  const array::Scalar& shelf_base_mass_flux() const;
-  const array::Scalar& average_water_column_pressure() const;
+  const array::Scalar &shelf_base_temperature() const;
+  const array::Scalar &shelf_base_mass_flux() const;
+  const array::Scalar &average_water_column_pressure() const;
 
   // These methods allocate storage and set metadata. They are public (and not protected)
   // so we can use them in PyOceanModel::allocate().
-  static std::shared_ptr<array::Scalar> allocate_shelf_base_temperature(std::shared_ptr<const Grid> g);
-  static std::shared_ptr<array::Scalar> allocate_shelf_base_mass_flux(std::shared_ptr<const Grid> g);
-  static std::shared_ptr<array::Scalar> allocate_water_column_pressure(std::shared_ptr<const Grid> g);
+  static std::shared_ptr<array::Scalar>
+  allocate_shelf_base_temperature(std::shared_ptr<const Grid> g);
+  static std::shared_ptr<array::Scalar>
+  allocate_shelf_base_mass_flux(std::shared_ptr<const Grid> g);
+  static std::shared_ptr<array::Scalar>
+  allocate_water_column_pressure(std::shared_ptr<const Grid> g);
 
 protected:
   virtual void init_impl(const Geometry &geometry);
@@ -70,14 +73,12 @@ protected:
   virtual DiagnosticList spatial_diagnostics_impl() const;
   virtual TSDiagnosticList scalar_diagnostics_impl() const;
 
-  virtual const array::Scalar& shelf_base_temperature_impl() const;
-  virtual const array::Scalar& shelf_base_mass_flux_impl() const;
-  virtual const array::Scalar& average_water_column_pressure_impl() const;
+  virtual const array::Scalar &shelf_base_temperature_impl() const;
+  virtual const array::Scalar &shelf_base_mass_flux_impl() const;
+  virtual const array::Scalar &average_water_column_pressure_impl() const;
 
   std::shared_ptr<OceanModel> m_input_model;
   std::shared_ptr<array::Scalar> m_water_column_pressure;
-
-
 };
 
 void compute_average_water_column_pressure(const Geometry &geometry, double ice_density,
@@ -87,4 +88,4 @@ void compute_average_water_column_pressure(const Geometry &geometry, double ice_
 } // end of namespace ocean
 } // end of namespace pism
 
-#endif  // __PISMOceanModel_hh
+#endif // __PISMOceanModel_hh

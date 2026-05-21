@@ -28,8 +28,7 @@ class ScalarForcing;
 namespace ocean {
 
 //! \brief Forcing using shelf base mass flux offsets (scalar, time-dependent).
-class Delta_SMB : public OceanModel
-{
+class Delta_SMB : public OceanModel {
 public:
   Delta_SMB(std::shared_ptr<const Grid> g, std::shared_ptr<OceanModel> in);
   virtual ~Delta_SMB();
@@ -39,7 +38,7 @@ private:
 
   void update_impl(const Inputs &inputs, double t, double dt);
 
-  const array::Scalar& shelf_base_mass_flux_impl() const;
+  const array::Scalar &shelf_base_mass_flux_impl() const;
 
   std::shared_ptr<array::Scalar> m_shelf_base_mass_flux;
 

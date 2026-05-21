@@ -20,8 +20,8 @@
 #define __flowlaw_factory
 
 #include <map>
-#include <string>
 #include <memory>
+#include <string>
 
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/util/Config.hh"
@@ -29,24 +29,25 @@
 namespace pism {
 namespace rheology {
 
-#define ICE_ISOTHERMAL_GLEN  "isothermal_glen" /* Plain isothermal Glen */
-#define ICE_PB      "pb"            /* Paterson-Budd (PatersonBudd) */
-#define ICE_GPBLD   "gpbld"         /* Paterson-Budd-Lliboutry-Duval (GPBLD) */
-#define ICE_HOOKE   "hooke"         /* Hooke (Hooke) */
-#define ICE_ARR     "arr"           /* Temperature dependent Arrhenius (either warm or cold) */
-#define ICE_GOLDSBY_KOHLSTEDT "gk"  /* Goldsby-Kohlstedt for SIA */
-#define ICE_ARRWARM "arrwarm"       /* Temperature dependent Arrhenius (should be refactored into ICE_ARR) */
+#define ICE_ISOTHERMAL_GLEN "isothermal_glen" /* Plain isothermal Glen */
+#define ICE_PB "pb"                           /* Paterson-Budd (PatersonBudd) */
+#define ICE_GPBLD "gpbld"                     /* Paterson-Budd-Lliboutry-Duval (GPBLD) */
+#define ICE_HOOKE "hooke"                     /* Hooke (Hooke) */
+#define ICE_ARR "arr"              /* Temperature dependent Arrhenius (either warm or cold) */
+#define ICE_GOLDSBY_KOHLSTEDT "gk" /* Goldsby-Kohlstedt for SIA */
+#define ICE_ARRWARM                                                                                \
+  "arrwarm" /* Temperature dependent Arrhenius (should be refactored into ICE_ARR) */
 
 typedef FlowLaw *(*FlowLawCreator)(double, const Config &, std::shared_ptr<EnthalpyConverter>);
 
 class FlowLawFactory {
 public:
-  FlowLawFactory(std::shared_ptr<const Config> conf,
-                 std::shared_ptr<EnthalpyConverter> my_EC);
+  FlowLawFactory(std::shared_ptr<const Config> conf, std::shared_ptr<EnthalpyConverter> my_EC);
   ~FlowLawFactory() = default;
   void add(const std::string &name, FlowLawCreator);
   void remove(const std::string &name);
   std::shared_ptr<FlowLaw> create(const std::string &type_name, double exponent);
+
 private:
   std::map<std::string, FlowLawCreator> m_flow_laws;
   std::shared_ptr<const Config> m_config;
@@ -57,4 +58,4 @@ private:
 } // end of namespace rheology
 } // end of namespace pism
 
-#endif  // __flowlaw_factory
+#endif // __flowlaw_factory

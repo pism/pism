@@ -28,10 +28,6 @@
 #include "pism/verification/tests/exactTestsABCD.h"
 #include "pism/verification/tests/exactTestsFG.hh"
 
-#include "pism/verification/BTU_Verification.hh"
-#include "pism/verification/PSVerification.hh"
-#include "pism/verification/TemperatureModel_Verification.hh"
-#include "pism/verification/iceCompModel.hh"
 #include "pism/coupler/SeaLevel.hh"
 #include "pism/coupler/ocean/Constant.hh"
 #include "pism/earth/BedDef.hh"
@@ -49,9 +45,13 @@
 #include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
+#include "pism/util/io/IO_Flags.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/io/IO_Flags.hh"
+#include "pism/verification/BTU_Verification.hh"
+#include "pism/verification/PSVerification.hh"
+#include "pism/verification/TemperatureModel_Verification.hh"
+#include "pism/verification/iceCompModel.hh"
 
 namespace pism {
 
@@ -199,8 +199,8 @@ void IceCompModel::allocate_bedrock_thermal_unit() {
   auto bed_vertical_grid = energy::BTUGrid::FromOptions(m_grid->ctx());
 
   if (bed_vertical_grid.Mbz > 1) {
-    m_btu = std::make_shared<energy::BTU_Verification>(m_grid, bed_vertical_grid,
-                                                       m_testname, m_bedrock_is_ice_forK);
+    m_btu = std::make_shared<energy::BTU_Verification>(m_grid, bed_vertical_grid, m_testname,
+                                                       m_bedrock_is_ice_forK);
   } else {
     m_btu = std::make_shared<energy::BTU_Minimal>(m_grid);
   }
@@ -231,14 +231,14 @@ void IceCompModel::allocate_bed_deformation() {
   IceModel::allocate_bed_deformation();
 
   // for simple isostasy
-  m_f = m_config->get_number("constants.ice.density") / m_config->get_number("bed_deformation.mantle_density");
+  m_f = m_config->get_number("constants.ice.density") /
+        m_config->get_number("bed_deformation.mantle_density");
 
   std::string bed_def_model = m_config->get_string("bed_deformation.model");
 
   if ((m_testname == 'H') && bed_def_model != "iso") {
-    m_log->message(1,
-                   "IceCompModel WARNING: Test H should be run with option\n"
-                   "  '-bed_def iso'  for the reported errors to be correct.\n");
+    m_log->message(1, "IceCompModel WARNING: Test H should be run with option\n"
+                      "  '-bed_def iso'  for the reported errors to be correct.\n");
   }
 }
 
@@ -256,13 +256,13 @@ void IceCompModel::allocate_couplers() {
   m_submodels["sea level forcing"] = m_sea_level.get();
 }
 
-void IceCompModel::bootstrap_2d(const File &/*input_file*/) {
+void IceCompModel::bootstrap_2d(const File & /*input_file*/) {
   throw RuntimeError(PISM_ERROR_LOCATION,
                      "PISM does not support bootstrapping in verification mode.");
 }
 
 void IceCompModel::initialize_2d() {
-  m_log->message(3, "initializing Test %c from formulas ...\n",m_testname);
+  m_log->message(3, "initializing Test %c from formulas ...\n", m_testname);
 
   m_geometry.bed_elevation.set(0.0);
   m_geometry.sea_level_elevation.set(0.0);
@@ -270,9 +270,7 @@ void IceCompModel::initialize_2d() {
   array::Scalar uplift(m_grid, "uplift");
   uplift.set(0.0);
 
-  m_beddef->bootstrap(m_geometry.bed_elevation,
-                      uplift,
-                      m_geometry.ice_thickness,
+  m_beddef->bootstrap(m_geometry.bed_elevation, uplift, m_geometry.ice_thickness,
                       m_geometry.sea_level_elevation);
 
   // Test-specific initialization:
@@ -286,11 +284,11 @@ void IceCompModel::initialize_2d() {
     break;
   case 'F':
   case 'G':
-    initTestFG();  // see iCMthermo.cc
+    initTestFG(); // see iCMthermo.cc
     break;
   case 'K':
   case 'O':
-    initTestsKO();  // see iCMthermo.cc
+    initTestsKO(); // see iCMthermo.cc
     break;
   case 'L':
     initTestL();
@@ -351,7 +349,7 @@ void IceCompModel::initTestABCDH() {
     if (m_testname == 'H') {
       m_geometry.bed_elevation.copy_from(m_geometry.ice_thickness);
       m_geometry.bed_elevation.scale(-m_f);
-    } else {  // flat bed case otherwise
+    } else { // flat bed case otherwise
       m_geometry.bed_elevation.set(0.0);
     }
     m_geometry.sea_level_elevation.set(0.0);
@@ -364,7 +362,7 @@ void IceCompModel::initTestABCDH() {
 class rgrid {
 public:
   double r;
-  int    i,j;
+  int i, j;
 };
 
 //! Comparison used initTestL() in generating sorted list for ODE solver.
@@ -389,7 +387,7 @@ void IceCompModel::initTestL() {
 
     rrv[k].i = i;
     rrv[k].j = j;
-    rrv[k].r = grid::radius(*m_grid, i,j);
+    rrv[k].r = grid::radius(*m_grid, i, j);
 
     k += 1;
   }
@@ -408,10 +406,10 @@ void IceCompModel::initTestL() {
   {
     array::Scalar bed_uplift(m_grid, "uplift");
 
-    array::AccessScope list{&m_geometry.ice_thickness, &m_geometry.bed_elevation};
+    array::AccessScope list{ &m_geometry.ice_thickness, &m_geometry.bed_elevation };
 
     for (k = 0; k < MM; k++) {
-      m_geometry.ice_thickness(rrv[k].i, rrv[k].j)  = L.H[k];
+      m_geometry.ice_thickness(rrv[k].i, rrv[k].j) = L.H[k];
       m_geometry.bed_elevation(rrv[k].i, rrv[k].j) = L.b[k];
     }
 
@@ -444,52 +442,40 @@ void IceCompModel::reset_thickness_test_A() {
   m_geometry.ice_thickness.update_ghosts();
 }
 
-void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
-                                         double &gdomeHexact, double &volerr,
-                                         double &areaerr, double &gmaxHerr,
-                                         double &gavHerr, double &gmaxetaerr,
-                                         double &centerHerr) {
+void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact, double &gdomeHexact,
+                                         double &volerr, double &areaerr, double &gmaxHerr,
+                                         double &gavHerr, double &gmaxetaerr, double &centerHerr) {
   // compute errors in thickness, eta=thickness^{(2n+2)/n}, volume, area
 
   const double time = m_time->current();
-  double
-    Hexact     = 0.0,
-    vol        = 0.0,
-    area       = 0.0,
-    domeH      = 0.0,
-    volexact   = 0.0,
-    areaexact  = 0.0,
-    domeHexact = 0.0;
-  double
-    Herr   = 0.0,
-    avHerr = 0.0,
-    etaerr = 0.0;
+  double Hexact = 0.0, vol = 0.0, area = 0.0, domeH = 0.0, volexact = 0.0, areaexact = 0.0,
+         domeHexact = 0.0;
+  double Herr = 0.0, avHerr = 0.0, etaerr = 0.0;
 
   array::AccessScope list(m_geometry.ice_thickness);
   if (m_testname == 'L') {
     list.add(m_HexactL);
   }
 
-  double
-    seawater_density = m_config->get_number("constants.sea_water.density"),
-    ice_density      = m_config->get_number("constants.ice.density"),
-    Glen_n           = m_config->get_number("stress_balance.sia.Glen_exponent"),
-    standard_gravity = m_config->get_number("constants.standard_gravity");
+  double seawater_density = m_config->get_number("constants.sea_water.density"),
+         ice_density      = m_config->get_number("constants.ice.density"),
+         Glen_n           = m_config->get_number("stress_balance.sia.Glen_exponent"),
+         standard_gravity = m_config->get_number("constants.standard_gravity");
 
   // area of grid square in square km:
-  const double   a = m_grid->dx() * m_grid->dy() * 1e-3 * 1e-3;
-  const double   m = (2.0 * Glen_n + 2.0) / Glen_n;
+  const double a = m_grid->dx() * m_grid->dy() * 1e-3 * 1e-3;
+  const double m = (2.0 * Glen_n + 2.0) / Glen_n;
 
   ParallelSection loop(m_grid->com);
   try {
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
-      if (m_geometry.ice_thickness(i,j) > 0) {
+      if (m_geometry.ice_thickness(i, j) > 0) {
         area += a;
-        vol += a * m_geometry.ice_thickness(i,j) * 1e-3;
+        vol += a * m_geometry.ice_thickness(i, j) * 1e-3;
       }
-      double xx = m_grid->x(i), r = grid::radius(*m_grid, i,j);
+      double xx = m_grid->x(i), r = grid::radius(*m_grid, i, j);
       switch (m_testname) {
       case 'A':
         Hexact = exactA(r).H;
@@ -504,19 +490,19 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
         Hexact = exactD(time, r).H;
         break;
       case 'F':
-        if (r > m_LforFG - 1.0) {  // outside of sheet
-          Hexact=0.0;
+        if (r > m_LforFG - 1.0) { // outside of sheet
+          Hexact = 0.0;
         } else {
-          r=std::max(r,1.0);
+          r = std::max(r, 1.0);
           std::vector<double> z(1, 0.0);
           Hexact = exactFG(0.0, r, z, 0.0).H;
         }
         break;
       case 'G':
-        if (r > m_LforFG -1.0) {  // outside of sheet
-          Hexact=0.0;
+        if (r > m_LforFG - 1.0) { // outside of sheet
+          Hexact = 0.0;
         } else {
-          r=std::max(r,1.0);
+          r = std::max(r, 1.0);
           std::vector<double> z(1, 0.0);
           Hexact = exactFG(time, r, z, m_ApforG).H;
         }
@@ -529,20 +515,17 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
         Hexact = 3000.0;
         break;
       case 'L':
-        Hexact = m_HexactL(i,j);
+        Hexact = m_HexactL(i, j);
         break;
-      case 'V':
-        {
-          double
-            H0 = 600.0,
-            v0 = convert(m_sys, 300.0, "m year-1", "m second-1"),
-            Q0 = H0 * v0,
-            B0 = m_stress_balance->shallow()->flow_law()->hardness(0, 0),
-            C  = pow(ice_density * standard_gravity * (1.0 - ice_density/seawater_density) / (4 * B0), 3);
+      case 'V': {
+        double H0 = 600.0, v0 = convert(m_sys, 300.0, "m year-1", "m second-1"), Q0 = H0 * v0,
+               B0 = m_stress_balance->shallow()->flow_law()->hardness(0, 0),
+               C  = pow(ice_density * standard_gravity * (1.0 - ice_density / seawater_density) /
+                            (4 * B0),
+                        3);
 
-          Hexact = pow(4 * C / Q0 * xx + 1/pow(H0, 4), -0.25);
-        }
-        break;
+        Hexact = pow(4 * C / Q0 * xx + 1 / pow(H0, 4), -0.25);
+      } break;
       default:
         throw RuntimeError(PISM_ERROR_LOCATION, "test must be A, B, C, D, F, G, H, K, L, or O");
       }
@@ -551,16 +534,15 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
         areaexact += a;
         volexact += a * Hexact * 1e-3;
       }
-      if (i == ((int)m_grid->Mx() - 1)/2 and
-          j == ((int)m_grid->My() - 1)/2) {
-        domeH = m_geometry.ice_thickness(i,j);
+      if (i == ((int)m_grid->Mx() - 1) / 2 and j == ((int)m_grid->My() - 1) / 2) {
+        domeH      = m_geometry.ice_thickness(i, j);
         domeHexact = Hexact;
       }
       // compute maximum errors
-      Herr = std::max(Herr,fabs(m_geometry.ice_thickness(i,j) - Hexact));
-      etaerr = std::max(etaerr,fabs(pow(m_geometry.ice_thickness(i,j),m) - pow(Hexact,m)));
+      Herr   = std::max(Herr, fabs(m_geometry.ice_thickness(i, j) - Hexact));
+      etaerr = std::max(etaerr, fabs(pow(m_geometry.ice_thickness(i, j), m) - pow(Hexact, m)));
       // add to sums for average errors
-      avHerr += fabs(m_geometry.ice_thickness(i,j) - Hexact);
+      avHerr += fabs(m_geometry.ice_thickness(i, j) - Hexact);
     }
   } catch (...) {
     loop.failed();
@@ -569,21 +551,21 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
 
   // globalize (find errors over all processors)
   double gvol, garea, gdomeH;
-  gvolexact = GlobalSum(m_grid->com, volexact);
+  gvolexact   = GlobalSum(m_grid->com, volexact);
   gdomeHexact = GlobalMax(m_grid->com, domeHexact);
-  gareaexact = GlobalSum(m_grid->com, areaexact);
+  gareaexact  = GlobalSum(m_grid->com, areaexact);
 
-  gvol = GlobalSum(m_grid->com, vol);
-  garea = GlobalSum(m_grid->com, area);
-  volerr = fabs(gvol - gvolexact);
+  gvol    = GlobalSum(m_grid->com, vol);
+  garea   = GlobalSum(m_grid->com, area);
+  volerr  = fabs(gvol - gvolexact);
   areaerr = fabs(garea - gareaexact);
 
-  gmaxHerr = GlobalMax(m_grid->com, Herr);
-  gavHerr = GlobalSum(m_grid->com, avHerr);
-  gavHerr = gavHerr/(m_grid->Mx()*m_grid->My());
+  gmaxHerr   = GlobalMax(m_grid->com, Herr);
+  gavHerr    = GlobalSum(m_grid->com, avHerr);
+  gavHerr    = gavHerr / (m_grid->Mx() * m_grid->My());
   gmaxetaerr = GlobalMax(m_grid->com, etaerr);
 
-  gdomeH = GlobalMax(m_grid->com, domeH);
+  gdomeH     = GlobalMax(m_grid->com, domeH);
   centerHerr = fabs(gdomeH - gdomeHexact);
 }
 
@@ -658,7 +640,7 @@ void IceCompModel::reportErrors() {
   double maxUerr = 0.0, avUerr = 0.0, maxWerr = 0.0, avWerr = 0.0;
 
   const rheology::FlowLaw &flow_law = *m_stress_balance->modifier()->flow_law();
-  const double m = (2.0 * flow_law.exponent() + 2.0) / flow_law.exponent();
+  const double m                    = (2.0 * flow_law.exponent() + 2.0) / flow_law.exponent();
 
   auto EC = m_ctx->enthalpy_converter();
 
@@ -670,77 +652,68 @@ void IceCompModel::reportErrors() {
                    m_testname);
   }
 
-  m_log->message(1,
-             "NUMERICAL ERRORS evaluated at final time (relative to exact solution):\n");
+  m_log->message(1, "NUMERICAL ERRORS evaluated at final time (relative to exact solution):\n");
 
 
   // geometry (thickness, vol) errors if appropriate; reported in m except for relmaxETA
   if ((m_testname != 'K') && (m_testname != 'O')) {
-    computeGeometryErrors(volexact,areaexact,domeHexact,
-                          volerr,areaerr,maxHerr,avHerr,maxetaerr,centerHerr);
-    m_log->message(1,
-               "geometry  :    prcntVOL        maxH         avH   relmaxETA\n");  // no longer reporting centerHerr
-    m_log->message(1, "           %12.6f%12.6f%12.6f%12.6f\n",
-               100*volerr/volexact, maxHerr, avHerr,
-               maxetaerr/pow(domeHexact,m));
-
+    computeGeometryErrors(volexact, areaexact, domeHexact, volerr, areaerr, maxHerr, avHerr,
+                          maxetaerr, centerHerr);
+    m_log->message(
+        1,
+        "geometry  :    prcntVOL        maxH         avH   relmaxETA\n"); // no longer reporting centerHerr
+    m_log->message(1, "           %12.6f%12.6f%12.6f%12.6f\n", 100 * volerr / volexact, maxHerr,
+                   avHerr, maxetaerr / pow(domeHexact, m));
   }
 
   // temperature errors for F and G
   if ((m_testname == 'F') || (m_testname == 'G')) {
     computeTemperatureErrors(maxTerr, avTerr);
     computeBasalTemperatureErrors(basemaxTerr, baseavTerr, basecenterTerr);
-    m_log->message(1,
-               "temp      :        maxT         avT    basemaxT     baseavT\n");  // no longer reporting   basecenterT
-    m_log->message(1, "           %12.6f%12.6f%12.6f%12.6f\n",
-               maxTerr, avTerr, basemaxTerr, baseavTerr);
+    m_log->message(
+        1,
+        "temp      :        maxT         avT    basemaxT     baseavT\n"); // no longer reporting   basecenterT
+    m_log->message(1, "           %12.6f%12.6f%12.6f%12.6f\n", maxTerr, avTerr, basemaxTerr,
+                   baseavTerr);
 
   } else if ((m_testname == 'K') || (m_testname == 'O')) {
     computeIceBedrockTemperatureErrors(maxTerr, avTerr, maxTberr, avTberr);
-    m_log->message(1,
-               "temp      :        maxT         avT       maxTb        avTb\n");
-    m_log->message(1, "           %12.6f%12.6f%12.6f%12.6f\n",
-               maxTerr, avTerr, maxTberr, avTberr);
-
+    m_log->message(1, "temp      :        maxT         avT       maxTb        avTb\n");
+    m_log->message(1, "           %12.6f%12.6f%12.6f%12.6f\n", maxTerr, avTerr, maxTberr, avTberr);
   }
 
   // strain_heating errors if appropriate; reported in 10^6 J/(s m^3)
   if ((m_testname == 'F') || (m_testname == 'G')) {
     compute_strain_heating_errors(max_strain_heating_error, av_strain_heating_error);
-    m_log->message(1,
-               "Sigma     :      maxSig       avSig\n");
-    m_log->message(1, "           %12.6f%12.6f\n",
-               max_strain_heating_error*1.0e6, av_strain_heating_error*1.0e6);
+    m_log->message(1, "Sigma     :      maxSig       avSig\n");
+    m_log->message(1, "           %12.6f%12.6f\n", max_strain_heating_error * 1.0e6,
+                   av_strain_heating_error * 1.0e6);
   }
 
   // surface velocity errors if exact values are available; reported in m year-1
   if ((m_testname == 'F') || (m_testname == 'G')) {
     computeSurfaceVelocityErrors(maxUerr, avUerr, maxWerr, avWerr);
-    m_log->message(1,
-               "surf vels :     maxUvec      avUvec        maxW         avW\n");
-    m_log->message(1,
-               "           %12.6f%12.6f%12.6f%12.6f\n",
-               convert(m_sys, maxUerr, "m second-1", "m year-1"),
-               convert(m_sys, avUerr, "m second-1", "m year-1"),
-               convert(m_sys, maxWerr, "m second-1", "m year-1"),
-               convert(m_sys, avWerr, "m second-1", "m year-1"));
+    m_log->message(1, "surf vels :     maxUvec      avUvec        maxW         avW\n");
+    m_log->message(1, "           %12.6f%12.6f%12.6f%12.6f\n",
+                   convert(m_sys, maxUerr, "m second-1", "m year-1"),
+                   convert(m_sys, avUerr, "m second-1", "m year-1"),
+                   convert(m_sys, maxWerr, "m second-1", "m year-1"),
+                   convert(m_sys, avWerr, "m second-1", "m year-1"));
   }
 
   // basal melt rate errors if appropriate; reported in m year-1
   if (m_testname == 'O') {
     computeBasalMeltRateErrors(maxbmelterr, minbmelterr);
     if (maxbmelterr != minbmelterr) {
-      m_log->message(1,
-                 "IceCompModel WARNING: unexpected Test O situation: max and min of bmelt error\n"
-                 "  are different: maxbmelterr = %f, minbmelterr = %f\n",
-                 convert(m_sys, maxbmelterr, "m second-1", "m year-1"),
-                 convert(m_sys, minbmelterr, "m second-1", "m year-1"));
+      m_log->message(
+          1,
+          "IceCompModel WARNING: unexpected Test O situation: max and min of bmelt error\n"
+          "  are different: maxbmelterr = %f, minbmelterr = %f\n",
+          convert(m_sys, maxbmelterr, "m second-1", "m year-1"),
+          convert(m_sys, minbmelterr, "m second-1", "m year-1"));
     }
-    m_log->message(1,
-               "basal melt:  max\n");
-    m_log->message(1, "           %11.5f\n",
-               convert(m_sys, maxbmelterr, "m second-1", "m year-1"));
-
+    m_log->message(1, "basal melt:  max\n");
+    m_log->message(1, "           %11.5f\n", convert(m_sys, maxbmelterr, "m second-1", "m year-1"));
   }
 
   m_log->message(1, "NUM ERRORS DONE\n");
@@ -759,7 +732,7 @@ void IceCompModel::reportErrors() {
 
     size_t start = file.dimension_length("N");
 
-    for (const auto& arg : m_output_global_attributes.all_strings()) {
+    for (const auto &arg : m_output_global_attributes.all_strings()) {
       file.write_attribute("PISM_GLOBAL", arg.first, arg.second);
     }
 
@@ -775,8 +748,9 @@ void IceCompModel::reportErrors() {
     write(file, start, "test", "", "test name", m_testname);
 
     if ((m_testname != 'K') && (m_testname != 'O')) {
-      write(file, start, "relative_volume", "1", "relative volume error", 100*volerr/volexact);
-      write(file, start, "relative_max_eta", "1", "relative $\\eta$ error", maxetaerr/pow(domeHexact,m));
+      write(file, start, "relative_volume", "1", "relative volume error", 100 * volerr / volexact);
+      write(file, start, "relative_max_eta", "1", "relative $\\eta$ error",
+            maxetaerr / pow(domeHexact, m));
       write(file, start, "maximum_thickness", "meters", "maximum ice thickness error", maxHerr);
       write(file, start, "average_thickness", "meters", "average ice thickness error", avHerr);
     }
@@ -784,37 +758,47 @@ void IceCompModel::reportErrors() {
     if ((m_testname == 'F') || (m_testname == 'G')) {
       write(file, start, "maximum_temperature", "kelvin", "maximum ice temperature error", maxTerr);
       write(file, start, "average_temperature", "kelvin", "average ice temperature error", avTerr);
-      write(file, start, "maximum_basal_temperature", "kelvin", "maximum basal temperature error", basemaxTerr);
-      write(file, start, "average_basal_temperature", "kelvin", "average basal temperature error", baseavTerr);
+      write(file, start, "maximum_basal_temperature", "kelvin", "maximum basal temperature error",
+            basemaxTerr);
+      write(file, start, "average_basal_temperature", "kelvin", "average basal temperature error",
+            baseavTerr);
 
       {
         units::Converter c(m_sys, "J s^-1 m^-3", "1e6 J s^-1 m^-3");
-        write(file, start, "maximum_sigma", "1e6 J s-1 m-3", "maximum strain heating error", c(max_strain_heating_error));
-        write(file, start, "average_sigma", "1e6 J s-1 m-3", "average strain heating error", c(av_strain_heating_error));
+        write(file, start, "maximum_sigma", "1e6 J s-1 m-3", "maximum strain heating error",
+              c(max_strain_heating_error));
+        write(file, start, "average_sigma", "1e6 J s-1 m-3", "average strain heating error",
+              c(av_strain_heating_error));
       }
 
       {
         units::Converter c(m_sys, "m second^-1", "m year^-1");
-        write(file, start, "maximum_surface_velocity", "m year-1", "maximum ice surface horizontal velocity error", c(maxUerr));
-        write(file, start, "average_surface_velocity", "m year-1", "average ice surface horizontal velocity error", c(avUerr));
-        write(file, start, "maximum_surface_w", "m year-1", "maximum ice surface vertical velocity error", c(maxWerr));
-        write(file, start, "average_surface_w", "m year-1", "average ice surface vertical velocity error", c(avWerr));
+        write(file, start, "maximum_surface_velocity", "m year-1",
+              "maximum ice surface horizontal velocity error", c(maxUerr));
+        write(file, start, "average_surface_velocity", "m year-1",
+              "average ice surface horizontal velocity error", c(avUerr));
+        write(file, start, "maximum_surface_w", "m year-1",
+              "maximum ice surface vertical velocity error", c(maxWerr));
+        write(file, start, "average_surface_w", "m year-1",
+              "average ice surface vertical velocity error", c(avWerr));
       }
     }
 
     if ((m_testname == 'K') || (m_testname == 'O')) {
       write(file, start, "maximum_temperature", "kelvin", "maximum ice temperature error", maxTerr);
       write(file, start, "average_temperature", "kelvin", "average ice temperature error", avTerr);
-      write(file, start, "maximum_bedrock_temperature", "kelvin", "maximum bedrock temperature error", maxTberr);
-      write(file, start, "average_bedrock_temperature", "kelvin", "average bedrock temperature error", avTberr);
+      write(file, start, "maximum_bedrock_temperature", "kelvin",
+            "maximum bedrock temperature error", maxTberr);
+      write(file, start, "average_bedrock_temperature", "kelvin",
+            "average bedrock temperature error", avTberr);
     }
 
     if (m_testname == 'O') {
       units::Converter c(m_sys, "m second^-1", "m year^-1");
-      write(file, start, "maximum_basal_melt_rate", "m year -1", "maximum basal melt rate error", c(maxbmelterr));
+      write(file, start, "maximum_basal_melt_rate", "m year -1", "maximum basal melt rate error",
+            c(maxbmelterr));
     }
   }
-
 }
 
 //! \brief Initialize test V.
@@ -857,26 +841,24 @@ void IceCompModel::test_V_init() {
   }
 
   // set SSA boundary conditions:
-  double upstream_velocity = convert(m_sys, 300.0, "m year-1", "m second-1"),
-    upstream_thk = 600.0;
+  double upstream_velocity = convert(m_sys, 300.0, "m year-1", "m second-1"), upstream_thk = 600.0;
 
-  array::AccessScope list
-    {&m_ice_thickness_bc_mask, &m_geometry.ice_thickness,
-     &m_velocity_bc_mask, &m_velocity_bc_values};
+  array::AccessScope list{ &m_ice_thickness_bc_mask, &m_geometry.ice_thickness, &m_velocity_bc_mask,
+                           &m_velocity_bc_values };
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (i <= 2) {
-      m_velocity_bc_mask(i,j) = 1;
-      m_velocity_bc_values(i,j)  = {upstream_velocity, 0.0};
+      m_velocity_bc_mask(i, j)       = 1;
+      m_velocity_bc_values(i, j)     = { upstream_velocity, 0.0 };
       m_geometry.ice_thickness(i, j) = upstream_thk;
-      m_ice_thickness_bc_mask(i, j) = 1;
+      m_ice_thickness_bc_mask(i, j)  = 1;
     } else {
-      m_velocity_bc_mask(i,j) = 0;
-      m_velocity_bc_values(i,j)  = {0.0, 0.0};
+      m_velocity_bc_mask(i, j)       = 0;
+      m_velocity_bc_values(i, j)     = { 0.0, 0.0 };
       m_geometry.ice_thickness(i, j) = 0;
-      m_ice_thickness_bc_mask(i, j) = 0;
+      m_ice_thickness_bc_mask(i, j)  = 0;
     }
   }
 

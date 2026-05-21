@@ -18,10 +18,10 @@
  */
 
 #include <algorithm>
-#include <cstddef>              // size_t
-#include <memory>
 #include <cmath>
+#include <cstddef> // size_t
 #include <cstring>
+#include <memory>
 #include <mpi.h>
 #include <vector>
 
@@ -156,17 +156,16 @@ void YacOutputWriter::create_intercomm() {
   // We then find the corresponding rank of each leader in the global group and
   // exchange this information between the processes.
   // The intercomm creation is then done using this information.
-  const int local_leader_rank[]  = {0};
-  int local_leader_global_rank[] = {-1};
-  MPI_Group_translate_ranks(local_group, 1, local_leader_rank,
-                            global_group, local_leader_global_rank);
-  MPI_Allgather(local_leader_global_rank, 1, MPI_INT,
-                component_leaders_ranks.data(), 1, MPI_INT, global_comm);
+  const int local_leader_rank[]  = { 0 };
+  int local_leader_global_rank[] = { -1 };
+  MPI_Group_translate_ranks(local_group, 1, local_leader_rank, global_group,
+                            local_leader_global_rank);
+  MPI_Allgather(local_leader_global_rank, 1, MPI_INT, component_leaders_ranks.data(), 1, MPI_INT,
+                global_comm);
   int remote_leader = component_leaders_ranks.back();
 
   int tag = 0;
-  MPI_Intercomm_create(comm(), local_leader_rank[0], global_comm, remote_leader, tag,
-                       &m_intercomm);
+  MPI_Intercomm_create(comm(), local_leader_rank[0], global_comm, remote_leader, tag, &m_intercomm);
 
   MPI_Group_free(&local_group);
   MPI_Group_free(&global_group);
@@ -180,7 +179,7 @@ int YacOutputWriter::tag(const std::string &variable_name, TagTreatment flag) {
   }
 
   if (flag == CREATE_NEW_TAG) {
-    int new_tag = (int)m_variable_tags.size();
+    int new_tag                    = (int)m_variable_tags.size();
     m_variable_tags[variable_name] = new_tag;
     return new_tag;
   }
@@ -214,10 +213,10 @@ void YacOutputWriter::define_yac_grid(const VariableMetadata &variable,
   // Send grid information:
   if (m_leader) {
     // send projection info
-    MPI_Send((void *) proj_string.c_str(), (int)proj_string.size(), MPI_CHAR, 0, 0, m_intercomm);
+    MPI_Send((void *)proj_string.c_str(), (int)proj_string.size(), MPI_CHAR, 0, 0, m_intercomm);
     // send x and y coordinates:
-    MPI_Send((void*)grid.x.data(), (int)grid.x.size(), MPI_DOUBLE, 0, 0, m_intercomm);
-    MPI_Send((void*)grid.y.data(), (int)grid.y.size(), MPI_DOUBLE, 0, 0, m_intercomm);
+    MPI_Send((void *)grid.x.data(), (int)grid.x.size(), MPI_DOUBLE, 0, 0, m_intercomm);
+    MPI_Send((void *)grid.y.data(), (int)grid.y.size(), MPI_DOUBLE, 0, 0, m_intercomm);
   }
 
   if (proj_string.empty()) {
@@ -292,8 +291,7 @@ void YacOutputWriter::end_yac_definitions() {
   m_field_buffer = new double[m_field_buffer_size];
 }
 
-void YacOutputWriter::send_action(int action_id,
-                                  const nlohmann::json &metadata) {
+void YacOutputWriter::send_action(int action_id, const nlohmann::json &metadata) {
   // Only the leader process needs to send actions to the server
   if (not m_leader) {
     return;
@@ -313,7 +311,7 @@ void YacOutputWriter::send_action(int action_id,
 }
 
 YacOutputWriter::YacOutputWriter(MPI_Comm comm, const Config &config, const std::string &mapping)
-  : OutputWriter(comm, config), m_grid_mapping(mapping) {
+    : OutputWriter(comm, config), m_grid_mapping(mapping) {
 
   set_is_async(true);
   {
@@ -437,7 +435,7 @@ void YacOutputWriter::append_impl(const std::string &file_name) {
     MPI_Recv(&last_time, 1, MPI_DOUBLE, 0, 0, m_intercomm, &status);
 
     m_time_length[file_name] = time_length;
-    m_last_time[file_name] = last_time;
+    m_last_time[file_name]   = last_time;
   }
 
   // scatter to other ranks in `comm()`:
@@ -471,8 +469,8 @@ void YacOutputWriter::close_impl(const std::string &file_name) {
   send_action(CLOSE_FILE, info);
 }
 
-void YacOutputWriter::define_dimension_impl(const std::string &file_name,
-                                            const std::string &name, unsigned int length) {
+void YacOutputWriter::define_dimension_impl(const std::string &file_name, const std::string &name,
+                                            unsigned int length) {
 
   // If this dimension has been defined already for this file, return
   if (m_defined_dimension[file_name][name]) {
@@ -552,8 +550,8 @@ void YacOutputWriter::write_array_impl(const std::string &file_name,
     m_buffers.push_back(buffer);
     memcpy(buffer, data, data_size * sizeof(double));
     m_mpi_requests.emplace_back();
-    MPI_Isend((void *)(buffer), data_size, MPI_DOUBLE, 0, tag(variable_name),
-              m_intercomm, &m_mpi_requests.back());
+    MPI_Isend((void *)(buffer), data_size, MPI_DOUBLE, 0, tag(variable_name), m_intercomm,
+              &m_mpi_requests.back());
   }
 }
 
@@ -585,8 +583,8 @@ void YacOutputWriter::write_text_impl(const std::string &file_name,
     // happens automatically at the destructor
     m_text_buffers.push_back(input);
     m_mpi_requests.emplace_back();
-    MPI_Isend((void *)(m_text_buffers.back().data()), data_size, MPI_CHAR, 0,
-              tag(variable_name), m_intercomm, &m_mpi_requests.back());
+    MPI_Isend((void *)(m_text_buffers.back().data()), data_size, MPI_CHAR, 0, tag(variable_name),
+              m_intercomm, &m_mpi_requests.back());
   }
 }
 
@@ -618,8 +616,8 @@ void YacOutputWriter::write_distributed_array_impl(const std::string &file_name,
   // Assemble the "send_field" argument for yac_cput():
   //
   // This method comes from examples/toy_dummy/dummy_ocean_c.c in YAC's source code tree.
-  std::vector<double**> collection_data(collection_size, nullptr);
-  std::vector<double*> point_set_data(collection_size, nullptr);
+  std::vector<double **> collection_data(collection_size, nullptr);
+  std::vector<double *> point_set_data(collection_size, nullptr);
   for (int j = 0; j < collection_size; ++j) {
     point_set_data[j]  = m_field_buffer + (int)(j * (x_size * y_size));
     collection_data[j] = &(point_set_data[j]);
@@ -659,7 +657,7 @@ void YacOutputWriter::write_distributed_array_impl(const std::string &file_name,
 bool yac_component_defined(const std::string &name) {
   int nbr_comps = yac_cget_nbr_comps();
 
-  std::vector<const char*> comp_names(nbr_comps, nullptr);
+  std::vector<const char *> comp_names(nbr_comps, nullptr);
 
   yac_cget_comp_names(nbr_comps, comp_names.data());
 

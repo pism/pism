@@ -19,17 +19,16 @@
 
 #include "pism/frontretreat/calving/EigenCalving.hh"
 
-#include "pism/util/Grid.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/util/array/CellType.hh"
 #include "pism/stressbalance/StressBalance.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/array/CellType.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 namespace calving {
 
-EigenCalving::EigenCalving(std::shared_ptr<const Grid> grid)
-  : StressCalving(grid, 2) {
+EigenCalving::EigenCalving(std::shared_ptr<const Grid> grid) : StressCalving(grid, 2) {
 
   m_K = m_config->get_number("calving.eigen_calving.K");
 
@@ -45,10 +44,12 @@ void EigenCalving::init() {
   m_log->message(2, "* Initializing the 'eigen-calving' mechanism...\n");
 
   if (fabs(m_grid->dx() - m_grid->dy()) / std::min(m_grid->dx(), m_grid->dy()) > 1e-2) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "-calving eigen_calving using a non-square grid cell is not implemented (yet);\n"
-                                  "dx = %f, dy = %f, relative difference = %f",
-                                  m_grid->dx(), m_grid->dy(),
-                                  fabs(m_grid->dx() - m_grid->dy()) / std::max(m_grid->dx(), m_grid->dy()));
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION,
+        "-calving eigen_calving using a non-square grid cell is not implemented (yet);\n"
+        "dx = %f, dy = %f, relative difference = %f",
+        m_grid->dx(), m_grid->dy(),
+        fabs(m_grid->dx() - m_grid->dy()) / std::max(m_grid->dx(), m_grid->dy()));
   }
 
   m_strain_rates.set(0.0);
@@ -58,8 +59,7 @@ void EigenCalving::init() {
 /*!
   See equation (26) in [\ref Winkelmannetal2011].
 */
-void EigenCalving::update(const array::CellType &cell_type,
-                          const array::Vector1 &ice_velocity) {
+void EigenCalving::update(const array::CellType &cell_type, const array::Vector1 &ice_velocity) {
 
   // make a copy with a wider stencil
   m_cell_type.copy_from(cell_type);
@@ -72,11 +72,10 @@ void EigenCalving::update(const array::CellType &cell_type,
   // regime
   const double eigenCalvOffset = 0.0;
 
-  stressbalance::compute_2D_principal_strain_rates(ice_velocity, m_cell_type,
-                                                   m_strain_rates);
+  stressbalance::compute_2D_principal_strain_rates(ice_velocity, m_cell_type, m_strain_rates);
   m_strain_rates.update_ghosts();
 
-  array::AccessScope list{&m_cell_type, &m_calving_rate, &m_strain_rates};
+  array::AccessScope list{ &m_cell_type, &m_calving_rate, &m_strain_rates };
 
   // Compute the horizontal calving rate
   for (auto pt : m_grid->points()) {
@@ -88,9 +87,7 @@ void EigenCalving::update(const array::CellType &cell_type,
 
       // Average of strain-rate eigenvalues in adjacent floating grid cells to be used for
       // eigen-calving:
-      double
-        eigen1 = 0.0,
-        eigen2 = 0.0;
+      double eigen1 = 0.0, eigen2 = 0.0;
       {
         int N = 0;
         for (int p = -1; p < 2; p += 2) {
@@ -135,7 +132,7 @@ void EigenCalving::update(const array::CellType &cell_type,
 }
 
 DiagnosticList EigenCalving::spatial_diagnostics_impl() const {
-  return {{"eigen_calving_rate", Diagnostic::wrap(m_calving_rate)}};
+  return { { "eigen_calving_rate", Diagnostic::wrap(m_calving_rate) } };
 }
 
 } // end of namespace calving

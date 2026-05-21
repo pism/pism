@@ -105,7 +105,7 @@ protected:
   /*!
    * Allocate storage for an array of type `T` and copy metadata from `m_vars`.
    */
-  template<typename T>
+  template <typename T>
   std::shared_ptr<T> allocate(const std::string &name) const {
     auto result = std::make_shared<T>(m_grid, name);
     for (unsigned int k = 0; k < result->ndof(); ++k) {
@@ -407,9 +407,9 @@ private:
 template <class D, class M>
 class TSDiag : public D {
 public:
-  TSDiag(const M *m, const std::string &name)
-    : D(m->grid(), name), model(m) {
+  TSDiag(const M *m, const std::string &name) : D(m->grid(), name), model(m) {
   }
+
 protected:
   const M *model;
 };

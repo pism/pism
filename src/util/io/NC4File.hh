@@ -24,8 +24,7 @@
 namespace pism {
 namespace io {
 
-class NC4File : public NCFile
-{
+class NC4File : public NCFile {
 public:
   NC4File(MPI_Comm com, unsigned int compression_level);
   virtual ~NC4File() = default;
@@ -54,20 +53,18 @@ protected:
 
   // var
   virtual void def_var_chunking_impl(const std::string &name,
-                                    std::vector<size_t> &dimensions) const;
+                                     std::vector<size_t> &dimensions) const;
 
-  virtual void def_var_impl(const std::string &name,
-                           io::Type nctype, const std::vector<std::string> &dims) const;
+  virtual void def_var_impl(const std::string &name, io::Type nctype,
+                            const std::vector<std::string> &dims) const;
 
   virtual void get_vara_double_impl(const std::string &variable_name,
-                                   const std::vector<unsigned int> &start,
-                                   const std::vector<unsigned int> &count,
-                                   double *ip) const;
+                                    const std::vector<unsigned int> &start,
+                                    const std::vector<unsigned int> &count, double *ip) const;
 
   virtual void put_vara_double_impl(const std::string &variable_name,
-                                   const std::vector<unsigned int> &start,
-                                   const std::vector<unsigned int> &count,
-                                   const double *op) const;
+                                    const std::vector<unsigned int> &start,
+                                    const std::vector<unsigned int> &count, const double *op) const;
 
   virtual void put_vara_text_impl(const std::string &variable_name,
                                   const std::vector<unsigned int> &start,
@@ -75,7 +72,8 @@ protected:
 
   virtual void inq_nvars_impl(int &result) const;
 
-  virtual void inq_vardimid_impl(const std::string &variable_name, std::vector<std::string> &result) const;
+  virtual void inq_vardimid_impl(const std::string &variable_name,
+                                 std::vector<std::string> &result) const;
 
   virtual void inq_varnatts_impl(const std::string &variable_name, int &result) const;
 
@@ -84,22 +82,29 @@ protected:
   virtual void inq_varname_impl(unsigned int j, std::string &result) const;
 
   // att
-  virtual void get_att_double_impl(const std::string &variable_name, const std::string &att_name, std::vector<double> &result) const;
+  virtual void get_att_double_impl(const std::string &variable_name, const std::string &att_name,
+                                   std::vector<double> &result) const;
 
-  virtual void get_att_text_impl(const std::string &variable_name, const std::string &att_name, std::string &result) const;
+  virtual void get_att_text_impl(const std::string &variable_name, const std::string &att_name,
+                                 std::string &result) const;
 
-  virtual void put_att_double_impl(const std::string &variable_name, const std::string &att_name, io::Type xtype, const std::vector<double> &data) const;
+  virtual void put_att_double_impl(const std::string &variable_name, const std::string &att_name,
+                                   io::Type xtype, const std::vector<double> &data) const;
 
-  virtual void put_att_text_impl(const std::string &variable_name, const std::string &att_name, const std::string &value) const;
+  virtual void put_att_text_impl(const std::string &variable_name, const std::string &att_name,
+                                 const std::string &value) const;
 
-  virtual void inq_attname_impl(const std::string &variable_name, unsigned int n, std::string &result) const;
+  virtual void inq_attname_impl(const std::string &variable_name, unsigned int n,
+                                std::string &result) const;
 
-  virtual void inq_atttype_impl(const std::string &variable_name, const std::string &att_name, io::Type &result) const;
+  virtual void inq_atttype_impl(const std::string &variable_name, const std::string &att_name,
+                                io::Type &result) const;
 
   // misc
   virtual void set_fill_impl(int fillmode, int &old_modep) const;
 
   virtual void del_att_impl(const std::string &variable_name, const std::string &att_name) const;
+
 protected:
   virtual void set_access_mode(int varid) const;
   virtual void get_put_var_double(const std::string &variable_name,

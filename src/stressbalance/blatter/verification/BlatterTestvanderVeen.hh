@@ -47,25 +47,20 @@ public:
 
   // Exact sliding coefficient beta
   double beta_exact(double x) const;
-private:
-  bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I);
 
-  bool marine_boundary(int face,
-                       const int *node_type,
-                       const double *ice_bottom,
+private:
+  bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex &I);
+
+  bool marine_boundary(int face, const int *node_type, const double *ice_bottom,
                        const double *sea_level);
 
   Vector2d u_bc(double x, double y, double z) const;
 
-  void residual_lateral(const fem::Q1Element3 &element,
-                        const fem::Q1Element3Face &face,
-                        const double *surface_nodal,
-                        const double *z_nodal,
-                        const double *sl_nodal,
+  void residual_lateral(const fem::Q1Element3 &element, const fem::Q1Element3Face &face,
+                        const double *surface_nodal, const double *z_nodal, const double *sl_nodal,
                         Vector2d *residual);
 
-  void residual_surface(const fem::Q1Element3 &element,
-                        const fem::Q1Element3Face &face,
+  void residual_surface(const fem::Q1Element3 &element, const fem::Q1Element3Face &face,
                         Vector2d *residual);
 
   // constant ice hardness

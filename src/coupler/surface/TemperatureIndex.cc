@@ -16,22 +16,22 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <algorithm>            // std::min
+#include <algorithm> // std::min
 
+#include "pism/coupler/AtmosphereModel.hh"
 #include "pism/coupler/surface/TemperatureIndex.hh"
 #include "pism/coupler/surface/localMassBalance.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/Time.hh"
-#include "pism/coupler/AtmosphereModel.hh"
 #include "pism/util/io/File.hh"
 
-#include "pism/util/error_handling.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/array/CellType.hh"
 #include "pism/geometry/Geometry.hh"
-#include "pism/util/array/Forcing.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/array/CellType.hh"
+#include "pism/util/array/Forcing.hh"
+#include "pism/util/error_handling.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace surface {
@@ -40,10 +40,10 @@ namespace surface {
 
 TemperatureIndex::TemperatureIndex(std::shared_ptr<const Grid> g,
                                    std::shared_ptr<atmosphere::AtmosphereModel> input)
-  : SurfaceModel(g, input),
-    m_mass_flux(m_grid, "climatic_mass_balance"),
-    m_firn_depth(m_grid, "firn_depth"),
-    m_snow_depth(m_grid, "snow_depth") {
+    : SurfaceModel(g, input),
+      m_mass_flux(m_grid, "climatic_mass_balance"),
+      m_firn_depth(m_grid, "firn_depth"),
+      m_snow_depth(m_grid, "snow_depth") {
 
   m_base_ddf.snow              = m_config->get_number("surface.pdd.factor_snow");
   m_base_ddf.ice               = m_config->get_number("surface.pdd.factor_ice");
@@ -53,7 +53,7 @@ TemperatureIndex::TemperatureIndex(std::shared_ptr<const Grid> g,
   m_sd_param_a                 = m_config->get_number("surface.pdd.std_dev.param_a");
   m_sd_param_b                 = m_config->get_number("surface.pdd.std_dev.param_b");
 
-  bool use_fausto_params     = m_config->get_flag("surface.pdd.fausto.enabled");
+  bool use_fausto_params = m_config->get_flag("surface.pdd.fausto.enabled");
 
   auto method = m_config->get_string("surface.pdd.method");
 
@@ -73,15 +73,12 @@ TemperatureIndex::TemperatureIndex(std::shared_ptr<const Grid> g,
   auto sd_file = m_config->get_string("surface.pdd.std_dev.file");
 
   if (not sd_file.empty()) {
-    bool sd_periodic = m_config->get_flag("surface.pdd.std_dev.periodic");
-    int max_buffer_size = (int) m_config->get_number("input.forcing.buffer_size");
+    bool sd_periodic    = m_config->get_flag("surface.pdd.std_dev.periodic");
+    int max_buffer_size = (int)m_config->get_number("input.forcing.buffer_size");
 
     File file(m_grid->com, sd_file, io::PISM_NETCDF3, io::PISM_READONLY);
-    m_air_temp_sd = std::make_shared<array::Forcing>(m_grid, file,
-                                                "air_temp_sd", "",
-                                                max_buffer_size,
-                                                sd_periodic,
-                                                LINEAR);
+    m_air_temp_sd = std::make_shared<array::Forcing>(m_grid, file, "air_temp_sd", "",
+                                                     max_buffer_size, sd_periodic, LINEAR);
     m_sd_file_set = true;
   } else {
     m_air_temp_sd = array::Forcing::Constant(m_grid, "air_temp_sd", 0.0);
@@ -99,15 +96,11 @@ TemperatureIndex::TemperatureIndex(std::shared_ptr<const Grid> g,
 
   m_mass_flux.metadata()["comment"] = "positive values correspond to ice gain";
 
-  m_snow_depth.metadata(0)
-      .long_name("snow cover depth (set to zero once a year)")
-      .units("m");
+  m_snow_depth.metadata(0).long_name("snow cover depth (set to zero once a year)").units("m");
   m_snow_depth.set(0.0);
 
-  m_firn_depth.metadata(0)
-      .long_name("firn cover depth")
-      .units("m");
-  m_firn_depth.metadata()["valid_min"] = {0.0};
+  m_firn_depth.metadata(0).long_name("firn cover depth").units("m");
+  m_firn_depth.metadata()["valid_min"] = { 0.0 };
   m_firn_depth.set(0.0);
 
   m_temperature = allocate_temperature(g);
@@ -124,22 +117,19 @@ void TemperatureIndex::init_impl(const Geometry &geometry) {
 
   // report user's modeling choices
   {
-    m_log->message(2,
-                   "* Initializing the default temperature-index, PDD-based surface processes scheme.\n"
-                   "  Precipitation and 2m air temperature provided by atmosphere are inputs.\n"
-                   "  Surface mass balance and ice upper surface temperature are outputs.\n"
-                   "  See PISM User's Manual for control of degree-day factors.\n");
+    m_log->message(
+        2, "* Initializing the default temperature-index, PDD-based surface processes scheme.\n"
+           "  Precipitation and 2m air temperature provided by atmosphere are inputs.\n"
+           "  Surface mass balance and ice upper surface temperature are outputs.\n"
+           "  See PISM User's Manual for control of degree-day factors.\n");
 
-    m_log->message(2,
-                   "  Computing number of positive degree-days by: %s.\n",
+    m_log->message(2, "  Computing number of positive degree-days by: %s.\n",
                    m_mbscheme->method().c_str());
 
     if (m_faustogreve) {
-      m_log->message(2,
-                     "  Setting PDD parameters from [Faustoetal2009].\n");
+      m_log->message(2, "  Setting PDD parameters from [Faustoetal2009].\n");
     } else {
-      m_log->message(2,
-                     "  Using default PDD parameters.\n");
+      m_log->message(2, "  Using default PDD parameters.\n");
     }
   }
 
@@ -147,8 +137,7 @@ void TemperatureIndex::init_impl(const Geometry &geometry) {
   {
     auto sd_file = m_config->get_string("surface.pdd.std_dev.file");
     if (sd_file.empty()) {
-      m_log->message(2,
-                     "  Using constant standard deviation of near-surface temperature.\n");
+      m_log->message(2, "  Using constant standard deviation of near-surface temperature.\n");
 
       auto attributes = m_air_temp_sd->metadata();
       // replace with a constant array::Forcing:
@@ -156,8 +145,7 @@ void TemperatureIndex::init_impl(const Geometry &geometry) {
       // restore metadata:
       m_air_temp_sd->metadata() = attributes;
     } else {
-      m_log->message(2,
-                     "  Reading standard deviation of near-surface temperature from '%s'...\n",
+      m_log->message(2, "  Reading standard deviation of near-surface temperature from '%s'...\n",
                      sd_file.c_str());
 
       bool sd_periodic = m_config->get_flag("surface.pdd.std_dev.periodic");
@@ -220,11 +208,10 @@ MaxTimestep TemperatureIndex::max_timestep_impl(double my_t) const {
 
 double TemperatureIndex::compute_next_balance_year_start(double time) {
   // compute the time corresponding to the beginning of the next balance year
-  double
-    balance_year_start_day = m_config->get_number("surface.mass_balance_year_start_day"),
-    one_day                = units::convert(m_sys, 1.0, "days", "seconds"),
-    year_start             = this->time().calendar_year_start(time),
-    balance_year_start     = year_start + (balance_year_start_day - 1.0) * one_day;
+  double balance_year_start_day = m_config->get_number("surface.mass_balance_year_start_day"),
+         one_day                = units::convert(m_sys, 1.0, "days", "seconds"),
+         year_start             = this->time().calendar_year_start(time),
+         balance_year_start     = year_start + (balance_year_start_day - 1.0) * one_day;
 
   if (balance_year_start > time) {
     return balance_year_start;
@@ -261,13 +248,18 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
   const auto &mask = geometry.cell_type;
   const auto &H    = geometry.ice_thickness;
 
-  array::AccessScope list{&mask, &H, m_air_temp_sd.get(), &m_mass_flux,
-                               &m_firn_depth, &m_snow_depth,
-                               m_accumulation.get(), m_melt.get(), m_runoff.get()};
+  array::AccessScope list{ &mask,
+                           &H,
+                           m_air_temp_sd.get(),
+                           &m_mass_flux,
+                           &m_firn_depth,
+                           &m_snow_depth,
+                           m_accumulation.get(),
+                           m_melt.get(),
+                           m_runoff.get() };
 
-  const double
-    sigmalapserate = m_config->get_number("surface.pdd.std_dev.lapse_lat_rate"),
-    sigmabaselat   = m_config->get_number("surface.pdd.std_dev.lapse_lat_base");
+  const double sigmalapserate = m_config->get_number("surface.pdd.std_dev.lapse_lat_rate"),
+               sigmabaselat   = m_config->get_number("surface.pdd.std_dev.lapse_lat_base");
 
   const array::Scalar *latitude = &geometry.latitude;
   if ((fausto_greve != nullptr) or sigmalapserate != 0.0) {
@@ -275,9 +267,8 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
   }
 
   if (fausto_greve != nullptr) {
-    const array::Scalar
-      *longitude        = &geometry.latitude,
-      *surface_altitude = &geometry.ice_surface_elevation;
+    const array::Scalar *longitude        = &geometry.latitude,
+                        *surface_altitude = &geometry.ice_surface_elevation;
 
     fausto_greve->update_temp_mj(*surface_altitude, *latitude, *longitude);
   }
@@ -345,7 +336,7 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
         for (int k = 0; k < N; ++k) {
           S[k] = m_sd_param_a * (T[k] - 273.15) + m_sd_param_b;
           if (S[k] < 0.0) {
-            S[k] = 0.0 ;
+            S[k] = 0.0;
           }
         }
         (*m_air_temp_sd)(i, j) = S[0]; // ensure correct SD reporting
@@ -374,17 +365,10 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
 
         // make copies of firn and snow depth values at this point to avoid accessing 2D
         // fields in the inner loop
-        double
-          ice  = H(i, j),
-          firn = m_firn_depth(i, j),
-          snow = m_snow_depth(i, j);
+        double ice = H(i, j), firn = m_firn_depth(i, j), snow = m_snow_depth(i, j);
 
         // accumulation, melt, runoff over this time-step
-        double
-          A   = 0.0,
-          M   = 0.0,
-          R   = 0.0,
-          SMB = 0.0;
+        double A = 0.0, M = 0.0, R = 0.0, SMB = 0.0;
 
         for (int k = 0; k < N; ++k) {
           if (ts[k] >= next_snow_depth_reset) {
@@ -397,8 +381,7 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
           const double accumulation = P[k] * dtseries;
 
           LocalMassBalance::Changes changes;
-          changes = m_mbscheme->step(ddf, PDDs[k],
-                                     ice, firn, snow, accumulation);
+          changes = m_mbscheme->step(ddf, PDDs[k], ice, firn, snow, accumulation);
 
           // update ice thickness
           ice += changes.smb;
@@ -414,9 +397,9 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
 
           // update total accumulation, melt, and runoff
           {
-            A   += accumulation;
-            M   += changes.melt;
-            R   += changes.runoff;
+            A += accumulation;
+            M += changes.melt;
+            R += changes.runoff;
             SMB += changes.smb;
           }
         } // end of the time-stepping loop
@@ -428,9 +411,9 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
         // set total accumulation, melt, and runoff, and SMB at this point, converting
         // from "meters, ice equivalent" to "kg / m^2"
         {
-          (*m_accumulation)(i, j)          = A * ice_density;
-          (*m_melt)(i, j)                  = M * ice_density;
-          (*m_runoff)(i, j)                = R * ice_density;
+          (*m_accumulation)(i, j) = A * ice_density;
+          (*m_melt)(i, j)         = M * ice_density;
+          (*m_runoff)(i, j)       = R * ice_density;
           // m_mass_flux (unlike m_accumulation, m_melt, and m_runoff), is a
           // rate. m * (kg / m^3) / second = kg / m^2 / second
           m_mass_flux(i, j) = SMB * ice_density / dt;
@@ -438,8 +421,8 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
       }
 
       if (mask.ice_free_ocean(i, j)) {
-        m_firn_depth(i, j) = 0.0;  // no firn in the ocean
-        m_snow_depth(i, j) = 0.0;  // snow over the ocean does not stick
+        m_firn_depth(i, j) = 0.0; // no firn in the ocean
+        m_snow_depth(i, j) = 0.0; // snow over the ocean does not stick
       }
     }
   } catch (...) {
@@ -460,27 +443,27 @@ const array::Scalar &TemperatureIndex::temperature_impl() const {
   return *m_temperature;
 }
 
-const array::Scalar& TemperatureIndex::accumulation_impl() const {
+const array::Scalar &TemperatureIndex::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const array::Scalar& TemperatureIndex::melt_impl() const {
+const array::Scalar &TemperatureIndex::melt_impl() const {
   return *m_melt;
 }
 
-const array::Scalar& TemperatureIndex::runoff_impl() const {
+const array::Scalar &TemperatureIndex::runoff_impl() const {
   return *m_runoff;
 }
 
-const array::Scalar& TemperatureIndex::firn_depth() const {
+const array::Scalar &TemperatureIndex::firn_depth() const {
   return m_firn_depth;
 }
 
-const array::Scalar& TemperatureIndex::snow_depth() const {
+const array::Scalar &TemperatureIndex::snow_depth() const {
   return m_snow_depth;
 }
 
-const array::Scalar& TemperatureIndex::air_temp_sd() const {
+const array::Scalar &TemperatureIndex::air_temp_sd() const {
   return *m_air_temp_sd;
 }
 
@@ -498,9 +481,9 @@ void TemperatureIndex::write_state_impl(const OutputFile &output) const {
 
 DiagnosticList TemperatureIndex::spatial_diagnostics_impl() const {
   DiagnosticList result = {
-    {"air_temp_sd", Diagnostic::wrap(*m_air_temp_sd)},
-    {"snow_depth",  Diagnostic::wrap(m_snow_depth)},
-    {"firn_depth",  Diagnostic::wrap(m_firn_depth)},
+    { "air_temp_sd", Diagnostic::wrap(*m_air_temp_sd) },
+    { "snow_depth", Diagnostic::wrap(m_snow_depth) },
+    { "firn_depth", Diagnostic::wrap(m_firn_depth) },
   };
 
   result = pism::combine(result, SurfaceModel::spatial_diagnostics_impl());

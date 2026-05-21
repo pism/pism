@@ -18,11 +18,11 @@
  */
 
 #include "pism/coupler/FrontalMelt.hh"
-#include "pism/util/MaxTimestep.hh"
-#include "pism/util/pism_utilities.hh" // combine()
 #include "pism/geometry/Geometry.hh"
 #include "pism/geometry/part_grid_threshold_thickness.hh"
-#include "pism/util/Mask.hh"         // GeometryCalculator
+#include "pism/util/Mask.hh" // GeometryCalculator
+#include "pism/util/MaxTimestep.hh"
+#include "pism/util/pism_utilities.hh" // combine()
 
 namespace pism {
 
@@ -46,20 +46,18 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
 
   GeometryCalculator gc(*m_config);
 
-  const array::Scalar2
-    &bed_elevation       = geometry.bed_elevation;
-  const array::Scalar1
-    &sea_level_elevation = geometry.sea_level_elevation,
-    &surface_elevation   = geometry.ice_surface_elevation,
-    &ice_thickness       = geometry.ice_thickness;
-  const array::CellType1 &cell_type = geometry.cell_type;
+  const array::Scalar2 &bed_elevation       = geometry.bed_elevation;
+  const array::Scalar1 &sea_level_elevation = geometry.sea_level_elevation,
+                       &surface_elevation   = geometry.ice_surface_elevation,
+                       &ice_thickness       = geometry.ice_thickness;
+  const array::CellType1 &cell_type         = geometry.cell_type;
 
-  const double
-    ice_density = m_config->get_number("constants.ice.density"),
-    alpha       = ice_density / m_config->get_number("constants.sea_water.density");
+  const double ice_density = m_config->get_number("constants.ice.density"),
+               alpha       = ice_density / m_config->get_number("constants.sea_water.density");
 
-  array::AccessScope list{&cell_type, &frontal_melt_rate, &sea_level_elevation,
-                               &bed_elevation, &surface_elevation, &ice_thickness, &result};
+  array::AccessScope list{ &cell_type,     &frontal_melt_rate, &sea_level_elevation,
+                           &bed_elevation, &surface_elevation, &ice_thickness,
+                           &result };
 
   ParallelSection loop(m_grid->com);
   try {
@@ -67,9 +65,7 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
       const int i = p.i(), j = p.j();
 
       if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_ice(i, j)) {
-        const double
-          bed       = bed_elevation(i, j),
-          sea_level = sea_level_elevation(i, j);
+        const double bed = bed_elevation(i, j), sea_level = sea_level_elevation(i, j);
 
         auto H = ice_thickness.star(i, j);
         auto h = surface_elevation.star(i, j);
@@ -79,9 +75,8 @@ void FrontalMelt::compute_retreat_rate(const Geometry &geometry,
 
         int m = gc.mask(sea_level, bed, H_threshold);
 
-        double H_submerged = (mask::grounded(m) ?
-                              std::max(sea_level - bed, 0.0) :
-                              alpha * H_threshold);
+        double H_submerged =
+            (mask::grounded(m) ? std::max(sea_level - bed, 0.0) : alpha * H_threshold);
 
         result(i, j) = (H_submerged / H_threshold) * frontal_melt_rate(i, j);
       } else {
@@ -109,8 +104,7 @@ FrontalMelt::FrontalMelt(std::shared_ptr<const Grid> g, std::shared_ptr<FrontalM
 }
 
 // "model" constructor
-FrontalMelt::FrontalMelt(std::shared_ptr<const Grid> g)
-  : FrontalMelt(g, nullptr) {
+FrontalMelt::FrontalMelt(std::shared_ptr<const Grid> g) : FrontalMelt(g, nullptr) {
   // empty
 }
 
@@ -130,11 +124,11 @@ void FrontalMelt::update(const FrontalMeltInputs &inputs, double t, double dt) {
   compute_retreat_rate(*inputs.geometry, frontal_melt_rate(), m_retreat_rate);
 }
 
-const array::Scalar& FrontalMelt::frontal_melt_rate() const {
+const array::Scalar &FrontalMelt::frontal_melt_rate() const {
   return frontal_melt_rate_impl();
 }
 
-const array::Scalar& FrontalMelt::retreat_rate() const {
+const array::Scalar &FrontalMelt::retreat_rate() const {
   return m_retreat_rate;
 }
 
@@ -172,35 +166,30 @@ void FrontalMelt::write_state_impl(const OutputFile &output) const {
 namespace diagnostics {
 
 /*! @brief Report frontal melt rate. */
-class FrontalMeltRate : public DiagAverageRate<FrontalMelt>
-{
+class FrontalMeltRate : public DiagAverageRate<FrontalMelt> {
 public:
   FrontalMeltRate(const FrontalMelt *m)
-    : DiagAverageRate<FrontalMelt>(m, "frontal_melt_rate", RATE) {
+      : DiagAverageRate<FrontalMelt>(m, "frontal_melt_rate", RATE) {
 
     m_accumulator.metadata()["units"] = "m";
 
     m_vars = { { m_sys, "frontal_melt_rate", *m_grid } };
-    m_vars[0]
-        .long_name("frontal melt rate")
-        .units("m second^-1")
-        .output_units("m day^-1");
+    m_vars[0].long_name("frontal melt rate").units("m second^-1").output_units("m day^-1");
     m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+    m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
   }
 
 protected:
-  const array::Scalar& model_input() {
+  const array::Scalar &model_input() {
     return model->frontal_melt_rate();
   }
 };
 
 /*! @brief Report retreat rate due to frontal melt. */
-class FrontalMeltRetreatRate : public DiagAverageRate<FrontalMelt>
-{
+class FrontalMeltRetreatRate : public DiagAverageRate<FrontalMelt> {
 public:
   FrontalMeltRetreatRate(const FrontalMelt *m)
-    : DiagAverageRate<FrontalMelt>(m, "frontal_melt_retreat_rate", RATE) {
+      : DiagAverageRate<FrontalMelt>(m, "frontal_melt_retreat_rate", RATE) {
     m_accumulator.metadata()["units"] = "m";
 
     m_vars = { { m_sys, "frontal_melt_retreat_rate", *m_grid } };
@@ -209,12 +198,12 @@ public:
         .units("m second^-1")
         .output_units("m year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
-    m_vars[0]["comment"] = "takes into account what part of the front is submerged";
+    m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
+    m_vars[0]["comment"]      = "takes into account what part of the front is submerged";
   }
 
 protected:
-  const array::Scalar& model_input() {
+  const array::Scalar &model_input() {
     return model->retreat_rate();
   }
 };
@@ -223,10 +212,9 @@ protected:
 
 DiagnosticList FrontalMelt::spatial_diagnostics_impl() const {
   using namespace diagnostics;
-  DiagnosticList result = {
-    {"frontal_melt_rate", Diagnostic::Ptr(new FrontalMeltRate(this))},
-    {"frontal_melt_retreat_rate", Diagnostic::Ptr(new FrontalMeltRetreatRate(this))}
-  };
+  DiagnosticList result = { { "frontal_melt_rate", Diagnostic::Ptr(new FrontalMeltRate(this)) },
+                            { "frontal_melt_retreat_rate",
+                              Diagnostic::Ptr(new FrontalMeltRetreatRate(this)) } };
 
   if (m_input_model) {
     return combine(m_input_model->spatial_diagnostics(), result);

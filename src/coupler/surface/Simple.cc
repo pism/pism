@@ -25,8 +25,9 @@
 namespace pism {
 namespace surface {
 
-Simple::Simple(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere::AtmosphereModel> atmosphere)
-  : SurfaceModel(g, atmosphere) {
+Simple::Simple(std::shared_ptr<const Grid> g,
+               std::shared_ptr<atmosphere::AtmosphereModel> atmosphere)
+    : SurfaceModel(g, atmosphere) {
 
   m_temperature = allocate_temperature(g);
   m_mass_flux   = allocate_mass_flux(g);
@@ -36,11 +37,10 @@ void Simple::init_impl(const Geometry &geometry) {
 
   m_atmosphere->init(geometry);
 
-  m_log->message(2,
-             "* Initializing the simplest PISM surface (snow) processes model Simple.\n"
-             "  It passes atmospheric state directly to upper ice fluid surface:\n"
-             "    surface mass balance          := precipitation,\n"
-             "    ice upper surface temperature := 2m air temperature.\n");
+  m_log->message(2, "* Initializing the simplest PISM surface (snow) processes model Simple.\n"
+                    "  It passes atmospheric state directly to upper ice fluid surface:\n"
+                    "    surface mass balance          := precipitation,\n"
+                    "    ice upper surface temperature := 2m air temperature.\n");
 }
 
 void Simple::update_impl(const Geometry &geometry, double t, double dt) {

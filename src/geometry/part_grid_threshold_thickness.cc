@@ -34,13 +34,10 @@ double part_grid_threshold_thickness(stencils::Star<int> cell_type,
                                      double bed_elevation) {
   // get mean ice thickness and surface elevation over adjacent
   // icy cells
-  double
-    H_average   = 0.0,
-    h_average   = 0.0,
-    H_threshold = 0.0;
+  double H_average = 0.0, h_average = 0.0, H_threshold = 0.0;
   int N = 0;
 
-  for (auto d : {North, East, South, West}) {
+  for (auto d : { North, East, South, West }) {
     if (mask::icy(cell_type[d])) {
       H_average += ice_thickness[d];
       h_average += surface_elevation[d];

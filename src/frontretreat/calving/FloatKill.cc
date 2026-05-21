@@ -19,33 +19,28 @@
 
 #include "pism/frontretreat/calving/FloatKill.hh"
 
-#include "pism/util/Mask.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/array/CellType.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/Mask.hh"
+#include "pism/util/array/CellType.hh"
 
 namespace pism {
 namespace calving {
 
-FloatKill::FloatKill(std::shared_ptr<const Grid> g)
-  : Component(g),
-    m_old_mask(m_grid, "old_mask") {
-  m_margin_only = m_config->get_flag("calving.float_kill.margin_only");
+FloatKill::FloatKill(std::shared_ptr<const Grid> g) : Component(g), m_old_mask(m_grid, "old_mask") {
+  m_margin_only               = m_config->get_flag("calving.float_kill.margin_only");
   m_calve_near_grounding_line = m_config->get_flag("calving.float_kill.calve_near_grounding_line");
 }
 
 void FloatKill::init() {
-  m_log->message(2,
-                 "* Initializing calving using the floatation criterion (float_kill)...\n");
+  m_log->message(2, "* Initializing calving using the floatation criterion (float_kill)...\n");
 
   if (m_margin_only) {
-    m_log->message(2,
-                   "  [only cells at the ice margin are calved during a given time step]\n");
+    m_log->message(2, "  [only cells at the ice margin are calved during a given time step]\n");
   }
 
   if (not m_calve_near_grounding_line) {
-    m_log->message(2,
-                   "  [keeping floating cells near the grounding line]\n");
+    m_log->message(2, "  [keeping floating cells near the grounding line]\n");
   }
 }
 
@@ -63,7 +58,7 @@ void FloatKill::update(array::Scalar &cell_type, array::Scalar &ice_thickness) {
   // this call fills ghosts of m_old_mask
   m_old_mask.copy_from(cell_type);
 
-  array::AccessScope list{&cell_type, &m_old_mask, &ice_thickness};
+  array::AccessScope list{ &cell_type, &m_old_mask, &ice_thickness };
 
   const bool dont_calve_near_grounded_ice = not m_calve_near_grounding_line;
 

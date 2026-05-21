@@ -32,8 +32,7 @@ YieldStressInputs::YieldStressInputs() {
 }
 
 YieldStress::YieldStress(std::shared_ptr<const Grid> g)
-  : Component(g),
-  m_basal_yield_stress(m_grid, "tauc") {
+    : Component(g), m_basal_yield_stress(m_grid, "tauc") {
 
   // PROPOSED standard_name = land_ice_basal_material_yield_stress
   m_basal_yield_stress.metadata(0)
@@ -76,7 +75,7 @@ void YieldStress::update(const YieldStressInputs &inputs, double t, double dt) {
   this->update_impl(inputs, t, dt);
 }
 
-const array::Scalar& YieldStress::basal_material_yield_stress() {
+const array::Scalar &YieldStress::basal_material_yield_stress() {
   return m_basal_yield_stress;
 }
 
@@ -102,7 +101,7 @@ void YieldStress::write_state_impl(const OutputFile &output) const {
 }
 
 DiagnosticList YieldStress::spatial_diagnostics_impl() const {
-  return {{"tauc", Diagnostic::wrap(m_basal_yield_stress)}};
+  return { { "tauc", Diagnostic::wrap(m_basal_yield_stress) } };
 }
 
 std::string YieldStress::name() const {

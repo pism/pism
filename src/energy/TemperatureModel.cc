@@ -20,12 +20,12 @@
 #include "pism/energy/TemperatureModel.hh"
 #include "pism/energy/tempSystem.hh"
 #include "pism/energy/utilities.hh"
+#include "pism/util/Logger.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/Logger.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace energy {
@@ -40,10 +40,10 @@ TemperatureModel::TemperatureModel(
       .long_name("ice temperature")
       .units("kelvin")
       .standard_name("land_ice_temperature");
-  m_ice_temperature.metadata()["valid_min"] = {0.0};
+  m_ice_temperature.metadata()["valid_min"] = { 0.0 };
 }
 
-const array::Array3D & TemperatureModel::temperature() const {
+const array::Array3D &TemperatureModel::temperature() const {
   return m_ice_temperature;
 }
 
@@ -69,8 +69,7 @@ void TemperatureModel::restart_impl(const File &input_file, int record) {
   compute_enthalpy_cold(m_ice_temperature, ice_thickness, m_ice_enthalpy);
 }
 
-void TemperatureModel::bootstrap_impl(const File &input_file,
-                                      const array::Scalar &ice_thickness,
+void TemperatureModel::bootstrap_impl(const File &input_file, const array::Scalar &ice_thickness,
                                       const array::Scalar &surface_temperature,
                                       const array::Scalar &climatic_mass_balance,
                                       const array::Scalar &basal_heat_flux) {
@@ -169,61 +168,67 @@ This method should be kept because it is worth having alternative physics, and
   */
 void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
   // current time does not matter here
-  (void) t;
+  (void)t;
 
   using mask::ocean;
 
   Logger log(MPI_COMM_SELF, m_log->get_threshold());
 
-  const double
-    ice_density        = m_config->get_number("constants.ice.density"),
-    ice_c              = m_config->get_number("constants.ice.specific_heat_capacity"),
-    L                  = m_config->get_number("constants.fresh_water.latent_heat_of_fusion"),
-    melting_point_temp = m_config->get_number("constants.fresh_water.melting_point_temperature"),
-    beta_CC_grad       = m_config->get_number("constants.ice.beta_Clausius_Clapeyron") * ice_density * m_config->get_number("constants.standard_gravity");
+  const double ice_density = m_config->get_number("constants.ice.density"),
+               ice_c       = m_config->get_number("constants.ice.specific_heat_capacity"),
+               L           = m_config->get_number("constants.fresh_water.latent_heat_of_fusion"),
+               melting_point_temp =
+                   m_config->get_number("constants.fresh_water.melting_point_temperature"),
+               beta_CC_grad = m_config->get_number("constants.ice.beta_Clausius_Clapeyron") *
+                              ice_density * m_config->get_number("constants.standard_gravity");
 
   const bool allow_above_melting = m_config->get_flag("energy.allow_temperature_above_melting");
 
   // this is bulge limit constant in K; is max amount by which ice
   //   or bedrock can be lower than surface temperature
-  const double bulge_max  = m_config->get_number("energy.enthalpy.cold_bulge_max") / ice_c;
+  const double bulge_max = m_config->get_number("energy.enthalpy.cold_bulge_max") / ice_c;
 
   inputs.check();
-  const array::Array3D
-    &strain_heating3 = *inputs.volumetric_heating_rate,
-    &u3              = *inputs.u3,
-    &v3              = *inputs.v3,
-    &w3              = *inputs.w3;
+  const array::Array3D &strain_heating3 = *inputs.volumetric_heating_rate, &u3 = *inputs.u3,
+                       &v3 = *inputs.v3, &w3 = *inputs.w3;
 
   const auto &cell_type = *inputs.cell_type;
 
-  const array::Scalar
-    &basal_frictional_heating = *inputs.basal_frictional_heating,
-    &basal_heat_flux          = *inputs.basal_heat_flux,
-    &shelf_base_temp          = *inputs.shelf_base_temp,
-    &ice_surface_temp         = *inputs.surface_temp,
-    &till_water_thickness     = *inputs.till_water_thickness;
+  const array::Scalar &basal_frictional_heating = *inputs.basal_frictional_heating,
+                      &basal_heat_flux          = *inputs.basal_heat_flux,
+                      &shelf_base_temp          = *inputs.shelf_base_temp,
+                      &ice_surface_temp         = *inputs.surface_temp,
+                      &till_water_thickness     = *inputs.till_water_thickness;
 
   const array::Scalar1 &ice_thickness = *inputs.ice_thickness;
 
-  array::AccessScope list{&ice_surface_temp, &shelf_base_temp, &ice_thickness,
-      &cell_type, &basal_heat_flux, &till_water_thickness, &basal_frictional_heating,
-      &u3, &v3, &w3, &strain_heating3, &m_basal_melt_rate, &m_ice_temperature, &m_work};
+  array::AccessScope list{ &ice_surface_temp,
+                           &shelf_base_temp,
+                           &ice_thickness,
+                           &cell_type,
+                           &basal_heat_flux,
+                           &till_water_thickness,
+                           &basal_frictional_heating,
+                           &u3,
+                           &v3,
+                           &w3,
+                           &strain_heating3,
+                           &m_basal_melt_rate,
+                           &m_ice_temperature,
+                           &m_work };
 
-  energy::tempSystemCtx system(m_grid->z(), "temperature",
-                               m_grid->dx(), m_grid->dy(), dt,
-                               *m_config,
-                               m_ice_temperature, u3, v3, w3, strain_heating3);
+  energy::tempSystemCtx system(m_grid->z(), "temperature", m_grid->dx(), m_grid->dy(), dt,
+                               *m_config, m_ice_temperature, u3, v3, w3, strain_heating3);
 
-  double dz = system.dz();
-  const std::vector<double>& z_fine = system.z();
-  size_t Mz_fine = z_fine.size();
-  std::vector<double> x(Mz_fine);// space for solution of system
+  double dz                         = system.dz();
+  const std::vector<double> &z_fine = system.z();
+  size_t Mz_fine                    = z_fine.size();
+  std::vector<double> x(Mz_fine);    // space for solution of system
   std::vector<double> Tnew(Mz_fine); // post-processed solution
 
   // counts unreasonably low temperature values; deprecated?
   unsigned int maxLowTempCount = m_config->get_number("energy.max_low_temperature_count");
-  const double T_minimum = m_config->get_number("energy.minimum_allowed_temperature");
+  const double T_minimum       = m_config->get_number("energy.minimum_allowed_temperature");
 
   double margin_threshold = m_config->get_number("energy.margin_ice_thickness_limit");
 
@@ -232,14 +237,12 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
-      MaskValue mask = static_cast<MaskValue>(cell_type.as_int(i,j));
+      MaskValue mask = static_cast<MaskValue>(cell_type.as_int(i, j));
 
-      const double H = ice_thickness(i, j);
+      const double H         = ice_thickness(i, j);
       const double T_surface = ice_surface_temp(i, j);
 
-      system.initThisColumn(i, j,
-                            marginal(ice_thickness, i, j, margin_threshold),
-                            mask, H);
+      system.initThisColumn(i, j, marginal(ice_thickness, i, j, margin_threshold), mask, H);
 
       const int ks = system.ks();
 
@@ -251,26 +254,25 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
 
         // set boundary values for tridiagonal system
         system.setSurfaceBoundaryValuesThisColumn(T_surface);
-        system.setBasalBoundaryValuesThisColumn(basal_heat_flux(i,j),
-                                                shelf_base_temp(i,j),
-                                                basal_frictional_heating(i,j));
+        system.setBasalBoundaryValuesThisColumn(basal_heat_flux(i, j), shelf_base_temp(i, j),
+                                                basal_frictional_heating(i, j));
 
         // solve the system for this column; melting not addressed yet
         system.solveThisColumn(x);
-      }       // end of "if there are enough points in ice to bother ..."
+      } // end of "if there are enough points in ice to bother ..."
 
       // prepare for melting/refreezing
-      double bwatnew = till_water_thickness(i,j);
+      double bwatnew = till_water_thickness(i, j);
 
       // insert solution for generic ice segments
-      for (int k=1; k <= ks; k++) {
+      for (int k = 1; k <= ks; k++) {
         if (allow_above_melting) { // in the ice
           Tnew[k] = x[k];
         } else {
-          const double
-            Tpmp = melting_point_temp - beta_CC_grad * (H - z_fine[k]); // FIXME issue #15
+          const double Tpmp =
+              melting_point_temp - beta_CC_grad * (H - z_fine[k]); // FIXME issue #15
           if (x[k] > Tpmp) {
-            Tnew[k] = Tpmp;
+            Tnew[k]        = Tpmp;
             double Texcess = x[k] - Tpmp; // always positive
             column_drainage(ice_density, ice_c, L, z_fine[k], dz, &Texcess, &bwatnew);
             // Texcess  will always come back zero here; ignore it
@@ -297,13 +299,13 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
       if (ks > 0) {
         if (allow_above_melting == true) { // ice/rock interface
           Tnew[0] = x[0];
-        } else {  // compute diff between x[k0] and Tpmp; melt or refreeze as appropriate
+        } else { // compute diff between x[k0] and Tpmp; melt or refreeze as appropriate
           const double Tpmp = melting_point_temp - beta_CC_grad * H; // FIXME issue #15
-          double Texcess = x[0] - Tpmp; // positive or negative
+          double Texcess    = x[0] - Tpmp;                           // positive or negative
           if (ocean(mask)) {
             // when floating, only half a segment has had its temperature raised
             // above Tpmp
-            column_drainage(ice_density, ice_c, L, 0.0, dz/2.0, &Texcess, &bwatnew);
+            column_drainage(ice_density, ice_c, L, 0.0, dz / 2.0, &Texcess, &bwatnew);
           } else {
             column_drainage(ice_density, ice_c, L, 0.0, dz, &Texcess, &bwatnew);
           }
@@ -316,7 +318,7 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
           log.message(1,
                       "  [[too low (<200) ice/bedrock segment temp T = %f at %d,%d;"
                       " proc %d; mask=%d; w=%f]]\n",
-                      Tnew[0],i,j,m_grid->rank(), mask,
+                      Tnew[0], i, j, m_grid->rank(), mask,
                       units::convert(m_sys, system.w(0), "m second^-1", "m year^-1"));
 
           m_stats.low_temperature_counter++;
@@ -337,13 +339,13 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
 
       // basal_melt_rate(i,j) is rate of mass loss at bottom of ice
       if (ocean(mask)) {
-        m_basal_melt_rate(i,j) = 0.0;
+        m_basal_melt_rate(i, j) = 0.0;
       } else {
         // basalMeltRate is rate of change of bwat;  can be negative
         //   (subglacial water freezes-on); note this rate is calculated
         //   *before* limiting or other nontrivial modelling of bwat,
         //   which is Hydrology's job
-        m_basal_melt_rate(i,j) = (bwatnew - till_water_thickness(i,j)) / dt;
+        m_basal_melt_rate(i, j) = (bwatnew - till_water_thickness(i, j)) / dt;
       } // end of the grounded case
     }
   } catch (...) {
@@ -377,37 +379,34 @@ void TemperatureModel::write_state_impl(const OutputFile &output) const {
 
 //! Compute the melt water which should go to the base if \f$T\f$ is above pressure-melting.
 void TemperatureModel::column_drainage(const double rho, const double c, const double L,
-                                       const double z, const double dz,
-                                       double *Texcess, double *bwat) const {
+                                       const double z, const double dz, double *Texcess,
+                                       double *bwat) const {
 
-  const double
-    darea      = m_grid->cell_area(),
-    dvol       = darea * dz,
-    dE         = rho * c * (*Texcess) * dvol,
-    massmelted = dE / L;
+  const double darea = m_grid->cell_area(), dvol = darea * dz, dE = rho * c * (*Texcess) * dvol,
+               massmelted = dE / L;
 
   if (*Texcess >= 0.0) {
     // T is at or above pressure-melting temp, so temp needs to be set to
     // pressure-melting; a fraction of excess energy is turned into melt water at base
     // note massmelted is POSITIVE!
-    const double FRACTION_TO_BASE
-                         = (z < 100.0) ? 0.2 * (100.0 - z) / 100.0 : 0.0;
+    const double FRACTION_TO_BASE = (z < 100.0) ? 0.2 * (100.0 - z) / 100.0 : 0.0;
     // note: ice-equiv thickness:
     *bwat += (FRACTION_TO_BASE * massmelted) / (rho * darea);
     *Texcess = 0.0;
-  } else {  // neither Texcess nor bwat needs to change if Texcess < 0.0
+  } else { // neither Texcess nor bwat needs to change if Texcess < 0.0
     // Texcess negative; only refreeze (i.e. reduce bwat) if at base and bwat > 0.0
     // note ONLY CALLED IF AT BASE!   note massmelted is NEGATIVE!
     if (z > 0.00001) {
-      throw RuntimeError(PISM_ERROR_LOCATION, "excessToBasalMeltLayer() called with z not at base and negative Texcess");
+      throw RuntimeError(PISM_ERROR_LOCATION,
+                         "excessToBasalMeltLayer() called with z not at base and negative Texcess");
     }
     if (*bwat > 0.0) {
-      const double thicknessToFreezeOn = - massmelted / (rho * darea);
+      const double thicknessToFreezeOn = -massmelted / (rho * darea);
       if (thicknessToFreezeOn <= *bwat) { // the water *is* available to freeze on
         *bwat -= thicknessToFreezeOn;
         *Texcess = 0.0;
       } else { // only refreeze bwat thickness of water; update Texcess
-        *bwat = 0.0;
+        *bwat              = 0.0;
         const double dTemp = L * (*bwat) / (c * dz);
         *Texcess += dTemp;
       }
@@ -417,4 +416,4 @@ void TemperatureModel::column_drainage(const double rho, const double c, const d
 }
 
 } // end of namespace energy
-} // end of namespace
+} // namespace pism

@@ -50,7 +50,7 @@ void NC4_Par::open_impl(const std::string &fname, io::Mode mode) {
   int stat;
 
   int open_mode = mode == io::PISM_READONLY ? NC_NOWRITE : NC_WRITE;
-  open_mode = open_mode | NC_MPIIO;
+  open_mode     = open_mode | NC_MPIIO;
 
   stat = nc_open_par(fname.c_str(), open_mode, m_com, info, &m_file_id);
 
@@ -61,9 +61,7 @@ void NC4_Par::create_impl(const std::string &fname) {
   MPI_Info info = MPI_INFO_NULL;
   int stat;
 
-  stat = nc_create_par(fname.c_str(),
-                       NC_NETCDF4 | NC_MPIIO,
-                       m_com, info, &m_file_id);
+  stat = nc_create_par(fname.c_str(), NC_NETCDF4 | NC_MPIIO, m_com, info, &m_file_id);
 
   check(PISM_ERROR_LOCATION, stat);
 }

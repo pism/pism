@@ -18,25 +18,22 @@
 
 #include "pism/coupler/atmosphere/Frac_P.hh"
 
-#include "pism/util/Config.hh"
-#include "pism/util/ScalarForcing.hh"
-#include "pism/util/io/File.hh"
 #include "pism/coupler/util/options.hh"
-#include "pism/util/array/Forcing.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/ScalarForcing.hh"
+#include "pism/util/array/Forcing.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace atmosphere {
 
 Frac_P::Frac_P(std::shared_ptr<const Grid> grid, std::shared_ptr<AtmosphereModel> in)
-  : AtmosphereModel(grid, in) {
+    : AtmosphereModel(grid, in) {
 
-  std::string
-    prefix        = "atmosphere.frac_P",
-    variable_name = "frac_P",
-    long_name     = "precipitation multiplier, pure fraction",
-    units         = "1";
+  std::string prefix = "atmosphere.frac_P", variable_name = "frac_P",
+              long_name = "precipitation multiplier, pure fraction", units = "1";
 
   ForcingOptions opt(*m_grid->ctx(), prefix);
 
@@ -48,20 +45,14 @@ Frac_P::Frac_P(std::shared_ptr<const Grid> grid, std::shared_ptr<AtmosphereModel
   bool scalar = input.dimensions(variable_name).size() == 1;
 
   if (scalar) {
-    m_1d_scaling.reset(new ScalarForcing(*grid->ctx(),
-                                         prefix,
-                                         variable_name,
-                                         units, units,
-                                         long_name));
+    m_1d_scaling.reset(
+        new ScalarForcing(*grid->ctx(), prefix, variable_name, units, units, long_name));
   } else {
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
 
-    m_2d_scaling = std::make_shared<array::Forcing>(m_grid,
-                                               input,
-                                               variable_name,
-                                               "", // no standard name
-                                               buffer_size,
-                                               opt.periodic);
+    m_2d_scaling = std::make_shared<array::Forcing>(m_grid, input, variable_name,
+                                                    "", // no standard name
+                                                    buffer_size, opt.periodic);
 
     m_2d_scaling->metadata().long_name(long_name).units(units);
   }
@@ -124,10 +115,10 @@ void Frac_P::update_impl(const Geometry &geometry, double t, double dt) {
     m_2d_scaling->update(t, dt);
     m_2d_scaling->average(t, dt);
 
-    array::Scalar &P = *m_precipitation;
+    array::Scalar &P  = *m_precipitation;
     array::Forcing &S = *m_2d_scaling;
 
-    array::AccessScope list{&P, &S};
+    array::AccessScope list{ &P, &S };
 
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
@@ -137,7 +128,7 @@ void Frac_P::update_impl(const Geometry &geometry, double t, double dt) {
   }
 }
 
-const array::Scalar& Frac_P::precipitation_impl() const {
+const array::Scalar &Frac_P::precipitation_impl() const {
   return *m_precipitation;
 }
 

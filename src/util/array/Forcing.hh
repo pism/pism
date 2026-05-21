@@ -19,9 +19,9 @@
 #ifndef PISM_ARRAY_FORCING
 #define PISM_ARRAY_FORCING
 
-#include "pism/util/array/Scalar.hh"
+#include "pism/util/Interpolation1D.hh" // InterpolationType
 #include "pism/util/MaxTimestep.hh"
-#include "pism/util/Interpolation1D.hh"     // InterpolationType
+#include "pism/util/array/Scalar.hh"
 
 namespace pism {
 namespace array {
@@ -40,19 +40,14 @@ namespace array {
 */
 class Forcing : public array::Scalar {
 public:
-
-  Forcing(std::shared_ptr<const Grid> grid,
-          const File &file,
-          const std::string &short_name,
-          const std::string &standard_name,
-          unsigned int max_buffer_size,
-          bool periodic,
+  Forcing(std::shared_ptr<const Grid> grid, const File &file, const std::string &short_name,
+          const std::string &standard_name, unsigned int max_buffer_size, bool periodic,
           InterpolationType interpolation_type = PIECEWISE_CONSTANT);
 
   virtual ~Forcing();
 
-  static std::shared_ptr<Forcing>
-  Constant(std::shared_ptr<const Grid> grid, const std::string &short_name, double value);
+  static std::shared_ptr<Forcing> Constant(std::shared_ptr<const Grid> grid,
+                                           const std::string &short_name, double value);
 
   unsigned int buffer_size() const;
 
@@ -76,13 +71,11 @@ private:
 
   Data *m_data;
 
-  Forcing(std::shared_ptr<const Grid> grid,
-          const std::string &short_name,
-          unsigned int buffer_size,
+  Forcing(std::shared_ptr<const Grid> grid, const std::string &short_name, unsigned int buffer_size,
           InterpolationType interpolation_type);
   void allocate(unsigned int buffer_size, InterpolationType interpolation_type);
 
-  double*** array3();
+  double ***array3();
   void update(unsigned int start);
   void discard(int N);
   void set_record(int n);

@@ -17,37 +17,36 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/inverse/IP_SSAHardavForwardProblem.hh"
-#include "pism/util/Grid.hh"
+#include "pism/geometry/Geometry.hh"
+#include "pism/rheology/FlowLaw.hh"
+#include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/Config.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/Logger.hh"
 #include "pism/util/Vars.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/rheology/FlowLaw.hh"
-#include "pism/geometry/Geometry.hh"
-#include "pism/stressbalance/StressBalance.hh"
+#include "pism/util/fem/DirichletData.hh"
+#include "pism/util/fem/Quadrature.hh"
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Vec.hh"
-#include "pism/util/fem/Quadrature.hh"
-#include "pism/util/fem/DirichletData.hh"
-#include "pism/util/Logger.hh"
 
 namespace pism {
 namespace inverse {
 
 IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(std::shared_ptr<const Grid> g,
                                                        IPDesignVariableParameterization &tp)
-  : SSAFEM(g),
-    m_stencil_width(1),
-    m_zeta(NULL),
-    m_dzeta_local(m_grid, "d_zeta_local"),
-    m_fixed_design_locations(NULL),
-    m_design_param(tp),
-    m_du_global(m_grid, "linearization work vector (sans ghosts)"),
-    m_du_local(m_grid, "linearization work vector (with ghosts)"),
-    m_hardav(m_grid, "hardav"),
-    m_element_index(*m_grid),
-    m_element(*m_grid, fem::Q1Quadrature4()),
-    m_rebuild_J_state(true)
-{
+    : SSAFEM(g),
+      m_stencil_width(1),
+      m_zeta(NULL),
+      m_dzeta_local(m_grid, "d_zeta_local"),
+      m_fixed_design_locations(NULL),
+      m_design_param(tp),
+      m_du_global(m_grid, "linearization work vector (sans ghosts)"),
+      m_du_local(m_grid, "linearization work vector (with ghosts)"),
+      m_hardav(m_grid, "hardav"),
+      m_element_index(*m_grid),
+      m_element(*m_grid, fem::Q1Quadrature4()),
+      m_rebuild_J_state(true) {
 
   PetscErrorCode ierr;
 
@@ -67,7 +66,7 @@ IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(std::shared_ptr<const Gri
   PISM_CHK(ierr, "KSPCreate");
 
   double ksp_rtol = 1e-12;
-  ierr = KSPSetTolerances(m_ksp, ksp_rtol, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
+  ierr            = KSPSetTolerances(m_ksp, ksp_rtol, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
   PISM_CHK(ierr, "KSPSetTolerances");
 
   PC pc;
@@ -148,7 +147,7 @@ void IP_SSAHardavForwardProblem::set_design(array::Scalar &new_zeta) {
   m_design_param.convertToDesignVariable(*m_zeta, m_hardav);
 
   // Cache hardav at the quadrature points.
-  array::AccessScope list{&m_coefficients, &m_hardav};
+  array::AccessScope list{ &m_coefficients, &m_hardav };
 
   for (auto p : m_grid->points_with_ghosts(1)) {
     const int i = p.i(), j = p.j();
@@ -172,7 +171,7 @@ std::shared_ptr<TerminationReason> IP_SSAHardavForwardProblem::linearize_at(arra
 of the residual is returned in \a RHS.*/
 void IP_SSAHardavForwardProblem::assemble_residual(array::Vector &u, array::Vector &RHS) {
 
-  array::AccessScope l{&u, &RHS};
+  array::AccessScope l{ &u, &RHS };
 
   this->compute_local_function(u.array(), RHS.array());
 }
@@ -182,11 +181,11 @@ void IP_SSAHardavForwardProblem::assemble_residual(array::Vector &u, array::Vect
 the method is identical to the assemble_residual returning values as a StateVec (an array::Vector).*/
 void IP_SSAHardavForwardProblem::assemble_residual(array::Vector &u, Vec RHS) {
 
-  array::AccessScope l{&u};
+  array::AccessScope l{ &u };
 
   petsc::DMDAVecArray rhs_a(m_velocity_global.dm(), RHS);
 
-  this->compute_local_function(u.array(), (Vector2d**)rhs_a.get());
+  this->compute_local_function(u.array(), (Vector2d **)rhs_a.get());
 }
 
 //! Assembles the state Jacobian matrix.
@@ -198,7 +197,7 @@ to this method.
   @param[out] J computed state Jacobian.
 */
 void IP_SSAHardavForwardProblem::assemble_jacobian_state(array::Vector &u, Mat Jac) {
-  array::AccessScope l{&u};
+  array::AccessScope l{ &u };
 
   this->compute_local_jacobian(u.array(), Jac);
 }
@@ -207,10 +206,9 @@ void IP_SSAHardavForwardProblem::assemble_jacobian_state(array::Vector &u, Mat J
 /*! The return value uses a DesignVector (array::Vector), which can be ghostless. Ghosts (if present) are updated.
 \overload
 */
-void IP_SSAHardavForwardProblem::apply_jacobian_design(array::Vector &u,
-                                                       array::Scalar &dzeta,
+void IP_SSAHardavForwardProblem::apply_jacobian_design(array::Vector &u, array::Scalar &dzeta,
                                                        array::Vector &du) {
-  array::AccessScope l{&du};
+  array::AccessScope l{ &du };
 
   this->apply_jacobian_design(u, dzeta, du.array());
 }
@@ -219,11 +217,10 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(array::Vector &u,
 /*! The return value is a Vec for the benefit of TAO. It is assumed to be ghostless; no communication is done.
 \overload
 */
-void IP_SSAHardavForwardProblem::apply_jacobian_design(array::Vector &u,
-                                                       array::Scalar &dzeta,
+void IP_SSAHardavForwardProblem::apply_jacobian_design(array::Vector &u, array::Scalar &dzeta,
                                                        Vec du) {
   petsc::DMDAVecArray du_a(m_velocity_global.dm(), du);
-  this->apply_jacobian_design(u, dzeta, (Vector2d**)du_a.get());
+  this->apply_jacobian_design(u, dzeta, (Vector2d **)du_a.get());
 }
 
 //! @brief Applies the design Jacobian matrix to a perturbation of the
@@ -247,15 +244,14 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(array::Vector &u,
 
   Typically this method is called via one of its overloads.
 */
-void IP_SSAHardavForwardProblem::apply_jacobian_design(array::Vector &u,
-                                                       array::Scalar &dzeta,
+void IP_SSAHardavForwardProblem::apply_jacobian_design(array::Vector &u, array::Scalar &dzeta,
                                                        Vector2d **du_a) {
 
   const unsigned int Nk     = fem::q1::n_chi;
   const unsigned int Nq     = m_element.n_pts();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
-  array::AccessScope list{&m_coefficients, m_zeta, &u};
+  array::AccessScope list{ &m_coefficients, m_zeta, &u };
 
   array::Scalar *dzeta_local;
   if (dzeta.stencil_width() > 0) {
@@ -276,8 +272,8 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(array::Vector &u,
 
   // Aliases to help with notation consistency below.
   const array::Scalar *dirichletLocations = &m_bc_mask;
-  const array::Vector   *dirichletValues    = &m_bc_values;
-  double                 dirichletWeight    = m_dirichletScale;
+  const array::Vector *dirichletValues    = &m_bc_values;
+  double dirichletWeight                  = m_dirichletScale;
 
   Vector2d u_e[Nk];
   Vector2d U[Nq_max], U_x[Nq_max], U_y[Nq_max];
@@ -291,24 +287,20 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(array::Vector &u,
   double dB_e[Nk];
   double dB_q[Nq_max];
 
-  fem::DirichletData_Vector dirichletBC(dirichletLocations, dirichletValues,
-                                        dirichletWeight);
+  fem::DirichletData_Vector dirichletBC(dirichletLocations, dirichletValues, dirichletWeight);
   fem::DirichletData_Scalar fixedZeta(m_fixed_design_locations, NULL);
 
   // Loop through all elements.
-  const int
-    xs = m_element_index.xs,
-    xm = m_element_index.xm,
-    ys = m_element_index.ys,
-    ym = m_element_index.ym;
+  const int xs = m_element_index.xs, xm = m_element_index.xm, ys = m_element_index.ys,
+            ym = m_element_index.ym;
 
   ParallelSection loop(m_grid->com);
   try {
-    for (int j =ys; j<ys+ym; j++) {
-      for (int i =xs; i<xs+xm; i++) {
+    for (int j = ys; j < ys + ym; j++) {
+      for (int i = xs; i < xs + xm; i++) {
 
         // Zero out the element-local residual in prep for updating it.
-        for (unsigned int k=0; k<Nk; k++) {
+        for (unsigned int k = 0; k < Nk; k++) {
           du_e[k].u = 0;
           du_e[k].v = 0;
         }
@@ -333,34 +325,32 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(array::Vector &u,
 
         // Compute the change in hardav with respect to zeta at the quad points.
         m_element.nodal_values(m_zeta->array(), zeta_e);
-        for (unsigned int k=0; k<Nk; k++) {
+        for (unsigned int k = 0; k < Nk; k++) {
           m_design_param.toDesignVariable(zeta_e[k], NULL, dB_e + k);
-          dB_e[k]*=dzeta_e[k];
+          dB_e[k] *= dzeta_e[k];
         }
         m_element.evaluate(dB_e, dB_q);
 
         double thickness[Nq_max];
         {
           Coefficients coeffs[Nk];
-          int    mask[Nq_max];
+          int mask[Nq_max];
           double tauc[Nq_max];
           double hardness[Nq_max];
 
           m_element.nodal_values(m_coefficients.array(), coeffs);
 
-          quad_point_values(m_element, coeffs,
-                            mask, thickness, tauc, hardness);
+          quad_point_values(m_element, coeffs, mask, thickness, tauc, hardness);
         }
 
         for (unsigned int q = 0; q < Nq; q++) {
           // Symmetric gradient at the quadrature point.
-          double Duqq[3] = {U_x[q].u, U_y[q].v, 0.5 * (U_y[q].u + U_x[q].v)};
+          double Duqq[3] = { U_x[q].u, U_y[q].v, 0.5 * (U_y[q].u + U_x[q].v) };
 
           double d_nuH = 0;
           if (thickness[q] >= strength_extension->get_min_thickness()) {
-            m_flow_law->effective_viscosity(dB_q[q],
-                                            secondInvariant_2D(U_x[q], U_y[q]),
-                                            &d_nuH, NULL);
+            m_flow_law->effective_viscosity(dB_q[q], secondInvariant_2D(U_x[q], U_y[q]), &d_nuH,
+                                            NULL);
             d_nuH *= (2.0 * thickness[q]);
           }
 
@@ -368,8 +358,8 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(array::Vector &u,
 
           for (unsigned int k = 0; k < Nk; k++) {
             const fem::Germ &testqk = m_element.chi(q, k);
-            du_e[k].u += W*d_nuH*(testqk.dx*(2*Duqq[0] + Duqq[1]) + testqk.dy*Duqq[2]);
-            du_e[k].v += W*d_nuH*(testqk.dy*(2*Duqq[1] + Duqq[0]) + testqk.dx*Duqq[2]);
+            du_e[k].u += W * d_nuH * (testqk.dx * (2 * Duqq[0] + Duqq[1]) + testqk.dy * Duqq[2]);
+            du_e[k].v += W * d_nuH * (testqk.dy * (2 * Duqq[1] + Duqq[0]) + testqk.dx * Duqq[2]);
           }
         } // q
         m_element.add_contribution(du_e, du_a);
@@ -392,7 +382,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design(array::Vector &u,
 void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(array::Vector &u,
                                                                  array::Vector &du,
                                                                  array::Scalar &dzeta) {
-  array::AccessScope l{&dzeta};
+  array::AccessScope l{ &dzeta };
   this->apply_jacobian_design_transpose(u, du, dzeta.array());
 }
 
@@ -400,12 +390,11 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(array::Vector &
 /*! The return value uses a Vec for the benefit of TAO.  It is assumed to be ghostless; no communication is done.
 \overload */
 void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(array::Vector &u,
-                                                                 array::Vector &du,
-                                                                 Vec dzeta) {
+                                                                 array::Vector &du, Vec dzeta) {
 
   auto da2 = m_grid->get_dm(1, m_grid->max_stencil_width());
   petsc::DMDAVecArray dzeta_a(da2, dzeta);
-  this->apply_jacobian_design_transpose(u, du, (double**)dzeta_a.get());
+  this->apply_jacobian_design_transpose(u, du, (double **)dzeta_a.get());
 }
 
 //! @brief Applies the transpose of the design Jacobian matrix to a
@@ -436,7 +425,7 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(array::Vector &
   const unsigned int Nq     = m_element.n_pts();
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
-  array::AccessScope list{&m_coefficients, m_zeta, &u};
+  array::AccessScope list{ &m_coefficients, m_zeta, &u };
 
   array::Vector *du_local;
   if (du.stencil_width() > 0) {
@@ -459,11 +448,10 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(array::Vector &
 
   // Aliases to help with notation consistency.
   const array::Scalar *dirichletLocations = &m_bc_mask;
-  const array::Vector   *dirichletValues    = &m_bc_values;
-  double                 dirichletWeight    = m_dirichletScale;
+  const array::Vector *dirichletValues    = &m_bc_values;
+  double dirichletWeight                  = m_dirichletScale;
 
-  fem::DirichletData_Vector dirichletBC(dirichletLocations, dirichletValues,
-                                        dirichletWeight);
+  fem::DirichletData_Vector dirichletBC(dirichletLocations, dirichletValues, dirichletWeight);
 
   // Zero out the portion of the function we are responsible for computing.
   for (auto p : m_grid->points()) {
@@ -472,11 +460,8 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(array::Vector &
     dzeta_a[j][i] = 0;
   }
 
-  const int
-    xs = m_element_index.xs,
-    xm = m_element_index.xm,
-    ys = m_element_index.ys,
-    ym = m_element_index.ym;
+  const int xs = m_element_index.xs, xm = m_element_index.xm, ys = m_element_index.ys,
+            ym = m_element_index.ym;
 
   ParallelSection loop(m_grid->com);
   try {
@@ -507,36 +492,33 @@ void IP_SSAHardavForwardProblem::apply_jacobian_design_transpose(array::Vector &
         double thickness[Nq_max];
         {
           Coefficients coeffs[Nk];
-          int    mask[Nq_max];
+          int mask[Nq_max];
           double tauc[Nq_max];
           double hardness[Nq_max];
 
           m_element.nodal_values(m_coefficients.array(), coeffs);
 
-          quad_point_values(m_element, coeffs,
-                            mask, thickness, tauc, hardness);
+          quad_point_values(m_element, coeffs, mask, thickness, tauc, hardness);
         }
 
         for (unsigned int q = 0; q < Nq; q++) {
           // Symmetric gradient at the quadrature point.
-          double Duqq[3] = {U_x[q].u, U_y[q].v, 0.5 * (U_y[q].u + U_x[q].v)};
+          double Duqq[3] = { U_x[q].u, U_y[q].v, 0.5 * (U_y[q].u + U_x[q].v) };
 
           // Determine "d_nuH / dB" at the quadrature point
           double d_nuH_dB = 0;
           if (thickness[q] >= strength_extension->get_min_thickness()) {
-            m_flow_law->effective_viscosity(1.0,
-                                            secondInvariant_2D(U_x[q], U_y[q]),
-                                            &d_nuH_dB, NULL);
+            m_flow_law->effective_viscosity(1.0, secondInvariant_2D(U_x[q], U_y[q]), &d_nuH_dB,
+                                            NULL);
             d_nuH_dB *= (2.0 * thickness[q]);
           }
 
           auto W = m_element.weight(q);
 
           for (unsigned int k = 0; k < Nk; k++) {
-            dzeta_e[k] += W*d_nuH_dB*m_element.chi(q, k).val*((du_dx_q[q].u*(2*Duqq[0] + Duqq[1]) +
-                                                               du_dy_q[q].u*Duqq[2]) +
-                                                              (du_dy_q[q].v*(2*Duqq[1] + Duqq[0]) +
-                                                               du_dx_q[q].v*Duqq[2]));
+            dzeta_e[k] += W * d_nuH_dB * m_element.chi(q, k).val *
+                          ((du_dx_q[q].u * (2 * Duqq[0] + Duqq[1]) + du_dy_q[q].u * Duqq[2]) +
+                           (du_dy_q[q].v * (2 * Duqq[1] + Duqq[0]) + du_dx_q[q].v * Duqq[2]));
           }
         } // q
 
@@ -599,7 +581,8 @@ void IP_SSAHardavForwardProblem::apply_linearization(array::Scalar &dzeta, array
   PISM_CHK(ierr, "KSPGetConvergedReason");
 
   if (reason < 0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "IP_SSAHardavForwardProblem::apply_linearization solve"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "IP_SSAHardavForwardProblem::apply_linearization solve"
                                   " failed to converge (KSP reason %s)",
                                   KSPConvergedReasons[reason]);
   }
@@ -641,15 +624,14 @@ void IP_SSAHardavForwardProblem::apply_linearization_transpose(array::Vector &du
 
   // Aliases to help with notation consistency below.
   const array::Scalar *dirichletLocations = &m_bc_mask;
-  const array::Vector   *dirichletValues    = &m_bc_values;
-  double                 dirichletWeight    = m_dirichletScale;
+  const array::Vector *dirichletValues    = &m_bc_values;
+  double dirichletWeight                  = m_dirichletScale;
 
   m_du_global.copy_from(du);
 
-  fem::DirichletData_Vector dirichletBC(dirichletLocations, dirichletValues,
-                                        dirichletWeight);
+  fem::DirichletData_Vector dirichletBC(dirichletLocations, dirichletValues, dirichletWeight);
   if (dirichletBC) {
-    array::AccessScope list{&m_du_global};
+    array::AccessScope list{ &m_du_global };
     dirichletBC.fix_residual_homogeneous(m_du_global.array());
   }
 
@@ -660,13 +642,15 @@ void IP_SSAHardavForwardProblem::apply_linearization_transpose(array::Vector &du
   ierr = KSPSolve(m_ksp, m_du_global.vec(), m_du_global.vec());
   PISM_CHK(ierr, "KSPSolve"); // SOLVE
 
-  KSPConvergedReason  reason;
+  KSPConvergedReason reason;
   ierr = KSPGetConvergedReason(m_ksp, &reason);
   PISM_CHK(ierr, "KSPGetConvergedReason");
 
   if (reason < 0) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "IP_SSAHardavForwardProblem::apply_linearization solve failed to converge (KSP reason %s)",
-                                  KSPConvergedReasons[reason]);
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION,
+        "IP_SSAHardavForwardProblem::apply_linearization solve failed to converge (KSP reason %s)",
+        KSPConvergedReasons[reason]);
   }
 
   m_log->message(4, "IP_SSAHardavForwardProblem::apply_linearization converged (KSP reason %s)\n",

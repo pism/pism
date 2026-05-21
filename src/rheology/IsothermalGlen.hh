@@ -29,6 +29,7 @@ namespace rheology {
 class IsothermalGlen : public PatersonBudd {
 public:
   IsothermalGlen(double exponent, const Config &config, std::shared_ptr<EnthalpyConverter> EC);
+
 protected:
   double flow_impl(double stress, double, double, double) const;
   double softness_impl(double, double) const;

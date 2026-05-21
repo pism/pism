@@ -19,12 +19,12 @@
 #ifndef FRACTUREDENSITY_H
 #define FRACTUREDENSITY_H
 
-#include "pism/util/Component.hh"
 #include "pism/rheology/FlowLaw.hh"
+#include "pism/stressbalance/StressBalance.hh"
+#include "pism/util/Component.hh"
+#include "pism/util/array/Array2D.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/array/Vector.hh"
-#include "pism/util/array/Array2D.hh"
-#include "pism/stressbalance/StressBalance.hh"
 
 namespace pism {
 
@@ -33,7 +33,8 @@ class Geometry;
 
 class FractureDensity : public Component {
 public:
-  FractureDensity(std::shared_ptr<const Grid> grid, std::shared_ptr<const rheology::FlowLaw> flow_law);
+  FractureDensity(std::shared_ptr<const Grid> grid,
+                  std::shared_ptr<const rheology::FlowLaw> flow_law);
   virtual ~FractureDensity() = default;
 
   void restart(const File &input_file, int record);
@@ -41,21 +42,17 @@ public:
   void initialize(const array::Scalar &density, const array::Scalar &age);
   void initialize();
 
-  void update(double dt,
-              const Geometry &geometry,
-              const array::Vector &velocity,
-              const array::Scalar &hardness,
-              const array::Scalar &inflow_boundary_mask);
+  void update(double dt, const Geometry &geometry, const array::Vector &velocity,
+              const array::Scalar &hardness, const array::Scalar &inflow_boundary_mask);
 
-  const array::Scalar1& density() const;
-  const array::Scalar& growth_rate() const;
-  const array::Scalar& healing_rate() const;
-  const array::Scalar& flow_enhancement() const;
-  const array::Scalar& age() const;
-  const array::Scalar& toughness() const;
+  const array::Scalar1 &density() const;
+  const array::Scalar &growth_rate() const;
+  const array::Scalar &healing_rate() const;
+  const array::Scalar &flow_enhancement() const;
+  const array::Scalar &age() const;
+  const array::Scalar &toughness() const;
 
 private:
-
   virtual std::set<VariableMetadata> state_impl() const;
   void write_state_impl(const OutputFile &output) const;
 

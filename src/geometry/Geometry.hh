@@ -65,8 +65,7 @@ double ice_volume(const Geometry &geometry, double thickness_threshold);
 double ice_area_floating(const Geometry &geometry, double thickness_threshold);
 double ice_area_grounded(const Geometry &geometry, double thickness_threshold);
 double ice_area(const Geometry &geometry, double thickness_threshold);
-double ice_volume_not_displacing_seawater(const Geometry &geometry,
-                                          double thickness_threshold);
+double ice_volume_not_displacing_seawater(const Geometry &geometry, double thickness_threshold);
 double sea_level_rise_potential(const Geometry &geometry, double thickness_threshold);
 
 void set_no_model_strip(const Grid &grid, double width, array::Scalar &result);

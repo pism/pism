@@ -22,8 +22,7 @@
 #define __exactTestK_h 1
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /*
@@ -59,5 +58,4 @@ int print_alpha_k(const int N);
 #endif
 
 
-#endif  /* __exactTestK_h */
-
+#endif /* __exactTestK_h */

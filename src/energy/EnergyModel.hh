@@ -22,9 +22,9 @@
 
 #include "pism/util/Component.hh"
 
-#include "pism/util/array/Scalar.hh"
 #include "pism/util/array/Array3D.hh"
 #include "pism/util/array/CellType.hh"
+#include "pism/util/array/Scalar.hh"
 #include <memory>
 
 namespace pism {
@@ -62,7 +62,7 @@ class EnergyModelStats {
 public:
   EnergyModelStats();
 
-  EnergyModelStats& operator+=(const EnergyModelStats &other);
+  EnergyModelStats &operator+=(const EnergyModelStats &other);
 
   void sum(MPI_Comm com);
 
@@ -84,35 +84,30 @@ public:
    * Bootstrap by reading 2d fields (currently the basal melt rate) from a file and filling 3D
    * fields using heuristics.
    */
-  void bootstrap(const File &input_file,
-                 const array::Scalar &ice_thickness,
+  void bootstrap(const File &input_file, const array::Scalar &ice_thickness,
                  const array::Scalar &surface_temperature,
-                 const array::Scalar &climatic_mass_balance,
-                 const array::Scalar &basal_heat_flux);
+                 const array::Scalar &climatic_mass_balance, const array::Scalar &basal_heat_flux);
 
   /*! @brief Initialize using formulas (for runs using synthetic data). */
-  void initialize(const array::Scalar &basal_melt_rate,
-                  const array::Scalar &ice_thickness,
+  void initialize(const array::Scalar &basal_melt_rate, const array::Scalar &ice_thickness,
                   const array::Scalar &surface_temperature,
-                  const array::Scalar &climatic_mass_balance,
-                  const array::Scalar &basal_heat_flux);
+                  const array::Scalar &climatic_mass_balance, const array::Scalar &basal_heat_flux);
 
   void update(double t, double dt, const Inputs &inputs);
 
-  const EnergyModelStats& stats() const;
+  const EnergyModelStats &stats() const;
 
-  const array::Array3D & enthalpy() const;
-  const array::Scalar & basal_melt_rate() const;
+  const array::Array3D &enthalpy() const;
+  const array::Scalar &basal_melt_rate() const;
 
-  const std::string& stdout_flags() const;
+  const std::string &stdout_flags() const;
+
 protected:
-
   virtual MaxTimestep max_timestep_impl(double t) const;
 
   virtual void restart_impl(const File &input_file, int record) = 0;
 
-  virtual void bootstrap_impl(const File &input_file,
-                              const array::Scalar &ice_thickness,
+  virtual void bootstrap_impl(const File &input_file, const array::Scalar &ice_thickness,
                               const array::Scalar &surface_temperature,
                               const array::Scalar &climatic_mass_balance,
                               const array::Scalar &basal_heat_flux) = 0;
@@ -125,7 +120,7 @@ protected:
 
   virtual void update_impl(double t, double dt, const Inputs &inputs) = 0;
 
-  virtual std::set<VariableMetadata> state_impl() const = 0;
+  virtual std::set<VariableMetadata> state_impl() const         = 0;
   virtual void write_state_impl(const OutputFile &output) const = 0;
 
   virtual DiagnosticList spatial_diagnostics_impl() const;
@@ -137,6 +132,7 @@ protected:
 
   /*! @brief Regrid enthalpy from the -regrid_file. */
   void regrid_enthalpy();
+
 protected:
   array::Array3D m_ice_enthalpy;
   array::Array3D m_work;

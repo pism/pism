@@ -20,25 +20,23 @@
 #include "pism/util/error_handling.hh"
 #include <petsc.h>
 
-#include <stdexcept>
 #include <stdarg.h>
+#include <stdexcept>
 
 namespace pism {
 
-ErrorLocation::ErrorLocation()
-  : filename(NULL), line_number(0) {
+ErrorLocation::ErrorLocation() : filename(NULL), line_number(0) {
   // empty
 }
 
-ErrorLocation::ErrorLocation(const char *name, int line)
-  : filename(name), line_number(line) {
+ErrorLocation::ErrorLocation(const char *name, int line) : filename(name), line_number(line) {
   // empty
 }
 
 RuntimeError::Hook RuntimeError::sm_hook = NULL;
 
 RuntimeError::RuntimeError(const ErrorLocation &location, const std::string &message)
-  : std::runtime_error(message), m_location(location) {
+    : std::runtime_error(message), m_location(location) {
   if (sm_hook != NULL) {
     sm_hook(this);
   }
@@ -81,7 +79,7 @@ void RuntimeError::add_context(const char format[], ...) {
 
 void RuntimeError::print(MPI_Comm com) {
   PetscErrorCode ierr = 0;
-  std::string error = "PISM ERROR: ";
+  std::string error   = "PISM ERROR: ";
   std::string message = this->what();
 
   std::string padding = std::string(error.size(), ' ');
@@ -89,17 +87,17 @@ void RuntimeError::print(MPI_Comm com) {
   // replace newlines with newlines plus padding
   size_t k = message.find('\n', 0);
   while (k != std::string::npos) {
-    message.insert(k+1, padding);
-    k = message.find('\n', k+1);
+    message.insert(k + 1, padding);
+    k = message.find('\n', k + 1);
   }
 
   // print the error message with "PISM ERROR:" in front:
-  ierr = PetscPrintf(com,
-                     "%s%s\n", error.c_str(), message.c_str()); CHKERRCONTINUE(ierr);
+  ierr = PetscPrintf(com, "%s%s\n", error.c_str(), message.c_str());
+  CHKERRCONTINUE(ierr);
 
   // compute how much padding we need to align things:
   std::string while_str = std::string(error.size(), ' ') + "while ";
-  padding = std::string(while_str.size() + 1, ' '); // 1 extra space
+  padding               = std::string(while_str.size() + 1, ' '); // 1 extra space
 
   // loop over "context" messages
   for (const auto &j : m_context) {
@@ -108,20 +106,20 @@ void RuntimeError::print(MPI_Comm com) {
     // replace newlines with newlines plus padding
     k = message.find('\n', 0);
     while (k != std::string::npos) {
-      message.insert(k+1, padding);
-      k = message.find('\n', k+1);
+      message.insert(k + 1, padding);
+      k = message.find('\n', k + 1);
     }
 
     // print a "context" message
-    ierr = PetscPrintf(com,
-                       "%s%s\n", while_str.c_str(), message.c_str()); CHKERRCONTINUE(ierr);
+    ierr = PetscPrintf(com, "%s%s\n", while_str.c_str(), message.c_str());
+    CHKERRCONTINUE(ierr);
   }
 
   if (m_location.filename != NULL) {
     padding = std::string(error.size(), ' ');
-    ierr = PetscPrintf(com,
-                       "%sError location: %s, line %d\n",
-                       padding.c_str(), m_location.filename, m_location.line_number); CHKERRCONTINUE(ierr);
+    ierr = PetscPrintf(com, "%sError location: %s, line %d\n", padding.c_str(), m_location.filename,
+                       m_location.line_number);
+    CHKERRCONTINUE(ierr);
   }
 }
 
@@ -134,47 +132,43 @@ void RuntimeError::print(MPI_Comm com) {
 void handle_fatal_errors(MPI_Comm com) {
   PetscErrorCode ierr;
   try {
-    throw;                      // re-throw the current exception
-  }
-  catch (RuntimeError &e) {
+    throw; // re-throw the current exception
+  } catch (RuntimeError &e) {
     e.print(com);
-  }
-  catch (std::exception &e) {
+  } catch (std::exception &e) {
     ierr = PetscPrintf(PETSC_COMM_SELF,
                        "\n"
                        "PISM ERROR: Caught a C++ standard library exception: \"%s\".\n"
                        "            This is probably a bug in PISM.\n"
                        "            Please send a report to uaf-pism@alaska.edu\n"
                        "\n",
-                       e.what()); CHKERRCONTINUE(ierr);
+                       e.what());
+    CHKERRCONTINUE(ierr);
   } catch (...) {
-    ierr = PetscPrintf(PETSC_COMM_SELF,
-                       "\n"
-                       "PISM ERROR: Caught an unexpected exception.\n"
-                       "            This is probably a bug in PISM.\n"
-                       "            Please send a report to uaf-pism@alaska.edu\n"
-                       "\n");
+    ierr = PetscPrintf(PETSC_COMM_SELF, "\n"
+                                        "PISM ERROR: Caught an unexpected exception.\n"
+                                        "            This is probably a bug in PISM.\n"
+                                        "            Please send a report to uaf-pism@alaska.edu\n"
+                                        "\n");
     CHKERRCONTINUE(ierr);
   }
 }
 
-void check_c_call(int errcode, int success,
-                  const char* function_name, const char *file, int line) {
+void check_c_call(int errcode, int success, const char *function_name, const char *file, int line) {
   if (errcode != success) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "External library function %s failed at %s:%d",
-                                  function_name, file, line);
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "External library function %s failed at %s:%d", function_name,
+                                  file, line);
   }
 }
 
-void check_petsc_call(int errcode,
-                      const char* function_name, const char *file, int line) {
+void check_petsc_call(int errcode, const char *function_name, const char *file, int line) {
   // tell PETSc to print the error message
   CHKERRCONTINUE(errcode);
   check_c_call(errcode, 0, function_name, file, line);
 }
 
-ParallelSection::ParallelSection(MPI_Comm com)
-  : m_failed(false), m_com(com) {
+ParallelSection::ParallelSection(MPI_Comm com) : m_failed(false), m_com(com) {
   // empty
 }
 
@@ -186,8 +180,8 @@ void ParallelSection::failed() {
   int rank = 0;
   MPI_Comm_rank(m_com, &rank);
 
-  PetscFPrintf(MPI_COMM_SELF, stderr,
-               "PISM ERROR: Rank %d failed with the following message.\n", rank);
+  PetscFPrintf(MPI_COMM_SELF, stderr, "PISM ERROR: Rank %d failed with the following message.\n",
+               rank);
 
   handle_fatal_errors(MPI_COMM_SELF);
 
@@ -199,14 +193,15 @@ void ParallelSection::reset() {
 }
 
 void ParallelSection::check() {
-#if (Pism_DEBUG==1)
-  int success_flag = m_failed ? 0 : 1;
+#if (Pism_DEBUG == 1)
+  int success_flag        = m_failed ? 0 : 1;
   int success_flag_global = 0;
 
   MPI_Allreduce(&success_flag, &success_flag_global, 1, MPI_INT, MPI_LAND, m_com);
 
   if (success_flag_global == 0) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "Failure in a parallel section. See error messages above for more.");
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "Failure in a parallel section. See error messages above for more.");
   }
 #endif
 }

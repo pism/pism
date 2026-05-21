@@ -45,65 +45,56 @@ public:
 
   void reset();
 
-  void flow_step(const Geometry &ice_geometry, double dt,
-                 const array::Vector    &advective_velocity,
-                 const array::Staggered &diffusive_flux,
-                 const array::Scalar  &thickness_bc_mask);
+  void flow_step(const Geometry &ice_geometry, double dt, const array::Vector &advective_velocity,
+                 const array::Staggered &diffusive_flux, const array::Scalar &thickness_bc_mask);
 
-  void source_term_step(const Geometry &geometry, double dt,
-                        const array::Scalar &thickness_bc_mask,
-                        const array::Scalar   &surface_mass_balance_rate,
-                        const array::Scalar   &basal_melt_rate);
+  void source_term_step(const Geometry &geometry, double dt, const array::Scalar &thickness_bc_mask,
+                        const array::Scalar &surface_mass_balance_rate,
+                        const array::Scalar &basal_melt_rate);
 
   void apply_flux_divergence(Geometry &geometry) const;
   void apply_mass_fluxes(Geometry &geometry) const;
 
-  const array::Scalar& top_surface_mass_balance() const;
-  const array::Scalar& bottom_surface_mass_balance() const;
+  const array::Scalar &top_surface_mass_balance() const;
+  const array::Scalar &bottom_surface_mass_balance() const;
 
-  const array::Scalar& thickness_change_due_to_flow() const;
-  const array::Scalar& area_specific_volume_change_due_to_flow() const;
+  const array::Scalar &thickness_change_due_to_flow() const;
+  const array::Scalar &area_specific_volume_change_due_to_flow() const;
 
-  const array::Scalar& conservation_error() const;
+  const array::Scalar &conservation_error() const;
 
   // diagnostic
-  const array::Staggered1& flux_staggered() const;
-  const array::Scalar& flux_divergence() const;
+  const array::Staggered1 &flux_staggered() const;
+  const array::Scalar &flux_divergence() const;
 
   // "regional" setup
   virtual void set_no_model_mask(const array::Scalar &mask);
+
 protected:
-  std::map<std::string,Diagnostic::Ptr> spatial_diagnostics_impl() const;
+  std::map<std::string, Diagnostic::Ptr> spatial_diagnostics_impl() const;
 
   virtual void init_impl(const InputOptions &opts);
 
-  void update_in_place(double dt,
-                       const array::Scalar& bed_topography,
-                       const array::Scalar& sea_level,
-                       const array::Scalar& flux_divergence,
-                       array::Scalar& ice_thickness,
-                       array::Scalar& area_specific_volume);
+  void update_in_place(double dt, const array::Scalar &bed_topography,
+                       const array::Scalar &sea_level, const array::Scalar &flux_divergence,
+                       array::Scalar &ice_thickness, array::Scalar &area_specific_volume);
 
   void residual_redistribution_iteration(const array::Scalar &bed_topography,
                                          const array::Scalar &sea_level,
-                                         array::Scalar1      &ice_surface_elevation,
-                                         array::Scalar       &ice_thickness,
-                                         array::CellType1    &cell_type,
-                                         array::Scalar       &area_specific_volume,
-                                         array::Scalar1      &residual,
-                                         bool                &done);
+                                         array::Scalar1 &ice_surface_elevation,
+                                         array::Scalar &ice_thickness, array::CellType1 &cell_type,
+                                         array::Scalar &area_specific_volume,
+                                         array::Scalar1 &residual, bool &done);
 
   virtual void compute_interface_fluxes(const array::CellType1 &cell_type,
-                                        const array::Scalar        &ice_thickness,
-                                        const array::Vector        &velocity,
-                                        const array::Staggered     &diffusive_flux,
-                                        array::Staggered           &output);
+                                        const array::Scalar &ice_thickness,
+                                        const array::Vector &velocity,
+                                        const array::Staggered &diffusive_flux,
+                                        array::Staggered &output);
 
-  virtual void compute_flux_divergence(double dt,
-                                       const array::Staggered1 &flux,
+  virtual void compute_flux_divergence(double dt, const array::Staggered1 &flux,
                                        const array::Scalar &thickness_bc_mask,
-                                       array::Scalar &conservation_error,
-                                       array::Scalar &output);
+                                       array::Scalar &conservation_error, array::Scalar &output);
 
   virtual void ensure_nonnegativity(const array::Scalar &ice_thickness,
                                     const array::Scalar &area_specific_volume,
@@ -115,14 +106,11 @@ protected:
 
   // note: cells with area_specific_volume > 0 do not experience changes due to surface and basal
   // mass balance sources
-  virtual void compute_surface_and_basal_mass_balance(double dt,
-                                                      const array::Scalar      &thickness_bc_mask,
-                                                      const array::Scalar        &ice_thickness,
-                                                      const array::CellType &cell_type,
-                                                      const array::Scalar        &surface_mass_flux,
-                                                      const array::Scalar        &basal_melt_rate,
-                                                      array::Scalar              &effective_SMB,
-                                                      array::Scalar              &effective_BMB);
+  virtual void compute_surface_and_basal_mass_balance(
+      double dt, const array::Scalar &thickness_bc_mask, const array::Scalar &ice_thickness,
+      const array::CellType &cell_type, const array::Scalar &surface_mass_flux,
+      const array::Scalar &basal_melt_rate, array::Scalar &effective_SMB,
+      array::Scalar &effective_BMB);
 
   struct Impl;
   Impl *m_impl;
@@ -136,10 +124,8 @@ protected:
   void set_no_model_mask_impl(const array::Scalar &mask);
 
   void compute_interface_fluxes(const array::CellType1 &cell_type,
-                                const array::Scalar        &ice_thickness,
-                                const array::Vector        &velocity,
-                                const array::Staggered     &diffusive_flux,
-                                array::Staggered           &output);
+                                const array::Scalar &ice_thickness, const array::Vector &velocity,
+                                const array::Staggered &diffusive_flux, array::Staggered &output);
 
   void compute_surface_and_basal_mass_balance(double dt, const array::Scalar &thickness_bc_mask,
                                               const array::Scalar &ice_thickness,
@@ -171,8 +157,7 @@ void ice_flow_rate_across_grounding_line(const array::CellType1 &cell_type,
 /*!
  * Compute the total grounding line flux over a time step, in kg.
  */
-double total_grounding_line_flux(const array::CellType1 &cell_type,
-                                 const array::Staggered1 &flux,
+double total_grounding_line_flux(const array::CellType1 &cell_type, const array::Staggered1 &flux,
                                  double dt);
 } // end of namespace pism
 

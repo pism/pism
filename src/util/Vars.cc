@@ -20,11 +20,11 @@
 #include <memory>
 using std::dynamic_pointer_cast;
 
-#include "pism/util/Vars.hh"
 #include "pism/util/VariableMetadata.hh"
+#include "pism/util/Vars.hh"
+#include "pism/util/array/Array3D.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/array/Vector.hh"
-#include "pism/util/array/Array3D.hh"
 #include "pism/util/error_handling.hh"
 
 namespace pism {
@@ -52,7 +52,8 @@ bool Vars::is_available(const std::string &name) const {
 void Vars::add(const array::Array &v, const std::string &name) {
 
   if (m_variables.find(name) != m_variables.end()) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Vars::add(): an array::Array with the name '%s'"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Vars::add(): an array::Array with the name '%s'"
                                   " was added already.",
                                   name.c_str());
   }
@@ -67,7 +68,7 @@ void Vars::add(const array::Array &v, const std::string &name) {
 */
 void Vars::add(const array::Array &v) {
 
-  const auto &m = v.metadata();
+  const auto &m    = v.metadata();
   std::string name = v.get_name();
 
   if (m.has_attribute("standard_name")) {
@@ -76,7 +77,8 @@ void Vars::add(const array::Array &v) {
     if (m_standard_names[standard_name].empty()) {
       m_standard_names[standard_name] = name;
     } else {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Vars::add(): an array::Array with the standard_name '%s'"
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "Vars::add(): an array::Array with the standard_name '%s'"
                                     " was added already.",
                                     standard_name.c_str());
     }
@@ -85,7 +87,8 @@ void Vars::add(const array::Array &v) {
   if (m_variables[name] == NULL) {
     m_variables[name] = &v;
   } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Vars::add(): an array::Array with the name '%s'"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Vars::add(): an array::Array with the name '%s'"
                                   " was added already.",
                                   name.c_str());
   }
@@ -95,9 +98,9 @@ void Vars::add(const array::Array &v) {
 void Vars::remove(const std::string &name) {
 
   const array::Array *v = m_variables[name];
-  const auto &m = v->metadata();
+  const auto &m         = v->metadata();
 
-  if (v != NULL) {              // the argument is a "short" name
+  if (v != NULL) { // the argument is a "short" name
     m_variables.erase(name);
     if (m.has_attribute("standard_name")) {
       std::string std_name = m["standard_name"];
@@ -106,9 +109,9 @@ void Vars::remove(const std::string &name) {
     }
   } else {
     std::string &short_name = m_standard_names[name];
-    v = m_variables[short_name];
+    v                       = m_variables[short_name];
 
-    if (v != NULL) {            // the argument is a standard_name
+    if (v != NULL) { // the argument is a standard_name
       m_variables.erase(short_name);
       m_standard_names.erase(name);
     }
@@ -120,15 +123,16 @@ void Vars::remove(const std::string &name) {
 /*!
  * Checks standard_name first, then short name
  */
-const array::Array* Vars::get(const std::string &name) const {
+const array::Array *Vars::get(const std::string &name) const {
   const array::Array *tmp = get_internal(name);
   if (tmp == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable '%s' is not available", name.c_str());
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "variable '%s' is not available",
+                                  name.c_str());
   }
   return tmp;
 }
 
-const array::Array* Vars::get_internal(const std::string &name) const {
+const array::Array *Vars::get_internal(const std::string &name) const {
 
   auto j = m_standard_names.find(name);
   if (j != m_standard_names.end()) {
@@ -153,9 +157,9 @@ const array::Array* Vars::get_internal(const std::string &name) const {
   return NULL;
 }
 
-template<class A>
-const A* get_(const Vars *vars, const std::string &name, const std::string &kind) {
-  auto tmp = dynamic_cast<const A*>(vars->get(name));
+template <class A>
+const A *get_(const Vars *vars, const std::string &name, const std::string &kind) {
+  auto tmp = dynamic_cast<const A *>(vars->get(name));
 
   if (tmp == NULL) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "%s variable '%s' is not available",
@@ -165,27 +169,27 @@ const A* get_(const Vars *vars, const std::string &name, const std::string &kind
   return tmp;
 }
 
-const array::Scalar* Vars::get_2d_scalar(const std::string &name) const {
+const array::Scalar *Vars::get_2d_scalar(const std::string &name) const {
   return get_<array::Scalar>(this, name, "2D scalar");
 }
 
-const array::Scalar1* Vars::get_2d_scalar1(const std::string &name) const {
+const array::Scalar1 *Vars::get_2d_scalar1(const std::string &name) const {
   return get_<array::Scalar1>(this, name, "2D scalar (ghosted)");
 }
 
-const array::Scalar2* Vars::get_2d_scalar2(const std::string &name) const {
+const array::Scalar2 *Vars::get_2d_scalar2(const std::string &name) const {
   return get_<array::Scalar2>(this, name, "2D scalar (ghosted, stencil width=2)");
 }
 
-const array::Vector* Vars::get_2d_vector(const std::string &name) const {
+const array::Vector *Vars::get_2d_vector(const std::string &name) const {
   return get_<array::Vector>(this, name, "2D vector");
 }
 
-const array::CellType* Vars::get_2d_cell_type(const std::string &name) const {
+const array::CellType *Vars::get_2d_cell_type(const std::string &name) const {
   return get_<array::CellType>(this, name, "2D cell type");
 }
 
-const array::Array3D* Vars::get_3d_scalar(const std::string &name) const {
+const array::Array3D *Vars::get_3d_scalar(const std::string &name) const {
   return get_<array::Array3D>(this, name, "3D scalar");
 }
 
@@ -214,7 +218,7 @@ std::set<std::string> Vars::keys() const {
 
 void Vars::add_shared(std::shared_ptr<array::Array> variable) {
 
-  const auto &m = variable->metadata();
+  const auto &m    = variable->metadata();
   std::string name = variable->get_name();
 
   if (m.has_attribute("standard_name")) {
@@ -223,16 +227,19 @@ void Vars::add_shared(std::shared_ptr<array::Array> variable) {
     if (m_standard_names[standard_name].empty()) {
       m_standard_names[standard_name] = name;
     } else {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Vars::add_shared(): an array::Array with the standard_name '%s'"
-                                    " was added already.",
-                                    standard_name.c_str());
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "Vars::add_shared(): an array::Array with the standard_name '%s'"
+          " was added already.",
+          standard_name.c_str());
     }
   }
 
   if (m_variables_shared.find(name) == m_variables_shared.end()) {
     m_variables_shared[name] = variable;
   } else {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Vars::add_shared(): an array::Array with the name '%s'"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Vars::add_shared(): an array::Array with the name '%s'"
                                   " was added already.",
                                   name.c_str());
   }
@@ -242,7 +249,8 @@ void Vars::add_shared(std::shared_ptr<array::Array> variable) {
 void Vars::add_shared(std::shared_ptr<array::Array> variable, const std::string &name) {
 
   if (m_variables_shared.find(name) != m_variables_shared.end()) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Vars::add_shared(): an array::Array with the name '%s'"
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "Vars::add_shared(): an array::Array with the name '%s'"
                                   " was added already.",
                                   name.c_str());
   }
@@ -278,8 +286,9 @@ std::shared_ptr<A> get_shared_(const Vars *vars, const std::string &name, const 
 
 std::shared_ptr<array::Array> Vars::get_shared(const std::string &name) const {
   auto tmp = get_internal_shared(name);
-  if (not (bool)tmp) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "shared variable '%s' is not available", name.c_str());
+  if (not(bool) tmp) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "shared variable '%s' is not available",
+                                  name.c_str());
   }
   return tmp;
 }

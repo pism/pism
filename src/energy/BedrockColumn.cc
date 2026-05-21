@@ -25,18 +25,17 @@
 namespace pism {
 namespace energy {
 
-BedrockColumn::BedrockColumn(const std::string& prefix,
-                             const Config& config, double dz, unsigned int M)
-  : m_dz(dz), m_M(M), m_system(M, prefix) {
+BedrockColumn::BedrockColumn(const std::string &prefix, const Config &config, double dz,
+                             unsigned int M)
+    : m_dz(dz), m_M(M), m_system(M, prefix) {
 
   assert(M > 1);
 
-  const double
-    rho = config.get_number("energy.bedrock_thermal.density"),
-    c   = config.get_number("energy.bedrock_thermal.specific_heat_capacity");
+  const double rho = config.get_number("energy.bedrock_thermal.density"),
+               c   = config.get_number("energy.bedrock_thermal.specific_heat_capacity");
 
-  m_k   = config.get_number("energy.bedrock_thermal.conductivity");
-  m_D   = m_k / (rho * c);
+  m_k = config.get_number("energy.bedrock_thermal.conductivity");
+  m_D = m_k / (rho * c);
 }
 
 /*!
@@ -50,13 +49,13 @@ BedrockColumn::BedrockColumn(const std::string& prefix,
  *
  * Note: T_old and T_new may point to the same location.
  */
-void BedrockColumn::solve(double dt, double Q_bottom, double T_top,
-                          const double *T_old, double *T_new) {
+void BedrockColumn::solve(double dt, double Q_bottom, double T_top, const double *T_old,
+                          double *T_new) {
 
   double R = m_D * dt / (m_dz * m_dz);
   double G = -Q_bottom / m_k;
 
-  m_system.L(0)   = 0.0;                 // not used
+  m_system.L(0)   = 0.0; // not used
   m_system.D(0)   = 1.0 + 2.0 * R;
   m_system.U(0)   = -2.0 * R;
   m_system.RHS(0) = T_old[0] - 2.0 * G * m_dz * R;
@@ -72,7 +71,7 @@ void BedrockColumn::solve(double dt, double Q_bottom, double T_top,
 
   m_system.L(N)   = 0.0;
   m_system.D(N)   = 1.0;
-  m_system.U(N)   = 0.0;                 // not used
+  m_system.U(N)   = 0.0; // not used
   m_system.RHS(N) = T_top;
 
   m_system.solve(m_M, T_new);
@@ -82,8 +81,7 @@ void BedrockColumn::solve(double dt, double Q_bottom, double T_top,
  * This version of `solve()` is easier to use in Python.
  */
 void BedrockColumn::solve(double dt, double Q_bottom, double T_top,
-                          const std::vector<double> &T_old,
-                          std::vector<double> &result) {
+                          const std::vector<double> &T_old, std::vector<double> &result) {
   result.resize(m_M);
   solve(dt, Q_bottom, T_top, T_old.data(), result.data());
 }

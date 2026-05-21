@@ -18,8 +18,8 @@
  */
 
 #include "pism/energy/EnthalpyModel.hh"
-#include "pism/util/MaxTimestep.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace energy {
@@ -34,33 +34,33 @@ DummyEnergyModel::DummyEnergyModel(
 void DummyEnergyModel::restart_impl(const File &input_file, int record) {
   EnthalpyModel::restart_impl(input_file, record);
 
-  m_log->message(2,
-                 "NOTE: this \"energy balance\" model holds enthalpy and basal melt rate constant in time.\n");
+  m_log->message(
+      2,
+      "NOTE: this \"energy balance\" model holds enthalpy and basal melt rate constant in time.\n");
 }
 
-void DummyEnergyModel::bootstrap_impl(const File &input_file,
-                                   const array::Scalar &ice_thickness,
-                                   const array::Scalar &surface_temperature,
-                                   const array::Scalar &climatic_mass_balance,
-                                   const array::Scalar &basal_heat_flux) {
-  EnthalpyModel::bootstrap_impl(input_file,
-                                ice_thickness, surface_temperature,
+void DummyEnergyModel::bootstrap_impl(const File &input_file, const array::Scalar &ice_thickness,
+                                      const array::Scalar &surface_temperature,
+                                      const array::Scalar &climatic_mass_balance,
+                                      const array::Scalar &basal_heat_flux) {
+  EnthalpyModel::bootstrap_impl(input_file, ice_thickness, surface_temperature,
                                 climatic_mass_balance, basal_heat_flux);
-  m_log->message(2,
-                 "NOTE: this \"energy balance\" model holds enthalpy and basal melt rate constant in time.\n");
+  m_log->message(
+      2,
+      "NOTE: this \"energy balance\" model holds enthalpy and basal melt rate constant in time.\n");
 }
 
 void DummyEnergyModel::update_impl(double t, double dt, const Inputs &inputs) {
-  (void) t;
-  (void) dt;
-  (void) inputs;
+  (void)t;
+  (void)dt;
+  (void)inputs;
   // new enthalpy (stored in m_work) is the same as old enthalpy (in m_ice_enthalpy):
   m_work.copy_from(m_ice_enthalpy);
 }
 
 MaxTimestep DummyEnergyModel::max_timestep_impl(double t) const {
   // silence a compiler warning
-  (void) t;
+  (void)t;
 
   // no time step restriction
   return MaxTimestep("dummy energy model");

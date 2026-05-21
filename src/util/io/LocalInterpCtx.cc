@@ -16,20 +16,20 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <cstddef>              // size_t
-#include <cstring>
+#include <algorithm> // std::min
+#include <cstddef>   // size_t
 #include <cstdlib>
-#include <algorithm>            // std::min
+#include <cstring>
 #include <gsl/gsl_interp.h>
 #include <memory>
 #include <vector>
 
 #include "IO_Flags.hh"
-#include "pism/util/io/LocalInterpCtx.hh"
 #include "pism/util/Grid.hh"
+#include "pism/util/io/LocalInterpCtx.hh"
 
-#include "pism/util/error_handling.hh"
 #include "pism/util/Interpolation1D.hh"
+#include "pism/util/error_handling.hh"
 
 namespace pism {
 
@@ -97,7 +97,8 @@ LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input_grid,
 /*!
  * The two-dimensional version of the interpolation context.
  */
-LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input_grid, const grid::DistributedGridInfo &internal_grid,
+LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input_grid,
+                               const grid::DistributedGridInfo &internal_grid,
                                InterpolationType type) {
 
   const auto &xx = internal_grid.x;
@@ -130,8 +131,8 @@ LocalInterpCtx::LocalInterpCtx(const grid::InputGridInfo &input_grid, const grid
     y = std::make_shared<Interpolation1D>(type, &input_grid.y[start[Y_AXIS]], count[Y_AXIS],
                                           &yy[internal_grid.ys], internal_grid.ym);
 
-    std::vector<double> zz = {0.0};
-    z = std::make_shared<Interpolation1D>(type, zz, zz);
+    std::vector<double> zz = { 0.0 };
+    z                      = std::make_shared<Interpolation1D>(type, zz, zz);
   } else {
     throw RuntimeError(PISM_ERROR_LOCATION, "invalid interpolation type in LocalInterpCtx");
   }

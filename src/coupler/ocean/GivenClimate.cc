@@ -22,15 +22,14 @@
 #include "pism/util/Time.hh"
 
 #include "pism/coupler/util/options.hh"
-#include "pism/util/array/Forcing.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/array/Forcing.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace ocean {
 
-Given::Given(std::shared_ptr<const Grid> g)
-  : OceanModel(g, std::shared_ptr<OceanModel>()) {
+Given::Given(std::shared_ptr<const Grid> g) : OceanModel(g, std::shared_ptr<OceanModel>()) {
 
   m_shelf_base_temperature = allocate_shelf_base_temperature(g);
   m_shelf_base_mass_flux   = allocate_shelf_base_mass_flux(g);
@@ -42,25 +41,16 @@ Given::Given(std::shared_ptr<const Grid> g)
 
     File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    m_shelfbtemp = std::make_shared<array::Forcing>(m_grid,
-                                               file,
-                                               "shelfbtemp",
-                                               "", // no standard name
-                                               buffer_size,
-                                               opt.periodic,
-                                               LINEAR);
+    m_shelfbtemp = std::make_shared<array::Forcing>(m_grid, file, "shelfbtemp",
+                                                    "", // no standard name
+                                                    buffer_size, opt.periodic, LINEAR);
 
-    m_shelfbmassflux = std::make_shared<array::Forcing>(m_grid,
-                                                   file,
-                                                   "shelfbmassflux",
-                                                   "", // no standard name
-                                                   buffer_size,
-                                                   opt.periodic);
+    m_shelfbmassflux = std::make_shared<array::Forcing>(m_grid, file, "shelfbmassflux",
+                                                        "", // no standard name
+                                                        buffer_size, opt.periodic);
   }
 
-  m_shelfbtemp->metadata(0)
-      .long_name("absolute temperature at ice shelf base")
-      .units("kelvin");
+  m_shelfbtemp->metadata(0).long_name("absolute temperature at ice shelf base").units("kelvin");
 
   m_shelfbmassflux->metadata(0)
       .long_name("ice mass flux from ice shelf base (positive flux is loss from ice shelf)")
@@ -70,9 +60,8 @@ Given::Given(std::shared_ptr<const Grid> g)
 
 void Given::init_impl(const Geometry &geometry) {
 
-  m_log->message(2,
-             "* Initializing the ocean model reading base of the shelf temperature\n"
-             "  and sub-shelf mass flux from a file...\n");
+  m_log->message(2, "* Initializing the ocean model reading base of the shelf temperature\n"
+                    "  and sub-shelf mass flux from a file...\n");
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.given");
 
@@ -86,13 +75,12 @@ void Given::init_impl(const Geometry &geometry) {
     update(inputs, time().current(), 0); // dt is irrelevant
   }
 
-  const double
-    ice_density   = m_config->get_number("constants.ice.density"),
-    water_density = m_config->get_number("constants.sea_water.density"),
-    g             = m_config->get_number("constants.standard_gravity");
+  const double ice_density   = m_config->get_number("constants.ice.density"),
+               water_density = m_config->get_number("constants.sea_water.density"),
+               g             = m_config->get_number("constants.standard_gravity");
 
   compute_average_water_column_pressure(geometry, ice_density, water_density, g,
-                                           *m_water_column_pressure);
+                                        *m_water_column_pressure);
 }
 
 void Given::update_impl(const Inputs &inputs, double t, double dt) {
@@ -106,26 +94,25 @@ void Given::update_impl(const Inputs &inputs, double t, double dt) {
   m_shelf_base_temperature->copy_from(*m_shelfbtemp);
   m_shelf_base_mass_flux->copy_from(*m_shelfbmassflux);
 
-  const double
-    ice_density   = m_config->get_number("constants.ice.density"),
-    water_density = m_config->get_number("constants.sea_water.density"),
-    g             = m_config->get_number("constants.standard_gravity");
+  const double ice_density   = m_config->get_number("constants.ice.density"),
+               water_density = m_config->get_number("constants.sea_water.density"),
+               g             = m_config->get_number("constants.standard_gravity");
 
   compute_average_water_column_pressure(*inputs.geometry, ice_density, water_density, g,
                                         *m_water_column_pressure);
 }
 
 MaxTimestep Given::max_timestep_impl(double t) const {
-  (void) t;
+  (void)t;
 
   return MaxTimestep("ocean th");
 }
 
-const array::Scalar& Given::shelf_base_temperature_impl() const {
+const array::Scalar &Given::shelf_base_temperature_impl() const {
   return *m_shelf_base_temperature;
 }
 
-const array::Scalar& Given::shelf_base_mass_flux_impl() const {
+const array::Scalar &Given::shelf_base_mass_flux_impl() const {
   return *m_shelf_base_mass_flux;
 }
 

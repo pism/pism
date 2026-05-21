@@ -20,8 +20,8 @@
 #define _SHALLOWSTRESSBALANCE_H_
 
 #include "pism/util/Component.hh"
-#include "pism/util/array/Vector.hh"
 #include "pism/util/EnthalpyConverter.hh"
+#include "pism/util/array/Vector.hh"
 
 namespace pism {
 namespace rheology {
@@ -48,15 +48,13 @@ public:
   virtual void update(const Inputs &inputs, bool full_update) = 0;
 
   //! \brief Get the thickness-advective 2D velocity.
-  const array::Vector1& velocity() const;
+  const array::Vector1 &velocity() const;
 
   //! \brief Get the basal frictional heating (for the adaptive energy time-stepping).
-  const array::Scalar& basal_frictional_heating();
+  const array::Scalar &basal_frictional_heating();
 
-  void compute_basal_frictional_heating(const array::Vector &velocity,
-                                        const array::Scalar &tauc,
-                                        const array::CellType &mask,
-                                        array::Scalar &result) const;
+  void compute_basal_frictional_heating(const array::Vector &velocity, const array::Scalar &tauc,
+                                        const array::CellType &mask, array::Scalar &result) const;
   // helpers:
 
   //! \brief Produce a report string for the standard output.
@@ -66,9 +64,10 @@ public:
 
   std::shared_ptr<EnthalpyConverter> enthalpy_converter() const;
 
-  const IceBasalResistancePlasticLaw* sliding_law() const;
+  const IceBasalResistancePlasticLaw *sliding_law() const;
 
   double flow_enhancement_factor() const;
+
 protected:
   virtual void init_impl();
 
@@ -106,6 +105,7 @@ public:
   PrescribedSliding(std::shared_ptr<const Grid> g);
   virtual ~PrescribedSliding() = default;
   virtual void update(const Inputs &inputs, bool full_update);
+
 protected:
   virtual void init_impl();
 };

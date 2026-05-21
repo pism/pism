@@ -24,7 +24,7 @@
 #include "pism/util/node_types.hh"
 
 #include "pism/stressbalance/blatter/util/DataAccess.hh"
-#include "pism/stressbalance/blatter/util/grid_hierarchy.hh"    // grid_transpose(), grid_z()
+#include "pism/stressbalance/blatter/util/grid_hierarchy.hh" // grid_transpose(), grid_z()
 #include "pism/util/fem/Quadrature.hh"
 
 namespace pism {
@@ -33,17 +33,11 @@ namespace stressbalance {
 /*!
  * Computes the Jacobian contribution of the "main" part of the Blatter system.
  */
-void Blatter::jacobian_f(const fem::Q1Element3 &element,
-                         const Vector2d *u_nodal,
-                         const double *B_nodal,
-                         double K[16][16]) {
+void Blatter::jacobian_f(const fem::Q1Element3 &element, const Vector2d *u_nodal,
+                         const double *B_nodal, double K[16][16]) {
   int Nk = fem::q13d::n_chi;
 
-  Vector2d
-    *u   = m_work2[0],
-    *u_x = m_work2[1],
-    *u_y = m_work2[2],
-    *u_z = m_work2[3];
+  Vector2d *u = m_work2[0], *u_x = m_work2[1], *u_y = m_work2[2], *u_z = m_work2[3];
 
   double *B = m_work[0];
 
@@ -54,16 +48,10 @@ void Blatter::jacobian_f(const fem::Q1Element3 &element,
   for (unsigned int q = 0; q < element.n_pts(); ++q) {
     auto W = element.weight(q) / m_scaling;
 
-    double
-      ux = u_x[q].u,
-      uy = u_y[q].u,
-      uz = u_z[q].u,
-      vx = u_x[q].v,
-      vy = u_y[q].v,
-      vz = u_z[q].v;
+    double ux = u_x[q].u, uy = u_y[q].u, uz = u_z[q].u, vx = u_x[q].v, vy = u_y[q].v, vz = u_z[q].v;
 
-    double gamma = (ux * ux + vy * vy + ux * vy +
-                    0.25 * ((uy + vx) * (uy + vx) + uz * uz + vz * vz));
+    double gamma =
+        (ux * ux + vy * vy + ux * vy + 0.25 * ((uy + vx) * (uy + vx) + uz * uz + vz * vz));
 
     double eta, deta;
     m_flow_law->effective_viscosity(B[q], gamma, m_viscosity_eps, &eta, &deta);
@@ -80,30 +68,26 @@ void Blatter::jacobian_f(const fem::Q1Element3 &element,
         auto phi = element.chi(q, s);
 
         // partial derivatives of gamma with respect to u_i and v_i
-        double
-          gamma_u = 2.0 * ux * phi.dx + vy * phi.dx + 0.5 * phi.dy * (uy + vx) + 0.5 * uz * phi.dz,
-          gamma_v = 2.0 * vy * phi.dy + ux * phi.dy + 0.5 * phi.dx * (uy + vx) + 0.5 * vz * phi.dz;
+        double gamma_u =
+                   2.0 * ux * phi.dx + vy * phi.dx + 0.5 * phi.dy * (uy + vx) + 0.5 * uz * phi.dz,
+               gamma_v =
+                   2.0 * vy * phi.dy + ux * phi.dy + 0.5 * phi.dx * (uy + vx) + 0.5 * vz * phi.dz;
 
         // partial derivatives of eta with respect to u_i and v_i, using chain rule
-        double
-          eta_u = deta * gamma_u,
-          eta_v = deta * gamma_v;
+        double eta_u = deta * gamma_u, eta_v = deta * gamma_v;
 
         // F_u = grad(psi) . (4ux + 2vy, uy + vx, uz) and
         // F_v = grad(psi) . (uy + vx, 4vy + 2ux, vz)
-        double
-          F_u = (psi.dx * (4.0 * ux + 2.0 * vy) + psi.dy * (uy + vx) + psi.dz * uz),
-          F_v = (psi.dx * (uy + vx) + psi.dy * (4.0 * vy + 2.0 * ux) + psi.dz * vz);
+        double F_u = (psi.dx * (4.0 * ux + 2.0 * vy) + psi.dy * (uy + vx) + psi.dz * uz),
+               F_v = (psi.dx * (uy + vx) + psi.dy * (4.0 * vy + 2.0 * ux) + psi.dz * vz);
 
         // partial derivatives of F_u with respect to u_i and v_i
-        double
-          F_uu = 4.0 * psi.dx * phi.dx + psi.dy * phi.dy + psi.dz * phi.dz,
-          F_uv = 2.0 * psi.dx * phi.dy + psi.dy * phi.dx;
+        double F_uu = 4.0 * psi.dx * phi.dx + psi.dy * phi.dy + psi.dz * phi.dz,
+               F_uv = 2.0 * psi.dx * phi.dy + psi.dy * phi.dx;
 
         // partial derivatives of F_v with respect to u_i and v_i
-        double
-          F_vu = 2.0 * psi.dy * phi.dx + psi.dx * phi.dy,
-          F_vv = 4.0 * psi.dy * phi.dy + psi.dx * phi.dx + psi.dz * phi.dz;
+        double F_vu = 2.0 * psi.dy * phi.dx + psi.dx * phi.dy,
+               F_vv = 4.0 * psi.dy * phi.dy + psi.dx * phi.dx + psi.dz * phi.dz;
 
         K[t * 2 + 0][s * 2 + 0] += W * (eta * F_uu + eta_u * F_u);
         K[t * 2 + 0][s * 2 + 1] += W * (eta * F_uv + eta_v * F_u);
@@ -112,7 +96,6 @@ void Blatter::jacobian_f(const fem::Q1Element3 &element,
       }
     }
   } // end of the loop over q
-
 }
 
 /*!
@@ -120,18 +103,13 @@ void Blatter::jacobian_f(const fem::Q1Element3 &element,
  *
  * This method implements basal sliding.
  */
-void Blatter::jacobian_basal(const fem::Q1Element3Face &face,
-                             const double *tauc_nodal,
-                             const double *f_nodal,
-                             const Vector2d *u_nodal,
-                             double K[16][16]) {
+void Blatter::jacobian_basal(const fem::Q1Element3Face &face, const double *tauc_nodal,
+                             const double *f_nodal, const Vector2d *u_nodal, double K[16][16]) {
   int Nk = fem::q13d::n_chi;
 
   Vector2d *u = m_work2[0];
 
-  double
-    *tauc       = m_work[0],
-    *floatation = m_work[1];
+  double *tauc = m_work[0], *floatation = m_work[1];
 
   face.evaluate(u_nodal, u);
   face.evaluate(tauc_nodal, tauc);
@@ -170,7 +148,7 @@ void Blatter::jacobian_dirichlet(const DMDALocalInfo &info, Parameters **P, Mat 
   PetscErrorCode ierr;
 
   // Dirichlet scaling
-  Vector2d scaling = {1.0, 1.0};
+  Vector2d scaling = { 1.0, 1.0 };
 
   // take care of Dirichlet nodes (both explicit and grid points outside the domain)
   //
@@ -178,15 +156,15 @@ void Blatter::jacobian_dirichlet(const DMDALocalInfo &info, Parameters **P, Mat 
   for (int j = info.ys; j < info.ys + info.ym; j++) {
     for (int i = info.xs; i < info.xs + info.xm; i++) {
       for (int k = info.zs; k < info.zs + info.zm; k++) {
-        if ((int)P[j][i].node_type == NODE_EXTERIOR or dirichlet_node(info, {i, j, k})) {
+        if ((int)P[j][i].node_type == NODE_EXTERIOR or dirichlet_node(info, { i, j, k })) {
 
-          double identity[4] = {scaling.u, 0, 0, scaling.v};
+          double identity[4] = { scaling.u, 0, 0, scaling.v };
 
           MatStencil row;
-          row.i = k;            // STORAGE_ORDER
-          row.j = i;            // STORAGE_ORDER
-          row.k = j;            // STORAGE_ORDER
-          ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, identity, ADD_VALUES);
+          row.i = k; // STORAGE_ORDER
+          row.j = i; // STORAGE_ORDER
+          row.k = j; // STORAGE_ORDER
+          ierr  = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, identity, ADD_VALUES);
           PISM_CHK(ierr, "MatSetValuesBlockedStencil"); // this may throw
         }
       }
@@ -197,8 +175,7 @@ void Blatter::jacobian_dirichlet(const DMDALocalInfo &info, Parameters **P, Mat 
 /*!
  * Compute the Jacobian matrix.
  */
-void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
-                               const Vector2d ***X, Mat A, Mat J) {
+void Blatter::compute_jacobian(DMDALocalInfo *petsc_info, const Vector2d ***X, Mat A, Mat J) {
   auto info = grid_transpose(*petsc_info);
 
   // Zero out the Jacobian in preparation for updating it.
@@ -223,15 +200,10 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   assert(info.sw == 1);
 
   // horizontal grid spacing is the same on all multigrid levels
-  double
-    x_min = m_grid->x0() - m_grid->Lx(),
-    y_min = m_grid->y0() - m_grid->Ly(),
-    dx    = m_grid->dx(),
-    dy    = m_grid->dy();
+  double x_min = m_grid->x0() - m_grid->Lx(), y_min = m_grid->y0() - m_grid->Ly(),
+         dx = m_grid->dx(), dy = m_grid->dy();
 
-  fem::Q1Element3 element(info,
-                          fem::Q13DQuadrature8(),
-                          dx, dy, x_min, y_min);
+  fem::Q1Element3 element(info, fem::Q13DQuadrature8(), dx, dy, x_min, y_min);
 
   // Maximum number of nodes per element
   const int Nk = fem::q13d::n_chi;
@@ -251,7 +223,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
   // current multigrid level
   //
   // FIXME: This communicates ghosts of ice hardness
-  DataAccess<double***> hardness(info.da, 3, GHOSTED);
+  DataAccess<double ***> hardness(info.da, 3, GHOSTED);
 
   array::AccessScope list(m_parameters);
   auto *P = m_parameters.array();
@@ -261,11 +233,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
     for (int i = info.gxs; i < info.gxs + info.gxm - 1; i++) {
 
       // Initialize 2D geometric info at element nodes
-      nodal_parameter_values(element, P, i, j,
-                             node_type,
-                             bottom_elevation,
-                             ice_thickness,
-                             NULL,
+      nodal_parameter_values(element, P, i, j, node_type, bottom_elevation, ice_thickness, NULL,
                              NULL);
 
       // skip ice-free (exterior) columns
@@ -277,7 +245,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
 
         // Element-local Jacobian matrix (there are Nk vector valued degrees of freedom
         // per element, for a total of Nk*Nk = 64 entries in the local Jacobian.
-        double K[2*Nk][2*Nk];
+        double K[2 * Nk][2 * Nk];
         memset(K, 0, sizeof(K));
 
         // Compute coordinates of the nodes of this element and fetch node types.
@@ -306,7 +274,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
           }
         }
 
-        element.nodal_values((double***)hardness, B_nodal);
+        element.nodal_values((double ***)hardness, B_nodal);
 
         jacobian_f(element, velocity, B_nodal, K);
 
@@ -344,17 +312,19 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
 
   jacobian_dirichlet(info, P, J);
 
-  ierr = MatAssemblyBegin(J, MAT_FINAL_ASSEMBLY); PISM_CHK(ierr, "MatAssemblyBegin");
-  ierr = MatAssemblyEnd(J, MAT_FINAL_ASSEMBLY); PISM_CHK(ierr, "MatAssemblyEnd");
+  ierr = MatAssemblyBegin(J, MAT_FINAL_ASSEMBLY);
+  PISM_CHK(ierr, "MatAssemblyBegin");
+  ierr = MatAssemblyEnd(J, MAT_FINAL_ASSEMBLY);
+  PISM_CHK(ierr, "MatAssemblyEnd");
   if (A != J) {
-    ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY); PISM_CHK(ierr, "MatAssemblyBegin");
-    ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY); PISM_CHK(ierr, "MatAssemblyEnd");
+    ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);
+    PISM_CHK(ierr, "MatAssemblyBegin");
+    ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);
+    PISM_CHK(ierr, "MatAssemblyEnd");
   }
 }
 
-PetscErrorCode Blatter::jacobian_callback(DMDALocalInfo *info,
-                                          const Vector2d ***x,
-                                          Mat A, Mat J,
+PetscErrorCode Blatter::jacobian_callback(DMDALocalInfo *info, const Vector2d ***x, Mat A, Mat J,
                                           Blatter *solver) {
   try {
     solver->compute_jacobian(info, x, A, J);

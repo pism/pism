@@ -18,27 +18,27 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#include <math.h>
 #include "pism/verification/tests/exactTestN.h"
+#include <math.h>
 
-#define secpera  31556926.0    /* seconds per year; 365.2422 days */
-#define g        9.81
-#define rho      910.0         /* ice density; kg m-3 */
-#define rhow     1028.0        /* sea water density; kg m-3 */
-#define n        3.0           /* Glen power */
+#define secpera 31556926.0 /* seconds per year; 365.2422 days */
+#define g 9.81
+#define rho 910.0   /* ice density; kg m-3 */
+#define rhow 1028.0 /* sea water density; kg m-3 */
+#define n 3.0       /* Glen power */
 
 struct TestNConstants exactNConstants(void) {
   double s = 0.0;
   struct TestNConstants result;
 
   /* geometry */
-  result.H0   = 3000.0;
-  result.L0   = 500.0e3;
-  result.xc   = 0.9 * (result.L0);
+  result.H0 = 3000.0;
+  result.L0 = 500.0e3;
+  result.xc = 0.9 * (result.L0);
 
   /* mass balance */
   result.a     = 0.003 / secpera;   /* s-1; mass balance gradient with elevation */
-  result.H_ela = (result.H0) / 1.5;       /* m;  H0 = 1.5 H_ela  exactly */
+  result.H_ela = (result.H0) / 1.5; /* m;  H0 = 1.5 H_ela  exactly */
 
   /* sliding */
   /* s m-1; choose k so that eqn (24) gives our L0 */
@@ -47,7 +47,7 @@ struct TestNConstants exactNConstants(void) {
   /* grounded calving front boundary condition, imposed at xc = .9 L0, determines
      constant vertically-integrated longitudinal stress T; see (2.12) in Schoof (2006);
      treats Hc = H(xc) as exactly at flotation */
-  s = (result.xc) / (result.L0);
+  s           = (result.xc) / (result.L0);
   result.H_xc = (result.H0) * (1.0 - s * s);
   result.T_xc = 0.5 * (1.0 - rho / rhow) * rho * g * (result.H_xc) * (result.H_xc);
 
@@ -62,12 +62,12 @@ struct TestNParameters exactN(double x) {
 
   {
     result.error_code = 0;
-    result.H = 0;
-    result.h_x = 0;
-    result.u = 0;
-    result.M = 0;
-    result.B = 0;
-    result.beta = 0;
+    result.H          = 0;
+    result.h_x        = 0;
+    result.u          = 0;
+    result.M          = 0;
+    result.B          = 0;
+    result.beta       = 0;
   }
 
   if (x < 0.0) {
@@ -80,23 +80,21 @@ struct TestNParameters exactN(double x) {
     return result;
   }
 
-  q   = (1.0 / n) - 1.0;              /* a useful power */
-  hxx = - 2.0 * c.H0 / (c.L0 * c.L0); /* constant concavity of h(x) */
-  ux  = - hxx / c.k;                  /* constant strain rate */
+  q   = (1.0 / n) - 1.0;             /* a useful power */
+  hxx = -2.0 * c.H0 / (c.L0 * c.L0); /* constant concavity of h(x) */
+  ux  = -hxx / c.k;                  /* constant strain rate */
 
-  result.H = c.H0 * (1.0 - (x / c.L0) * (x / c.L0));  /* eqn (23) in Bodvardsson */
+  result.H = c.H0 * (1.0 - (x / c.L0) * (x / c.L0)); /* eqn (23) in Bodvardsson */
 
   result.h_x = hxx * x;
-  
-  result.u = - (result.h_x) / c.k; /* eqn (10) in Bodvardson, once SIA is dropped */
-  
+
+  result.u = -(result.h_x) / c.k; /* eqn (10) in Bodvardson, once SIA is dropped */
+
   result.M = c.a * ((result.H) - c.H_ela); /* page 6 in Bodvardsson, just before eqn (23) */
 
-  result.B = c.T_xc / (2.0 * (result.H) * pow(fabs(ux),q) * ux); /* Bueler interpretation */
+  result.B = c.T_xc / (2.0 * (result.H) * pow(fabs(ux), q) * ux); /* Bueler interpretation */
 
   result.beta = c.k * rho * g * (result.H);
 
   return result;
 }
-
-

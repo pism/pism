@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include <gsl/gsl_interp.h>     // gsl_interp_bsearch()
+#include <gsl/gsl_interp.h> // gsl_interp_bsearch()
 
 #include <algorithm>
 #include <memory>
@@ -26,22 +26,21 @@
 
 #include "pism/icemodel/IceModel.hh"
 
-#include "pism/util/Grid.hh"
+#include "pism/util/Component.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/Diagnostic.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/Profiling.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/Profiling.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/Component.hh"
 #include "pism/util/io/IO_Flags.hh"
-#include "pism/util/io/io_helpers.hh"
 #include "pism/util/io/SynchronousOutputWriter.hh"
+#include "pism/util/io/io_helpers.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 
-MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
-                                   double resolution,
+MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t, double resolution,
                                    const std::string &description) {
 
   const size_t N = times.size();
@@ -49,7 +48,7 @@ MaxTimestep reporting_max_timestep(const std::vector<double> &times, double t,
     return MaxTimestep();
   }
 
-  size_t j = 0;
+  size_t j  = 0;
   double dt = 0.0;
   if (t < times[0]) {
     j = -1;
@@ -130,7 +129,7 @@ void IceModel::init_final_output() {
   {
     std::string proj_string = m_grid->get_mapping_info()["proj_params"];
     if (not proj_string.empty()) {
-      for (std::string v : {"lon", "lat"}) {
+      for (std::string v : { "lon", "lat" }) {
         if (set_member(v, m_output_vars)) {
           m_output_vars.insert(v + "_bnds");
         }
@@ -182,7 +181,7 @@ void IceModel::write_final_output() {
 void IceModel::write_run_stats(const OutputFile &file) const {
 
   auto t_length = file.time_dimension_length();
-  auto t_start = t_length > 0 ? t_length - 1 : 0;
+  auto t_start  = t_length > 0 ? t_length - 1 : 0;
 
   double wall_clock_hours = pism::wall_clock_hours(m_grid->com, m_start_time),
          proc_hours       = m_grid->size() * wall_clock_hours,
@@ -205,8 +204,7 @@ void IceModel::write_run_stats(const OutputFile &file) const {
 
 void IceModel::define_variables(const OutputFile &file,
                                 const std::set<VariableMetadata> &variables) const {
-  io::define_variables(file, variables,
-                       m_grid->get_mapping_info(),
+  io::define_variables(file, variables, m_grid->get_mapping_info(),
                        m_config->get_flag("output.use_MKS"));
 }
 
@@ -242,7 +240,7 @@ void IceModel::write_state(const OutputFile &file) const {
     v->write(file);
   }
 
-  for (const auto& m : m_submodels) {
+  for (const auto &m : m_submodels) {
     m.second->write_state(file);
   }
 }
@@ -255,7 +253,8 @@ std::string IceModel::save_state_on_error(const std::string &suffix,
   std::shared_ptr<OutputWriter> writer =
       std::make_shared<SynchronousOutputWriter>(m_grid->com, *m_config);
 
-  auto variables = pism::combine(m_output_file_contents, diagnostic_variables(additional_variables));
+  auto variables =
+      pism::combine(m_output_file_contents, diagnostic_variables(additional_variables));
 
   std::set<std::string> variable_names;
   for (const auto &v : variables) {

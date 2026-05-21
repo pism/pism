@@ -35,6 +35,7 @@ public:
 
   virtual void init_impl(const Geometry &geometry);
   virtual void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
+
 protected:
   virtual MaxTimestep max_timestep_impl(double t) const;
   virtual void update_impl(const Geometry &geometry, double t, double dt);
@@ -44,4 +45,4 @@ protected:
 } // end of namespace atmosphere
 } // end of namespace pism
 
-#endif  // __PASeariseGreenland_hh
+#endif // __PASeariseGreenland_hh

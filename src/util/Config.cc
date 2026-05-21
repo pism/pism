@@ -17,32 +17,31 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
+#include <cmath>   // std::round()
+#include <cstdlib> // realpath()
 #include <mpi.h>
-#include <cmath>                // std::round()
-#include <cstdlib>              // realpath()
 
 #include "VariableMetadata.hh"
+#include "pism/external/nlohmann/json.hpp"
 #include "pism/pism_config.hh"
-#include "pism/util/io/File.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/Units.hh"
-#include "pism/util/pism_utilities.hh"
-#include "pism/util/pism_options.hh"
 #include "pism/util/error_handling.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/io/OutputWriter.hh"
-#include "pism/external/nlohmann/json.hpp"
+#include "pism/util/pism_options.hh"
+#include "pism/util/pism_utilities.hh"
 
 // include an implementation header so that we can allocate a NetCDFConfig instance in
 // config_from_options()
-#include "pism/util/NetCDFConfig.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/NetCDFConfig.hh"
 
 namespace pism {
 
 struct Config::Impl {
-  Impl(units::System::Ptr sys)
-    : unit_system(sys) {
+  Impl(units::System::Ptr sys) : unit_system(sys) {
     // empty
   }
 
@@ -58,8 +57,7 @@ struct Config::Impl {
   std::set<std::string> parameters_used;
 };
 
-Config::Config(units::System::Ptr system)
-  : m_impl(new Impl(system)) {
+Config::Config(units::System::Ptr system) : m_impl(new Impl(system)) {
   // empty
 }
 
@@ -95,8 +93,7 @@ void Config::import_from(const Config &other) {
     if (set_member(p.first, parameters)) {
       this->set_numbers(p.first, p.second, CONFIG_USER);
     } else {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "unrecognized parameter %s in %s",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "unrecognized parameter %s in %s",
                                     p.first.c_str(), other.filename().c_str());
     }
   }
@@ -105,8 +102,7 @@ void Config::import_from(const Config &other) {
     if (set_member(p.first, parameters)) {
       this->set_string(p.first, p.second, CONFIG_USER);
     } else {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "unrecognized parameter %s in %s",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "unrecognized parameter %s in %s",
                                     p.first.c_str(), other.filename().c_str());
     }
   }
@@ -115,8 +111,7 @@ void Config::import_from(const Config &other) {
     if (set_member(p.first, parameters)) {
       this->set_flag(p.first, p.second, CONFIG_USER);
     } else {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "unrecognized parameter %s in %s",
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "unrecognized parameter %s in %s",
                                     p.first.c_str(), other.filename().c_str());
     }
   }
@@ -125,7 +120,7 @@ void Config::import_from(const Config &other) {
 void Config::resolve_filenames() {
   for (const auto &s : all_strings()) {
     auto parameter = s.first;
-    auto value = s.second;
+    auto value     = s.second;
 
     if (value.empty()) {
       continue;
@@ -145,11 +140,11 @@ void Config::resolve_filenames() {
   } // end of the loop over all strings
 }
 
-const std::set<std::string>& Config::parameters_set_by_user() const {
+const std::set<std::string> &Config::parameters_set_by_user() const {
   return m_impl->parameters_set_by_user;
 }
 
-const std::set<std::string>& Config::parameters_used() const {
+const std::set<std::string> &Config::parameters_used() const {
   return m_impl->parameters_used;
 }
 
@@ -242,17 +237,15 @@ double Config::get_number(const std::string &name, UseFlag flag) const {
   return value;
 }
 
-double Config::get_number(const std::string &name,
-                          const std::string &units,
-                          UseFlag flag) const {
-  double value = this->get_number(name, flag);
+double Config::get_number(const std::string &name, const std::string &units, UseFlag flag) const {
+  double value            = this->get_number(name, flag);
   std::string input_units = this->units(name);
 
   try {
     return units::convert(m_impl->unit_system, value, input_units, units);
   } catch (RuntimeError &e) {
-    e.add_context("converting \"%s\" from \"%s\" to \"%s\"",
-                  name.c_str(), input_units.c_str(), units.c_str());
+    e.add_context("converting \"%s\" from \"%s\" to \"%s\"", name.c_str(), input_units.c_str(),
+                  units.c_str());
     throw;
   }
 }
@@ -264,8 +257,7 @@ std::vector<double> Config::get_numbers(const std::string &name, UseFlag flag) c
   return this->get_numbers_impl(name);
 }
 
-std::vector<double> Config::get_numbers(const std::string &name,
-                                        const std::string &units,
+std::vector<double> Config::get_numbers(const std::string &name, const std::string &units,
                                         UseFlag flag) const {
   auto value       = this->get_numbers(name, flag);
   auto input_units = this->units(name);
@@ -277,14 +269,13 @@ std::vector<double> Config::get_numbers(const std::string &name,
     }
     return value;
   } catch (RuntimeError &e) {
-    e.add_context("converting \"%s\" from \"%s\" to \"%s\"",
-                  name.c_str(), input_units.c_str(), units.c_str());
+    e.add_context("converting \"%s\" from \"%s\" to \"%s\"", name.c_str(), input_units.c_str(),
+                  units.c_str());
     throw;
   }
 }
 
-void Config::set_number(const std::string &name, double value,
-                        ConfigSettingFlag flag) {
+void Config::set_number(const std::string &name, double value, ConfigSettingFlag flag) {
   std::set<std::string> &set_by_user = m_impl->parameters_set_by_user;
 
   if (flag == CONFIG_USER) {
@@ -292,16 +283,14 @@ void Config::set_number(const std::string &name, double value,
   }
 
   // stop if we're setting the default value and this parameter was set by user already
-  if (flag == CONFIG_DEFAULT and
-      set_by_user.find(name) != set_by_user.end()) {
+  if (flag == CONFIG_DEFAULT and set_by_user.find(name) != set_by_user.end()) {
     return;
   }
 
   this->set_number_impl(name, value);
 }
 
-void Config::set_numbers(const std::string &name,
-                         const std::vector<double> &values,
+void Config::set_numbers(const std::string &name, const std::vector<double> &values,
                          ConfigSettingFlag flag) {
   std::set<std::string> &set_by_user = m_impl->parameters_set_by_user;
 
@@ -310,8 +299,7 @@ void Config::set_numbers(const std::string &name,
   }
 
   // stop if we're setting the default value and this parameter was set by user already
-  if (flag == CONFIG_DEFAULT and
-      set_by_user.find(name) != set_by_user.end()) {
+  if (flag == CONFIG_DEFAULT and set_by_user.find(name) != set_by_user.end()) {
     return;
   }
 
@@ -329,9 +317,7 @@ std::string Config::get_string(const std::string &name, UseFlag flag) const {
   return this->get_string_impl(name);
 }
 
-void Config::set_string(const std::string &name,
-                        const std::string &value,
-                        ConfigSettingFlag flag) {
+void Config::set_string(const std::string &name, const std::string &value, ConfigSettingFlag flag) {
   std::set<std::string> &set_by_user = m_impl->parameters_set_by_user;
 
   if (flag == CONFIG_USER) {
@@ -339,8 +325,7 @@ void Config::set_string(const std::string &name,
   }
 
   // stop if we're setting the default value and this parameter was set by user already
-  if (flag == CONFIG_DEFAULT and
-      set_by_user.find(name) != set_by_user.end()) {
+  if (flag == CONFIG_DEFAULT and set_by_user.find(name) != set_by_user.end()) {
     return;
   }
 
@@ -351,15 +336,14 @@ Config::Flags Config::all_flags() const {
   return this->all_flags_impl();
 }
 
-bool Config::get_flag(const std::string& name, UseFlag flag) const {
+bool Config::get_flag(const std::string &name, UseFlag flag) const {
   if (flag == REMEMBER_THIS_USE) {
     m_impl->parameters_used.insert(name);
   }
   return this->get_flag_impl(name);
 }
 
-void Config::set_flag(const std::string& name, bool value,
-                         ConfigSettingFlag flag) {
+void Config::set_flag(const std::string &name, bool value, ConfigSettingFlag flag) {
   std::set<std::string> &set_by_user = m_impl->parameters_set_by_user;
 
   if (flag == CONFIG_USER) {
@@ -367,8 +351,7 @@ void Config::set_flag(const std::string& name, bool value,
   }
 
   // stop if we're setting the default value and this parameter was set by user already
-  if (flag == CONFIG_DEFAULT and
-      set_by_user.find(name) != set_by_user.end()) {
+  if (flag == CONFIG_DEFAULT and set_by_user.find(name) != set_by_user.end()) {
     return;
   }
 
@@ -376,7 +359,8 @@ void Config::set_flag(const std::string& name, bool value,
 }
 
 static bool special_parameter(const std::string &name) {
-  for (const auto &suffix : {"_doc", "_units", "_type", "_option", "_choices", "_valid_min", "_valid_max"}) {
+  for (const auto &suffix :
+       { "_doc", "_units", "_type", "_option", "_choices", "_valid_min", "_valid_max" }) {
     if (ends_with(name, suffix)) {
       return true;
     }
@@ -390,9 +374,8 @@ static bool special_parameter(const std::string &name) {
 void print_config(const Logger &log, int verbosity_threshhold, const Config &config) {
   const int v = verbosity_threshhold;
 
-  log.message(v,
-             "### Strings:\n"
-             "###\n");
+  log.message(v, "### Strings:\n"
+                 "###\n");
 
   Config::Strings strings = config.all_strings();
 
@@ -417,17 +400,15 @@ void print_config(const Logger &log, int verbosity_threshhold, const Config &con
     std::string padding(max_name_size - name.size(), ' ');
 
     if (config.type(name) == "keyword") {
-      log.message(v, "  %s%s = \"%s\" (allowed choices: %s)\n",
-                  name.c_str(), padding.c_str(), value.c_str(),
-                  config.choices(name).c_str());
+      log.message(v, "  %s%s = \"%s\" (allowed choices: %s)\n", name.c_str(), padding.c_str(),
+                  value.c_str(), config.choices(name).c_str());
     } else {
       log.message(v, "  %s%s = \"%s\"\n", name.c_str(), padding.c_str(), value.c_str());
     }
   }
 
-  log.message(v,
-             "### Doubles:\n"
-             "###\n");
+  log.message(v, "### Doubles:\n"
+                 "###\n");
 
   // find max. name size
   max_name_size = 0;
@@ -436,8 +417,8 @@ void print_config(const Logger &log, int verbosity_threshhold, const Config &con
   }
   // print doubles
   for (auto d : config.all_doubles()) {
-    std::string name  = d.first;
-    double      value = d.second[0];
+    std::string name = d.first;
+    double value     = d.second[0];
 
     if (special_parameter(name)) {
       continue;
@@ -456,9 +437,8 @@ void print_config(const Logger &log, int verbosity_threshhold, const Config &con
     }
   }
 
-  log.message(v,
-             "### Flags:\n"
-             "###\n");
+  log.message(v, "### Flags:\n"
+                 "###\n");
 
   // find max. name size
   max_name_size = 0;
@@ -475,14 +455,12 @@ void print_config(const Logger &log, int verbosity_threshhold, const Config &con
     log.message(v, "  %s%s = %s\n", name.c_str(), padding.c_str(), value.c_str());
   }
 
-  log.message(v,
-             "### List of configuration parameters ends here.\n"
-             "###\n");
+  log.message(v, "### List of configuration parameters ends here.\n"
+                 "###\n");
 }
 
-void print_unused_parameters(const Logger &log, int verbosity_threshhold,
-                             const Config &config) {
-  std::set<std::string> parameters_set = config.parameters_set_by_user();
+void print_unused_parameters(const Logger &log, int verbosity_threshhold, const Config &config) {
+  std::set<std::string> parameters_set  = config.parameters_set_by_user();
   std::set<std::string> parameters_used = config.parameters_used();
 
   if (options::Bool("-options_left", "report unused options")) {
@@ -497,9 +475,7 @@ void print_unused_parameters(const Logger &log, int verbosity_threshhold,
 
     if (parameters_used.find(p) == parameters_used.end()) {
       log.message(verbosity_threshhold,
-                  "PISM WARNING: flag or parameter \"%s\" was set but was not used!\n",
-                  p.c_str());
-
+                  "PISM WARNING: flag or parameter \"%s\" was set but was not used!\n", p.c_str());
     }
   }
 }
@@ -584,12 +560,13 @@ void set_flag_from_option(Config &config, const std::string &option,
 */
 void set_number_from_option(Config &config, const std::string &option,
                             const std::string &parameter) {
-  options::Real opt(config.unit_system(), "-" + option, config.doc(parameter), config.units(parameter),
-                    config.get_number(parameter, Config::FORGET_THIS_USE));
+  options::Real opt(config.unit_system(), "-" + option, config.doc(parameter),
+                    config.units(parameter), config.get_number(parameter, Config::FORGET_THIS_USE));
   if (opt.is_set()) {
     if (not config.is_valid_number(parameter, opt.value())) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "'%s' value %f (set using -%s) is not valid",
-                                    parameter.c_str(), opt.value(), option.c_str());
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "'%s' value %f (set using -%s) is not valid", parameter.c_str(),
+                                    opt.value(), option.c_str());
     }
     config.set_number(parameter, opt, CONFIG_USER);
   }
@@ -609,7 +586,8 @@ void set_integer_from_option(Config &config, const std::string &option,
   }
 }
 
-void set_string_from_option(Config &config, const std::string &option, const std::string &parameter) {
+void set_string_from_option(Config &config, const std::string &option,
+                            const std::string &parameter) {
 
   options::String value("-" + option, config.doc(parameter),
                         config.get_string(parameter, Config::FORGET_THIS_USE));
@@ -624,8 +602,8 @@ void set_string_from_option(Config &config, const std::string &option, const std
  * option. This option requires an argument, which has to match one of the
  * keyword given in a comma-separated list "choices_list".
  */
-void set_keyword_from_option(Config &config, const std::string &option, const std::string &parameter,
-                             const std::string &choices) {
+void set_keyword_from_option(Config &config, const std::string &option,
+                             const std::string &parameter, const std::string &choices) {
 
   options::Keyword keyword("-" + option, config.doc(parameter), choices,
                            config.get_string(parameter, Config::FORGET_THIS_USE));
@@ -685,17 +663,17 @@ void set_config_from_options(Config &config) {
   // Check for deprecated command-line options
   {
     std::map<std::string, std::string> options = {
-      {"-extra_append", "-spatial_append"},
-      {"-extra_file", "-spatial_file"},
-      {"-extra_split", "-spatial_split"},
-      {"-extra_stop_missing", "-spatial_stop_missing"},
-      {"-extra_times", "-spatial_times"},
-      {"-extra_force_output_times", "-spatial_force_output_times"},
-      {"-extra_vars", "-spatial_vars"},
-      {"-ts_append", "-scalar_append"},
-      {"-ts_file", "-scalar_file"},
-      {"-ts_times", "-scalar_times"},
-      {"-ts_vars", "-scalar_vars"},
+      { "-extra_append", "-spatial_append" },
+      { "-extra_file", "-spatial_file" },
+      { "-extra_split", "-spatial_split" },
+      { "-extra_stop_missing", "-spatial_stop_missing" },
+      { "-extra_times", "-spatial_times" },
+      { "-extra_force_output_times", "-spatial_force_output_times" },
+      { "-extra_vars", "-spatial_vars" },
+      { "-ts_append", "-scalar_append" },
+      { "-ts_file", "-scalar_file" },
+      { "-ts_times", "-scalar_times" },
+      { "-ts_vars", "-scalar_vars" },
     };
 
     for (const auto &o : options) {
@@ -808,16 +786,14 @@ void set_config_from_options(Config &config) {
       config.set_number("surface.elevation_dependent.M_limit_max", meter_per_second(L[1]));
     }
   }
-
 }
 
 //! Create a configuration database using command-line options.
-std::shared_ptr<Config> config_from_options(MPI_Comm com,
-                                            units::System::Ptr unit_system) {
+std::shared_ptr<Config> config_from_options(MPI_Comm com, units::System::Ptr unit_system) {
 
-  using T         = NetCDFConfig;
-  auto  config    = std::make_shared<T>("pism_config", unit_system);
-  auto  overrides = std::make_shared<T>("pism_overrides", unit_system);
+  using T        = NetCDFConfig;
+  auto config    = std::make_shared<T>("pism_config", unit_system);
+  auto overrides = std::make_shared<T>("pism_overrides", unit_system);
 
   options::String config_filename("-config", "Config file name", pism::config_file);
   options::String override_filename("-config_override", "Config override file name");
@@ -940,8 +916,8 @@ std::string Config::json() const {
     json[p.first] = p.second;
   }
 
-  int indent = -1;              // compact form
-  char indent_char = ' ';
+  int indent        = -1; // compact form
+  char indent_char  = ' ';
   bool ensure_ascii = true;
   return json.dump(indent, indent_char, ensure_ascii);
 }

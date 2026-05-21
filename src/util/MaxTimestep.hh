@@ -47,6 +47,7 @@ public:
   double value() const;
 
   std::string description() const;
+
 private:
   bool m_finite;
   double m_value;

@@ -59,12 +59,11 @@ private:
 
   void set_global_attributes_impl(const std::string &file_name,
                                   const std::map<std::string, std::string> &strings,
-                                  const std::map<std::string, std::vector<double> > &numbers);
+                                  std::map<std::string, std::vector<double> > &numbers);
 
   void write_attributes(const std::string &file_name, const std::string &var_name,
                         const std::map<std::string, std::string> &strings,
-                        const std::map<std::string, std::vector<double> > &numbers,
-                        io::Type output_type);
+                        std::map<std::string, std::vector<double> > &numbers, io::Type output_type);
 
   void append_time_impl(const std::string &file_name, double time_seconds);
 
@@ -82,8 +81,8 @@ private:
                        const std::vector<unsigned int> &start,
                        const std::vector<unsigned int> &count, const std::string &input);
 
-  void write_distributed_array_impl(const std::string &file_name,
-                                    const std::string &variable_name, const double *data);
+  void write_distributed_array_impl(const std::string &file_name, const std::string &variable_name,
+                                    const double *data);
 
   void append_impl(const std::string &file_name);
   void sync_impl(const std::string &file_name);

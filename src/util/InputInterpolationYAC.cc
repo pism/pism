@@ -17,11 +17,11 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <cmath>
 #include <cstddef>
 #include <memory>
 #include <mpi.h>
 #include <vector>
-#include <cmath>
 
 #include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
@@ -82,14 +82,13 @@ int InputInterpolationYAC::define_field(int component_id, const std::vector<doub
 
 static double dx_estimate(Proj &mapping, double x1, double x2, double y) {
   PJ_COORD p1 = proj_coord(0, 0, 0, 0), p2 = proj_coord(0, 0, 0, 0);
-  p1.lp = {proj_torad(x1), proj_torad(y)};
-  p2.lp = {proj_torad(x2), proj_torad(y)};
+  p1.lp = { proj_torad(x1), proj_torad(y) };
+  p2.lp = { proj_torad(x2), proj_torad(y) };
 
   return proj_lp_dist(mapping, p1, p2);
 }
 
-static double dx_min(const std::string &proj_string,
-                     const std::vector<double> &x,
+static double dx_min(const std::string &proj_string, const std::vector<double> &x,
                      const std::vector<double> &y) {
   size_t Nx = x.size();
   size_t Ny = y.size();
@@ -99,7 +98,7 @@ static double dx_min(const std::string &proj_string,
   double dx = dx_estimate(mapping, x[0], x[1], y[0]);
   for (size_t j = 0; j < Ny; ++j) {   // y
     for (size_t i = 1; i < Nx; ++i) { // x; note: starts from 1
-      dx = std::min(dx, dx_estimate(mapping, x[i-1], x[i], y[j]));
+      dx = std::min(dx, dx_estimate(mapping, x[i - 1], x[i], y[j]));
     }
   }
   return dx;
@@ -107,14 +106,13 @@ static double dx_min(const std::string &proj_string,
 
 static double dy_estimate(Proj &mapping, double x, double y1, double y2) {
   PJ_COORD p1 = proj_coord(0, 0, 0, 0), p2 = proj_coord(0, 0, 0, 0);
-  p1.lp = {proj_torad(x), proj_torad(y1)};
-  p2.lp = {proj_torad(x), proj_torad(y2)};
+  p1.lp = { proj_torad(x), proj_torad(y1) };
+  p2.lp = { proj_torad(x), proj_torad(y2) };
 
   return proj_lp_dist(mapping, p1, p2);
 }
 
-static double dy_min(const std::string &proj_string,
-                     const std::vector<double> &x,
+static double dy_min(const std::string &proj_string, const std::vector<double> &x,
                      const std::vector<double> &y) {
   size_t Nx = x.size();
   size_t Ny = y.size();
@@ -122,9 +120,9 @@ static double dy_min(const std::string &proj_string,
   Proj mapping(proj_string, "EPSG:4326");
 
   double dy = dy_estimate(mapping, x[0], x[1], y[0]);
-  for (size_t i = 0; i < Nx; ++i) { // x
+  for (size_t i = 0; i < Nx; ++i) {   // x
     for (size_t j = 1; j < Ny; ++j) { // y; note: starts from 1
-      dy = std::min(dy, dy_estimate(mapping, x[i], y[j-1], y[j]));
+      dy = std::min(dy, dy_estimate(mapping, x[i], y[j - 1], y[j]));
     }
   }
   return dy;
@@ -156,9 +154,9 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
 
     // Note: `input_file` is created on the communicator corresponding to target_grid, so
     // all ranks of target_grid.com have to call functions that use `input_file`:
-    auto source_grid_name = grid_name(input_file, variable_name, ctx->unit_system(),
-                                      type == PIECEWISE_CONSTANT);
-    auto target_grid_name = "internal for " + source_grid_name;
+    auto source_grid_name =
+        grid_name(input_file, variable_name, ctx->unit_system(), type == PIECEWISE_CONSTANT);
+    auto target_grid_name      = "internal for " + source_grid_name;
     double target_grid_spacing = std::min(target_grid.dx(), target_grid.dy());
 
     log->message(
@@ -170,7 +168,8 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
     grid::InputGridInfo source_grid_info(input_file, variable_name, ctx->unit_system(),
                                          pism::grid::CELL_CENTER);
 
-    auto source_grid_mapping = mapping_info_from_file(input_file, variable_name, ctx->unit_system());
+    auto source_grid_mapping =
+        mapping_info_from_file(input_file, variable_name, ctx->unit_system());
 
     std::string grid_mapping_name = source_grid_mapping["grid_mapping_name"];
 
@@ -204,9 +203,9 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
     int target_comp_id = 0;
     int source_comp_id = 0;
     if (io_subcomm) {
-      const int n_comps = 2;
-      const char *comp_names[n_comps] = {"source_component", "target_component"};
-      int comp_ids[n_comps] = {0, 0};
+      const int n_comps               = 2;
+      const char *comp_names[n_comps] = { "source_component", "target_component" };
+      int comp_ids[n_comps]           = { 0, 0 };
       yac_cdef_comps_instance(m_instance_id, comp_names, n_comps, comp_ids);
       source_comp_id = comp_ids[0];
       target_comp_id = comp_ids[1];
@@ -380,7 +379,7 @@ InputInterpolationYAC::~InputInterpolationYAC() {
 
 double InputInterpolationYAC::interpolate(const pism::array::Scalar *source,
                                           pism::petsc::Vec &target) const {
-  double start  = MPI_Wtime();
+  double start = MPI_Wtime();
   {
     int collection_size = 1;
     if (source != nullptr) {
@@ -418,9 +417,8 @@ void InputInterpolationYAC::regrid(const pism::File &file, pism::array::Scalar &
 }
 
 
-double InputInterpolationYAC::regrid_impl(const VariableMetadata &metadata,
-                                          const pism::File &file, int record_index,
-                                          const Grid & /* target_grid (unused) */,
+double InputInterpolationYAC::regrid_impl(const VariableMetadata &metadata, const pism::File &file,
+                                          int record_index, const Grid & /* target_grid (unused) */,
                                           petsc::Vec &output) const {
 
   if (m_buffer != nullptr) {

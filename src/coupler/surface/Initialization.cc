@@ -18,23 +18,24 @@
  */
 
 #include "pism/coupler/surface/Initialization.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/util/io/File.hh"
 #include "pism/coupler/util/init_step.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/io/File.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace surface {
 
-InitializationHelper::InitializationHelper(std::shared_ptr<const Grid> grid, std::shared_ptr<SurfaceModel> input)
-  : SurfaceModel(grid, input),
-    m_mass_flux(m_grid, "effective_climatic_mass_balance"),
-    m_temperature(m_grid, "effective_ice_surface_temp")
-{
+InitializationHelper::InitializationHelper(std::shared_ptr<const Grid> grid,
+                                           std::shared_ptr<SurfaceModel> input)
+    : SurfaceModel(grid, input),
+      m_mass_flux(m_grid, "effective_climatic_mass_balance"),
+      m_temperature(m_grid, "effective_ice_surface_temp") {
 
   if (not input) {
-    throw RuntimeError(PISM_ERROR_LOCATION, "pism::surface::InitializationHelper got a NULL input model");
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "pism::surface::InitializationHelper got a NULL input model");
   }
 
   // allocate storage
@@ -86,14 +87,9 @@ InitializationHelper::InitializationHelper(std::shared_ptr<const Grid> grid, std
   m_runoff->set_name("effective_" + m_runoff->get_name());
 
   // collect pointers
-  m_variables = {&m_mass_flux,
-                 &m_temperature,
-                 m_liquid_water_fraction.get(),
-                 m_layer_mass.get(),
-                 m_layer_thickness.get(),
-                 m_accumulation.get(),
-                 m_melt.get(),
-                 m_runoff.get()};
+  m_variables = { &m_mass_flux,       &m_temperature,          m_liquid_water_fraction.get(),
+                  m_layer_mass.get(), m_layer_thickness.get(), m_accumulation.get(),
+                  m_melt.get(),       m_runoff.get() };
 }
 
 void InitializationHelper::init_impl(const Geometry &geometry) {
@@ -186,7 +182,6 @@ void InitializationHelper::write_state_impl(const OutputFile &output) const {
   }
   m_input_model->write_state(output);
 }
-
 
 
 } // end of namespace surface

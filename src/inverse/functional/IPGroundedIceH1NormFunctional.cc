@@ -17,11 +17,11 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/inverse/functional/IPGroundedIceH1NormFunctional.hh"
-#include "pism/util/error_handling.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/pism_utilities.hh"
 #include "pism/util/array/CellType.hh"
+#include "pism/util/error_handling.hh"
 #include "pism/util/fem/DirichletData.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace inverse {
@@ -43,25 +43,21 @@ void IPGroundedIceH1NormFunctional2S::valueAt(array::Scalar &x, double *OUTPUT) 
     x_e[k] = 0.0;
   }
 
-  array::AccessScope list{&x, &m_ice_mask};
+  array::AccessScope list{ &x, &m_ice_mask };
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
   // Loop through all LOCAL elements.
-  const int
-    xs = m_element_index.lxs,
-    xm = m_element_index.lxm,
-    ys = m_element_index.lys,
-    ym = m_element_index.lym;
+  const int xs = m_element_index.lxs, xm = m_element_index.lxm, ys = m_element_index.lys,
+            ym = m_element_index.lym;
 
-  for (int j=ys; j<ys+ym; j++) {
-    for (int i=xs; i<xs+xm; i++) {
-      bool all_grounded_ice = (m_ice_mask.grounded_ice(i, j) and
-                               m_ice_mask.grounded_ice(i+1, j) and
-                               m_ice_mask.grounded_ice(i, j+1) and
-                               m_ice_mask.grounded_ice(i+1, j+1));
+  for (int j = ys; j < ys + ym; j++) {
+    for (int i = xs; i < xs + xm; i++) {
+      bool all_grounded_ice =
+          (m_ice_mask.grounded_ice(i, j) and m_ice_mask.grounded_ice(i + 1, j) and
+           m_ice_mask.grounded_ice(i, j + 1) and m_ice_mask.grounded_ice(i + 1, j + 1));
 
-      if (! all_grounded_ice) {
+      if (!all_grounded_ice) {
         continue;
       }
 
@@ -74,9 +70,10 @@ void IPGroundedIceH1NormFunctional2S::valueAt(array::Scalar &x, double *OUTPUT) 
       }
       m_element.evaluate(x_e, x_q, dxdx_q, dxdy_q);
 
-      for (unsigned int q=0; q<Nq; q++) {
+      for (unsigned int q = 0; q < Nq; q++) {
         auto W = m_element.weight(q);
-        value += W*(m_cL2*x_q[q]*x_q[q]+ m_cH1*(dxdx_q[q]*dxdx_q[q]+dxdy_q[q]*dxdy_q[q]));
+        value +=
+            W * (m_cL2 * x_q[q] * x_q[q] + m_cH1 * (dxdx_q[q] * dxdx_q[q] + dxdy_q[q] * dxdy_q[q]));
       } // q
     } // j
   } // i
@@ -96,7 +93,7 @@ void IPGroundedIceH1NormFunctional2S::dot(array::Scalar &a, array::Scalar &b, do
   double a_e[Nk];
   double a_q[Nq_max], dadx_q[Nq_max], dady_q[Nq_max];
 
-  array::AccessScope list{&a, &b, &m_ice_mask};
+  array::AccessScope list{ &a, &b, &m_ice_mask };
 
   double b_e[Nk];
   double b_q[Nq_max], dbdx_q[Nq_max], dbdy_q[Nq_max];
@@ -110,20 +107,16 @@ void IPGroundedIceH1NormFunctional2S::dot(array::Scalar &a, array::Scalar &b, do
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
   // Loop through all LOCAL elements.
-  const int
-    xs = m_element_index.lxs,
-    xm = m_element_index.lxm,
-    ys = m_element_index.lys,
-    ym = m_element_index.lym;
+  const int xs = m_element_index.lxs, xm = m_element_index.lxm, ys = m_element_index.lys,
+            ym = m_element_index.lym;
 
-  for (int j=ys; j<ys+ym; j++) {
-    for (int i=xs; i<xs+xm; i++) {
-      bool all_grounded_ice = (m_ice_mask.grounded_ice(i, j) and
-                               m_ice_mask.grounded_ice(i+1, j) and
-                               m_ice_mask.grounded_ice(i, j+1) and
-                               m_ice_mask.grounded_ice(i+1, j+1));
+  for (int j = ys; j < ys + ym; j++) {
+    for (int i = xs; i < xs + xm; i++) {
+      bool all_grounded_ice =
+          (m_ice_mask.grounded_ice(i, j) and m_ice_mask.grounded_ice(i + 1, j) and
+           m_ice_mask.grounded_ice(i, j + 1) and m_ice_mask.grounded_ice(i + 1, j + 1));
 
-      if (! all_grounded_ice) {
+      if (!all_grounded_ice) {
         continue;
       }
 
@@ -142,9 +135,10 @@ void IPGroundedIceH1NormFunctional2S::dot(array::Scalar &a, array::Scalar &b, do
       }
       m_element.evaluate(b_e, b_q, dbdx_q, dbdy_q);
 
-      for (unsigned int q=0; q<Nq; q++) {
+      for (unsigned int q = 0; q < Nq; q++) {
         auto W = m_element.weight(q);
-        value += W*(m_cL2*a_q[q]*b_q[q]+ m_cH1*(dadx_q[q]*dbdx_q[q]+dady_q[q]*dbdy_q[q]));
+        value +=
+            W * (m_cL2 * a_q[q] * b_q[q] + m_cH1 * (dadx_q[q] * dbdx_q[q] + dady_q[q] * dbdy_q[q]));
       } // q
     } // j
   } // i
@@ -170,27 +164,23 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(array::Scalar &x, array::Scalar
     x_e[k] = 0.0;
   }
 
-  array::AccessScope list{&x, &gradient, &m_ice_mask};
+  array::AccessScope list{ &x, &gradient, &m_ice_mask };
 
   double gradient_e[Nk];
 
   fem::DirichletData_Scalar dirichletBC(m_dirichletIndices, NULL);
 
   // Loop through all local and ghosted elements.
-  const int
-    xs = m_element_index.xs,
-    xm = m_element_index.xm,
-    ys = m_element_index.ys,
-    ym = m_element_index.ym;
+  const int xs = m_element_index.xs, xm = m_element_index.xm, ys = m_element_index.ys,
+            ym = m_element_index.ym;
 
-  for (int j=ys; j<ys+ym; j++) {
-    for (int i=xs; i<xs+xm; i++) {
-      bool all_grounded_ice = (m_ice_mask.grounded_ice(i, j) and
-                               m_ice_mask.grounded_ice(i+1, j) and
-                               m_ice_mask.grounded_ice(i, j+1) and
-                               m_ice_mask.grounded_ice(i+1, j+1));
+  for (int j = ys; j < ys + ym; j++) {
+    for (int i = xs; i < xs + xm; i++) {
+      bool all_grounded_ice =
+          (m_ice_mask.grounded_ice(i, j) and m_ice_mask.grounded_ice(i + 1, j) and
+           m_ice_mask.grounded_ice(i, j + 1) and m_ice_mask.grounded_ice(i + 1, j + 1));
 
-      if (! all_grounded_ice) {
+      if (!all_grounded_ice) {
         continue;
       }
 
@@ -206,17 +196,19 @@ void IPGroundedIceH1NormFunctional2S::gradientAt(array::Scalar &x, array::Scalar
       m_element.evaluate(x_e, x_q, dxdx_q, dxdy_q);
 
       // Zero out the element-local residual in prep for updating it.
-      for (unsigned int k=0; k<Nk; k++) {
+      for (unsigned int k = 0; k < Nk; k++) {
         gradient_e[k] = 0;
       }
 
-      for (unsigned int q=0; q<Nq; q++) {
-        auto W = m_element.weight(q);
-        const double &x_qq=x_q[q];
-        const double &dxdx_qq=dxdx_q[q], &dxdy_qq=dxdy_q[q];
-        for (unsigned int k=0; k<Nk; k++) {
-          gradient_e[k] += 2*W*(m_cL2*x_qq*m_element.chi(q, k).val +
-                                   m_cH1*(dxdx_qq*m_element.chi(q, k).dx + dxdy_qq*m_element.chi(q, k).dy));
+      for (unsigned int q = 0; q < Nq; q++) {
+        auto W                = m_element.weight(q);
+        const double &x_qq    = x_q[q];
+        const double &dxdx_qq = dxdx_q[q], &dxdy_qq = dxdy_q[q];
+        for (unsigned int k = 0; k < Nk; k++) {
+          gradient_e[k] +=
+              2 * W *
+              (m_cL2 * x_qq * m_element.chi(q, k).val +
+               m_cH1 * (dxdx_qq * m_element.chi(q, k).dx + dxdy_qq * m_element.chi(q, k).dy));
         } // k
       } // q
       m_element.add_contribution(gradient_e, gradient.array());
@@ -230,7 +222,7 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
   const unsigned int Nq = m_element.n_pts();
 
   PetscErrorCode ierr;
-  int         i, j;
+  int i, j;
 
   // Zero out the Jacobian in preparation for updating it.
   ierr = MatZeroEntries(form);
@@ -241,19 +233,15 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
   array::AccessScope list(m_ice_mask);
 
   // Loop through all the elements.
-  const int
-    xs = m_element_index.xs,
-    xm = m_element_index.xm,
-    ys = m_element_index.ys,
-    ym = m_element_index.ym;
+  const int xs = m_element_index.xs, xm = m_element_index.xm, ys = m_element_index.ys,
+            ym = m_element_index.ym;
 
-  for (j=ys; j<ys+ym; j++) {
-    for (i=xs; i<xs+xm; i++) {
-      bool all_grounded_ice = (m_ice_mask.grounded_ice(i, j) and
-                               m_ice_mask.grounded_ice(i+1, j) and
-                               m_ice_mask.grounded_ice(i, j+1) and
-                               m_ice_mask.grounded_ice(i+1, j+1));
-      if (! all_grounded_ice) {
+  for (j = ys; j < ys + ym; j++) {
+    for (i = xs; i < xs + xm; i++) {
+      bool all_grounded_ice =
+          (m_ice_mask.grounded_ice(i, j) and m_ice_mask.grounded_ice(i + 1, j) and
+           m_ice_mask.grounded_ice(i, j + 1) and m_ice_mask.grounded_ice(i + 1, j + 1));
+      if (!all_grounded_ice) {
         continue;
       }
 
@@ -274,14 +262,14 @@ void IPGroundedIceH1NormFunctional2S::assemble_form(Mat form) {
       ierr = PetscMemzero(K, sizeof(K));
       PISM_CHK(ierr, "PetscMemzero");
 
-      for (unsigned int q=0; q<Nq; q++) {
+      for (unsigned int q = 0; q < Nq; q++) {
         auto W = m_element.weight(q);
-        for (unsigned int k = 0; k < Nk; k++) {   // Test functions
-          const fem::Germ &test_qk=m_element.chi(q, k);
+        for (unsigned int k = 0; k < Nk; k++) { // Test functions
+          const fem::Germ &test_qk = m_element.chi(q, k);
           for (unsigned int l = 0; l < Nk; l++) { // Trial functions
-            const fem::Germ &test_ql=m_element.chi(q, l);
-            K[k][l]     += W*(m_cL2*test_qk.val*test_ql.val
-              +  m_cH1*(test_qk.dx*test_ql.dx + test_qk.dy*test_ql.dy));
+            const fem::Germ &test_ql = m_element.chi(q, l);
+            K[k][l] += W * (m_cL2 * test_qk.val * test_ql.val +
+                            m_cH1 * (test_qk.dx * test_ql.dx + test_qk.dy * test_ql.dy));
           } // l
         } // k
       } // q

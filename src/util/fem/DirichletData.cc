@@ -19,17 +19,16 @@
 
 #include "pism/util/fem/DirichletData.hh"
 
+#include "pism/util/Context.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/array/Vector.hh"
-#include "pism/util/Context.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/fem/Element.hh"
 
 namespace pism {
 namespace fem {
 
-DirichletData::DirichletData()
-  : m_indices(NULL), m_weight(1.0) {
+DirichletData::DirichletData() : m_indices(NULL), m_weight(1.0) {
   for (unsigned int k = 0; k < q1::n_chi; ++k) {
     m_indices_e[k] = 0;
   }
@@ -39,9 +38,7 @@ DirichletData::~DirichletData() {
   finish(NULL);
 }
 
-void DirichletData::init(const array::Scalar *indices,
-                         const array::Array *values,
-                         double weight) {
+void DirichletData::init(const array::Scalar *indices, const array::Array *values, double weight) {
   m_weight = weight;
 
   if (indices != NULL) {
@@ -91,13 +88,12 @@ void DirichletData::constrain(Element2 &element) {
 // Scalar version
 
 DirichletData_Scalar::DirichletData_Scalar(const array::Scalar *indices,
-                                           const array::Scalar *values,
-                                           double weight)
-  : m_values(values) {
+                                           const array::Scalar *values, double weight)
+    : m_values(values) {
   init(indices, m_values, weight);
 }
 
-void DirichletData_Scalar::enforce(const Element2 &element, double* x_nodal) {
+void DirichletData_Scalar::enforce(const Element2 &element, double *x_nodal) {
   assert(m_values != NULL);
 
   element.nodal_values(m_indices->array(), m_indices_e);
@@ -110,7 +106,7 @@ void DirichletData_Scalar::enforce(const Element2 &element, double* x_nodal) {
   }
 }
 
-void DirichletData_Scalar::enforce_homogeneous(const Element2 &element, double* x_nodal) {
+void DirichletData_Scalar::enforce_homogeneous(const Element2 &element, double *x_nodal) {
   element.nodal_values(m_indices->array(), m_indices_e);
   for (int k = 0; k < element.n_chi(); k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
@@ -130,7 +126,7 @@ void DirichletData_Scalar::fix_residual(double const *const *const x_global, dou
 
     if ((*m_indices)(i, j) > 0.5) {
       // Enforce explicit dirichlet data.
-      r_global[j][i] = m_weight * (x_global[j][i] - (*m_values)(i,j));
+      r_global[j][i] = m_weight * (x_global[j][i] - (*m_values)(i, j));
     }
   }
 }
@@ -168,8 +164,8 @@ void DirichletData_Scalar::fix_jacobian(Mat J) {
         MatStencil row;
         row.j = j;
         row.i = i;
-        PetscErrorCode ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, &identity,
-                                                         ADD_VALUES);
+        PetscErrorCode ierr =
+            MatSetValuesBlockedStencil(J, 1, &row, 1, &row, &identity, ADD_VALUES);
         PISM_CHK(ierr, "MatSetValuesBlockedStencil"); // this may throw
       }
     }
@@ -187,13 +183,12 @@ DirichletData_Scalar::~DirichletData_Scalar() {
 // Vector version
 
 DirichletData_Vector::DirichletData_Vector(const array::Scalar *indices,
-                                           const array::Vector *values,
-                                           double weight)
-  : m_values(values) {
+                                           const array::Vector *values, double weight)
+    : m_values(values) {
   init(indices, m_values, weight);
 }
 
-void DirichletData_Vector::enforce(const Element2 &element, Vector2d* x_nodal) {
+void DirichletData_Vector::enforce(const Element2 &element, Vector2d *x_nodal) {
   assert(m_values != NULL);
 
   element.nodal_values(m_indices->array(), m_indices_e);
@@ -206,7 +201,7 @@ void DirichletData_Vector::enforce(const Element2 &element, Vector2d* x_nodal) {
   }
 }
 
-void DirichletData_Vector::enforce_homogeneous(const Element2 &element, Vector2d* x_nodal) {
+void DirichletData_Vector::enforce_homogeneous(const Element2 &element, Vector2d *x_nodal) {
   element.nodal_values(m_indices->array(), m_indices_e);
   for (int k = 0; k < element.n_chi(); k++) {
     if (m_indices_e[k] > 0.5) { // Dirichlet node
@@ -215,7 +210,8 @@ void DirichletData_Vector::enforce_homogeneous(const Element2 &element, Vector2d
   }
 }
 
-void DirichletData_Vector::fix_residual(Vector2d const *const *const x_global, Vector2d **r_global) {
+void DirichletData_Vector::fix_residual(Vector2d const *const *const x_global,
+                                        Vector2d **r_global) {
   assert(m_values != NULL);
 
   const Grid &grid = *m_indices->grid();
@@ -255,8 +251,7 @@ void DirichletData_Vector::fix_jacobian(Mat J) {
   // these columns previously, the symmetry of the Jacobian matrix is
   // preserved.
 
-  const double identity[4] = {m_weight, 0,
-                              0, m_weight};
+  const double identity[4] = { m_weight, 0, 0, m_weight };
   ParallelSection loop(grid.com);
   try {
     for (auto p : grid.points()) {
@@ -264,10 +259,9 @@ void DirichletData_Vector::fix_jacobian(Mat J) {
 
       if ((*m_indices)(i, j) > 0.5) {
         MatStencil row;
-        row.j = j;
-        row.i = i;
-        PetscErrorCode ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, identity,
-                                                         ADD_VALUES);
+        row.j               = j;
+        row.i               = i;
+        PetscErrorCode ierr = MatSetValuesBlockedStencil(J, 1, &row, 1, &row, identity, ADD_VALUES);
         PISM_CHK(ierr, "MatSetValuesBlockedStencil"); // this may throw
       }
     }

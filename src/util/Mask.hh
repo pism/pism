@@ -96,14 +96,12 @@ public:
   void compute_surface(const array::Scalar &sea_level, const array::Scalar &bed,
                        const array::Scalar &thickness, array::Scalar &result) const;
 
-  inline void compute(double sea_level, double bed, double thickness,
-                      int *out_mask, double *out_surface) const {
+  inline void compute(double sea_level, double bed, double thickness, int *out_mask,
+                      double *out_surface) const {
     const double hgrounded = bed + thickness; // FIXME issue #15
-    const double hfloating = sea_level + m_alpha*thickness;
+    const double hfloating = sea_level + m_alpha * thickness;
 
-    const bool
-      is_floating = (hfloating > hgrounded),
-      ice_free    = (thickness <= m_icefree_thickness);
+    const bool is_floating = (hfloating > hgrounded), ice_free = (thickness <= m_icefree_thickness);
 
     int mask_result;
     double surface_result;
@@ -116,7 +114,7 @@ public:
       } else {
         mask_result = MASK_FLOATING;
       }
-    } else {  // Grounded
+    } else { // Grounded
       surface_result = hgrounded;
 
       if (ice_free) {

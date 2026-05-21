@@ -17,26 +17,26 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <gsl/gsl_math.h>       // GSL_NAN
+#include <gsl/gsl_math.h> // GSL_NAN
 
 #include "pism/coupler/OceanModel.hh"
+#include "pism/geometry/Geometry.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 
 namespace ocean {
 
-std::shared_ptr<array::Scalar> OceanModel::allocate_shelf_base_temperature(std::shared_ptr<const Grid> g) {
+std::shared_ptr<array::Scalar>
+OceanModel::allocate_shelf_base_temperature(std::shared_ptr<const Grid> g) {
   auto result = std::make_shared<array::Scalar>(g, "shelfbtemp");
-  result->metadata(0)
-      .long_name("ice temperature at the bottom of floating ice")
-      .units("kelvin");
+  result->metadata(0).long_name("ice temperature at the bottom of floating ice").units("kelvin");
   return result;
 }
 
-std::shared_ptr<array::Scalar> OceanModel::allocate_shelf_base_mass_flux(std::shared_ptr<const Grid> g) {
+std::shared_ptr<array::Scalar>
+OceanModel::allocate_shelf_base_mass_flux(std::shared_ptr<const Grid> g) {
   auto result = std::make_shared<array::Scalar>(g, "shelfbmassflux");
 
   result->metadata(0)
@@ -46,7 +46,8 @@ std::shared_ptr<array::Scalar> OceanModel::allocate_shelf_base_mass_flux(std::sh
   return result;
 }
 
-std::shared_ptr<array::Scalar> OceanModel::allocate_water_column_pressure(std::shared_ptr<const Grid> g) {
+std::shared_ptr<array::Scalar>
+OceanModel::allocate_water_column_pressure(std::shared_ptr<const Grid> g) {
   auto result = std::make_shared<array::Scalar>(g, "average_water_column_pressure");
 
   result->metadata(0).long_name("vertically-averaged water column pressure").units("Pa");

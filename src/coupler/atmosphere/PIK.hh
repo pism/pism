@@ -35,8 +35,14 @@ private:
   MaxTimestep max_timestep_impl(double t) const;
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  enum Parameterization {MARTIN, HUYBRECHTS_DEWOLDE, MARTIN_HUYBRECHTS_DEWOLDE,
-                         ERA_INTERIM, ERA_INTERIM_SIN, ERA_INTERIM_LON};
+  enum Parameterization {
+    MARTIN,
+    HUYBRECHTS_DEWOLDE,
+    MARTIN_HUYBRECHTS_DEWOLDE,
+    ERA_INTERIM,
+    ERA_INTERIM_SIN,
+    ERA_INTERIM_LON
+  };
 
   Parameterization m_parameterization;
 };

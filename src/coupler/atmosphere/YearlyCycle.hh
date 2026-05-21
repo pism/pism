@@ -33,7 +33,7 @@ public:
   YearlyCycle(std::shared_ptr<const Grid> g);
   virtual ~YearlyCycle() = default;
 
-  virtual const array::Scalar& mean_summer_temp() const;
+  virtual const array::Scalar &mean_summer_temp() const;
 
 protected:
   virtual std::set<VariableMetadata> state_impl() const;
@@ -41,8 +41,8 @@ protected:
 
   virtual void init_impl(const Geometry &geometry);
 
-  virtual const array::Scalar& precipitation_impl() const;
-  virtual const array::Scalar& air_temperature_impl() const;
+  virtual const array::Scalar &precipitation_impl() const;
+  virtual const array::Scalar &air_temperature_impl() const;
 
   virtual void begin_pointwise_access_impl() const;
   virtual void end_pointwise_access_impl() const;
@@ -54,9 +54,9 @@ protected:
   virtual void update_impl(const Geometry &geometry, double t, double dt) = 0;
 
   virtual DiagnosticList spatial_diagnostics_impl() const;
+
 protected:
-  void init_internal(const std::string &input_filename, bool regrid,
-                     unsigned int start);
+  void init_internal(const std::string &input_filename, bool regrid, unsigned int start);
 
   double m_snow_temp_summer_day;
   std::string m_reference;

@@ -22,8 +22,7 @@
 #define __exactTestIJ_h 1
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /*
@@ -57,4 +56,4 @@ struct TestJParameters exactJ(const double x, const double y);
 #endif
 
 
-#endif  /* __exactTestIJ_h */
+#endif /* __exactTestIJ_h */

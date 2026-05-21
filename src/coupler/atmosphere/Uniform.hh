@@ -29,12 +29,13 @@ namespace atmosphere {
 class Uniform : public AtmosphereModel {
 public:
   Uniform(std::shared_ptr<const Grid> g);
+
 private:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  const array::Scalar& precipitation_impl() const;
-  const array::Scalar& air_temperature_impl() const;
+  const array::Scalar &precipitation_impl() const;
+  const array::Scalar &air_temperature_impl() const;
 
   void begin_pointwise_access_impl() const;
   void end_pointwise_access_impl() const;

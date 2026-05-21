@@ -18,8 +18,8 @@
 
 #include "pism/inverse/functional/IPLogRelativeFunctional.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/array/Vector.hh"
 #include "pism/util/array/Scalar.hh"
+#include "pism/util/array/Vector.hh"
 #include "pism/util/pism_utilities.hh"
 
 namespace pism {
@@ -37,7 +37,7 @@ void IPLogRelativeFunctional::normalize(double scale) {
   // The local value of the weights
   double value = 0;
 
-  double scale_sq = scale*scale;
+  double scale_sq = scale * scale;
 
   double w = 1.;
 
@@ -54,21 +54,21 @@ void IPLogRelativeFunctional::normalize(double scale) {
     if (m_weights) {
       w = (*m_weights)(i, j);
     }
-    double obsMagSq = (u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v) + m_eps*m_eps;
-    value += log(1 + w*scale_sq/obsMagSq);
+    double obsMagSq = (u_obs_ij.u * u_obs_ij.u + u_obs_ij.v * u_obs_ij.v) + m_eps * m_eps;
+    value += log(1 + w * scale_sq / obsMagSq);
   }
 
   m_normalization = GlobalSum(m_grid->com, value);
 }
 
-void IPLogRelativeFunctional::valueAt(array::Vector &x, double *OUTPUT)  {
+void IPLogRelativeFunctional::valueAt(array::Vector &x, double *OUTPUT) {
 
   // The value of the objective
   double value = 0;
 
   double w = 1;
 
-  array::AccessScope list{&x, &m_u_observed};
+  array::AccessScope list{ &x, &m_u_observed };
   if (m_weights) {
     list.add(*m_weights);
   }
@@ -76,13 +76,13 @@ void IPLogRelativeFunctional::valueAt(array::Vector &x, double *OUTPUT)  {
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
-    Vector2d &x_ij = x(i, j);
+    Vector2d &x_ij     = x(i, j);
     Vector2d &u_obs_ij = m_u_observed(i, j);
     if (m_weights) {
       w = (*m_weights)(i, j);
     }
-    double obsMagSq = (u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v) + m_eps*m_eps;
-    value += log(1 + w*(x_ij.u*x_ij.u + x_ij.v*x_ij.v)/obsMagSq);
+    double obsMagSq = (u_obs_ij.u * u_obs_ij.u + u_obs_ij.v * u_obs_ij.v) + m_eps * m_eps;
+    value += log(1 + w * (x_ij.u * x_ij.u + x_ij.v * x_ij.v) / obsMagSq);
   }
 
   value /= m_normalization;
@@ -90,12 +90,12 @@ void IPLogRelativeFunctional::valueAt(array::Vector &x, double *OUTPUT)  {
   GlobalSum(m_grid->com, &value, OUTPUT, 1);
 }
 
-void IPLogRelativeFunctional::gradientAt(array::Vector &x, array::Vector &gradient)  {
+void IPLogRelativeFunctional::gradientAt(array::Vector &x, array::Vector &gradient) {
   gradient.set(0);
 
   double w = 1;
 
-  array::AccessScope list{&x, &gradient, &m_u_observed};
+  array::AccessScope list{ &x, &gradient, &m_u_observed };
   if (m_weights) {
     list.add(*m_weights);
   }
@@ -103,16 +103,16 @@ void IPLogRelativeFunctional::gradientAt(array::Vector &x, array::Vector &gradie
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
-    Vector2d &x_ij = x(i, j);
+    Vector2d &x_ij     = x(i, j);
     Vector2d &u_obs_ij = m_u_observed(i, j);
     if (m_weights) {
       w = (*m_weights)(i, j);
     }
-    double obsMagSq = u_obs_ij.u*u_obs_ij.u + u_obs_ij.v*u_obs_ij.v + m_eps*m_eps;
-    double dJdxsq =  w/(obsMagSq + w*(x_ij.u*x_ij.u + x_ij.v*x_ij.v));
+    double obsMagSq = u_obs_ij.u * u_obs_ij.u + u_obs_ij.v * u_obs_ij.v + m_eps * m_eps;
+    double dJdxsq   = w / (obsMagSq + w * (x_ij.u * x_ij.u + x_ij.v * x_ij.v));
 
-    gradient(i, j).u = dJdxsq*2*x_ij.u/m_normalization;
-    gradient(i, j).v = dJdxsq*2*x_ij.v/m_normalization;
+    gradient(i, j).u = dJdxsq * 2 * x_ij.u / m_normalization;
+    gradient(i, j).v = dJdxsq * 2 * x_ij.v / m_normalization;
   }
 }
 

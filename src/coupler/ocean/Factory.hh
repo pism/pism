@@ -19,8 +19,8 @@
 #ifndef _POFACTORY_H_
 #define _POFACTORY_H_
 
-#include "pism/coupler/util/PCFactory.hh"
 #include "pism/coupler/OceanModel.hh"
+#include "pism/coupler/util/PCFactory.hh"
 
 namespace pism {
 namespace ocean {

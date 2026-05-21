@@ -19,12 +19,12 @@
 
 #include "pism/frontretreat/calving/CalvingAtThickness.hh"
 
-#include "pism/util/Mask.hh"
-#include "pism/util/Grid.hh"
 #include "pism/coupler/util/options.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/Mask.hh"
 #include "pism/util/array/Forcing.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/Logger.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
@@ -33,8 +33,7 @@ namespace pism {
 namespace calving {
 
 CalvingAtThickness::CalvingAtThickness(std::shared_ptr<const Grid> g)
-  : Component(g),
-    m_old_mask(m_grid, "old_mask") {
+    : Component(g), m_old_mask(m_grid, "old_mask") {
 
   ForcingOptions opt(*m_grid->ctx(), "calving.thickness_calving");
   {
@@ -42,18 +41,15 @@ CalvingAtThickness::CalvingAtThickness(std::shared_ptr<const Grid> g)
 
     File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    m_calving_threshold = std::make_shared<array::Forcing>(m_grid,
-                                                      file,
-                                                      "thickness_calving_threshold",
-                                                      "", // no standard name
-                                                      buffer_size,
-                                                      opt.periodic,
-                                                      LINEAR);
+    m_calving_threshold =
+        std::make_shared<array::Forcing>(m_grid, file, "thickness_calving_threshold",
+                                         "", // no standard name
+                                         buffer_size, opt.periodic, LINEAR);
 
     m_calving_threshold->metadata(0)
         .long_name("threshold used by the 'calving at threshold' calving method")
         .units("m"); // no standard name
-    m_calving_threshold->metadata()["valid_min"] = {0.0};
+    m_calving_threshold->metadata()["valid_min"] = { 0.0 };
   }
 
   if (not m_config->get_flag("geometry.part_grid.enabled")) {
@@ -73,8 +69,7 @@ void CalvingAtThickness::init() {
   File file(m_grid->com, opt.filename, io::PISM_GUESS, io::PISM_READONLY);
   auto variable_exists = file.variable_exists(m_calving_threshold->get_name());
   if (variable_exists) {
-    m_log->message(2,
-                   "  Reading thickness calving threshold from file '%s'...\n",
+    m_log->message(2, "  Reading thickness calving threshold from file '%s'...\n",
                    opt.filename.c_str());
 
     m_calving_threshold->init(opt.filename, opt.periodic);
@@ -83,14 +78,12 @@ void CalvingAtThickness::init() {
 
     auto attributes = m_calving_threshold->metadata();
     // replace with a constant array::Forcing
-    m_calving_threshold = array::Forcing::Constant(m_grid,
-                                                  "thickness_calving_threshold",
-                                                  calving_threshold);
+    m_calving_threshold =
+        array::Forcing::Constant(m_grid, "thickness_calving_threshold", calving_threshold);
     // restore metadata
     m_calving_threshold->metadata() = attributes;
 
-    m_log->message(2,
-                   "  Thickness threshold: %3.3f meters.\n", calving_threshold);
+    m_log->message(2, "  Thickness threshold: %3.3f meters.\n", calving_threshold);
   }
 }
 
@@ -106,9 +99,7 @@ void CalvingAtThickness::init() {
  *
  * @return 0 on success
  */
-void CalvingAtThickness::update(double t,
-                                double dt,
-                                array::Scalar &cell_type,
+void CalvingAtThickness::update(double t, double dt, array::Scalar &cell_type,
                                 array::Scalar &ice_thickness) {
 
   m_calving_threshold->update(t, dt);
@@ -119,12 +110,11 @@ void CalvingAtThickness::update(double t,
 
   const auto &threshold = *m_calving_threshold;
 
-  array::AccessScope list{&cell_type, &ice_thickness, &m_old_mask, &threshold};
+  array::AccessScope list{ &cell_type, &ice_thickness, &m_old_mask, &threshold };
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
-    if (m_old_mask.floating_ice(i, j)           &&
-        m_old_mask.next_to_ice_free_ocean(i, j) &&
+    if (m_old_mask.floating_ice(i, j) && m_old_mask.next_to_ice_free_ocean(i, j) &&
         ice_thickness(i, j) < threshold(i, j)) {
       ice_thickness(i, j) = 0.0;
       cell_type(i, j)     = MASK_ICE_FREE_OCEAN;
@@ -135,12 +125,12 @@ void CalvingAtThickness::update(double t,
   ice_thickness.update_ghosts();
 }
 
-const array::Scalar& CalvingAtThickness::threshold() const {
+const array::Scalar &CalvingAtThickness::threshold() const {
   return *m_calving_threshold;
 }
 
 DiagnosticList CalvingAtThickness::spatial_diagnostics_impl() const {
-  return {{"thickness_calving_threshold", Diagnostic::wrap(*m_calving_threshold)}};
+  return { { "thickness_calving_threshold", Diagnostic::wrap(*m_calving_threshold) } };
 }
 
 } // end of namespace calving

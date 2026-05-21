@@ -38,15 +38,12 @@ namespace energy {
  */
 class BedrockColumn {
 public:
-  BedrockColumn(const std::string &prefix, const Config &config,
-                double dz, unsigned int M);
+  BedrockColumn(const std::string &prefix, const Config &config, double dz, unsigned int M);
   ~BedrockColumn() = default;
 
-  void solve(double dt, double Q_bottom, double T_top,
-             const double *T_old, double *result);
+  void solve(double dt, double Q_bottom, double T_top, const double *T_old, double *result);
 
-  void solve(double dt, double Q_bottom, double T_top,
-             const std::vector<double> &T_old,
+  void solve(double dt, double Q_bottom, double T_top, const std::vector<double> &T_old,
              std::vector<double> &result);
 
 private:
@@ -65,4 +62,4 @@ private:
 } // end of namespace energy
 } // end of namespace pism
 
-#endif   //  ifndef BEDROCK_COLUMN_HH
+#endif //  ifndef BEDROCK_COLUMN_HH

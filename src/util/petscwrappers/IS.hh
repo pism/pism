@@ -26,7 +26,7 @@
 
 namespace pism {
 namespace petsc {
-class IS : public Wrapper< ::IS > {
+class IS : public Wrapper< ::IS> {
 public:
   IS();
   IS(::IS m);

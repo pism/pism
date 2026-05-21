@@ -33,6 +33,7 @@ public:
   void init();
 
   void update(const array::CellType &cell_type, const array::Vector1 &ice_velocity);
+
 protected:
   DiagnosticList spatial_diagnostics_impl() const;
 

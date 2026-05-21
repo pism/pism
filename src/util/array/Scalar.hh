@@ -20,7 +20,7 @@
 #ifndef PISM_ARRAY_SCALAR_H
 #define PISM_ARRAY_SCALAR_H
 
-#include <cmath>                // floor()
+#include <cmath> // floor()
 
 #include "pism/util/array/Array2D.hh"
 
@@ -55,8 +55,9 @@ public:
   Scalar1(std::shared_ptr<const Grid> grid, const std::string &name);
   using Array2D<double>::star;
   using Array2D<double>::box;
-  using Scalar::star_int;
   using Scalar::box_int;
+  using Scalar::star_int;
+
 protected:
   Scalar1(std::shared_ptr<const Grid> grid, const std::string &name, int width);
 };
@@ -72,24 +73,20 @@ public:
 inline stencils::Star<int> Scalar::star_int(int i, int j) const {
   stencils::Star<int> result;
 
-  result.c = as_int(i,j);
-  result.e = as_int(i+1,j);
-  result.w = as_int(i-1,j);
-  result.n = as_int(i,j+1);
-  result.s = as_int(i,j-1);
+  result.c = as_int(i, j);
+  result.e = as_int(i + 1, j);
+  result.w = as_int(i - 1, j);
+  result.n = as_int(i, j + 1);
+  result.s = as_int(i, j - 1);
 
   return result;
 }
 
 inline stencils::Box<int> Scalar::box_int(int i, int j) const {
-  const int
-      E = i + 1,
-      W = i - 1,
-      N = j + 1,
-      S = j - 1;
+  const int E = i + 1, W = i - 1, N = j + 1, S = j - 1;
 
-  return {as_int(i, j), as_int(i, N), as_int(W, N), as_int(W, j), as_int(W, S),
-          as_int(i, S), as_int(E, S), as_int(E, j), as_int(E, N)};
+  return { as_int(i, j), as_int(i, N), as_int(W, N), as_int(W, j), as_int(W, S),
+           as_int(i, S), as_int(E, S), as_int(E, j), as_int(E, N) };
 }
 
 // Finite-difference shortcuts. They may be slower than hard-coding FD approximations of x

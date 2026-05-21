@@ -16,26 +16,26 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "pism/util/Grid.hh"
 #include "pism/stressbalance/ssa/SSAFEM.hh"
-#include "pism/util/fem/Quadrature.hh"
-#include "pism/util/fem/DirichletData.hh"
-#include "pism/util/Mask.hh"
 #include "pism/basalstrength/basal_resistance.hh"
-#include "pism/rheology/FlowLaw.hh"
-#include "pism/util/pism_options.hh"
-#include "pism/util/error_handling.hh"
-#include "pism/util/Vars.hh"
-#include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
+#include "pism/rheology/FlowLaw.hh"
+#include "pism/stressbalance/StressBalance.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/Mask.hh"
+#include "pism/util/Vars.hh"
+#include "pism/util/error_handling.hh"
+#include "pism/util/fem/DirichletData.hh"
+#include "pism/util/fem/Quadrature.hh"
+#include "pism/util/pism_options.hh"
 
-#include "pism/util/node_types.hh"
-#include "pism/util/pism_utilities.hh" // average_water_column_pressure()
 #include "pism/util/Interpolation1D.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/node_types.hh"
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/petscwrappers/Viewer.hh"
-#include "pism/util/Logger.hh"
+#include "pism/util/pism_utilities.hh" // average_water_column_pressure()
 
 namespace pism {
 namespace stressbalance {
@@ -80,19 +80,19 @@ SSAFEM::SSAFEM(std::shared_ptr<const Grid> grid)
   auto dm = m_velocity_global.dm();
 
   ierr = DMDASNESSetFunctionLocal(*dm, INSERT_VALUES,
-#if PETSC_VERSION_LT(3,21,0)
+#if PETSC_VERSION_LT(3, 21, 0)
                                   (DMDASNESFunction)function_callback,
 #else
-                                  (DMDASNESFunctionFn*)function_callback,
+                                  (DMDASNESFunctionFn *)function_callback,
 #endif
                                   &m_callback_data);
   PISM_CHK(ierr, "DMDASNESSetFunctionLocal");
 
   ierr = DMDASNESSetJacobianLocal(*dm,
-#if PETSC_VERSION_LT(3,21,0)
+#if PETSC_VERSION_LT(3, 21, 0)
                                   (DMDASNESJacobian)jacobian_callback,
 #else
-                                  (DMDASNESJacobianFn*)jacobian_callback,
+                                  (DMDASNESJacobianFn *)jacobian_callback,
 #endif
                                   &m_callback_data);
   PISM_CHK(ierr, "DMDASNESSetJacobianLocal");
@@ -227,7 +227,8 @@ std::shared_ptr<TerminationReason> SSAFEM::solve_nocache() {
 
   // See if it worked.
   SNESConvergedReason snes_reason;
-  ierr = SNESGetConvergedReason(m_snes, &snes_reason); PISM_CHK(ierr, "SNESGetConvergedReason");
+  ierr = SNESGetConvergedReason(m_snes, &snes_reason);
+  PISM_CHK(ierr, "SNESGetConvergedReason");
 
   std::shared_ptr<TerminationReason> reason(new SNESTerminationReason(snes_reason));
   if (not reason->failed()) {
@@ -247,7 +248,6 @@ std::shared_ptr<TerminationReason> SSAFEM::solve_nocache() {
       ierr = VecView(m_velocity_global.vec(), viewer);
       PISM_CHK(ierr, "VecView");
     }
-
   }
 
   return reason;
@@ -278,16 +278,16 @@ void SSAFEM::cache_inputs(const Inputs &inputs) {
 
   const std::vector<double> &z = m_grid->z();
 
-  array::AccessScope list{&m_coefficients,
-      inputs.enthalpy,
-      &inputs.geometry->ice_thickness,
-      &inputs.geometry->bed_elevation,
-      &inputs.geometry->sea_level_elevation,
-      inputs.basal_yield_stress};
+  array::AccessScope list{ &m_coefficients,
+                           inputs.enthalpy,
+                           &inputs.geometry->ice_thickness,
+                           &inputs.geometry->bed_elevation,
+                           &inputs.geometry->sea_level_elevation,
+                           inputs.basal_yield_stress };
 
   bool use_explicit_driving_stress = (m_driving_stress_x != NULL) && (m_driving_stress_y != NULL);
   if (use_explicit_driving_stress) {
-    list.add({m_driving_stress_x, m_driving_stress_y});
+    list.add({ m_driving_stress_x, m_driving_stress_y });
   }
 
   ParallelSection loop(m_grid->com);
@@ -302,14 +302,13 @@ void SSAFEM::cache_inputs(const Inputs &inputs) {
         tau_d.u = (*m_driving_stress_x)(i, j);
         tau_d.v = (*m_driving_stress_y)(i, j);
       } else {
-	// tau_d above is set to zero by the Vector2d
-	// constructor, but is not used
+        // tau_d above is set to zero by the Vector2d
+        // constructor, but is not used
       }
 
       const double *enthalpy = inputs.enthalpy->get_column(i, j);
-      double hardness = rheology::averaged_hardness(*m_flow_law, thickness,
-                                                    m_grid->kBelowHeight(thickness),
-                                                    z.data(), enthalpy);
+      double hardness        = rheology::averaged_hardness(
+          *m_flow_law, thickness, m_grid->kBelowHeight(thickness), z.data(), enthalpy);
 
       Coefficients c;
       c.thickness      = thickness;
@@ -339,36 +338,29 @@ void SSAFEM::cache_inputs(const Inputs &inputs) {
   }
 
   cache_residual_cfbc(inputs);
-
 }
 
 //! Compute quadrature point values of various coefficients given a quadrature `Q` and nodal values.
-void SSAFEM::quad_point_values(const fem::Element &E,
-                               const Coefficients *x,
-                               int *mask,
-                               double *thickness,
-                               double *tauc,
-                               double *hardness) const {
+void SSAFEM::quad_point_values(const fem::Element &E, const Coefficients *x, int *mask,
+                               double *thickness, double *tauc, double *hardness) const {
   // quadrature size
   unsigned int n = E.n_pts();
 
   for (unsigned int q = 0; q < n; q++) {
-    double
-      bed       = 0.0,
-      sea_level = 0.0;
+    double bed = 0.0, sea_level = 0.0;
 
     thickness[q] = 0.0;
     tauc[q]      = 0.0;
     hardness[q]  = 0.0;
 
     for (int k = 0; k < E.n_chi(); k++) {
-      const fem::Germ &psi  = E.chi(q, k);
+      const fem::Germ &psi = E.chi(q, k);
 
       thickness[q] += psi.val * x[k].thickness;
-      bed          += psi.val * x[k].bed;
-      sea_level    += psi.val * x[k].sea_level;
-      tauc[q]      += psi.val * x[k].tauc;
-      hardness[q]  += psi.val * x[k].hardness;
+      bed += psi.val * x[k].bed;
+      sea_level += psi.val * x[k].sea_level;
+      tauc[q] += psi.val * x[k].tauc;
+      hardness[q] += psi.val * x[k].hardness;
     }
 
     mask[q] = m_gc.mask(sea_level, bed, thickness[q]);
@@ -377,8 +369,7 @@ void SSAFEM::quad_point_values(const fem::Element &E,
 
 //! Compute gravitational driving stress at quadrature points.
 //! Uses explicitly-provided nodal values.
-void SSAFEM::explicit_driving_stress(const fem::Element &E,
-                                     const Coefficients *x,
+void SSAFEM::explicit_driving_stress(const fem::Element &E, const Coefficients *x,
                                      Vector2d *result) {
   const unsigned int n = E.n_pts();
 
@@ -386,8 +377,8 @@ void SSAFEM::explicit_driving_stress(const fem::Element &E,
     result[q] = 0.0;
 
     for (int k = 0; k < E.n_chi(); k++) {
-      const fem::Germ &psi  = E.chi(q, k);
-      result[q]  += psi.val * x[k].driving_stress;
+      const fem::Germ &psi = E.chi(q, k);
+      result[q] += psi.val * x[k].driving_stress;
     }
   }
 }
@@ -437,47 +428,36 @@ void SSAFEM::explicit_driving_stress(const fem::Element &E,
    because @f$ z = z_{sl} @f$ defines the geoid surface and so *its gradient
    does not contribute to the driving stress*.
 */
-void SSAFEM::driving_stress(const fem::Element &E,
-                            const Coefficients *x,
-                            Vector2d *result) const {
+void SSAFEM::driving_stress(const fem::Element &E, const Coefficients *x, Vector2d *result) const {
   const unsigned int n = E.n_pts();
 
   for (unsigned int q = 0; q < n; q++) {
-    double
-      sea_level = 0.0,
-      b         = 0.0,
-      b_x       = 0.0,
-      b_y       = 0.0,
-      H         = 0.0,
-      H_x       = 0.0,
-      H_y       = 0.0;
+    double sea_level = 0.0, b = 0.0, b_x = 0.0, b_y = 0.0, H = 0.0, H_x = 0.0, H_y = 0.0;
 
     result[q] = 0.0;
 
     for (int k = 0; k < E.n_chi(); k++) {
-      const fem::Germ &psi  = E.chi(q, k);
+      const fem::Germ &psi = E.chi(q, k);
 
-      b   += psi.val * x[k].bed;
+      b += psi.val * x[k].bed;
       b_x += psi.dx * x[k].bed;
       b_y += psi.dy * x[k].bed;
 
-      H   += psi.val * x[k].thickness;
+      H += psi.val * x[k].thickness;
       H_x += psi.dx * x[k].thickness;
       H_y += psi.dy * x[k].thickness;
 
       sea_level += psi.val * x[k].sea_level;
     }
 
-    const int M = m_gc.mask(sea_level, b, H);
+    const int M         = m_gc.mask(sea_level, b, H);
     const bool grounded = mask::grounded(M);
 
-    const double
-      pressure = m_rho_g * H,
-      h_x = grounded ? b_x + H_x : m_alpha * H_x,
-      h_y = grounded ? b_y + H_y : m_alpha * H_y;
+    const double pressure = m_rho_g * H, h_x = grounded ? b_x + H_x : m_alpha * H_x,
+                 h_y = grounded ? b_y + H_y : m_alpha * H_y;
 
-    result[q].u = - pressure * h_x;
-    result[q].v = - pressure * h_y;
+    result[q].u = -pressure * h_x;
+    result[q].v = -pressure * h_y;
   }
 }
 
@@ -501,15 +481,9 @@ void SSAFEM::driving_stress(const fem::Element &E,
  *                   second invariant @f$ \gamma @f$. Set to NULL if
  *                   not desired.
  */
-void SSAFEM::PointwiseNuHAndBeta(double thickness,
-                                 double hardness,
-                                 int mask,
-                                 double tauc,
-                                 const Vector2d &U,
-                                 const Vector2d &U_x,
-                                 const Vector2d &U_y,
-                                 double *nuH, double *dnuH,
-                                 double *beta, double *dbeta) {
+void SSAFEM::PointwiseNuHAndBeta(double thickness, double hardness, int mask, double tauc,
+                                 const Vector2d &U, const Vector2d &U_x, const Vector2d &U_y,
+                                 double *nuH, double *dnuH, double *beta, double *dbeta) {
 
   if (thickness < strength_extension->get_min_thickness()) {
     *nuH = strength_extension->get_notional_strength();
@@ -517,10 +491,9 @@ void SSAFEM::PointwiseNuHAndBeta(double thickness,
       *dnuH = 0;
     }
   } else {
-    m_flow_law->effective_viscosity(hardness, secondInvariant_2D(U_x, U_y),
-                                    nuH, dnuH);
+    m_flow_law->effective_viscosity(hardness, secondInvariant_2D(U_x, U_y), nuH, dnuH);
 
-    *nuH  = m_epsilon_ssa + *nuH * thickness;
+    *nuH = m_epsilon_ssa + *nuH * thickness;
 
     if (dnuH != nullptr) {
       *dnuH *= thickness;
@@ -562,8 +535,8 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
     // interval length does not matter here
     fem::Gaussian2 Q(1.0);
 
-    for (int i = 0; i < 2; ++i) {      // 2 functions
-      for (int j = 0; j < 2; ++j) {    // 2 quadrature points
+    for (int i = 0; i < 2; ++i) {   // 2 functions
+      for (int j = 0; j < 2; ++j) { // 2 quadrature points
         chi_b[i][j] = fem::linear::chi(i, Q.point(j)).val;
       }
     }
@@ -573,20 +546,16 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
 
   using fem::P1Element2;
   fem::P1Quadrature3 Q_p1;
-  P1Element2 p1_element[Nk] = {P1Element2(*m_grid, Q_p1, 0),
-                               P1Element2(*m_grid, Q_p1, 1),
-                               P1Element2(*m_grid, Q_p1, 2),
-                               P1Element2(*m_grid, Q_p1, 3)};
+  P1Element2 p1_element[Nk] = { P1Element2(*m_grid, Q_p1, 0), P1Element2(*m_grid, Q_p1, 1),
+                                P1Element2(*m_grid, Q_p1, 2), P1Element2(*m_grid, Q_p1, 3) };
 
   using mask::ocean;
 
-  const bool
-    use_cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
+  const bool use_cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
 
-  const double
-    ice_density      = m_config->get_number("constants.ice.density"),
-    ocean_density    = m_config->get_number("constants.sea_water.density"),
-    standard_gravity = m_config->get_number("constants.standard_gravity");
+  const double ice_density      = m_config->get_number("constants.ice.density"),
+               ocean_density    = m_config->get_number("constants.sea_water.density"),
+               standard_gravity = m_config->get_number("constants.standard_gravity");
 
   // Reset the boundary integral so that all values are overwritten.
   m_boundary_integral.set(0.0);
@@ -596,18 +565,13 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
     return;
   }
 
-  array::AccessScope list{&m_node_type,
-      &inputs.geometry->ice_thickness,
-      &inputs.geometry->bed_elevation,
-      &inputs.geometry->sea_level_elevation,
-      &m_boundary_integral};
+  array::AccessScope list{ &m_node_type, &inputs.geometry->ice_thickness,
+                           &inputs.geometry->bed_elevation, &inputs.geometry->sea_level_elevation,
+                           &m_boundary_integral };
 
   // Iterate over the elements.
-  const int
-    xs = m_element_index.xs,
-    xm = m_element_index.xm,
-    ys = m_element_index.ys,
-    ym = m_element_index.ym;
+  const int xs = m_element_index.xs, xm = m_element_index.xm, ys = m_element_index.ys,
+            ym = m_element_index.ym;
 
   ParallelSection loop(m_grid->com);
   try {
@@ -652,7 +616,7 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
         E->nodal_values(inputs.geometry->sea_level_elevation.array(), sl_nodal);
 
         // storage for values of test functions on a side of the element
-        double psi[2] = {0.0, 0.0};
+        double psi[2] = { 0.0, 0.0 };
 
         const unsigned int n_sides = E->n_sides();
         // loop over element sides
@@ -662,12 +626,9 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
           fem::Gaussian2 Q(E->side_length(s));
 
           // nodes incident to the current side
-          const int
-            n0 = s,
-            n1 = (n0 + 1) % n_sides;
+          const int n0 = s, n1 = (n0 + 1) % n_sides;
 
-          if (not (node_type[n0] == NODE_BOUNDARY and
-                   node_type[n1] == NODE_BOUNDARY)) {
+          if (not(node_type[n0] == NODE_BOUNDARY and node_type[n1] == NODE_BOUNDARY)) {
             // not a boundary side; skip it
             continue;
           }
@@ -683,17 +644,14 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
 
             // Compute ice thickness and bed elevation at a quadrature point. This uses a 1D basis
             // expansion on the current side.
-            const double
-              H         = H_nodal[n0]  * psi[0] + H_nodal[n1]  * psi[1],
-              bed       = b_nodal[n0]  * psi[0] + b_nodal[n1]  * psi[1],
-              sea_level = sl_nodal[n0] * psi[0] + sl_nodal[n1] * psi[1];
+            const double H         = H_nodal[n0] * psi[0] + H_nodal[n1] * psi[1],
+                         bed       = b_nodal[n0] * psi[0] + b_nodal[n1] * psi[1],
+                         sea_level = sl_nodal[n0] * psi[0] + sl_nodal[n1] * psi[1];
 
             // vertically averaged pressures at a quadrature point
-            double
-              P_ice = 0.5 * ice_density * standard_gravity * H,
-              P_water = average_water_column_pressure(H, bed, sea_level,
-                                                      ice_density, ocean_density,
-                                                      standard_gravity);
+            double P_ice   = 0.5 * ice_density * standard_gravity * H,
+                   P_water = average_water_column_pressure(H, bed, sea_level, ice_density,
+                                                           ocean_density, standard_gravity);
 
             // vertical integral of the pressure difference
             double dP = H * (P_ice - P_water);
@@ -708,8 +666,8 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
             //
             // FIXME: set pressure difference to zero at grounded locations at domain
             // boundaries.
-            I[n0] += W * (- psi[0] * dP) * E->normal(s);
-            I[n1] += W * (- psi[1] * dP) * E->normal(s);
+            I[n0] += W * (-psi[0] * dP) * E->normal(s);
+            I[n1] += W * (-psi[1] * dP) * E->normal(s);
           } // q-loop
 
         } // loop over element sides
@@ -736,21 +694,20 @@ void SSAFEM::cache_residual_cfbc(const Inputs &inputs) {
 void SSAFEM::compute_local_function(Vector2d const *const *const velocity_global,
                                     Vector2d **residual_global) {
 
-  const bool use_explicit_driving_stress = (m_driving_stress_x != NULL) && (m_driving_stress_y != NULL);
+  const bool use_explicit_driving_stress =
+      (m_driving_stress_x != NULL) && (m_driving_stress_y != NULL);
 
   const bool use_cfbc = m_config->get_flag("stress_balance.calving_front_stress_bc");
 
-  const unsigned int Nk = fem::q1::n_chi;
+  const unsigned int Nk     = fem::q1::n_chi;
   const unsigned int Nq_max = fem::MAX_QUADRATURE_SIZE;
 
   using fem::P1Element2;
   fem::P1Quadrature3 Q_p1;
-  P1Element2 p1_element[Nk] = {P1Element2(*m_grid, Q_p1, 0),
-                               P1Element2(*m_grid, Q_p1, 1),
-                               P1Element2(*m_grid, Q_p1, 2),
-                               P1Element2(*m_grid, Q_p1, 3)};
+  P1Element2 p1_element[Nk] = { P1Element2(*m_grid, Q_p1, 0), P1Element2(*m_grid, Q_p1, 1),
+                                P1Element2(*m_grid, Q_p1, 2), P1Element2(*m_grid, Q_p1, 3) };
 
-  array::AccessScope list{&m_node_type, &m_coefficients, &m_boundary_integral};
+  array::AccessScope list{ &m_node_type, &m_coefficients, &m_boundary_integral };
 
   // Set the boundary contribution of the residual. This is computed at the nodes, so we don't want
   // to set it using Element::add_contribution() because that would lead to
@@ -768,11 +725,8 @@ void SSAFEM::compute_local_function(Vector2d const *const *const velocity_global
   Vector2d U[Nq_max], U_x[Nq_max], U_y[Nq_max];
 
   // Iterate over the elements.
-  const int
-    xs = m_element_index.xs,
-    xm = m_element_index.xm,
-    ys = m_element_index.ys,
-    ym = m_element_index.ym;
+  const int xs = m_element_index.xs, xm = m_element_index.xm, ys = m_element_index.ys,
+            ym = m_element_index.ym;
 
   ParallelSection loop(m_grid->com);
   try {
@@ -813,7 +767,7 @@ void SSAFEM::compute_local_function(Vector2d const *const *const velocity_global
         // Storage for the solution and residuals at element nodes.
         Vector2d residual[Nk];
 
-        int    mask[Nq_max];
+        int mask[Nq_max];
         double thickness[Nq_max];
         double tauc[Nq_max];
         double hardness[Nq_max];
@@ -863,28 +817,25 @@ void SSAFEM::compute_local_function(Vector2d const *const *const velocity_global
           auto W = E->weight(q);
 
           double eta = 0.0, beta = 0.0;
-          PointwiseNuHAndBeta(thickness[q], hardness[q], mask[q], tauc[q],
-                              U[q], U_x[q], U_y[q], // inputs
-                              &eta, NULL, &beta, NULL);              // outputs
+          PointwiseNuHAndBeta(thickness[q], hardness[q], mask[q], tauc[q], U[q], U_x[q],
+                              U_y[q],                   // inputs
+                              &eta, NULL, &beta, NULL); // outputs
 
           // The next few lines compute the actual residual for the element.
-          const Vector2d tau_b = U[q] * (- beta); // basal shear stress
+          const Vector2d tau_b = U[q] * (-beta); // basal shear stress
 
-          const double
-            u_x          = U_x[q].u,
-            v_y          = U_y[q].v,
-            u_y_plus_v_x = U_y[q].u + U_x[q].v;
+          const double u_x = U_x[q].u, v_y = U_y[q].v, u_y_plus_v_x = U_y[q].u + U_x[q].v;
 
           // Loop over test functions.
           for (int k = 0; k < E->n_chi(); k++) {
             const fem::Germ &psi = E->chi(q, k);
 
-            residual[k].u += W * (eta * (psi.dx * (4.0 * u_x + 2.0 * v_y) + psi.dy * u_y_plus_v_x)
-                                   - psi.val * (tau_b.u + tau_d[q].u));
-            residual[k].v += W * (eta * (psi.dx * u_y_plus_v_x + psi.dy * (2.0 * u_x + 4.0 * v_y))
-                                   - psi.val * (tau_b.v + tau_d[q].v));
+            residual[k].u += W * (eta * (psi.dx * (4.0 * u_x + 2.0 * v_y) + psi.dy * u_y_plus_v_x) -
+                                  psi.val * (tau_b.u + tau_d[q].u));
+            residual[k].v += W * (eta * (psi.dx * u_y_plus_v_x + psi.dy * (2.0 * u_x + 4.0 * v_y)) -
+                                  psi.val * (tau_b.v + tau_d[q].v));
           } // k (test functions)
-        }   // q (quadrature points)
+        } // q (quadrature points)
 
         E->add_contribution(residual, residual_global);
       } // i-loop
@@ -919,8 +870,7 @@ void SSAFEM::monitor_function(Vector2d const *const *const velocity_global,
     return;
   }
 
-  ierr = PetscPrintf(m_grid->com,
-                     "SSA Solution and Function values (pointwise residuals)\n");
+  ierr = PetscPrintf(m_grid->com, "SSA Solution and Function values (pointwise residuals)\n");
   PISM_CHK(ierr, "PetscPrintf");
 
   ParallelSection loop(m_grid->com);
@@ -929,8 +879,7 @@ void SSAFEM::monitor_function(Vector2d const *const *const velocity_global,
       const int i = p.i(), j = p.j();
 
       ierr = PetscSynchronizedPrintf(m_grid->com,
-                                     "[%2d, %2d] u=(%12.10e, %12.10e)  f=(%12.4e, %12.4e)\n",
-                                     i, j,
+                                     "[%2d, %2d] u=(%12.10e, %12.10e)  f=(%12.4e, %12.4e)\n", i, j,
                                      velocity_global[j][i].u, velocity_global[j][i].v,
                                      residual_global[j][i].u, residual_global[j][i].v);
       PISM_CHK(ierr, "PetscSynchronizedPrintf");
@@ -964,16 +913,14 @@ void SSAFEM::compute_local_jacobian(Vector2d const *const *const velocity_global
 
   using fem::P1Element2;
   fem::P1Quadrature3 Q_p1;
-  P1Element2 p1_element[Nk] = {P1Element2(*m_grid, Q_p1, 0),
-                               P1Element2(*m_grid, Q_p1, 1),
-                               P1Element2(*m_grid, Q_p1, 2),
-                               P1Element2(*m_grid, Q_p1, 3)};
+  P1Element2 p1_element[Nk] = { P1Element2(*m_grid, Q_p1, 0), P1Element2(*m_grid, Q_p1, 1),
+                                P1Element2(*m_grid, Q_p1, 2), P1Element2(*m_grid, Q_p1, 3) };
 
   // Zero out the Jacobian in preparation for updating it.
   PetscErrorCode ierr = MatZeroEntries(Jac);
   PISM_CHK(ierr, "MatZeroEntries");
 
-  array::AccessScope list{&m_node_type, &m_coefficients};
+  array::AccessScope list{ &m_node_type, &m_coefficients };
 
   // Start access to Dirichlet data if present.
   fem::DirichletData_Vector dirichlet_data(&m_bc_mask, &m_bc_values, m_dirichletScale);
@@ -982,11 +929,8 @@ void SSAFEM::compute_local_jacobian(Vector2d const *const *const velocity_global
   Vector2d U[Nq_max], U_x[Nq_max], U_y[Nq_max];
 
   // Loop through all the elements.
-  int
-    xs = m_element_index.xs,
-    xm = m_element_index.xm,
-    ys = m_element_index.ys,
-    ym = m_element_index.ym;
+  int xs = m_element_index.xs, xm = m_element_index.xm, ys = m_element_index.ys,
+      ym = m_element_index.ym;
 
   ParallelSection loop(m_grid->com);
   try {
@@ -1022,11 +966,9 @@ void SSAFEM::compute_local_jacobian(Vector2d const *const *const velocity_global
         }
 
         // Number of quadrature points.
-        const unsigned int
-          Nq = E->n_pts(),
-          n_chi = E->n_chi();
+        const unsigned int Nq = E->n_pts(), n_chi = E->n_chi();
 
-        int    mask[Nq_max];
+        int mask[Nq_max];
         double thickness[Nq_max];
         double tauc[Nq_max];
         double hardness[Nq_max];
@@ -1035,8 +977,7 @@ void SSAFEM::compute_local_jacobian(Vector2d const *const *const velocity_global
           Coefficients coeffs[Nk];
           E->nodal_values(m_coefficients.array(), coeffs);
 
-          quad_point_values(*E, coeffs,
-                            mask, thickness, tauc, hardness);
+          quad_point_values(*E, coeffs, mask, thickness, tauc, hardness);
         }
 
         {
@@ -1057,24 +998,18 @@ void SSAFEM::compute_local_jacobian(Vector2d const *const *const velocity_global
         // Element-local Jacobian matrix (there are Nk vector valued degrees
         // of freedom per element, for a total of (2*Nk)*(2*Nk) = 64
         // entries in the local Jacobian.
-        double K[2*Nk][2*Nk];
+        double K[2 * Nk][2 * Nk];
         // Build the element-local Jacobian.
         ierr = PetscMemzero(K, sizeof(K));
         PISM_CHK(ierr, "PetscMemzero");
 
         for (unsigned int q = 0; q < Nq; q++) {
 
-          const double
-            W            = E->weight(q),
-            u            = U[q].u,
-            v            = U[q].v,
-            u_x          = U_x[q].u,
-            v_y          = U_y[q].v,
-            u_y_plus_v_x = U_y[q].u + U_x[q].v;
+          const double W = E->weight(q), u = U[q].u, v = U[q].v, u_x = U_x[q].u, v_y = U_y[q].v,
+                       u_y_plus_v_x = U_y[q].u + U_x[q].v;
 
           double eta = 0.0, deta = 0.0, beta = 0.0, dbeta = 0.0;
-          PointwiseNuHAndBeta(thickness[q], hardness[q], mask[q], tauc[q],
-                              U[q], U_x[q], U_y[q],
+          PointwiseNuHAndBeta(thickness[q], hardness[q], mask[q], tauc[q], U[q], U_x[q], U_y[q],
                               &eta, &deta, &beta, &dbeta);
 
           for (unsigned int l = 0; l < n_chi; l++) { // Trial functions
@@ -1083,23 +1018,21 @@ void SSAFEM::compute_local_jacobian(Vector2d const *const *const velocity_global
             const fem::Germ &phi = E->chi(q, l);
 
             // Derivatives of \gamma with respect to u_l and v_l:
-            const double
-              gamma_u = (2.0 * u_x + v_y) * phi.dx + 0.5 * u_y_plus_v_x * phi.dy,
-              gamma_v = 0.5 * u_y_plus_v_x * phi.dx + (u_x + 2.0 * v_y) * phi.dy;
+            const double gamma_u = (2.0 * u_x + v_y) * phi.dx + 0.5 * u_y_plus_v_x * phi.dy,
+                         gamma_v = 0.5 * u_y_plus_v_x * phi.dx + (u_x + 2.0 * v_y) * phi.dy;
 
             // Derivatives of \eta = \nu*H with respect to u_l and v_l:
-            const double
-              eta_u = deta * gamma_u,
-              eta_v = deta * gamma_v;
+            const double eta_u = deta * gamma_u, eta_v = deta * gamma_v;
 
             // Derivatives of the basal shear stress term (\tau_b):
-            const double
-              taub_xu = -dbeta * u * u * phi.val - beta * phi.val,  // x-component, derivative with respect to u_l
-              taub_xv = -dbeta * u * v * phi.val,                   // x-component, derivative with respect to u_l
-              taub_yu = -dbeta * v * u * phi.val,                   // y-component, derivative with respect to v_l
-              taub_yv = -dbeta * v * v * phi.val - beta * phi.val;  // y-component, derivative with respect to v_l
+            const double taub_xu = -dbeta * u * u * phi.val -
+                                   beta * phi.val,  // x-component, derivative with respect to u_l
+                taub_xv = -dbeta * u * v * phi.val, // x-component, derivative with respect to u_l
+                taub_yu = -dbeta * v * u * phi.val, // y-component, derivative with respect to v_l
+                taub_yv = -dbeta * v * v * phi.val -
+                          beta * phi.val; // y-component, derivative with respect to v_l
 
-            for (unsigned int k = 0; k < n_chi; k++) {   // Test functions
+            for (unsigned int k = 0; k < n_chi; k++) { // Test functions
 
               // Current test function and its derivatives:
 
@@ -1111,17 +1044,21 @@ void SSAFEM::compute_local_jacobian(Vector2d const *const *const velocity_global
               }
 
               // u-u coupling
-              K[k*2 + 0][l*2 + 0] += W * (eta_u * (psi.dx * (4 * u_x + 2 * v_y) + psi.dy * u_y_plus_v_x)
-                                          + eta * (4 * psi.dx * phi.dx + psi.dy * phi.dy) - psi.val * taub_xu);
+              K[k * 2 + 0][l * 2 + 0] +=
+                  W * (eta_u * (psi.dx * (4 * u_x + 2 * v_y) + psi.dy * u_y_plus_v_x) +
+                       eta * (4 * psi.dx * phi.dx + psi.dy * phi.dy) - psi.val * taub_xu);
               // u-v coupling
-              K[k*2 + 0][l*2 + 1] += W * (eta_v * (psi.dx * (4 * u_x + 2 * v_y) + psi.dy * u_y_plus_v_x)
-                                          + eta * (2 * psi.dx * phi.dy + psi.dy * phi.dx) - psi.val * taub_xv);
+              K[k * 2 + 0][l * 2 + 1] +=
+                  W * (eta_v * (psi.dx * (4 * u_x + 2 * v_y) + psi.dy * u_y_plus_v_x) +
+                       eta * (2 * psi.dx * phi.dy + psi.dy * phi.dx) - psi.val * taub_xv);
               // v-u coupling
-              K[k*2 + 1][l*2 + 0] += W * (eta_u * (psi.dx * u_y_plus_v_x + psi.dy * (2 * u_x + 4 * v_y))
-                                          + eta * (psi.dx * phi.dy + 2 * psi.dy * phi.dx) - psi.val * taub_yu);
+              K[k * 2 + 1][l * 2 + 0] +=
+                  W * (eta_u * (psi.dx * u_y_plus_v_x + psi.dy * (2 * u_x + 4 * v_y)) +
+                       eta * (psi.dx * phi.dy + 2 * psi.dy * phi.dx) - psi.val * taub_yu);
               // v-v coupling
-              K[k*2 + 1][l*2 + 1] += W * (eta_v * (psi.dx * u_y_plus_v_x + psi.dy * (2 * u_x + 4 * v_y))
-                                          + eta * (psi.dx * phi.dx + 4 * psi.dy * phi.dy) - psi.val * taub_yv);
+              K[k * 2 + 1][l * 2 + 1] +=
+                  W * (eta_v * (psi.dx * u_y_plus_v_x + psi.dy * (2 * u_x + 4 * v_y)) +
+                       eta * (psi.dx * phi.dx + 4 * psi.dy * phi.dy) - psi.val * taub_yv);
 
             } // l
           } // k
@@ -1178,7 +1115,7 @@ void SSAFEM::monitor_jacobian(Mat Jac) {
   // iter has to be a PetscInt because it is used in the
   // SNESGetIterationNumber() call below.
   PetscInt iter = 0;
-  ierr = SNESGetIterationNumber(m_snes, &iter);
+  ierr          = SNESGetIterationNumber(m_snes, &iter);
   PISM_CHK(ierr, "SNESGetIterationNumber");
 
   auto file_name = pism::printf("PISM_SSAFEM_J%d.m", (int)iter);
@@ -1198,7 +1135,7 @@ void SSAFEM::monitor_jacobian(Mat Jac) {
   ierr = PetscViewerFileSetName(viewer, file_name.c_str());
   PISM_CHK(ierr, "PetscViewerFileSetName");
 
-  ierr = PetscObjectSetName((PetscObject) Jac, "A");
+  ierr = PetscObjectSetName((PetscObject)Jac, "A");
   PISM_CHK(ierr, "PetscObjectSetName");
 
   ierr = MatView(Jac, viewer);
@@ -1209,32 +1146,31 @@ void SSAFEM::monitor_jacobian(Mat Jac) {
 }
 
 //!
-PetscErrorCode SSAFEM::function_callback(DMDALocalInfo *info,
-                                         Vector2d const *const *const velocity,
-                                         Vector2d **residual,
-                                         CallbackData *fe) {
+PetscErrorCode SSAFEM::function_callback(DMDALocalInfo *info, Vector2d const *const *const velocity,
+                                         Vector2d **residual, CallbackData *fe) {
   try {
-    (void) info;
+    (void)info;
     fe->ssa->compute_local_function(velocity, residual);
   } catch (...) {
-    MPI_Comm com = MPI_COMM_SELF;
-    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)fe->da, &com); CHKERRQ(ierr);
+    MPI_Comm com        = MPI_COMM_SELF;
+    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)fe->da, &com);
+    CHKERRQ(ierr);
     handle_fatal_errors(com);
     SETERRQ(com, 1, "A PISM callback failed");
   }
   return 0;
 }
 
-PetscErrorCode SSAFEM::jacobian_callback(DMDALocalInfo *info,
-                                         Vector2d const *const *const velocity,
+PetscErrorCode SSAFEM::jacobian_callback(DMDALocalInfo *info, Vector2d const *const *const velocity,
                                          Mat A, Mat J, CallbackData *fe) {
   try {
-    (void) A;
-    (void) info;
+    (void)A;
+    (void)info;
     fe->ssa->compute_local_jacobian(velocity, J);
   } catch (...) {
-    MPI_Comm com = MPI_COMM_SELF;
-    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)fe->da, &com); CHKERRQ(ierr);
+    MPI_Comm com        = MPI_COMM_SELF;
+    PetscErrorCode ierr = PetscObjectGetComm((PetscObject)fe->da, &com);
+    CHKERRQ(ierr);
     handle_fatal_errors(com);
     SETERRQ(com, 1, "A PISM callback failed");
   }

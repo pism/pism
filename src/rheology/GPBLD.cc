@@ -47,7 +47,7 @@ GPBLD::GPBLD(double exponent, const Config &config, std::shared_ptr<EnthalpyConv
 */
 double GPBLD::softness_impl(double enthalpy, double pressure) const {
   const double E_s = m_EC->enthalpy_cts(pressure);
-  if (enthalpy < E_s) {       // cold ice
+  if (enthalpy < E_s) { // cold ice
     double T_pa = m_EC->pressure_adjusted_temperature(enthalpy, pressure);
     return softness_paterson_budd(T_pa);
   }
@@ -60,9 +60,8 @@ double GPBLD::softness_impl(double enthalpy, double pressure) const {
   return softness_paterson_budd(m_T_0) * (1.0 + m_water_frac_coeff * omega);
 }
 
-void GPBLD::flow_n_impl(const double *stress, const double *enthalpy,
-                        const double *pressure, const double *grainsize,
-                        unsigned int n, double *result) const {
+void GPBLD::flow_n_impl(const double *stress, const double *enthalpy, const double *pressure,
+                        const double *grainsize, unsigned int n, double *result) const {
   // optimize the common case of Glen n=3
   if (m_n == 3.0) {
     for (unsigned int k = 0; k < n; ++k) {

@@ -27,17 +27,14 @@ namespace pism {
 //! Tridiagonal linear system for vertical column of age (pure advection) problem.
 class AgeColumnSystem : public columnSystemCtx {
 public:
-  AgeColumnSystem(const std::vector<double>& storage_grid,
-                  const std::string &my_prefix,
-                  double dx, double dy, double dt,
-                  const array::Array3D &age,
-                  const array::Array3D &u3,
-                  const array::Array3D &v3,
-                  const array::Array3D &w3);
+  AgeColumnSystem(const std::vector<double> &storage_grid, const std::string &my_prefix, double dx,
+                  double dy, double dt, const array::Array3D &age, const array::Array3D &u3,
+                  const array::Array3D &v3, const array::Array3D &w3);
 
   void init(int i, int j, double thickness);
 
   void solve(std::vector<double> &x);
+
 protected:
   const array::Array3D &m_age3;
   double m_nu;

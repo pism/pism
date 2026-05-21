@@ -22,8 +22,8 @@
 #include <petscis.h>
 #include <petscvec.h>
 
-#include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/petscwrappers/IS.hh"
+#include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/petscwrappers/VecScatter.hh"
 
 namespace pism {
@@ -53,19 +53,19 @@ public:
   void gatherFromA(Vec a, Vec ab);
   void gatherFromB(Vec b, Vec ab);
 
-  operator Vec () {
+  operator Vec() {
     return m_ab;
   }
 
 protected:
   void scatter_begin_end(VecScatter s, Vec a, Vec b, ScatterMode m);
   petsc::Vec m_ab;
-  
+
   PetscInt m_na_local, m_na_global, m_nb_local, m_nb_global;
-  
+
   petsc::IS m_a_in_ab;
   petsc::IS m_b_in_ab;
-  
+
   petsc::VecScatter m_scatter_a;
   petsc::VecScatter m_scatter_b;
 };

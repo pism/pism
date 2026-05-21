@@ -28,6 +28,7 @@ class ISMIP6 : public SurfaceModel {
 public:
   ISMIP6(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere::AtmosphereModel> input);
   virtual ~ISMIP6() = default;
+
 protected:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
@@ -35,10 +36,11 @@ protected:
   const array::Scalar &temperature_impl() const;
   const array::Scalar &mass_flux_impl() const;
 
-  const array::Scalar& accumulation_impl() const;
-  const array::Scalar& melt_impl() const;
-  const array::Scalar& runoff_impl() const;
+  const array::Scalar &accumulation_impl() const;
+  const array::Scalar &melt_impl() const;
+  const array::Scalar &runoff_impl() const;
   MaxTimestep max_timestep_impl(double t) const;
+
 protected:
   // time-dependent inputs
   std::shared_ptr<array::Forcing> m_mass_flux_anomaly;
@@ -54,7 +56,6 @@ protected:
   // outputs; stored as shared_ptr to be able to use SurfaceModel::allocate_xxx()
   std::shared_ptr<array::Scalar> m_mass_flux;
   std::shared_ptr<array::Scalar> m_temperature;
-
 };
 
 } // end of namespace surface

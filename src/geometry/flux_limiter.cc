@@ -19,8 +19,8 @@
 
 #include "pism/geometry/flux_limiter.hh"
 
-#include <cassert>
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <limits>
 

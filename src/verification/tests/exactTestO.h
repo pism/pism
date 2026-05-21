@@ -22,8 +22,7 @@
 #define __exactTestO_h 1
 
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 /*
@@ -54,5 +53,4 @@ struct TestOParameters exactO(double z);
 }
 #endif
 
-#endif  /* __exactTestO_h */
-
+#endif /* __exactTestO_h */

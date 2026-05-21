@@ -20,13 +20,13 @@
 
 #include "pism/icemodel/IceModel.hh"
 
-#include "pism/energy/BedThermalUnit.hh"
-#include "pism/util/Grid.hh"
-#include "pism/util/Config.hh"
-#include "pism/util/error_handling.hh"
 #include "pism/coupler/SurfaceModel.hh"
+#include "pism/energy/BedThermalUnit.hh"
+#include "pism/util/Config.hh"
 #include "pism/util/EnthalpyConverter.hh"
+#include "pism/util/Grid.hh"
 #include "pism/util/Profiling.hh"
+#include "pism/util/error_handling.hh"
 
 #include "pism/energy/EnergyModel.hh"
 
@@ -43,13 +43,9 @@ void IceModel::bedrock_thermal_model_step(double t, double dt) {
 
   extract_surface(m_energy_model->enthalpy(), 0.0, basal_enthalpy);
 
-  bedrock_surface_temperature(m_geometry.sea_level_elevation,
-                              m_geometry.cell_type,
-                              m_geometry.bed_elevation,
-                              m_geometry.ice_thickness,
-                              basal_enthalpy,
-                              m_surface->temperature(),
-                              m_bedtoptemp);
+  bedrock_surface_temperature(m_geometry.sea_level_elevation, m_geometry.cell_type,
+                              m_geometry.bed_elevation, m_geometry.ice_thickness, basal_enthalpy,
+                              m_surface->temperature(), m_bedtoptemp);
 
   profiling.begin("btu");
   m_btu->update(m_bedtoptemp, t, dt);
@@ -90,8 +86,8 @@ void IceModel::combine_basal_melt_rate(const Geometry &geometry,
   const bool sub_gl = (m_config->get_flag("geometry.grounded_cell_fraction") and
                        m_config->get_flag("energy.basal_melt.use_grounded_cell_fraction"));
 
-  array::AccessScope list{&geometry.cell_type,
-      &grounded_basal_melt_rate, &shelf_base_mass_flux, &result};
+  array::AccessScope list{ &geometry.cell_type, &grounded_basal_melt_rate, &shelf_base_mass_flux,
+                           &result };
   if (sub_gl) {
     list.add(geometry.cell_grounded_fraction);
   }
@@ -101,58 +97,57 @@ void IceModel::combine_basal_melt_rate(const Geometry &geometry,
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
-    double lambda = 1.0;      // 1.0 corresponds to the grounded case
+    double lambda = 1.0; // 1.0 corresponds to the grounded case
     // Note: here we convert shelf base mass flux from [kg m-2 s-1] to [m s-1]:
-    const double
-      M_shelf_base = shelf_base_mass_flux(i,j) / ice_density;
+    const double M_shelf_base = shelf_base_mass_flux(i, j) / ice_density;
 
     // Use the fractional floatation mask to adjust the basal melt
     // rate near the grounding line:
     if (sub_gl) {
-      lambda = geometry.cell_grounded_fraction(i,j);
-    } else if (geometry.cell_type.ocean(i,j)) {
+      lambda = geometry.cell_grounded_fraction(i, j);
+    } else if (geometry.cell_type.ocean(i, j)) {
       lambda = 0.0;
     }
-    result(i,j) = lambda * grounded_basal_melt_rate(i, j) + (1.0 - lambda) * M_shelf_base;
+    result(i, j) = lambda * grounded_basal_melt_rate(i, j) + (1.0 - lambda) * M_shelf_base;
   }
 }
 
 //! @brief Compute the temperature seen by the top of the bedrock thermal layer.
-void bedrock_surface_temperature(const array::Scalar &sea_level,
-                                 const array::CellType &cell_type,
+void bedrock_surface_temperature(const array::Scalar &sea_level, const array::CellType &cell_type,
                                  const array::Scalar &bed_topography,
                                  const array::Scalar &ice_thickness,
                                  const array::Scalar &basal_enthalpy,
                                  const array::Scalar &ice_surface_temperature,
                                  array::Scalar &result) {
 
-  auto grid = result.grid();
+  auto grid   = result.grid();
   auto config = grid->ctx()->config();
 
-  const double
-    T0                     = config->get_number("constants.fresh_water.melting_point_temperature"),
-    beta_CC_grad_sea_water = (config->get_number("constants.ice.beta_Clausius_Clapeyron") *
-                              config->get_number("constants.sea_water.density") *
-                              config->get_number("constants.standard_gravity")); // K m-1
+  const double T0 = config->get_number("constants.fresh_water.melting_point_temperature"),
+               beta_CC_grad_sea_water =
+                   (config->get_number("constants.ice.beta_Clausius_Clapeyron") *
+                    config->get_number("constants.sea_water.density") *
+                    config->get_number("constants.standard_gravity")); // K m-1
 
   auto EC = grid->ctx()->enthalpy_converter();
 
-  array::AccessScope list{&cell_type, &bed_topography, &sea_level, &ice_thickness,
-      &ice_surface_temperature, &basal_enthalpy, &result};
+  array::AccessScope list{ &cell_type,     &bed_topography,          &sea_level,
+                           &ice_thickness, &ice_surface_temperature, &basal_enthalpy,
+                           &result };
   ParallelSection loop(grid->com);
   try {
     for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
-      if (cell_type.grounded(i,j)) {
-        if (cell_type.ice_free(i,j)) { // no ice: sees air temp
-          result(i,j) = ice_surface_temperature(i,j);
+      if (cell_type.grounded(i, j)) {
+        if (cell_type.ice_free(i, j)) { // no ice: sees air temp
+          result(i, j) = ice_surface_temperature(i, j);
         } else { // ice: sees temp of base of ice
-          const double pressure = EC->pressure(ice_thickness(i,j));
-          result(i,j) = EC->temperature(basal_enthalpy(i,j), pressure);
+          const double pressure = EC->pressure(ice_thickness(i, j));
+          result(i, j)          = EC->temperature(basal_enthalpy(i, j), pressure);
         }
       } else { // floating: apply pressure melting temp as top of bedrock temp
-        result(i,j) = T0 - (sea_level(i, j) - bed_topography(i,j)) * beta_CC_grad_sea_water;
+        result(i, j) = T0 - (sea_level(i, j) - bed_topography(i, j)) * beta_CC_grad_sea_water;
       }
     }
   } catch (...) {
