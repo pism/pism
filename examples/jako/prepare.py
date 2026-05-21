@@ -168,13 +168,9 @@ def download_from_s3(s3_uri: str, dest: str | Path) -> Path:
     return dest
 
 
-x_min = -199925
-x_max = -100025
-y_min = -2314025
-y_max = -2224025
 
 x_min = -199925 + 4500
-x_max = -100025 - 9000
+x_max = -50025 - 9000
 y_min = -2314025 + 4500
 y_max = -2224025 - 4500
 
@@ -244,9 +240,14 @@ for c, axis, stdname in (("x", "X", "projection_x_coordinate"), ("y", "Y", "proj
     }
     if c in obs_jib.coords:
         obs_jib[c].attrs.update(attrs)
-zeta_mask = obs_jib["bed"].rio.clip(jib.geometry, drop=False)
-obs_jib["zeta_fixed_mask"] = xr.where(zeta_mask.isnull(), 1, 0).fillna(0).astype(int)
 
+zeta_mask = obs_jib["bed"].rio.clip(jib.geometry, drop=False)
+outside_geometry = zeta_mask.isnull()
+no_ice = (obs_jib["thickness"] == 0) | obs_jib["bed"].isnull()
+obs_jib["zeta_fixed_mask"] = (
+    xr.where(outside_geometry | no_ice, 1, 0).fillna(0).astype(int)
+)
+  
 def fix_xy_attrs(ds):
     """Ensure x/y coordinates have proper CF attributes and float64 dtype."""
     for c, axis, stdname in (("x", "X", "projection_x_coordinate"),
@@ -261,7 +262,7 @@ def fix_xy_attrs(ds):
             ds[c].encoding["dtype"] = "float64"
     return ds
 
-obs_jib = obs_jib.fillna(0)
+obs_jib = obs_jib.fillna(0).isel(vel_time=1)
 boot_ds = fix_xy_attrs(obs_jib[["bed", "thickness", "surface_grimp"]])
 boot_ds["bed"].attrs.update({"standard_name": "bedrock_altitude", "units": "m"})
 boot_ds["surface_grimp"].attrs.update({"standard_name": "surface_altitude", "units": "m"})
@@ -269,8 +270,8 @@ encoding = {v: {"_FillValue": None} for v in (boot_ds.data_vars and boot_ds.coor
 boot_ds.to_netcdf("boot_jako.nc", encoding=encoding)
 
 obs_ds = fix_xy_attrs(
-    obs_jib[["vx_mosaic", "vy_mosaic", "zeta_fixed_mask"]]
-    .rename_vars({"vx_mosaic": "u_observed", "vy_mosaic": "v_observed"})
+    obs_jib[["vx_timeseries", "vy_timeseries", "zeta_fixed_mask"]]
+    .rename_vars({"vx_timeseries": "u_observed", "vy_timeseries": "v_observed"})
     .fillna(0)
 )
 encoding = {v: {"_FillValue": None} for v in (obs_ds.data_vars and obs_ds.coords)}

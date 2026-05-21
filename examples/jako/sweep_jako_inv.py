@@ -82,9 +82,10 @@ SSA_PHYSICS = [
     "-stress_balance.model", "ssa",
     "-stress_balance.ssa.flow_law", "isothermal_glen",
     "-stress_balance.ssa.method", "fem",
+    "-stress_balance.ssa.dirichlet_bc", "",
 ]
 
-max_iter = 250
+max_iter = 5000
 scriptdir = "run_obs_scripts"
 os.makedirs(scriptdir, exist_ok=True)
 
@@ -93,9 +94,9 @@ solvers = {
     "blatter": {"inv_flag": ["-inv_design", "tauc"], "physics": BLATTER_PHYSICS},
 }
 
-penalties = [10, 100, 1000, 10000]
-h1_values = [0.01, 1, 10]
-l2_values = [0, 1, 10]
+penalties = [10, 100, 1000, 10000, 1000000]
+h1_values = [1]
+l2_values = [0]
 hscales = ["50e3"]
 vscales = [100]
 
@@ -132,13 +133,9 @@ for sb, params in solvers.items():
 
         cmd_parts = [
             RUN_CMD, "pismi",
-            "-i", boot_file,
+            "-i", state_file,
             "-inv_data", inv_data,
             "-o", outfile,
-            "-grid.file", grid_file,
-            "-bootstrap", "",
-            "-input.regrid.file", state_file,
-            "-input.regrid.vars", "litho_temp,enthalpy,age,tillwat,bmelt,ice_area_specific_volume,tauc,no_model_mask",
             "-time.calendar", "standard",
             "-grid.dx", res,
             "-grid.dy", res,
