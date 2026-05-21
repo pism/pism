@@ -35,6 +35,18 @@ Download and Install
 
 See the section `Installing PISM <pism-installation_>`_ on ``pism.io``.
 
+You can install PISM prerequisites using conda::
+
+  git clone https://github.com/pism/pism.git
+  cd pism
+  conda env create -f environment.yml
+  conda activate pism
+
+Then build PISM::
+
+  CMAKE_BUILD_PARALLEL_LEVEL=8 python -m pip install --no-build-isolation -v .
+
+
 Support
 -------
 

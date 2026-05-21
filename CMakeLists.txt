@@ -17,6 +17,16 @@ list (APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake")
 
 pism_set_full_version()
 
+# Set install directories for scikit-build-core (pip install .):
+if (SKBUILD)
+  set(CMAKE_INSTALL_BINDIR      "${SKBUILD_SCRIPTS_DIR}"      CACHE PATH "" FORCE)
+  set(CMAKE_INSTALL_LIBDIR      "${SKBUILD_DATA_DIR}/lib"     CACHE PATH "" FORCE)
+  set(CMAKE_INSTALL_DATAROOTDIR "${SKBUILD_DATA_DIR}/share"   CACHE PATH "" FORCE)
+  set(CMAKE_INSTALL_DATADIR     "${SKBUILD_DATA_DIR}/share"   CACHE PATH "" FORCE)
+  set(CMAKE_INSTALL_INCLUDEDIR  "${SKBUILD_DATA_DIR}/include" CACHE PATH "" FORCE)
+  set(PISM_PYTHON_MODULE_DIR    "${SKBUILD_PLATLIB_DIR}"      CACHE PATH "" FORCE)
+endif()
+
 include (GNUInstallDirs)
 # doc directory: override capitalization ("pism" instead of "Pism" from the "project(...)"
 # call above)
@@ -43,16 +53,14 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Looks like CMAKE_CXX_STANDARD does not support Intel C++ compilers
-# yet...
-if (CMAKE_CXX_COMPILER_ID MATCHES "Intel" AND NOT CMAKE_CXX_FLAGS MATCHES "-std=c\\+\\+11")
-  message (STATUS "Adding -std=c++11 to C++ compiler flags for Intel compilers.")
-  set (CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}" CACHE STRING "C++ compiler flags" FORCE)
-endif()
-
-# Add a flag that makes it easier to use LLDB to debug code compiled with Clang:
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+# Add a flag that makes it easier to use LLDB to debug code compiled with Clang (if
+# supported by C and C++ compilers).
+include(CheckCompilerFlag)
+check_compiler_flag(C -fstandalone-debug PISM_C_FSTANDALONE_DEBUG)
+check_compiler_flag(CXX -fstandalone-debug PISM_CXX_FSTANDALONE_DEBUG)
+if (PISM_C_FSTANDALONE_DEBUG AND PISM_CXX_FSTANDALONE_DEBUG)
   add_compile_options(-fstandalone-debug)
+  message(STATUS "Adding -fstandalone-debug to compiler flags")
 endif()
 
 # Put executables in the build directory:
@@ -61,9 +69,23 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR})
 set(CMAKE_INSTALL_MESSAGE "LAZY")
 set(CMAKE_COLOR_MAKEFILE OFF)
 
-# Set Pism_CONFIG_FILE (*after* we set the CMAKE_INSTALL_PREFIX above).
 pism_check_build_dir_location()
-set (Pism_CONFIG_FILE "${CMAKE_INSTALL_FULL_DATADIR}/pism/pism_config.nc" CACHE STRING "" FORCE)
+
+# Set Pism_CONFIG_FILE (*after* we set the CMAKE_INSTALL_PREFIX above).
+if (Pism_CONFIG_FILE)
+  set (Pism_CONFIG_FILE "${Pism_CONFIG_FILE}" CACHE STRING "" FORCE)
+else()
+  set(Pism_CONFIG_FILE "${CMAKE_INSTALL_FULL_DATADIR}/pism/pism_config.nc" CACHE STRING "" FORCE)
+  if (SKBUILD)
+    if (DEFINED ENV{CONDA_PREFIX})
+      message(STATUS "CONDA_PREFIX is set: setting Pism_CONFIG_FILE accordingly")
+      set(Pism_CONFIG_FILE "$ENV{CONDA_PREFIX}/share/pism/pism_config.nc" CACHE STRING "" FORCE)
+    elseif (DEFINED ENV{VIRTUAL_ENV})
+      message(STATUS "VIRTUAL_ENV is set: setting Pism_CONFIG_FILE accordingly")
+      set(Pism_CONFIG_FILE "$ENV{VIRTUAL_ENV}/share/pism/pism_config.nc" CACHE STRING "" FORCE)
+    endif()
+  endif(SKBUILD)
+endif()
 mark_as_advanced (Pism_CONFIG_FILE)
 
 # The default options cache
@@ -94,6 +116,16 @@ option (Pism_GPROF_FLAGS        "Add flags necessary to profile with gprof." OFF
 # Use rpath by default; this has to go first, because rpath settings may be overridden later.
 if (Pism_DEBIAN_SYSTEMWIDE)
   pism_dont_use_rpath()
+elseif (SKBUILD)
+  # Use CMAKE_INSTALL_RPATH and CMAKE_BUILD_RPATH_USE_ORIGIN passed via pyproject.toml.
+  #
+  # Avoid baking the wheel-staging absolute libdir into the install RPATH or the macOS
+  # install_name_dir, which would break the binary once pip moves files out of the staging
+  # area.
+  set (CMAKE_SKIP_BUILD_RPATH FALSE)
+  set (CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+  set (CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+  set (CMAKE_MACOSX_RPATH 1)
 else()
   pism_use_rpath()
 endif()
@@ -163,33 +195,35 @@ if (Pism_BUILD_PYTHON_BINDINGS)
 
   mark_as_advanced (SWIG_DIR SWIG_EXECUTABLE SWIG_VERSION)
 
-  set (pism_python_path_py "${CMAKE_CURRENT_BINARY_DIR}/pism_python_path.py")
-  if (Pism_DEBIAN_SYSTEMWIDE)
-    set (pism_sysconfig_scheme "deb_system")
-  else()
-    set (pism_sysconfig_scheme "posix_prefix")
-  endif()
-  file (WRITE "${pism_python_path_py}" "
+  if (NOT PISM_PYTHON_MODULE_DIR)
+    set (pism_python_path_py "${CMAKE_CURRENT_BINARY_DIR}/pism_python_path.py")
+    if (Pism_DEBIAN_SYSTEMWIDE)
+      set (pism_sysconfig_scheme "deb_system")
+    else()
+      set (pism_sysconfig_scheme "posix_prefix")
+    endif()
+    # Note: this is almost the same as Python3_SITEARCH provided by CMake's FindPython3,
+    # but relative to the selected install prefix (CMAKE_INSTALL_PREFIX) and including a
+    # special case needed to build the .deb package.
+    file (WRITE "${pism_python_path_py}" "
 # Get module installation path from Python:
 import sysconfig
 print(sysconfig.get_path('platlib', '${pism_sysconfig_scheme}', vars={'platbase': '${CMAKE_INSTALL_PREFIX}'}))
 ")
-  unset(pism_sysconfig_scheme)
+    unset(pism_sysconfig_scheme)
 
-  execute_process(
-    COMMAND ${Python3_EXECUTABLE} ${pism_python_path_py}
-    OUTPUT_VARIABLE PISM_FULL_PYTHON_MODULE_DIR
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-  # convert to a path relative to the install prefix
-  file(RELATIVE_PATH PISM_PYTHON_MODULE_DIR
-    ${CMAKE_INSTALL_PREFIX} ${PISM_FULL_PYTHON_MODULE_DIR})
-  unset(pism_python_path_py)
-  set(PISM_PYTHON_MODULE_DIR ${PISM_PYTHON_MODULE_DIR}
-    CACHE PATH "Python extension module installation directory." )
-  set(PISM_FULL_PYTHON_MODULE_DIR ${PISM_FULL_PYTHON_MODULE_DIR}
-    CACHE PATH "Python extension module installation directory (full path)." )
-  mark_as_advanced(PISM_PYTHON_MODULE_DIR PISM_FULL_PYTHON_MODULE_DIR)
-endif ()
+    execute_process(
+      COMMAND ${Python3_EXECUTABLE} ${pism_python_path_py}
+      OUTPUT_VARIABLE PISM_PROBED_PYTHON_MODULE_DIR
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+    # convert to a path relative to the install prefix
+    file(RELATIVE_PATH PISM_PYTHON_MODULE_DIR
+      ${CMAKE_INSTALL_PREFIX} ${PISM_PROBED_PYTHON_MODULE_DIR})
+    unset(pism_python_path_py)
+    unset(PISM_PROBED_PYTHON_MODULE_DIR)
+  endif(NOT PISM_PYTHON_MODULE_DIR)
+  mark_as_advanced(PISM_PYTHON_MODULE_DIR)
+endif (Pism_BUILD_PYTHON_BINDINGS)
 
 # re-run tests that failed
 add_custom_target (retest

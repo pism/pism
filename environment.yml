@@ -1,0 +1,42 @@
+name: pism
+channels:
+  - conda-forge
+  - pism
+dependencies:
+  - python
+  # Compilers & build tools
+  - c-compiler
+  - cxx-compiler
+  - cmake >=3.20
+  - stdlibs
+  - pkg-config
+  - make
+  - swig
+  - gnuconfig
+  # MPI
+  - openmpi >=5
+  - libnetcdf=*=*openmpi*
+  - netcdf4=*=*openmpi*
+  - h5py=*=*openmpi*
+  - hdf5=*=*openmpi*
+  # Libraries
+  - fftw
+  - gsl >=1.15
+  - udunits2
+  - proj
+  - libsqlite
+  - libtiff
+  - libcurl
+  - zlib
+  - liblzma-devel
+  - libopenblas
+  - petsc
+  - petsc4py
+  - scikit-build-core
+  - yac=*=*openmpi*
+  - yaxt=*=*openmpi*
+  - ncview
+  # Python / analysis
+  - pip
+  - pip:
+      - -r requirements.txt
