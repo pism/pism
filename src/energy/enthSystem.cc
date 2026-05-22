@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2018, 2020, 2021, 2022, 2023, 2025 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009-2018, 2020, 2021, 2022, 2023, 2025, 2026 Andreas Aschwanden and Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -88,11 +88,7 @@ enthSystemCtx::enthSystemCtx(const std::vector<double>& storage_grid,
   m_R_cold = K * m_R_factor;
   m_R_temp = K0 * m_R_factor;
 
-  if (config.get_flag("energy.temperature_dependent_thermal_conductivity")) {
-    m_k_depends_on_T = true;
-  } else {
-    m_k_depends_on_T = false;
-  }
+  m_k_depends_on_T = config.get_flag("energy.temperature_dependent_thermal_conductivity");
 }
 
 /*!
@@ -451,7 +447,7 @@ void enthSystemCtx::assemble_R() {
  * @f[ \frac{K_{k+\frac12}\frac{E_{k+1} - E_{k}}{\dz} - K_{k-\frac12}\frac{E_{k} - E_{k-1}}{\dz}}{\dz} = \frac{E_{k} - E^{n-1}_{k}}{\dt}, @f]
  *
  * where @f$ E = E^{n} @f$ for clarity and @f$ K_{k\pm \frac12} = K(E^{n-1}_{k\pm \frac12}) @f$,
- * %i.e. we linearize this PDE by evaluating @f$ K(E) @f$ at the _previous_ time-step.
+ * %i.e. we linearize this PDE by evaluating @f$ K(E) @f$ at the *previous* time-step.
  *
  * We define
  *
@@ -474,7 +470,7 @@ void enthSystemCtx::assemble_R() {
  * corresponding to an equation @f$ i @f$ and @f$ b_i @f$ is the corresponding right-hand side.
  * (Staggered-grid values are approximated by interpolating from the regular grid).
  *
- * This method is _unconditionally stable_ and has a maximum principle (see [@ref MortonMayers,
+ * This method is *unconditionally stable* and has a maximum principle (see [@ref MortonMayers,
  * section 2.11]).
  */
 void enthSystemCtx::solve(std::vector<double> &result) {
