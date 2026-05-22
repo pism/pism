@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _COLUMNINTERPOLATION_H_
-#define _COLUMNINTERPOLATION_H_
+#ifndef PISM_COLUMNINTERPOLATION_HH
+#define PISM_COLUMNINTERPOLATION_HH
 
 #include <vector>
 
@@ -60,4 +60,4 @@ private:
 
 } // end of namespace pism
 
-#endif /* _COLUMNINTERPOLATION_H_ */
+#endif /* PISM_COLUMNINTERPOLATION_HH */

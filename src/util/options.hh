@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _OPTIONS_H_
-#define _OPTIONS_H_
+#ifndef PISM_OPTIONS_HH
+#define PISM_OPTIONS_HH
 
 namespace pism {
 namespace options {
@@ -63,4 +63,4 @@ protected:
 } // end of namespace pism
 
 
-#endif /* _OPTIONS_H_ */
+#endif /* PISM_OPTIONS_HH */

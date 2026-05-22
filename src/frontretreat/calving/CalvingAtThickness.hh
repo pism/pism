@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef _PISMCALVINGATTHICKNESS_H_
-#define _PISMCALVINGATTHICKNESS_H_
+#ifndef PISM_CALVINGATTHICKNESS_HH
+#define PISM_CALVINGATTHICKNESS_HH
 
 #include "pism/util/Component.hh"
 #include "pism/util/array/CellType.hh"
@@ -52,4 +52,4 @@ protected:
 } // end of namespace calving
 } // end of namespace pism
 
-#endif /* _PISMCALVINGATTHICKNESS_H_ */
+#endif /* PISM_CALVINGATTHICKNESS_HH */

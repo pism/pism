@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _PATERSONBUDDCOLD_H_
-#define _PATERSONBUDDCOLD_H_
+#ifndef PISM_PATERSONBUDDCOLD_HH
+#define PISM_PATERSONBUDDCOLD_HH
 
 #include "pism/rheology/PatersonBudd.hh"
 
@@ -50,4 +50,4 @@ bool FlowLawIsPatersonBuddCold(const FlowLaw &flow_law,
 } // end of namespace pism
 
 
-#endif /* _PATERSONBUDDCOLD_H_ */
+#endif /* PISM_PATERSONBUDDCOLD_HH */

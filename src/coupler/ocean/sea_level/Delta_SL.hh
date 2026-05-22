@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PODSLFORCING_H_
-#define _PODSLFORCING_H_
+#ifndef PISM_OCEAN_DSLFORCING_HH
+#define PISM_OCEAN_DSLFORCING_HH
 
 #include "pism/coupler/SeaLevel.hh"
 
@@ -44,4 +44,4 @@ private:
 } // end of namespace ocean
 } // end of namespace pism
 
-#endif /* _PODSLFORCING_H_ */
+#endif /* PISM_OCEAN_DSLFORCING_HH */

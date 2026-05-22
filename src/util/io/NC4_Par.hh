@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PISMNC4_PAR_H_
-#define _PISMNC4_PAR_H_
+#ifndef PISM_NC4_PAR_HH
+#define PISM_NC4_PAR_HH
 
 #include "pism/util/io/NC4File.hh"
 
@@ -45,4 +45,4 @@ protected:
 } // end of namespace io
 } // end of namespace pism
 
-#endif /* _PISMNC4_PAR_H_ */
+#endif /* PISM_NC4_PAR_HH */

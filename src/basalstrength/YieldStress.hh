@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PISMYIELDSTRESS_H_
-#define _PISMYIELDSTRESS_H_
+#ifndef PISM_YIELDSTRESS_HH
+#define PISM_YIELDSTRESS_HH
 
 #include "pism/util/Component.hh"
 
@@ -78,4 +78,4 @@ protected:
 
 } // end of namespace pism
 
-#endif /* _PISMYIELDSTRESS_H_ */
+#endif /* PISM_YIELDSTRESS_HH */

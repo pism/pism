@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _PATERSONBUDD_H_
-#define _PATERSONBUDD_H_
+#ifndef PISM_PATERSONBUDD_HH
+#define PISM_PATERSONBUDD_HH
 
 #include "pism/rheology/FlowLaw.hh"
 #include <string>                          // for string
@@ -52,4 +52,4 @@ protected:
 } // end of namespace pism
 
 
-#endif /* _PATERSONBUDD_H_ */
+#endif /* PISM_PATERSONBUDD_HH */

@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __DrainageCalculator_hh
-#define __DrainageCalculator_hh
+#ifndef PISM_DrainageCalculator_hh
+#define PISM_DrainageCalculator_hh
 
 #include "pism/util/Config.hh"
 
@@ -62,5 +62,5 @@ private:
 } // end of namespace energy
 } // end of namespace pism
 
-#endif // __DrainageCalculator_hh
+#endif // PISM_DrainageCalculator_hh
 

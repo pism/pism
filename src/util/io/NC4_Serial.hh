@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _NC4_Serial_H_
-#define _NC4_Serial_H_
+#ifndef PISM_NC4_Serial_HH
+#define PISM_NC4_Serial_HH
 
 #include "pism/util/io/NC_Serial.hh"
 
@@ -44,4 +44,4 @@ protected:
 } // end of namespace io
 } // end of namespace pism
 
-#endif /* _NC4_Serial_H_ */
+#endif /* PISM_NC4_Serial_HH */

@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019, 2021, 2022, 2023, 2025 Constantine Khroulev and Andy Aschwanden
+// Copyright (C) 2018, 2019, 2021, 2022, 2023, 2025, 2026 Constantine Khroulev and Andy Aschwanden
 //
 // This file is part of PISM.
 //
@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __PISMFrontalMelt_hh
-#define __PISMFrontalMelt_hh
+#ifndef PISM_FRONTAL_MELT_HH
+#define PISM_FRONTAL_MELT_HH
 
 #include <memory>
 
@@ -86,4 +86,4 @@ protected:
 } // end of namespace frontalmelt
 } // end of namespace pism
 
-#endif  // __PISMFrontalMelt_hh
+#endif  // PISM_FRONTAL_MELT_HH

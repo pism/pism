@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _HOOKE_H_
-#define _HOOKE_H_
+#ifndef PISM_HOOKE_HH
+#define PISM_HOOKE_HH
 
 #include "pism/rheology/PatersonBudd.hh"
 
@@ -42,4 +42,4 @@ protected:
 } // end of namespace pism
 
 
-#endif /* _HOOKE_H_ */
+#endif /* PISM_HOOKE_HH */

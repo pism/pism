@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2022 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2022, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _GROUNDED_CELL_FRACTION_H_
-#define _GROUNDED_CELL_FRACTION_H_
+#ifndef PISM_GROUNDED_CELL_FRACTION_HH
+#define PISM_GROUNDED_CELL_FRACTION_HH
 
 namespace pism {
 
@@ -43,4 +43,4 @@ void compute_grounded_cell_fraction(double ice_density,
 } // end of namespace pism
 
 
-#endif /* _GROUNDED_CELL_FRACTION_H_ */
+#endif /* PISM_GROUNDED_CELL_FRACTION_HH */

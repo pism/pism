@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef _PSVERIFICATION_H_
-#define _PSVERIFICATION_H_
+#ifndef PISM_SURFACE_VERIFICATION_HH
+#define PISM_SURFACE_VERIFICATION_HH
 
 #include "pism/coupler/surface/Formulas.hh"
 #include "pism/util/EnthalpyConverter.hh"
@@ -62,4 +62,4 @@ private:
 } // end of namespace surface
 } // end of namespace pism
 
-#endif /* _PSVERIFICATION_H_ */
+#endif /* PISM_SURFACE_VERIFICATION_HH */

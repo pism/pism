@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __localMassBalance_hh
-#define __localMassBalance_hh
+#ifndef PISM_localMassBalance_hh
+#define PISM_localMassBalance_hh
 
 #include "pism/util/array/Scalar.hh"  // only needed for FaustoGrevePDDObject
 #include "pism/util/Config.hh"

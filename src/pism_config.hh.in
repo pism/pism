@@ -21,8 +21,8 @@
  * This header contains values set during PISM's configuration process.
  */
 
-#ifndef PISM_CONFIG_HH
-#define PISM_CONFIG_HH
+#ifndef PISM_BUILD_CONFIG_HH
+#define PISM_BUILD_CONFIG_HH
 
 namespace pism {
 
@@ -64,4 +64,4 @@ extern const char *cmake_version;
 
 } // end of namespace pism
 
-#endif /* PISM_CONFIG_HH */
+#endif /* PISM_BUILD_CONFIG_HH */

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2014, 2015 David Maxwell and Constantine Khroulev
+// Copyright (C) 2011, 2014, 2015, 2026 David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -17,8 +17,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
-#ifndef _PISM_PYTHON_
-#define _PISM_PYTHON_
+#ifndef PISM_PYTHON_HH
+#define PISM_PYTHON_HH
 
 namespace pism {
 
@@ -50,4 +50,4 @@ private:
 } // end of namespace python
 } // end of namespace pism
 
-#endif
+#endif /* PISM_PYTHON_HH */

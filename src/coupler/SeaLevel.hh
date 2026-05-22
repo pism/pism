@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2021, 2025 PISM Authors
+/* Copyright (C) 2018, 2021, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -57,7 +57,6 @@ protected:
   virtual DiagnosticList spatial_diagnostics_impl() const;
   virtual TSDiagnosticList scalar_diagnostics_impl() const;
 
-protected:
   std::shared_ptr<SeaLevel> m_input_model;
   array::Scalar m_sea_level;
 };

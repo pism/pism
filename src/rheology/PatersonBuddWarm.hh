@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _PATERSONBUDDWARM_H_
-#define _PATERSONBUDDWARM_H_
+#ifndef PISM_PATERSONBUDDWARM_HH
+#define PISM_PATERSONBUDDWARM_HH
 
 #include "pism/rheology/PatersonBudd.hh"
 
@@ -47,4 +47,4 @@ protected:
 } // end of namespace pism
 
 
-#endif /* _PATERSONBUDDWARM_H_ */
+#endif /* PISM_PATERSONBUDDWARM_HH */
