@@ -48,45 +48,47 @@ private:
 
   const File &file(const std::string &file_name);
 
-  void initialize_impl(const std::set<VariableMetadata> &array_variables);
+  void initialize_impl(const std::set<VariableMetadata> &array_variables) override;
 
   void define_dimension_impl(const std::string &file_name, const std::string &name,
-                             unsigned int length);
+                             unsigned int length) override;
 
   void define_variable_impl(const std::string &file_name, const std::string &variable_name,
                             const std::vector<std::string> &dims, io::Type type,
-                            const VariableAttributes &attributes);
+                            const VariableAttributes &attributes) override;
 
   void set_global_attributes_impl(const std::string &file_name,
                                   const std::map<std::string, std::string> &strings,
-                                  std::map<std::string, std::vector<double> > &numbers);
+                                  const std::map<std::string, std::vector<double> > &numbers) override;
 
+  // Helper used internally by set_global_attributes_impl; not a virtual override.
   void write_attributes(const std::string &file_name, const std::string &var_name,
                         const std::map<std::string, std::string> &strings,
-                        std::map<std::string, std::vector<double> > &numbers, io::Type output_type);
+                        const std::map<std::string, std::vector<double> > &numbers,
+                        io::Type output_type);
 
-  void append_time_impl(const std::string &file_name, double time_seconds);
+  void append_time_impl(const std::string &file_name, double time_seconds) override;
 
-  void append_history_impl(const std::string &file_name, const std::string &text);
+  void append_history_impl(const std::string &file_name, const std::string &text) override;
 
-  unsigned int time_dimension_length_impl(const std::string &file_name);
+  unsigned int time_dimension_length_impl(const std::string &file_name) override;
 
-  double last_time_value_impl(const std::string &file_name);
+  double last_time_value_impl(const std::string &file_name) override;
 
   void write_array_impl(const std::string &file_name, const std::string &variable_name,
                         const std::vector<unsigned int> &start,
-                        const std::vector<unsigned int> &count, const double *data);
+                        const std::vector<unsigned int> &count, const double *data) override;
 
   void write_text_impl(const std::string &file_name, const std::string &variable_name,
                        const std::vector<unsigned int> &start,
-                       const std::vector<unsigned int> &count, const std::string &input);
+                       const std::vector<unsigned int> &count, const std::string &input) override;
 
   void write_distributed_array_impl(const std::string &file_name, const std::string &variable_name,
-                                    const double *data);
+                                    const double *data) override;
 
-  void append_impl(const std::string &file_name);
-  void sync_impl(const std::string &file_name);
-  void close_impl(const std::string &file_name);
+  void append_impl(const std::string &file_name) override;
+  void sync_impl(const std::string &file_name) override;
+  void close_impl(const std::string &file_name) override;
 };
 
 } // namespace pism

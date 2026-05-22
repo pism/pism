@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __BedDef_hh
-#define __BedDef_hh
+#ifndef BedDef_hh
+#define BedDef_hh
 
 #include "pism/util/Component.hh"
 
@@ -136,4 +136,4 @@ protected:
 } // end of namespace bed
 } // end of namespace pism
 
-#endif // __BedDef_hh
+#endif // BedDef_hh

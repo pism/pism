@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _SSAFEM_H_
-#define _SSAFEM_H_
+#ifndef SSAFEM_H_
+#define SSAFEM_H_
 
 #include "pism/stressbalance/ssa/SSA.hh"
 #include "pism/util/Mask.hh"
@@ -148,4 +148,4 @@ private:
 } // end of namespace stressbalance
 } // end of namespace pism
 
-#endif /* _SSAFEM_H_ */
+#endif // SSAFEM_H_ /* _SSAFEM_H_ */

@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _PETSCINITIALIZER_H_
-#define _PETSCINITIALIZER_H_
+#ifndef PETSCINITIALIZER_H_
+#define PETSCINITIALIZER_H_
 
 namespace pism {
 namespace petsc {
@@ -34,4 +34,4 @@ public:
 } // end of namespace petsc
 } // end of namespace pism
 
-#endif /* _PETSCINITIALIZER_H_ */
+#endif // PETSCINITIALIZER_H_ /* _PETSCINITIALIZER_H_ */

@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __localMassBalance_hh
-#define __localMassBalance_hh
+#ifndef localMassBalance_hh
+#define localMassBalance_hh
 
 #include "pism/util/Config.hh"
 #include "pism/util/array/Scalar.hh" // only needed for FaustoGrevePDDObject
@@ -44,9 +44,9 @@ namespace surface {
   modeled temperature away from the input temperature time series which contains
   the part of location-dependent temperature cycle on the time interval.
 
-  @note 
+  @note
   - Please avoid using `config.get...("...")` calls
-  inside those methods of this class which are called inside loops over 
+  inside those methods of this class which are called inside loops over
   spatial grids.  Doing otherwise increases computational costs.
   - This base class should be more general.  For instance, it could allow as
   input a time series for precipation rate.
@@ -94,7 +94,7 @@ public:
     double smb;
   };
 
-  /** 
+  /**
    * Take a step of the PDD model.
    *
    * @param[in] ddf degree day factors
@@ -160,7 +160,7 @@ protected:
   is identical to the base class PDDMassBalance.
 
   \note
-  A more realistic pattern for the variability of surface melting might have correlation 
+  A more realistic pattern for the variability of surface melting might have correlation
   with appropriate spatial and temporal ranges.
 */
 class PDDrandMassBalance : public PDDMassBalance {
@@ -182,8 +182,8 @@ protected:
 
 
 /*!
-  The PDD scheme described by Formula (6) in [\ref Faustoetal2009] requires 
-  special knowledge of latitude and mean July temp to set degree day factors 
+  The PDD scheme described by Formula (6) in [\ref Faustoetal2009] requires
+  special knowledge of latitude and mean July temp to set degree day factors
   for Greenland.
 
   These formulas are inherited by [\ref Faustoetal2009] from [\ref Greve2005geothermal].
@@ -230,4 +230,4 @@ protected:
 } // end of namespace surface
 } // end of namespace pism
 
-#endif
+#endif // localMassBalance_hh

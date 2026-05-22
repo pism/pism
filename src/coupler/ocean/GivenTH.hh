@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _POGIVENTH_H_
-#define _POGIVENTH_H_
+#ifndef POGIVENTH_H_
+#define POGIVENTH_H_
 
 #include "pism/coupler/ocean/CompleteOceanModel.hh"
 
@@ -91,4 +91,4 @@ private:
 } // end of namespace ocean
 } // end of namespace pism
 
-#endif /* _POGIVENTH_H_ */
+#endif // POGIVENTH_H_ /* _POGIVENTH_H_ */

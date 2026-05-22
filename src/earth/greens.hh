@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __greens_hh
-#define __greens_hh
+#ifndef greens_hh
+#define greens_hh
 
 #include <gsl/gsl_interp.h> // for gsl_interp_accel
 #include <gsl/gsl_spline.h> // for gsl_spline
@@ -68,4 +68,4 @@ double viscDisc(double t, double H0, double R0, double r, double rho, double rho
 } // end of namespace bed
 } // end of namespace pism
 
-#endif /* __greens_hh */
+#endif // greens_hh /* __greens_hh */

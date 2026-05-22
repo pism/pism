@@ -66,7 +66,7 @@ Assuming that ``g20km_10ka.nc`` was created :ref:`as described in the User's Man
          -ys 0 -ye 1 -spatial_times 1week \
          -spatial_file foo.nc \
          -spatial_vars climatic_mass_balance,ice_surface_temp,air_temp_snapshot
-    
+
 produces ``foo.nc``. Viewing in with ``ncview`` shows an annual cycle in the variable
 :var:`air_temp_snapshot` and a noticeable decrease in the surface mass balance during
 summer months (see variable :var:`climatic_mass_balance`). Note that

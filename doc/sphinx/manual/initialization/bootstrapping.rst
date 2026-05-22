@@ -40,7 +40,7 @@ within the ice:
       record from an ice core or a sea bed core (or both), to apply forcing to the surface
       temperature or sea level (for instance), but with the same functional result of
       filling in temperature, stress, and velocity fields.
-      
+
 When using :opt:`-bootstrap` you will need to specify both grid dimensions (using
 :opt:`-Mx`, :opt:`-My` and :opt:`-Mz`; see section :ref:`sec-grid`) and the height of the
 computational box for the ice with :opt:`-Lz` (section :ref:`sec-coords`). The data read
@@ -72,7 +72,7 @@ on the ice thickness, surface temperature, and geothermal flux.
 ``-bootstrap`` file format
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Allowed formats for a bootstrapping file are relatively simple to describe. 
+Allowed formats for a bootstrapping file are relatively simple to describe.
 
 #. NetCDF variables should have the ``units`` containing a UDUNITS_\-compatible string. If
    this attribute is missing, PISM will assume that a field uses MKS units.\ [#]_

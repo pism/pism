@@ -14,7 +14,7 @@
         return self.z()
       else:
         raise KeyError(f"Key {key} not found")
-          
+
     def points(self):
         """Iterate over tuples ``(i,j)`` of nodes owned by the current processor."""
         for i in range(self.xs(),self.xs()+self.xm()):

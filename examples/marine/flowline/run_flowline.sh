@@ -1,6 +1,6 @@
 #!/bin/bash
 # Copyright (C) 2011, 2013, 2014, 2015, 2016, 2021, 2024, 2026 Torsten Albrecht (torsten.albrecht@pik-potsdam.de)
-# regression/verification test of SSA ice shelf solution against Van-der-Veen analytical solution 
+# regression/verification test of SSA ice shelf solution against Van-der-Veen analytical solution
 
 count=0
 boxes=("11" "25" "51" "101" "251" "501") #cells

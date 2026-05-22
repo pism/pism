@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __PAPIK_hh
-#define __PAPIK_hh
+#ifndef PAPIK_hh
+#define PAPIK_hh
 
 #include "pism/coupler/atmosphere/YearlyCycle.hh"
 
@@ -50,4 +50,4 @@ private:
 } // end of namespace atmosphere
 } // end of namespace pism
 
-#endif // __PAPIK_hh
+#endif // PAPIK_hh

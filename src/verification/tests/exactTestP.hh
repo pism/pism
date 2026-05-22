@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef __exactTestP_h
-#define __exactTestP_h 1
+#ifndef exactTestP_h
+#define exactTestP_h 1
 
 #include <string>
 #include <vector>
@@ -77,4 +77,4 @@ TestPParameters exactP(const std::vector<double> &r, double EPS_ABS, double EPS_
 
 } // end of namespace pism
 
-#endif /* __exactTestP_h */
+#endif // exactTestP_h /* __exactTestP_h */

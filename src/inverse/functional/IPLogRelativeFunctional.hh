@@ -30,7 +30,7 @@ namespace inverse {
   J(x) = c_N \sum_i \log\left(1+W_i\frac{|X_i|^2}{|U_{i}|^2+\epsilon^2}\right)
   \f]
   where \f$\epsilon={\tt inv_ssa_velocity_eps}\f$ and \f$w\f$ is an optionally
-  provided weight function.  The normalization constant \f$c_N\f$ is determined 
+  provided weight function.  The normalization constant \f$c_N\f$ is determined
   implicitly by normalize().
 */
 class IPLogRelativeFunctional : public IPFunctional<array::Vector> {

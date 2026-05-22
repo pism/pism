@@ -31,7 +31,7 @@ def test_CalovGreveIntegrand():
     sigma = np.array([2.0, 0.0, 1.0])
     temperature = np.array([0.0, 2.0, -1.0])
 
-    
+
     debm = PISM.SurfaceDEBMSimplePointwise(context)
 
     cgi = np.vectorize(debm.CalovGreveIntegrand)(sigma, temperature)
@@ -80,7 +80,7 @@ def test_solar_declination_present_day():
     assert_array_almost_equal(
         np.array([-0.402449  , -0.30673297, -0.402449  ]), solar_declination, decimal=4
     )
-    
+
 def test_solar_declination_paleo():
     """
     Test solar declination paleo
@@ -122,7 +122,7 @@ def test_insolation():
     """
     Test insolation
     """
-    
+
     solar_constant = np.array([1361.0])
     distance_factor = np.array([1.1])
     hour_angle = np.array([0.8])
@@ -140,7 +140,7 @@ def test_orbital_parameters():
     Test orbital parameters
     """
     time = 2022.25
-    
+
     debm = PISM.SurfaceDEBMSimplePointwise(context)
     orbital_parameters = debm.orbital_parameters(time)
 
@@ -158,10 +158,10 @@ def test_albedo():
     debm = PISM.SurfaceDEBMSimplePointwise(context)
     melt_rate = 1. / 3.15569259747e7
     albedo = debm.albedo(melt_rate, 2)
-    
+
     assert_almost_equal(0.7972189470997155, albedo, decimal=4)
 
-    
+
 def test_atmospshere_transmissivity():
     """
     Test atmosphere transmissivity
@@ -172,20 +172,20 @@ def test_atmospshere_transmissivity():
     transmissivity = np.vectorize(debm.atmosphere_transmissivity)(elevation)
     assert_array_almost_equal(np.array([0.65 , 0.682, 0.714]), transmissivity, decimal=4)
 
-    
+
 def test_melt():
     """
     Test melt
     """
 
     year_fraction = 0.
-    dt = 1.0 / 12 
+    dt = 1.0 / 12
     temp = 323.0
     temp_sd = 12.0
     surface_elevation = 1000
     latitude = np.pi/4 * 3
     albedo = 0.47
-    
+
     debm = PISM.SurfaceDEBMSimplePointwise(context)
     orbital_parameters = debm.orbital_parameters(year_fraction)
     declination = orbital_parameters.declination

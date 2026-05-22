@@ -16,8 +16,8 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
-#ifndef _PISMEIGENCALVING_H_
-#define _PISMEIGENCALVING_H_
+#ifndef PISMEIGENCALVING_H_
+#define PISMEIGENCALVING_H_
 
 #include "pism/frontretreat/calving/StressCalving.hh"
 
@@ -44,4 +44,4 @@ protected:
 } // end of namespace calving
 } // end of namespace pism
 
-#endif /* _PISMEIGENCALVING_H_ */
+#endif // PISMEIGENCALVING_H_ /* _PISMEIGENCALVING_H_ */

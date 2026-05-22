@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PSCONSTANTPIK_H_
+#ifndef PSCONSTANTPIK_H_
 #define PSCONSTANTPIK_H_
 
 #include "pism/coupler/SurfaceModel.hh"
@@ -59,4 +59,4 @@ protected:
 } // end of namespace surface
 } // end of namespace pism
 
-#endif /* _PSCONSTANTPIK_H_ */
+#endif // PSCONSTANTPIK_H_

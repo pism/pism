@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _POCONSTANT_H_
-#define _POCONSTANT_H_
+#ifndef POCONSTANT_H_
+#define POCONSTANT_H_
 
 #include "pism/coupler/ocean/CompleteOceanModel.hh"
 
@@ -41,4 +41,4 @@ private:
 
 } // end of namespace ocean
 } // end of namespace pism
-#endif /* _POCONSTANT_H_ */
+#endif // POCONSTANT_H_ /* _POCONSTANT_H_ */

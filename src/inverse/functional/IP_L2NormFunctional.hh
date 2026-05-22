@@ -28,11 +28,11 @@ namespace pism {
 namespace inverse {
 
 //! Implements a functional corresponding to (the square of) an \f$L^2\f$ norm of a scalar valued function.
-/*! The functional is, in continuous terms 
+/*! The functional is, in continuous terms
   \f[
   J(f) = \int_{\Omega} f^2 \; dA
   \f]
-  where \f$\Omega\f$ is the square domain. Numerically it is implemented using 
+  where \f$\Omega\f$ is the square domain. Numerically it is implemented using
   Q1 finite elements.
 */
 class IP_L2NormFunctional2S : public IPInnerProductFunctional<array::Scalar> {
@@ -51,11 +51,11 @@ private:
 };
 
 //! Implements a functional corresponding to (the square of) an \f$L^2\f$ norm of a vector valued function.
-/*! The functional is, in continuous terms 
+/*! The functional is, in continuous terms
   \f[
   J(f) = \int_{\Omega} f^2 \; dA
   \f]
-  where \f$\Omega\f$ is the square domain. Numerically it is implemented using 
+  where \f$\Omega\f$ is the square domain. Numerically it is implemented using
   Q1 finite elements.
 */
 class IP_L2NormFunctional2V : public IPInnerProductFunctional<array::Vector> {

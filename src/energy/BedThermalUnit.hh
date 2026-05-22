@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PISMBEDTHERMALUNIT_H_
-#define _PISMBEDTHERMALUNIT_H_
+#ifndef PISMBEDTHERMALUNIT_H_
+#define PISMBEDTHERMALUNIT_H_
 
 #include "pism/util/Component.hh"
 
@@ -94,7 +94,7 @@ struct BTUGrid {
   and the top_heat_flux() method does nothing other than to copy the
   field \f$G\f$ = `bheatflx` into `result`.
 
-  If `n_levels` == 2 then everything is the general case except that 
+  If `n_levels` == 2 then everything is the general case except that
   top_heat_flux() method uses first-order differencing to compute the
   values of \f$G_0\f$.
 */
@@ -156,4 +156,4 @@ protected:
 } // end of namespace energy
 } // end of namespace pism
 
-#endif /* _PISMBEDTHERMALUNIT_H_ */
+#endif // PISMBEDTHERMALUNIT_H_ /* _PISMBEDTHERMALUNIT_H_ */

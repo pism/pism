@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _DELTA_SL_2D_
-#define _DELTA_SL_2D_
+#ifndef DELTA_SL_2D_
+#define DELTA_SL_2D_
 
 #include "pism/coupler/SeaLevel.hh"
 
@@ -48,4 +48,4 @@ private:
 } // end of namespace ocean
 } // end of namespace pism
 
-#endif /* _DELTA_SL_2D_ */
+#endif // DELTA_SL_2D_ /* _DELTA_SL_2D_ */

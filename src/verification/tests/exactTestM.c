@@ -1,18 +1,18 @@
 /*
    Copyright (C) 2008, 2014, 2016, 2023 Ed Bueler
-  
+
    This file is part of PISM.
-  
+
    PISM is free software; you can redistribute it and/or modify it under the
    terms of the GNU General Public License as published by the Free Software
    Foundation; either version 3 of the License, or (at your option) any later
    version.
-  
+
    PISM is distributed in the hope that it will be useful, but WITHOUT ANY
    WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
    FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
    details.
-  
+
    You should have received a copy of the GNU General Public License
    along with PISM; if not, write to the Free Software
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
@@ -58,9 +58,9 @@ double dF_M(double x, double alpha, double r, double Q) {
 int funcM_ode_G(double r, const double alpha[], double f[], void *params) {
   (void)params;
   /*   RHS G for differential equation:
-          alpha' = G(alpha,r)      
+          alpha' = G(alpha,r)
      but where we solve this equation to find alpha':
-          F(alpha',alpha,r) = 0 
+          F(alpha',alpha,r) = 0
      heuristic: guess is about 1/7 th of solution to a nearby problem;
      no range checking on r, so use away from zero */
 

@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __tempSystem_hh
-#define __tempSystem_hh
+#ifndef tempSystem_hh
+#define tempSystem_hh
 
 #include "pism/util/ColumnSystem.hh"
 #include "pism/util/Mask.hh"
@@ -38,11 +38,11 @@ namespace energy {
   ks = ...
   foo.setIndicesThisColumn(i,j,ks);
   [COMPUTE OTHER PARAMS]
-  foo.setSchemeParamsThisColumn(mask,isMarginal,lambda);  
+  foo.setSchemeParamsThisColumn(mask,isMarginal,lambda);
   foo.setSurfaceBoundaryValuesThisColumn(Ts);
   foo.setBasalBoundaryValuesThisColumn(Ghf,Tshelfbase,Rb);
   foo.solveThisColumn(x);
-  }  
+  }
   }
   \endcode
 */
@@ -89,4 +89,4 @@ private:
 } // end of namespace energy
 } // end of namespace pism
 
-#endif /* __tempSystem_hh */
+#endif // tempSystem_hh /* __tempSystem_hh */

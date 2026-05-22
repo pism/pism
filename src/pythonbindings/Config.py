@@ -14,7 +14,7 @@ def get(self, key):
 
     if key in strings:
         return self.get_string(key)
-        
+
     raise ValueError(f"unknown configuration parameter: {key}")
 
 def set(self, key, val):
@@ -34,7 +34,7 @@ def set(self, key, val):
 
     if key in strings:
         return self.set_string(key, val)
-        
+
     raise ValueError(f"unknown configuration parameter: {key}")
 
 def set_from_dict(self, d: dict):

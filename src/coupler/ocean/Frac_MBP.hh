@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef _FRAC_MBP_H_
-#define _FRAC_MBP_H_
+#ifndef FRAC_MBP_H_
+#define FRAC_MBP_H_
 
 #include "pism/coupler/OceanModel.hh"
 
@@ -30,7 +30,7 @@ namespace ocean {
 
 /**
  * Scalar melange back-pressure fraction forcing.
- * 
+ *
  */
 class Frac_MBP : public OceanModel {
 public:
@@ -50,4 +50,4 @@ private:
 } // end of namespace ocean
 } // end of namespace pism
 
-#endif /* _FRAC_MBP_H_ */
+#endif // FRAC_MBP_H_ /* _FRAC_MBP_H_ */

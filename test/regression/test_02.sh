@@ -12,7 +12,7 @@ NRANGE="1 2 3 4 6"
 
 # Create the files:
 for NN in $NRANGE;
-do 
+do
     $MPIEXEC -n $NN $PISM_PATH/pism -test G -Mx 30 -My 40 -Mz 20 -y 1 -verbose 1 -o foo$NN-02.nc
 done
 
@@ -24,7 +24,7 @@ do
     for j in $NRANGE;
     do
 	if [ $i -le $j ]; then continue; fi
-	
+
 	$PISM_PATH/pism_nccmp -x -v rank,timestamp,step_counter,model_years_per_processor_hour,wall_clock_time,pism_config foo$i-02.nc foo$j-02.nc
 	if [ $? != 0 ];
 	then

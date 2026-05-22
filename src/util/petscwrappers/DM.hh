@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _DM_H_
-#define _DM_H_
+#ifndef DM_H_
+#define DM_H_
 
 #include <petscdmda.h>
 
@@ -43,4 +43,4 @@ public:
 } // end of namespace petsc
 } // end of namespace pism
 
-#endif /* _DM_H_ */
+#endif // DM_H_ /* _DM_H_ */

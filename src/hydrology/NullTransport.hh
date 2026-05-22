@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _NULLTRANSPORT_H_
-#define _NULLTRANSPORT_H_
+#ifndef NULLTRANSPORT_H_
+#define NULLTRANSPORT_H_
 
 #include "pism/hydrology/Hydrology.hh"
 
@@ -72,4 +72,4 @@ private:
 } // end of namespace hydrology
 } // end of namespace pism
 
-#endif /* _NULLTRANSPORT_H_ */
+#endif // NULLTRANSPORT_H_ /* _NULLTRANSPORT_H_ */

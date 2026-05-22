@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _POANOMALY_H_
-#define _POANOMALY_H_
+#ifndef POANOMALY_H_
+#define POANOMALY_H_
 
 #include "pism/coupler/OceanModel.hh"
 
@@ -45,4 +45,4 @@ protected:
 } // end of namespace ocean
 } // end of namespace pism
 
-#endif /* _POANOMALY_H_ */
+#endif // POANOMALY_H_ /* _POANOMALY_H_ */

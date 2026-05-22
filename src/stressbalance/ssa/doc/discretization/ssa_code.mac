@@ -21,24 +21,24 @@ print_coeffs(var) := block(
 
 print_code(file_name, interior) := block(
   load("ssa_coeffs.mac"),
-  
+
   file : openw(file_name),
-  
+
   /* Define shortcuts */
   printf(file, "const double dx2 = dx*dx, dy2 = dy*dy, d4 = 4*dx*dy, d2 = 2*dx*dy;~%~%"),
-  
+
   printf(file,"/* Coefficients of the discretization of the first equation; u first, then v. */~%"),
   printf(file, "double eq1[] = {~%"),
   print_coeffs(c1u),
   print_coeffs(c1v),
   printf(file, "};~%~%"),
-  
+
   printf(file, "/* Coefficients of the discretization of the second equation; u first, then v. */~%"),
   printf(file, "double eq2[] = {~%"),
   print_coeffs(c2u),
   print_coeffs(c2v),
   printf(file, "};~%~%"),
-  
+
   printf(file, "/* i indices */~%"),
   printf(file, "const int I[] = {~%"),
   for v: 1 thru 2 do ( /* we have 2 variables */
@@ -50,7 +50,7 @@ print_code(file_name, interior) := block(
       )
     ),
   printf(file, "};~%~%"),
-  
+
   printf(file, "/* j indices */~%"),
   printf(file, "const int J[] = {~%"),
   for v: 1 thru 2 do ( /* we have 2 variables */

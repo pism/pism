@@ -461,7 +461,7 @@ PS_climatic_mass_balance::PS_climatic_mass_balance(const SurfaceModel *m) : Diag
       .output_units("kg m^-2 year^-1");
 }
 
-static std::shared_ptr<array::Array> PS_climatic_mass_balance::compute_impl() {
+std::shared_ptr<array::Array> PS_climatic_mass_balance::compute_impl() const {
   auto result = allocate<array::Scalar>("climatic_mass_balance");
 
   result->copy_from(model->mass_flux());
@@ -480,7 +480,7 @@ PS_ice_surface_temp::PS_ice_surface_temp(const SurfaceModel *m) : Diag<SurfaceMo
       .units("kelvin");
 }
 
-static std::shared_ptr<array::Array> PS_ice_surface_temp::compute_impl() {
+std::shared_ptr<array::Array> PS_ice_surface_temp::compute_impl() const {
   auto result = allocate<array::Scalar>("ice_surface_temp");
 
   result->copy_from(model->temperature());
@@ -493,7 +493,7 @@ PS_liquid_water_fraction::PS_liquid_water_fraction(const SurfaceModel *m) : Diag
   m_vars[0].long_name("ice liquid water fraction at the ice surface").units("1");
 }
 
-static std::shared_ptr<array::Array> PS_liquid_water_fraction::compute_impl() {
+std::shared_ptr<array::Array> PS_liquid_water_fraction::compute_impl() const {
 
   auto result = allocate<array::Scalar>("ice_surface_liquid_water_fraction");
 
@@ -507,7 +507,7 @@ PS_layer_mass::PS_layer_mass(const SurfaceModel *m) : Diag<SurfaceModel>(m) {
   m_vars[0].long_name("mass of the surface layer (snow and firn)").units("kg");
 }
 
-static std::shared_ptr<array::Array> PS_layer_mass::compute_impl() {
+std::shared_ptr<array::Array> PS_layer_mass::compute_impl() const {
 
   auto result = allocate<array::Scalar>("surface_layer_mass");
 
@@ -521,7 +521,7 @@ PS_layer_thickness::PS_layer_thickness(const SurfaceModel *m) : Diag<SurfaceMode
   m_vars[0].long_name("thickness of the surface layer (snow and firn)").units("meters");
 }
 
-static std::shared_ptr<array::Array> PS_layer_thickness::compute_impl() {
+std::shared_ptr<array::Array> PS_layer_thickness::compute_impl() const {
 
   auto result = allocate<array::Scalar>("surface_layer_thickness");
 

@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _PSFORMULAS_H_
-#define _PSFORMULAS_H_
+#ifndef PSFORMULAS_H_
+#define PSFORMULAS_H_
 
 #include "pism/coupler/SurfaceModel.hh"
 
@@ -28,7 +28,7 @@ namespace surface {
 /** Base class for surface models that compute climate inputs using
  * formulas.
  *
- * Used by EISMINTII and Verification. 
+ * Used by EISMINTII and Verification.
  */
 class PSFormulas : public SurfaceModel {
 public:
@@ -54,4 +54,4 @@ protected:
 } // end of namespace surface
 } // end of namespace pism
 
-#endif /* _PSFORMULAS_H_ */
+#endif // PSFORMULAS_H_ /* _PSFORMULAS_H_ */

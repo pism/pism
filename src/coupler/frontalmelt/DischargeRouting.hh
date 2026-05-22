@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PFMDISCHARGE_ROUTING_H_
-#define _PFMDISCHARGE_ROUTING_H_
+#ifndef PFMDISCHARGE_ROUTING_H_
+#define PFMDISCHARGE_ROUTING_H_
 
 #include "pism/coupler/FrontalMelt.hh"
 
@@ -49,4 +49,4 @@ private:
 
 } // end of namespace frontalmelt
 } // end of namespace pism
-#endif /* _PFMDISCHARGE_ROUTING_H_ */
+#endif // PFMDISCHARGE_ROUTING_H_ /* _PFMDISCHARGE_ROUTING_H_ */

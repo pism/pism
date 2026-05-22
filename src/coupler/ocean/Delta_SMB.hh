@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PODSBMFFORCING_H_
-#define _PODSBMFFORCING_H_
+#ifndef PODSBMFFORCING_H_
+#define PODSBMFFORCING_H_
 
 #include "pism/coupler/OceanModel.hh"
 
@@ -48,4 +48,4 @@ private:
 } // end of namespace ocean
 } // end of namespace pism
 
-#endif /* _PODSBMFFORCING_H_ */
+#endif // PODSBMFFORCING_H_ /* _PODSBMFFORCING_H_ */

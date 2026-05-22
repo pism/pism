@@ -18,7 +18,7 @@ $MPIEXEC -n 1 $PISM_PATH/pism -eisII A -eisII I -Mx 51 -My 101 -y 0 -o foo0-10.n
 
 # Bootstrap:
 for NN in $NRANGE;
-do 
+do
     $MPIEXEC -n $NN $PISM_PATH/pism -i foo0-10.nc -bootstrap -Mx 51 -My 101 -Mz 11 -Lz 5000 -y 0 -o foo$NN-10.nc -o_size small
 done
 
@@ -30,7 +30,7 @@ do
     for j in $NRANGE;
     do
 	if [ $i -le $j ]; then continue; fi
-	
+
 	$PISM_PATH/pism_nccmp -x -v timestamp,step_counter,model_years_per_processor_hour,wall_clock_time,pism_config foo$i-10.nc foo$j-10.nc
 	if [ $? != 0 ];
 	then

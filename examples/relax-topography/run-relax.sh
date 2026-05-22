@@ -41,7 +41,7 @@ fi
 if [ -n "${PISM_DO:+1}" ] ; then  # check if env var DO is already set
   echo "$SCRIPTNAME         PISM_DO = $PISM_DO  (already set)"
 else
-  PISM_DO="" 
+  PISM_DO=""
 fi
 
 # prefix to pism (not to executables)
@@ -194,7 +194,7 @@ EXTIMES=$STARTTIME:$EXSTEP:$ENDTIME
 EXVARS="diffusivity,thk,mask,lat,lon,taud_mag,topg,usurf"
 
 
-cmd="$PISM_MPIDO $NN $PISM -skip -skip_max $SKIP -i $BOOTNAME -bootstrap 
+cmd="$PISM_MPIDO $NN $PISM -skip -skip_max $SKIP -i $BOOTNAME -bootstrap
      $GRID $COUPLER \
      -scalar_file $TSNAME -scalar_times $TSTIMES \
      -spatial_file $EXNAME -spatial_vars $EXVARS -spatial_times $EXTIMES \
@@ -220,7 +220,7 @@ EXTIMES=$STARTTIME:$EXSTEP:$ENDTIME
 EXVARS="diffusivity,thk,mask,lat,lon,taud_mag,topg,usurf"
 
 echo
-cmd="$PISM_MPIDO $NN $PISM -skip -skip_max $SKIP -i $INNAME 
+cmd="$PISM_MPIDO $NN $PISM -skip -skip_max $SKIP -i $INNAME
      $COUPLER \
      -scalar_file $TSNAME -scalar_times $TSTIMES \
      -spatial_file $EXNAME -spatial_vars $EXVARS -spatial_times $EXTIMES \

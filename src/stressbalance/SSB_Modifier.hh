@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _SSB_MODIFIER_H_
-#define _SSB_MODIFIER_H_
+#ifndef SSB_MODIFIER_H_
+#define SSB_MODIFIER_H_
 
 #include "pism/util/Component.hh"
 #include "pism/util/EnthalpyConverter.hh"
@@ -84,4 +84,4 @@ public:
 } // end of namespace stressbalance
 } // end of namespace pism
 
-#endif /* _SSB_MODIFIER_H_ */
+#endif // SSB_MODIFIER_H_ /* _SSB_MODIFIER_H_ */

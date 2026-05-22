@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PFMFACTORY_H_
-#define _PFMFACTORY_H_
+#ifndef PFMFACTORY_H_
+#define PFMFACTORY_H_
 
 #include "pism/coupler/FrontalMelt.hh"
 #include "pism/coupler/util/PCFactory.hh"
@@ -32,4 +32,4 @@ public:
 } // end of namespace frontalmelt
 } // end of namespace pism
 
-#endif /* _PFMFACTORY_H_ */
+#endif // PFMFACTORY_H_ /* _PFMFACTORY_H_ */

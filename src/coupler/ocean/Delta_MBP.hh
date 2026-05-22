@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef _DELTA_MBP_H_
-#define _DELTA_MBP_H_
+#ifndef DELTA_MBP_H_
+#define DELTA_MBP_H_
 
 #include "pism/coupler/OceanModel.hh"
 
@@ -49,4 +49,4 @@ private:
 } // end of namespace ocean
 } // end of namespace pism
 
-#endif /* _DELTA_MBP_H_ */
+#endif // DELTA_MBP_H_ /* _DELTA_MBP_H_ */

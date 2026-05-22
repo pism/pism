@@ -38,6 +38,6 @@ cmake \
     -DPism_BUILD_PYTHON_BINDINGS=YES \
     -DPism_USE_YAC=YES \
     -DPism_USE_PARALLEL_NETCDF4=YES \
-    -DPism_USE_PROJ=YES  
+    -DPism_USE_PROJ=YES
 
 make -j $N -C ${build_dir} install

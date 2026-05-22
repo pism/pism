@@ -240,7 +240,7 @@ static double evalRR0_0fs(integrand f, void *fdata, unsigned dim, double *p, con
   return sum;
 }
 
-/* static double evalR0_0fs4d(integrand f, void *fdata, unsigned dim, double *p, const double *c, 
+/* static double evalR0_0fs4d(integrand f, void *fdata, unsigned dim, double *p, const double *c,
 double *sum0_, const double *r1, double *sum1_, const double *r2, double *sum2_) */
 static unsigned evalR0_0fs4d(integrand f, void *fdata, unsigned dim, double *p, const double *c,
                              double *sum0_, const double *r1, double *sum1_, const double *r2,

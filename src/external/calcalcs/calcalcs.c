@@ -78,7 +78,7 @@ static void ccs_init_country_database(void);
 /* Some arbitrary number that is unlikely to be encounterd in a string of random digits */
 #define CCS_VALID_SIG 89132412
 
-/* These implement the database that associates a two-letter country code, such as "UK", 
+/* These implement the database that associates a two-letter country code, such as "UK",
  * with the transition date that the country switched from the Julian to Gregorian calendar
  */
 #define CCS_MAX_N_COUNTRY_CODES 5000
@@ -328,7 +328,7 @@ calcalcs_cal *ccs_init_calendar(const char *calname) {
  * Errors include the passed year being invalid (before 4713 B.C.) or not existing
  * in the specified calendar (i.e., there is no year 0 in either the Gregorian or
  * Julian calendars).
- * 
+ *
  */
 int ccs_isleap(calcalcs_cal *calendar, int year, int *leap) {
   int ierr;
@@ -401,7 +401,7 @@ int ccs_dpm(calcalcs_cal *calendar, int year, int month, int *dpm) {
 }
 
 /**********************************************************************************************
- * ccs_jday2date: give a Julian day number, return the corresponding date in the 
+ * ccs_jday2date: give a Julian day number, return the corresponding date in the
  * 	  	selected calendar
  *
  * Returns 0 on success, <0 on error and fills string error_message
@@ -429,7 +429,7 @@ int ccs_jday2date(calcalcs_cal *calendar, int jday, int *year, int *month, int *
  * ccs_date2jday: given a date, return the (true) Julian day number
  *
  * Note that "Julian day number" is not the day number of the year, but rather the
- * day number starting on Jan 1st 4713 BC (in the proleptic Julian calendar) and 
+ * day number starting on Jan 1st 4713 BC (in the proleptic Julian calendar) and
  * counting consecutively.
  *
  * Returns 0 on success, <0 on error and fills string error_message
@@ -493,7 +493,7 @@ int ccs_date2doy(calcalcs_cal *calendar, int year, int month, int day, int *doy)
   if (calendar->mixed) {
 
     /* If we fall in the twilight zone after the old calendar was stopped but before
-		 * the new calendar was used, it's an error 
+		 * the new calendar was used, it's an error
 		 */
     if (date_gt(year, month, day, calendar->year_px, calendar->month_px, calendar->day_px) &&
         date_lt(year, month, day, calendar->year_x, calendar->month_x, calendar->day_x)) {
@@ -514,15 +514,15 @@ int ccs_date2doy(calcalcs_cal *calendar, int year, int month, int day, int *doy)
       c2use = calendar->early_cal;
     else {
       /* Complicated if we are asking for the day of the year during
-			 * the transition year and after the transition date.  I'm choosing 
-			 * to define the day numbering during a transition year as 
+			 * the transition year and after the transition date.  I'm choosing
+			 * to define the day numbering during a transition year as
 			 * consecutive, which means that the doy for dates
 			 * after the transition date equals the doy of the last
 			 * day of the earlier calendar plus the number of days
 			 * that have elapsed since the transition day.
 			 */
 
-      /* Get the doy of the day BEFORE the transition day 
+      /* Get the doy of the day BEFORE the transition day
 			 * in the earlier calendar
 			*/
       if ((ierr = ccs_date2doy(calendar->early_cal, calendar->year_px, calendar->month_px,
@@ -563,7 +563,7 @@ int ccs_date2doy(calcalcs_cal *calendar, int year, int month, int day, int *doy)
 
 /********************************************************************************************
  *
- * ccs_doy2date: given a year and a day number in that year (with counting starting at 1 for 
+ * ccs_doy2date: given a year and a day number in that year (with counting starting at 1 for
  * 	Jan 1st), this returns the month and day of the month that the doy refers to.
  *
  * Returns 0 on success, and a negative value on error (for example, a day of the year
@@ -586,7 +586,7 @@ int ccs_doy2date(calcalcs_cal *calendar, int year, int doy, int *month, int *day
     else if ((year > calendar->year_x) || xition_date_first_day_of_year)
       c2use = calendar->late_cal;
     else {
-      /* Get the doy of the day BEFORE the transition day 
+      /* Get the doy of the day BEFORE the transition day
 			 * in the earlier calendar
 			*/
       if ((ierr = ccs_date2doy(calendar->early_cal, calendar->year_px, calendar->month_px,
@@ -655,7 +655,7 @@ int ccs_doy2date(calcalcs_cal *calendar, int year, int doy, int *month, int *day
 }
 
 /********************************************************************************************
- * ccs_dayssince: Given a Y/M/D date in a specified calendar, and the number of days since 
+ * ccs_dayssince: Given a Y/M/D date in a specified calendar, and the number of days since
  *	that date, this returns the new Y/M/D date in a (possibly different) calendar.
  *
  * Note that specifying "zero" days since, and giving different calendars as the original
@@ -1015,11 +1015,11 @@ int c_isleap_gregorian_y0(int year, int *leap) {
 }
 
 /*==================================================================================================
- * Given a Y/M/D in the Gregorian calendar, this computes the (true) Julian day number of the 
- * specified date.  Julian days are counted starting at 0 on 1 Jan 4713 BC using a proleptic Julian 
- * calendar.  The algorithm is based on the "counting" algorithm in the C++ code I obtained from 
- * Edward M. Reingold's web site at http://emr.cs.uiuc.edu/~reingold/calendar.C. 
- * In that file, the work is declared to be in the public domain.  I modified it by 
+ * Given a Y/M/D in the Gregorian calendar, this computes the (true) Julian day number of the
+ * specified date.  Julian days are counted starting at 0 on 1 Jan 4713 BC using a proleptic Julian
+ * calendar.  The algorithm is based on the "counting" algorithm in the C++ code I obtained from
+ * Edward M. Reingold's web site at http://emr.cs.uiuc.edu/~reingold/calendar.C.
+ * In that file, the work is declared to be in the public domain.  I modified it by
  * extending it to negative years (years BC) in addition to positive years, and to use
  * actual Julian Days as the counter.  Otherwise, the spirit of the algorithm is similar.
  *
@@ -1071,8 +1071,8 @@ int c_date2jday_gregorian(int year, int month, int day, int *jday) {
 
   *jday += 365 * (year - 1) + (year - 1) / 4 - (year - 1) / 100 + (year - 1) / 400;
 
-  /* Ajust to "true" Julian days. This constant is how many days difference there is 
-	 * between the Julian Day origin date of 4713 BC and our offset date of 4800 BC 
+  /* Ajust to "true" Julian days. This constant is how many days difference there is
+	 * between the Julian Day origin date of 4713 BC and our offset date of 4800 BC
 	 */
   *jday -= 31739;
 
@@ -1080,11 +1080,11 @@ int c_date2jday_gregorian(int year, int month, int day, int *jday) {
 }
 
 /*==================================================================================================
- * Given a Y/M/D in the Gregorian calendar, this computes the (true) Julian day number of the 
- * specified date.  Julian days are counted starting at 0 on 1 Jan 4713 BC using a proleptic Julian 
- * calendar.  The algorithm is based on the "counting" algorithm in the C++ code I obtained from 
- * Edward M. Reingold's web site at http://emr.cs.uiuc.edu/~reingold/calendar.C. 
- * In that file, the work is declared to be in the public domain.  I modified it by 
+ * Given a Y/M/D in the Gregorian calendar, this computes the (true) Julian day number of the
+ * specified date.  Julian days are counted starting at 0 on 1 Jan 4713 BC using a proleptic Julian
+ * calendar.  The algorithm is based on the "counting" algorithm in the C++ code I obtained from
+ * Edward M. Reingold's web site at http://emr.cs.uiuc.edu/~reingold/calendar.C.
+ * In that file, the work is declared to be in the public domain.  I modified it by
  * extending it to negative years (years BC) in addition to positive years, and to use
  * actual Julian Days as the counter.  Otherwise, the spirit of the algorithm is similar.
  *
@@ -1123,8 +1123,8 @@ int c_date2jday_gregorian_y0(int year, int month, int day, int *jday) {
 
   *jday += 365 * (year - 1) + (year - 1) / 4 - (year - 1) / 100 + (year - 1) / 400;
 
-  /* Ajust to "true" Julian days. This constant is how many days difference there is 
-	 * between the Julian Day origin date of 4713 BC and our offset date of 4800 BC 
+  /* Ajust to "true" Julian days. This constant is how many days difference there is
+	 * between the Julian Day origin date of 4713 BC and our offset date of 4800 BC
 	 */
   *jday -= 31739;
 
@@ -1132,7 +1132,7 @@ int c_date2jday_gregorian_y0(int year, int month, int day, int *jday) {
 }
 
 /*==========================================================================================
- * Given a (true) Julian Day, this converts to a date in the Gregorian calendar.  
+ * Given a (true) Julian Day, this converts to a date in the Gregorian calendar.
  * Technically, in the proleptic Gregorian calendar, since this works for dates
  * back to 4713 BC.  Again based on the same public domain code from Edward Reingold's
  * web site as the date2jday routine, extended by me to apply to negative years (years BC).
@@ -1144,7 +1144,7 @@ int c_jday2date_gregorian(int jday, int *year, int *month, int *day) {
 
   /* Make first estimate for year. We subtract 4714 because Julian Day number
 	 * 0 occurs in year 4714 BC in the Gregorian calendar (recall that it occurs
-	 * in year 4713 BC in the JULIAN calendar 
+	 * in year 4713 BC in the JULIAN calendar
 	 */
   *year = jday / 366 - 4714;
 
@@ -1189,7 +1189,7 @@ int c_jday2date_gregorian(int jday, int *year, int *month, int *day) {
 }
 
 /*==========================================================================================
- * Given a (true) Julian Day, this converts to a date in the Gregorian calendar.  
+ * Given a (true) Julian Day, this converts to a date in the Gregorian calendar.
  * Technically, in the proleptic Gregorian calendar, since this works for dates
  * back to 4713 BC.  Again based on the same public domain code from Edward Reingold's
  * web site as the date2jday routine, extended by me to apply to negative years (years BC).
@@ -1201,7 +1201,7 @@ int c_jday2date_gregorian_y0(int jday, int *year, int *month, int *day) {
 
   /* Make first estimate for year. We subtract 4714 because Julian Day number
 	 * 0 occurs in year 4714 BC in the Gregorian calendar (recall that it occurs
-	 * in year 4713 BC in the JULIAN calendar 
+	 * in year 4713 BC in the JULIAN calendar
 	 */
   *year = jday / 366 - 4715;
 
@@ -1240,11 +1240,11 @@ int c_jday2date_gregorian_y0(int jday, int *year, int *month, int *day) {
 }
 
 /*==================================================================================================
- * Given a Y/M/D in the Julian calendar, this computes the (true) Julian day number of the 
- * specified date.  Julian days are counted starting at 0 on 1 Jan 4713 BC using a proleptic Julian 
- * calendar.  The algorithm is based on the "counting" algorithm in the C++ code I obtained from 
- * Edward M. Reingold's web site at http://emr.cs.uiuc.edu/~reingold/calendar.C. 
- * In that file, the work is declared to be in the public domain.  I modified it by 
+ * Given a Y/M/D in the Julian calendar, this computes the (true) Julian day number of the
+ * specified date.  Julian days are counted starting at 0 on 1 Jan 4713 BC using a proleptic Julian
+ * calendar.  The algorithm is based on the "counting" algorithm in the C++ code I obtained from
+ * Edward M. Reingold's web site at http://emr.cs.uiuc.edu/~reingold/calendar.C.
+ * In that file, the work is declared to be in the public domain.  I modified it by
  * extending it to negative years (years BC) in addition to positive years, and to use
  * actual Julian Days as the counter.  Otherwise, the spirit of the algorithm is similar.
  *
@@ -1294,8 +1294,8 @@ int c_date2jday_julian(int year, int month, int day, int *jday) {
 
   *jday += 365 * (year - 1) + (year - 1) / 4;
 
-  /* Ajust to "true" Julian days. This constant is how many days difference there is 
-	 * between the Julian Day origin date of 4713 BC and our offset date of 4800 BC 
+  /* Ajust to "true" Julian days. This constant is how many days difference there is
+	 * between the Julian Day origin date of 4713 BC and our offset date of 4800 BC
 	 */
   *jday -= 31777;
 
@@ -1303,7 +1303,7 @@ int c_date2jday_julian(int year, int month, int day, int *jday) {
 }
 
 /*==========================================================================================
- * Given a (true) Julian Day, this converts to a date in the Julian calendar.  
+ * Given a (true) Julian Day, this converts to a date in the Julian calendar.
  * Technically, in the proleptic Julian calendar, since this works for dates
  * back to 4713 BC.  Again based on the same public domain code from Edward Reingold's
  * web site as the date2jday routine, extended by me to apply to negative years (years BC).

@@ -33,11 +33,11 @@ class CellType;
 namespace inverse {
 
 //! Implements a functional corresponding to (the square of) an \f$H^1\f$ norm of a scalar valued function over a region with only grounded ice.
-/*! The functional is, in continuous terms 
+/*! The functional is, in continuous terms
   \f[
   J(f) = \int_{\Omega_g} c_{H^1} \left|\nabla f\right|^2 + c_{L^2}f^2 \; dA
   \f]
-  where \f$\Omega_g\f$ is a subset of the square domain consisting of grounded ice. 
+  where \f$\Omega_g\f$ is a subset of the square domain consisting of grounded ice.
   Numerically it is implemented using  Q1 finite elements.  Only those elements where all nodes
   have grounded ice are included in the integration, which alleviates edge effects due to steep
   derivatives in parameters that can occur at the transition between icy/non-icy regions.

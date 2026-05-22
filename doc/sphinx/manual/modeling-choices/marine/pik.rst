@@ -41,7 +41,7 @@ Table.
 
    * - :opt:`-part_grid`
      - allow the ice shelf front to advance by a part of a grid cell, avoiding
-       the development of unphysically-thinned ice shelves :cite:`Albrechtetal2011` 
+       the development of unphysically-thinned ice shelves :cite:`Albrechtetal2011`
 
    * - :opt:`-subgl`
      - apply interpolation to compute basal shear stress and basal melt near the grounding
@@ -50,7 +50,7 @@ Table.
    * - :opt:`-no_subgl_basal_melt`
      - **don't** apply interpolation to compute basal melt near the grounding line if
        :opt:`-subgl` is set :cite:`Feldmannetal2014`
-    
+
    * - :opt:`-pik`
      - equivalent to option combination ``-cfbc -kill_icebergs -part_grid -subgl``
 

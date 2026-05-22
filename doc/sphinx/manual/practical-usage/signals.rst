@@ -39,7 +39,7 @@ same signal, avoiding an explicit list of |pid|.
    * - ``kill -USR2`` |pid|
      - ``SIGUSR2``
      - Just flush time-series output buffers.
-   
+
 Here is an example. Suppose we start a long verification run in the background, with
 standard out redirected into a file:
 

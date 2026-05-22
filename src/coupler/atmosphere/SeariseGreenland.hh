@@ -17,8 +17,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __PASeariseGreenland_hh
-#define __PASeariseGreenland_hh
+#ifndef PASeariseGreenland_hh
+#define PASeariseGreenland_hh
 
 #include "pism/coupler/atmosphere/YearlyCycle.hh"
 
@@ -45,4 +45,4 @@ protected:
 } // end of namespace atmosphere
 } // end of namespace pism
 
-#endif // __PASeariseGreenland_hh
+#endif // PASeariseGreenland_hh

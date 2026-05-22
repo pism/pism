@@ -29,7 +29,7 @@ def to_xarray(self, **kwargs):
             dims = ["time", "y", "x", "z"]
         else:
             dims = ["time", "y", "x"]
-            
+
         attrs = self.attrs
         # Spatial coordinates
         coords = {k: ([k], numpy.array(grid[k]), spatial_coords[k]) for k in spatial_coords.keys()}

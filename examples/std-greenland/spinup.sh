@@ -230,7 +230,7 @@ fi
 if [ -n "${PISM_DO:+1}" ] ; then  # check if env var DO is already set
   echo "$SCRIPTNAME         PISM_DO = $PISM_DO  (already set)"
 else
-  PISM_DO="" 
+  PISM_DO=""
 fi
 
 # prefix to pism (not to executables)

@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _KSP_H_
-#define _KSP_H_
+#ifndef KSP_H_
+#define KSP_H_
 
 #include <petscksp.h>
 
@@ -37,4 +37,4 @@ public:
 } // end of namespace petsc
 } // end of namespace pism
 
-#endif /* _KSP_H_ */
+#endif // KSP_H_ /* _KSP_H_ */

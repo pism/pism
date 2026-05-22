@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PAGENERICYEARLYCYCLE_H_
-#define _PAGENERICYEARLYCYCLE_H_
+#ifndef PAGENERICYEARLYCYCLE_H_
+#define PAGENERICYEARLYCYCLE_H_
 
 #include <memory> // unique_ptr
 
@@ -46,4 +46,4 @@ protected:
 } // end of namespace atmosphere
 } // end of namespace pism
 
-#endif /* _PAGENERICYEARLYCYCLE_H_ */
+#endif // PAGENERICYEARLYCYCLE_H_ /* _PAGENERICYEARLYCYCLE_H_ */

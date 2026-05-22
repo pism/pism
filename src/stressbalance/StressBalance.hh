@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PISMSTRESSBALANCE_H_
-#define _PISMSTRESSBALANCE_H_
+#ifndef PISMSTRESSBALANCE_H_
+#define PISMSTRESSBALANCE_H_
 
 #include <memory> // std::shared_ptr
 
@@ -164,4 +164,4 @@ void compute_2D_stresses(const rheology::FlowLaw &flow_law, const array::Vector1
 } // end of namespace stressbalance
 } // end of namespace pism
 
-#endif /* _PISMSTRESSBALANCE_H_ */
+#endif // PISMSTRESSBALANCE_H_ /* _PISMSTRESSBALANCE_H_ */

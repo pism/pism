@@ -17,8 +17,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __AtmosphereModel
-#define __AtmosphereModel
+#ifndef PISM_ATMOSPHERE_MODEL_HH
+#define PISM_ATMOSPHERE_MODEL_HH
 
 #include <vector>
 
@@ -95,4 +95,4 @@ protected:
 } // end of namespace atmosphere
 } // end of namespace pism
 
-#endif // __AtmosphereModel
+#endif // PISM_ATMOSPHERE_MODEL_HH

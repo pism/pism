@@ -28,17 +28,17 @@ namely the SSA stress balance, by using options :opt:`-stress_balance ssa` or
      - Meaning
 
    * - 0 = ``MASK_ICE_FREE_BEDROCK``
-     - ice free bedrock 
+     - ice free bedrock
 
    * - 2 = ``MASK_GROUNDED``
-     - ice is grounded 
+     - ice is grounded
 
    * - 3 = ``MASK_FLOATING``
      - ice is floating (the SIA is never applied; the SSA is applied if the ``ssa`` or
        ``ssa+sia`` stress balance model is selected
 
    * - 4 = ``MASK_ICE_FREE_OCEAN``
-     - ice-free ocean 
+     - ice-free ocean
 
 Assuming that the geometry of the ice is allowed to evolve (which can be turned off by
 option ``-no_mass``), and assuming an ocean exists so that a sea level is used in the

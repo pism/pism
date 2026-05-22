@@ -8,7 +8,7 @@ set -u
 set -x
 
 ###############################################################################
-# Test simulation of Antarctic ice sheet model to check on PICO adjustments 
+# Test simulation of Antarctic ice sheet model to check on PICO adjustments
 # concerning large ice shelves crossing basin boundaries.
 ###############################################################################
 

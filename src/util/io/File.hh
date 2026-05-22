@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PISM_FILE_ACCESS_H_
-#define _PISM_FILE_ACCESS_H_
+#ifndef PISM_FILE_ACCESS_H_
+#define PISM_FILE_ACCESS_H_
 
 #include <mpi.h>
 #include <string>
@@ -155,4 +155,4 @@ private:
 
 } // end of namespace pism
 
-#endif /* _PISM_FILE_ACCESS_H_ */
+#endif // PISM_FILE_ACCESS_H_ /* _PISM_FILE_ACCESS_H_ */

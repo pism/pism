@@ -9,7 +9,7 @@ These publications cover PISM applications to Antarctic ice shelves:
 
 * T. Albrecht, A. Levermann (2012).  *Fracture field for large-scale ice dynamics*.  Journal of Glaciology 58 (207), 165--176.
 * A. Levermann, T. Albrecht, R. Winkelmann, M. A. Martin, M. Haseloff, I. Joughin (2012) [*Kinematic first-order calving law implies potential for abrupt ice-shelf retreat*](http://www.the-cryosphere.net/6/273/2012/tc-6-273-2012.html).  The Cryosphere 6, 273--286.
-* M. A. Martin, R. Winkelmann, M. Haseloff, T. Albrecht, E. Bueler, C. Khroulev, A. Levermann (2011).  [*The Potsdam Parallel Ice Sheet Model (PISM-PIK)--Part 2: Dynamic equilibrium simulation of the Antarctic ice sheet*](http://www.the-cryosphere.net/5/727/2011/tc-5-727-2011.html). The Cryosphere 5, 727--740. 
+* M. A. Martin, R. Winkelmann, M. Haseloff, T. Albrecht, E. Bueler, C. Khroulev, A. Levermann (2011).  [*The Potsdam Parallel Ice Sheet Model (PISM-PIK)--Part 2: Dynamic equilibrium simulation of the Antarctic ice sheet*](http://www.the-cryosphere.net/5/727/2011/tc-5-727-2011.html). The Cryosphere 5, 727--740.
 
 Input datasets
 ==========

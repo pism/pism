@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _SIAFD_H_
-#define _SIAFD_H_
+#ifndef SIAFD_H_
+#define SIAFD_H_
 
 #include "pism/stressbalance/SSB_Modifier.hh" // derives from SSB_Modifier
 
@@ -128,4 +128,4 @@ protected:
 } // end of namespace stressbalance
 } // end of namespace pism
 
-#endif /* _SIAFD_H_ */
+#endif // SIAFD_H_ /* _SIAFD_H_ */

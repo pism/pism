@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # test script to evaluate bmelt calculation
- 
+
 pism -test O -Mx 4 -My 4 -Mz 41 -Mbz 11 -Lbz 1000 -y 0 -verbose 3 -o foo.nc
 
 

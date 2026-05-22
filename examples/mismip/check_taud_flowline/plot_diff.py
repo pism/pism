@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 import netCDF4 as nc
 
-# ICE FRONT 
+# ICE FRONT
 
 data_path = ""
 

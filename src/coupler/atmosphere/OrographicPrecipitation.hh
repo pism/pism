@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PAOROGRAPHICPRECIPITATION_H_
-#define _PAOROGRAPHICPRECIPITATION_H_
+#ifndef PAOROGRAPHICPRECIPITATION_H_
+#define PAOROGRAPHICPRECIPITATION_H_
 
 #include "pism/coupler/AtmosphereModel.hh"
 
@@ -61,4 +61,4 @@ protected:
 } // end of namespace atmosphere
 } // end of namespace pism
 
-#endif /* _PAOROGRAPHICPRECIPITATION_H_ */
+#endif // PAOROGRAPHICPRECIPITATION_H_ /* _PAOROGRAPHICPRECIPITATION_H_ */

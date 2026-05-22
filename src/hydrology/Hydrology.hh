@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PISMHYDROLOGY_H_
-#define _PISMHYDROLOGY_H_
+#ifndef PISMHYDROLOGY_H_
+#define PISMHYDROLOGY_H_
 
 #include "pism/util/Component.hh"
 #include "pism/util/array/Vector.hh"
@@ -206,4 +206,4 @@ void check_bounds(const array::Scalar &W, double W_max);
 } // end of namespace hydrology
 } // end of namespace pism
 
-#endif /* _PISMHYDROLOGY_H_ */
+#endif // PISMHYDROLOGY_H_ /* _PISMHYDROLOGY_H_ */

@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PSELEVATION_H_
-#define _PSELEVATION_H_
+#ifndef PSELEVATION_H_
+#define PSELEVATION_H_
 
 #include "pism/coupler/SurfaceModel.hh"
 
@@ -56,4 +56,4 @@ private:
 } // end of namespace surface
 } // end of namespace pism
 
-#endif /* _PSELEVATION_H_ */
+#endif // PSELEVATION_H_ /* _PSELEVATION_H_ */

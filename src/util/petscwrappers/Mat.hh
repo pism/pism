@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _MAT_H_
-#define _MAT_H_
+#ifndef MAT_H_
+#define MAT_H_
 
 #include <petscmat.h>
 
@@ -35,4 +35,4 @@ public:
 } // end of namespace petsc
 } // end of namespace pism
 
-#endif /* _MAT_H_ */
+#endif // MAT_H_ /* _MAT_H_ */

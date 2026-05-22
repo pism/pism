@@ -71,7 +71,7 @@ coeffs_grid(name, var, func) := block(
     printf(file, "\\hline~%$~d$~%", n),
 
     for m:-1 thru 1 do tex(func(var[m,n]), file),
-    
+
     printf(file, "\\\\~%")
     ),
   printf(file, "}~%")

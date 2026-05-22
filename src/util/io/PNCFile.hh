@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PISMPNCFILE_H_
-#define _PISMPNCFILE_H_
+#ifndef PISMPNCFILE_H_
+#define PISMPNCFILE_H_
 
 #include "pism/util/io/NCFile.hh"
 
@@ -125,4 +125,4 @@ private:
 } // end of namespace io
 } // end of namespace pism
 
-#endif /* _PISMPNCFILE_H_ */
+#endif // PISMPNCFILE_H_ /* _PISMPNCFILE_H_ */

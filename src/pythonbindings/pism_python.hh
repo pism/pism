@@ -17,8 +17,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
-#ifndef _PISM_PYTHON_
-#define _PISM_PYTHON_
+#ifndef PISM_PYTHON_
+#define PISM_PYTHON_
 
 namespace pism {
 
@@ -50,4 +50,4 @@ private:
 } // end of namespace python
 } // end of namespace pism
 
-#endif
+#endif // PISM_PYTHON_

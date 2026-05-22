@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef _PISM_NETCDF_CONFIG_H_
-#define _PISM_NETCDF_CONFIG_H_
+#ifndef PISM_NETCDF_CONFIG_H_
+#define PISM_NETCDF_CONFIG_H_
 
 #include <set>
 #include <string>
@@ -66,4 +66,4 @@ private:
 
 } // end of namespace pism
 
-#endif /* _PISM_NETCDF_CONFIG_H_ */
+#endif // PISM_NETCDF_CONFIG_H_ /* _PISM_NETCDF_CONFIG_H_ */

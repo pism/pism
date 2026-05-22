@@ -22,30 +22,30 @@ repos:
         # — there's no separate `c++-header` tag in `identify`.
         types_or: [c++]
         exclude: '(^|/)(swig|.*_wrap\.cc|.*_wrap\.cxx)$'
-        
-  # - repo: https://github.com/pre-commit/pre-commit-hooks
-  #   rev: v6.0.0
-  #   hooks:
-  #     - id: trailing-whitespace
-  #     - id: end-of-file-fixer
-  #     - id: check-toml
-  #     - id: check-yaml
-  #       exclude: conda/meta.yaml
 
-  # # Can run individually with `pre-commit run black --all-files`
-  # - repo: https://github.com/psf/black
-  #   rev: 26.3.1
-  #   hooks:
-  #     - id: black
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-toml
+      - id: check-yaml
+        exclude: conda/meta.yaml
 
-  # # Can run individually with `pre-commit run isort --all-files`
-  # - repo: https://github.com/timothycrosley/isort
-  #   rev: 9.0.0a3
-  #   hooks:
-  #     - id: isort
-  #       args:
-  #         - --profile
-  #         - black
+  # Can run individually with `pre-commit run black --all-files`
+  - repo: https://github.com/psf/black
+    rev: 26.3.1
+    hooks:
+      - id: black
+
+  # Can run individually with `pre-commit run isort --all-files`
+  - repo: https://github.com/timothycrosley/isort
+    rev: 9.0.0a3
+    hooks:
+      - id: isort
+        args:
+          - --profile
+          - black
 
 
   # # Numpydoc

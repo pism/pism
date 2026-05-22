@@ -135,7 +135,7 @@ def preprocess_albmap():
                 "ncrename -O -v temp,%s -v acca,%s %s" % (temp_name, smb_name, output_filename)]
 
     run(commands)
-    
+
     nc = NC.Dataset(output_filename, 'a')
 
     # fix acab
@@ -169,7 +169,7 @@ def preprocess_albmap():
     # Remove usrf and lsrf variables:
     command = "ncks -x -v usrf,lsrf -O %s %s" % (output_filename, output_filename)
     run(command)
-    
+
     return output_filename
 
 

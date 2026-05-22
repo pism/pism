@@ -2,7 +2,7 @@ class SchoofSSA1dExact:
 
     """
     schoof_ssa_exact
-    Returns certain exact solutions of the ssa equation found in 
+    Returns certain exact solutions of the ssa equation found in
     Schoof, A Variational Approach to Ice Stream Flow, 2006, pp 237-238.
 
     The PDE is:

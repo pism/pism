@@ -162,7 +162,7 @@ namely with respect to the vertical coordinate `z`.  Rewriting equation
 .. math::
    :label: vertProblem
 
-    \rho_i \left(\frac{\partial E}{\partial t} + w \frac{\partial E}{\partial z}\right) 
+    \rho_i \left(\frac{\partial E}{\partial t} + w \frac{\partial E}{\partial z}\right)
          = \frac{k_i}{c_i}  \frac{\partial^2 E}{\partial z^2} + \Phi
 
 where
@@ -237,7 +237,7 @@ other stability criteria.
 
 In the analysis below we assume an equally-spaced grid `z_0,\dots,z_{M_z}`
 with `\dz = z_{k+1} - z_k`.  In fact PISM has a remapping scheme in each
-column, wherein the enthalpy in a column of ice is stored on an unequally-spaced 
+column, wherein the enthalpy in a column of ice is stored on an unequally-spaced
 vertical grid, but is mapped to a fine, equally-spaced grid for the conservation
 of energy computation described here.  (Similar structure applies to the age
 computation.  See classes ``EnthalpyModel`` and ``AgeModel``.)
@@ -370,7 +370,7 @@ reset at each time step `n`, then scheme :eq:`bombone`, :eq:`bombtwo` is
 unconditionally-stable in the following two senses:
 
 1. A maximum principle applies without further assumptions.
- 
+
 2. Suppose we freeze the coefficients of the problem to have constant values in time and
    space. (Concretely, we assume that `\lambda` is chosen independently of the time step
    `n`, and that `\dt` is the same for each time step. We assume constant vertical
@@ -413,7 +413,7 @@ coefficients in :eq:`formax` are nonnegative.  At one extreme, in
 the upwinding case (`\lambda=0`), all the coefficients are nonnegative.  Otherwise, note that
 `\nu w_k^n (1-\lambda) \uppair{+1}{-1}` is nonnegative for any valid value
 of `\lambda` and for any value of `w_k^n`, noting the meaning of the `\uppair{+1}{-1}`
-symbol.  Thus the coefficient on the left is always nonnegative.  The coefficient of 
+symbol.  Thus the coefficient on the left is always nonnegative.  The coefficient of
 `E_{k-1}^{n+1}` is clearly nonnegative for any valid value of `\lambda` if `w_k^n \ge 0`.
 The coefficient of `E_{k+1}^{n+1}` is clearly nonnegative for any valid value of `\lambda` if
 `w_k^n \le 0`.

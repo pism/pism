@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PAANOMALY_H_
-#define _PAANOMALY_H_
+#ifndef PAANOMALY_H_
+#define PAANOMALY_H_
 
 #include "pism/coupler/AtmosphereModel.hh"
 
@@ -56,4 +56,4 @@ protected:
 } // end of namespace atmosphere
 } // end of namespace pism
 
-#endif /* _PAANOMALY_H_ */
+#endif // PAANOMALY_H_ /* _PAANOMALY_H_ */

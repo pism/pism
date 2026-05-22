@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PISMOPTTILLPHIYIELDSTRESS_H_
-#define _PISMOPTTILLPHIYIELDSTRESS_H_
+#ifndef PISMOPTTILLPHIYIELDSTRESS_H_
+#define PISMOPTTILLPHIYIELDSTRESS_H_
 
 #include "pism/basalstrength/MohrCoulombYieldStress.hh"
 
@@ -83,4 +83,4 @@ private:
 
 } // end of namespace pism
 
-#endif /* _PISMOPTTILLPHIYIELDSTRESS_H_ */
+#endif // PISMOPTTILLPHIYIELDSTRESS_H_ /* _PISMOPTTILLPHIYIELDSTRESS_H_ */

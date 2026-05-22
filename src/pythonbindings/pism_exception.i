@@ -15,8 +15,8 @@
       return NULL;
     } else if (sig) {
       SWIG_exception(SWIG_RuntimeError, "Caught an unknown signal.");
-      return NULL;      
-    } 
+      return NULL;
+    }
   }
   catch(Swig::DirectorException &e) {
     SWIG_exception(SWIG_RuntimeError, e.getMessage());

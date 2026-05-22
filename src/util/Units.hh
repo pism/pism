@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef _PISMUNITS_H_
-#define _PISMUNITS_H_
+#ifndef PISMUNITS_H_
+#define PISMUNITS_H_
 
 #include <memory>
 #include <string>
@@ -99,7 +99,7 @@ private:
 bool are_convertible(const Unit &u1, const Unit &u2);
 
 /** Unit converter.
- * 
+ *
  * Throws pism::RuntimeError() if the conversion is not possible.
  *
  */
@@ -129,4 +129,4 @@ private:
 
 } // end of namespace pism
 
-#endif /* _PISMUNITS_H_ */
+#endif // PISMUNITS_H_ /* _PISMUNITS_H_ */

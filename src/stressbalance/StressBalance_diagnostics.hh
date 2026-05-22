@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PISMSTRESSBALANCE_DIAGNOSTICS_H_
-#define _PISMSTRESSBALANCE_DIAGNOSTICS_H_
+#ifndef PISMSTRESSBALANCE_DIAGNOSTICS_H_
+#define PISMSTRESSBALANCE_DIAGNOSTICS_H_
 
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/Diagnostic.hh"
@@ -242,4 +242,4 @@ public:
 } // end of namespace stressbalance
 } // end of namespace pism
 
-#endif /* _PISMSTRESSBALANCE_DIAGNOSTICS_H_ */
+#endif // PISMSTRESSBALANCE_DIAGNOSTICS_H_ /* _PISMSTRESSBALANCE_DIAGNOSTICS_H_ */

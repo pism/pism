@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _SSA_H_
-#define _SSA_H_
+#ifndef SSA_H_
+#define SSA_H_
 
 #include "pism/stressbalance/ShallowStressBalance.hh"
 #include "pism/util/array/CellType.hh"
@@ -50,7 +50,7 @@ namespace stressbalance {
 
   The quantity \f$\nu H\f$ is the nonlinear coefficient, and conceptually it is a
   membrane strength.  This class extends \f$\nu H\f$ to have a minimum value
-  at all points.  It is a class, and not just a configuration constant, because 
+  at all points.  It is a class, and not just a configuration constant, because
   setting both the thickness \f$H\f$ and the value \f$\nu H\f$ are allowed, and
   setting each of these does not affect the value of the other.
 */
@@ -87,7 +87,7 @@ private:
   - \tau_{(b)1}  &= - \rho g H h_x, \\
   - \left[\nu H \left(u_y + v_x\right)\right]_x
   - 2 \left[\nu H \left(u_x + 2 v_y\right)\right]_y
-  - \tau_{(b)2}  &= - \rho g H h_y, 
+  - \tau_{(b)2}  &= - \rho g H h_y,
   \f}
   where \f$u\f$ is the \f$x\f$-component of the velocity and \f$v\f$ is the
   \f$y\f$-component of the velocity [\ref MacAyeal, \ref Morland, \ref WeisGreveHutter].
@@ -126,4 +126,4 @@ protected:
 } // end of namespace stressbalance
 } // end of namespace pism
 
-#endif /* _SSA_H_ */
+#endif // SSA_H_ /* _SSA_H_ */

@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PSSIMPLE_H_
-#define _PSSIMPLE_H_
+#ifndef PSSIMPLE_H_
+#define PSSIMPLE_H_
 
 #include "pism/coupler/SurfaceModel.hh"
 
@@ -25,7 +25,7 @@ namespace pism {
 namespace surface {
 
 //! \brief A class implementing a primitive surface model.
-/*! 
+/*!
   This is an "invisible" surface processes model which "passes through"
   information from the atmosphere above directly to the ice below the surface
   layers.  It implements two modeling choices:
@@ -59,4 +59,4 @@ protected:
 } // end of namespace surface
 } // end of namespace pism
 
-#endif /* _PSSIMPLE_H_ */
+#endif // PSSIMPLE_H_ /* _PSSIMPLE_H_ */

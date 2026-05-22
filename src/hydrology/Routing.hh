@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _ROUTING_H_
-#define _ROUTING_H_
+#ifndef ROUTING_H_
+#define ROUTING_H_
 
 #include "pism/hydrology/Hydrology.hh"
 #include "pism/util/array/Staggered.hh"
@@ -166,4 +166,4 @@ void wall_melt(const Routing &model, const array::Scalar &bed_elevation, array::
 } // end of namespace hydrology
 } // end of namespace pism
 
-#endif /* _ROUTING_H_ */
+#endif // ROUTING_H_ /* _ROUTING_H_ */

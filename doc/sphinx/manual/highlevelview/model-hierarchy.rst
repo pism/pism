@@ -35,7 +35,7 @@ however, as also described in the Table.
 
    * - isothermal SIA
      - non-sliding lubrication flow, fixed softness :cite:`BLKCB`, :cite:`EISMINT96`
-     - *same as above, but time-dependence is allowed* 
+     - *same as above, but time-dependence is allowed*
 
    * - thermo-coupled SIA
      - non-sliding lubrication flow, temperature-dependent softness :cite:`BBL`,
@@ -48,7 +48,7 @@ however, as also described in the Table.
    * - polythermal SIA
      - allows liquid water fraction in temperate ice; conserves energy better
        :cite:`AschwandenBuelerKhroulevBlatter`, :cite:`Greve`
-     - *same as above* 
+     - *same as above*
 
    * - SIA + SSA hybrid
      - SSA as a sliding law for thermo-coupled SIA :cite:`BBssasliding`,
@@ -62,7 +62,7 @@ however, as also described in the Table.
      - pressure within the ice is hydrostatic; `x` and `y` derivatives of the
        vertical velocity component are small compared to `z` derivatives of horizontal
        components :cite:`Blatter`, :cite:`Pattyn03`, :cite:`SchoofCoulombBlatter`
-     - *same as above* 
+     - *same as above*
 
 It may also be helpful to view the implemented stress balances as PISM software components
 (C++ classes). :numref:`fig-stressbalance` shows the sequences of actions taken by the

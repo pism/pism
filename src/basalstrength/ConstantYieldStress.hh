@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PISMCONSTANTYIELDSTRESS_H_
-#define _PISMCONSTANTYIELDSTRESS_H_
+#ifndef PISMCONSTANTYIELDSTRESS_H_
+#define PISMCONSTANTYIELDSTRESS_H_
 
 #include "pism/basalstrength/YieldStress.hh"
 
@@ -44,4 +44,4 @@ private:
 
 } // end of namespace pism
 
-#endif /* _PISMCONSTANTYIELDSTRESS_H_ */
+#endif // PISMCONSTANTYIELDSTRESS_H_ /* _PISMCONSTANTYIELDSTRESS_H_ */

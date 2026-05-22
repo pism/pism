@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PAGIVEN_H_
-#define _PAGIVEN_H_
+#ifndef PAGIVEN_H_
+#define PAGIVEN_H_
 
 #include "pism/coupler/AtmosphereModel.hh"
 
@@ -53,4 +53,4 @@ private:
 } // end of namespace atmosphere
 } // end of namespace pism
 
-#endif /* _PAGIVEN_H_ */
+#endif // PAGIVEN_H_ /* _PAGIVEN_H_ */

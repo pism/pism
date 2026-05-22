@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _SIAFD_REGIONAL_H_
-#define _SIAFD_REGIONAL_H_
+#ifndef SIAFD_REGIONAL_H_
+#define SIAFD_REGIONAL_H_
 
 #include "pism/stressbalance/sia/SIAFD.hh"
 
@@ -43,4 +43,4 @@ private:
 } // end of namespace stressbalance
 } // end of namespace pism
 
-#endif /* _SIAFD_REGIONAL_H_ */
+#endif // SIAFD_REGIONAL_H_ /* _SIAFD_REGIONAL_H_ */

@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _SEA_LEVEL_FACTORY_
-#define _SEA_LEVEL_FACTORY_
+#ifndef SEA_LEVEL_FACTORY_
+#define SEA_LEVEL_FACTORY_
 
 #include "pism/coupler/SeaLevel.hh"
 #include "pism/coupler/util/PCFactory.hh"
@@ -36,4 +36,4 @@ public:
 } // end of namespace ocean
 } // end of namespace pism
 
-#endif /* _SEA_LEVEL_FACTORY_ */
+#endif // SEA_LEVEL_FACTORY_ /* _SEA_LEVEL_FACTORY_ */

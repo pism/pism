@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __flowlaws_hh
-#define __flowlaws_hh
+#ifndef flowlaws_hh
+#define flowlaws_hh
 
 #include <string>
 
@@ -152,4 +152,4 @@ bool FlowLawUsesGrainSize(const FlowLaw &flow_law);
 } // end of namespace rheology
 } // end of namespace pism
 
-#endif // __flowlaws_hh
+#endif // flowlaws_hh

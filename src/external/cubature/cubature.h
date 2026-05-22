@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef _cubature_h
-#define _cubature_h 1
+#ifndef cubature_h
+#define cubature_h 1
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,4 +72,4 @@ int adapt_integrate(integrand f, void *fdata, unsigned dim, const double *xmin, 
 }
 #endif
 
-#endif /* ifndef _cubature_h */
+#endif // cubature_h /* ifndef _cubature_h */

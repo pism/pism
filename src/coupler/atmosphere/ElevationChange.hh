@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PAELEVATIONCHANGE_H_
-#define _PAELEVATIONCHANGE_H_
+#ifndef PAELEVATIONCHANGE_H_
+#define PAELEVATIONCHANGE_H_
 
 #include "pism/coupler/AtmosphereModel.hh"
 
@@ -68,4 +68,4 @@ protected:
 } // end of namespace atmosphere
 } // end of namespace pism
 
-#endif /* _PAELEVATIONCHANGE_H_ */
+#endif // PAELEVATIONCHANGE_H_ /* _PAELEVATIONCHANGE_H_ */

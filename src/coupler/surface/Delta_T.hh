@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PS_DELTA_T_H_
-#define _PS_DELTA_T_H_
+#ifndef PS_DELTA_T_H_
+#define PS_DELTA_T_H_
 
 #include <memory> // std::unique_ptr
 
@@ -53,4 +53,4 @@ protected:
 } // end of namespace surface
 } // end of namespace pism
 
-#endif /* _PS_DELTA_T_H_ */
+#endif // PS_DELTA_T_H_ /* _PS_DELTA_T_H_ */

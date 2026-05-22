@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _VIEWER_H_
-#define _VIEWER_H_
+#ifndef VIEWER_H_
+#define VIEWER_H_
 
 #include <petscviewer.h>
 #include <string>
@@ -42,4 +42,4 @@ private:
 } // end of namespace petsc
 } // end of namespace pism
 
-#endif /* _VIEWER_H_ */
+#endif // VIEWER_H_ /* _VIEWER_H_ */

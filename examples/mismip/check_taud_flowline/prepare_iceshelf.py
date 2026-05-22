@@ -80,12 +80,12 @@ def thickness(x, step, Q0, H0, calving_front=1750e3, perturbation='default'):
       thk[ x > calving_front-1*dx ] -= 50.0
     elif perturbation=='p2':
       #perutbation i-1
-      thk[ x > calving_front-2*dx ] -= 50.0 
+      thk[ x > calving_front-2*dx ] -= 50.0
       thk[ x > calving_front-1*dx ] += 50.0
     elif perturbation=='p3':
       #perutbation i-2
       thk[ x > calving_front-3*dx ] -= 50.0
-      thk[ x > calving_front-2*dx ] += 50.0 
+      thk[ x > calving_front-2*dx ] += 50.0
     #perutbation gli+1
     #thk[ x > 100e3 + 0.5*dx ] -= 200.0
     #thk[ x > 100e3+1.5*dx ] += 200.0

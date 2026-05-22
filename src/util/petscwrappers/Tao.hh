@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _TAO_H_
-#define _TAO_H_
+#ifndef TAO_H_
+#define TAO_H_
 
 #include <petsctao.h>
 
@@ -35,4 +35,4 @@ public:
 } // end of namespace petsc
 } // end of namespace pism
 
-#endif /* _TAO_H_ */
+#endif // TAO_H_ /* _TAO_H_ */

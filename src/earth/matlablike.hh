@@ -17,8 +17,8 @@
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef __matlablike_hh
-#define __matlablike_hh
+#ifndef matlablike_hh
+#define matlablike_hh
 
 #include "pism/external/cubature/cubature.h" /* for 'integrand' type */
 
@@ -32,4 +32,4 @@ double dblquad_cubature(integrand f, double ax, double bx, double ay, double by,
                         void *fdata);
 
 
-#endif // ifndef __matlablike_hh
+#endif // matlablike_hh

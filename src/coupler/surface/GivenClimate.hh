@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PSGIVEN_H_
-#define _PSGIVEN_H_
+#ifndef PSGIVEN_H_
+#define PSGIVEN_H_
 
 #include "pism/coupler/SurfaceModel.hh"
 
@@ -50,4 +50,4 @@ protected:
 } // end of namespace surface
 } // end of namespace pism
 
-#endif /* _PSGIVEN_H_ */
+#endif // PSGIVEN_H_ /* _PSGIVEN_H_ */

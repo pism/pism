@@ -793,7 +793,7 @@ class ISMIP6(TestCase):
 
         time = self.ctx.time.metadata(with_bounds=True)
         time.units("seconds since 1-1-1")
-        
+
         out = PISM.util.prepare_output(filename, append_time=False, time=time)
 
         bounds = self.ctx.time.bounds_metadata()

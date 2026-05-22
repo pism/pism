@@ -17,8 +17,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __PISMSurfaceModel_hh
-#define __PISMSurfaceModel_hh
+#ifndef PISMSurfaceModel_hh
+#define PISMSurfaceModel_hh
 
 /*!
  * This file should contain the class definition and nothing else.
@@ -112,4 +112,4 @@ protected:
 } // end of namespace surface
 } // end of namespace pism
 
-#endif // __PISMSurfaceModel_hh
+#endif // PISMSurfaceModel_hh

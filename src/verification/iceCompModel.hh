@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __iceCompModel_hh
-#define __iceCompModel_hh
+#ifndef iceCompModel_hh
+#define iceCompModel_hh
 
 #include "pism/icemodel/IceModel.hh"
 
@@ -109,4 +109,4 @@ private:
 
 } // end of namespace pism
 
-#endif /* __iceCompModel_hh */
+#endif // iceCompModel_hh /* __iceCompModel_hh */

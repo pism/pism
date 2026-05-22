@@ -1,5 +1,5 @@
 
-/* 
+/*
    Usage: ./test_cube <dim> <tol> <integrand> <maxeval>
 
    where <dim> = # dimensions, <tol> = relative tolerance,

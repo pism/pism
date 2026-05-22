@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef _PISMICEBERGREMOVER_H_
-#define _PISMICEBERGREMOVER_H_
+#ifndef PISMICEBERGREMOVER_H_
+#define PISMICEBERGREMOVER_H_
 
 #include "pism/util/Component.hh"
 
@@ -64,4 +64,4 @@ protected:
 } // end of namespace calving
 } // end of namespace pism
 
-#endif /* _PISMICEBERGREMOVER_H_ */
+#endif // PISMICEBERGREMOVER_H_ /* _PISMICEBERGREMOVER_H_ */

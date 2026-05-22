@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _GROUNDED_CELL_FRACTION_H_
-#define _GROUNDED_CELL_FRACTION_H_
+#ifndef GROUNDED_CELL_FRACTION_H_
+#define GROUNDED_CELL_FRACTION_H_
 
 namespace pism {
 
@@ -41,4 +41,4 @@ void compute_grounded_cell_fraction(double ice_density, double ocean_density,
 } // end of namespace pism
 
 
-#endif /* _GROUNDED_CELL_FRACTION_H_ */
+#endif // GROUNDED_CELL_FRACTION_H_ /* _GROUNDED_CELL_FRACTION_H_ */

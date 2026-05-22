@@ -121,7 +121,7 @@ interpretation of "monthly" and "yearly" reporting with :opt:`-spatial_times`,
    * - ``360_day``
      - Calendar with fixed-length 360-day years divided into 30-day months
    * - ``julian``
-     - Julian calendar 
+     - Julian calendar
 
 .. _sec-time-file-restart:
 

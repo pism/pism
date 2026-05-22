@@ -123,7 +123,7 @@ scalar air temperature offsets :cite:`JohnsenetalGRIP`, precipitation adjustment
             :ref:`sec-surface-pdd`,
             :ref:`sec-ocean-constant`,
             :ref:`sec-ocean-delta-sl`
-    
+
 Note that the temperature offsets are applied to *air* temperatures at the *atmosphere
 level*. This ensures that `\Delta T` influences the PDD computation.
 

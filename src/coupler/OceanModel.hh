@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __PISMOceanModel_hh
-#define PISMOceanModel_hh
+#ifndef PISM_OCEAN_MODEL_HH
+#define PISM_OCEAN_MODEL_HH
 
 #include <memory>
 
@@ -88,4 +88,4 @@ void compute_average_water_column_pressure(const Geometry &geometry, double ice_
 } // end of namespace ocean
 } // end of namespace pism
 
-#endif // __PISMOceanModel_hh
+#endif // PISM_OCEAN_MODEL_HH

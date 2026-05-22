@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _PATERSONBUDD_H_
-#define _PATERSONBUDD_H_
+#ifndef PATERSONBUDD_H_
+#define PATERSONBUDD_H_
 
 #include "pism/rheology/FlowLaw.hh"
 #include "pism/util/EnthalpyConverter.hh" // for EnthalpyConverter, Enthalp...
@@ -52,4 +52,4 @@ protected:
 } // end of namespace pism
 
 
-#endif /* _PATERSONBUDD_H_ */
+#endif // PATERSONBUDD_H_ /* _PATERSONBUDD_H_ */

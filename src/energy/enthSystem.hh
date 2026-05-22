@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __enthSystem_hh
-#define __enthSystem_hh
+#ifndef enthSystem_hh
+#define enthSystem_hh
 
 #include <vector>
 
@@ -113,4 +113,4 @@ protected:
 } // end of namespace energy
 } // end of namespace pism
 
-#endif //  ifndef __enthSystem_hh
+#endif // enthSystem_hh

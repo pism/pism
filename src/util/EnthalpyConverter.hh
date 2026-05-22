@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __enthalpyConverter_hh
-#define __enthalpyConverter_hh
+#ifndef enthalpyConverter_hh
+#define enthalpyConverter_hh
 
 #include <memory>
 #include <vector>
@@ -38,7 +38,7 @@ class Config;
   ...
   E_s = EC.enthalpy_cts(p);
   ... etc ...
-  }   
+  }
   \endcode
 
   The three methods that get the enthalpy from temperatures and liquid
@@ -138,4 +138,4 @@ public:
 
 } // end of namespace pism
 
-#endif // __enthalpyConverter_hh
+#endif // enthalpyConverter_hh

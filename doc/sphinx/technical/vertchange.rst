@@ -120,7 +120,7 @@ energy:
      \nabla E      & \nabla E- \diff{E}{s}\nabla b \\
      \rho_i\left(\diff{E}{t}+\mathbf{U}\cdot\nabla E + w\diff{E}{z}\right)=\frac{k_i}{c_i} \frac{\partial^2 E}{\partial z^2} + Q & \rho_i\left(\diff{E}{t} + \mathbf{U}\cdot\nabla E + \left(w-\diff{b}{t}-\mathbf{U}\cdot\nabla b\right)\diff{E}{s}\right) = \frac{k_i}{c_i} \frac{\partial^2 E}{\partial s^2} + Q
    \end{array}
-   
+
 Note `E` is the ice enthalpy and `T` is the ice temperature (which is a
 function of the enthalpy; see ``EnthalpyConverter``), `P` is the ice pressure
 (assumed hydrostatic), `\mathbf{U}` is the depth-dependent horizontal velocity, and

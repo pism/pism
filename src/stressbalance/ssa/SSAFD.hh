@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _SSAFD_H_
-#define _SSAFD_H_
+#ifndef SSAFD_H_
+#define SSAFD_H_
 
 #include <array>
 
@@ -92,4 +92,4 @@ protected:
 } // end of namespace stressbalance
 } // end of namespace pism
 
-#endif /* _SSAFD_H_ */
+#endif // SSAFD_H_ /* _SSAFD_H_ */

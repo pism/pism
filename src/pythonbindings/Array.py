@@ -57,7 +57,7 @@ def attrs(self):
     """
     Return attributes
     """
-    metadata = self.metadata()    
+    metadata = self.metadata()
     return {**dict(metadata.all_strings()), **dict(metadata.all_doubles())}
 
 @property

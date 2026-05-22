@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PSISMIP6_H_
-#define _PSISMIP6_H_
+#ifndef PSISMIP6_H_
+#define PSISMIP6_H_
 
 #include "pism/coupler/SurfaceModel.hh"
 
@@ -61,4 +61,4 @@ protected:
 } // end of namespace surface
 } // end of namespace pism
 
-#endif /* _PSISMIP6_H_ */
+#endif // PSISMIP6_H_ /* _PSISMIP6_H_ */

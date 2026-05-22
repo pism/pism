@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PO_RUNOFF_SMB_H_
-#define _PO_RUNOFF_SMB_H_
+#ifndef PO_RUNOFF_SMB_H_
+#define PO_RUNOFF_SMB_H_
 
 #include "pism/coupler/OceanModel.hh"
 
@@ -78,4 +78,4 @@ private:
 } // end of namespace ocean
 } // end of namespace pism
 
-#endif /* _PO_RUNOFF_SMB_H_ */
+#endif // PO_RUNOFF_SMB_H_ /* _PO_RUNOFF_SMB_H_ */

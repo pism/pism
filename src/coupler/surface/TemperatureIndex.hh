@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PSTEMPERATUREINDEX_H_
-#define _PSTEMPERATUREINDEX_H_
+#ifndef PSTEMPERATUREINDEX_H_
+#define PSTEMPERATUREINDEX_H_
 
 #include <memory>
 
@@ -30,7 +30,7 @@ namespace surface {
 //! @brief A class implementing a temperature-index (positive degree-day) scheme
 //! to compute melt and runoff, and thus surface mass balance, from
 //! precipitation and air temperature.
-/*! 
+/*!
   Temperature-index schemes are far from perfect as a way of modeling surface mass
   balance on ice sheets which experience surface melt, but they are known to have
   reasonable data requirements and to do a good job when tuned appropriately
@@ -113,4 +113,4 @@ protected:
 } // end of namespace surface
 } // end of namespace pism
 
-#endif /* _PSTEMPERATUREINDEX_H_ */
+#endif // PSTEMPERATUREINDEX_H_ /* _PSTEMPERATUREINDEX_H_ */

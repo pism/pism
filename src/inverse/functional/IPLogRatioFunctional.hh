@@ -31,9 +31,9 @@ namespace inverse {
   \f[
   J(x) = c_N \sum_i W_i\left[\log\left(\frac{|X_i+U_i|^2+\epsilon^2}{|U_{i}|^2+\epsilon^2}\right)\right]^2
   \f]
-  where \f$\epsilon\f$ is a regularizing constant and \f$[W_i]\f$ is a vector of weights.  
-  The term \f$X_i+U_i\f$ appears because the argument is expected to already be in the form 
-  \f$V_i-U_i\f$, where \f$v=[V_i]\f$ is some approximation of \f$[U_i]\f$ and hence the 
+  where \f$\epsilon\f$ is a regularizing constant and \f$[W_i]\f$ is a vector of weights.
+  The term \f$X_i+U_i\f$ appears because the argument is expected to already be in the form
+  \f$V_i-U_i\f$, where \f$v=[V_i]\f$ is some approximation of \f$[U_i]\f$ and hence the
   integrand has the form \f$\log(|V_i|/|U_i|)\f$.
 
   The normalization constant \f$c_N\f$ is determined implicitly by normalize().
