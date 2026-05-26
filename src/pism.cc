@@ -157,7 +157,6 @@ std::shared_ptr<Context> context(MPI_Comm com, const std::string &prefix,
 
   set_config_defaults(*config, testname);
   set_config_from_options(*config);
-  config->resolve_filenames();
 
   logger->set_threshold(static_cast<int>(config->get_number("output.runtime.verbosity")));
 
@@ -238,7 +237,6 @@ int main(int argc, char *argv[]) {
 
       // process command-line options
       set_config_from_options(*config);
-      config->resolve_filenames();
     }
 
     if (options::Bool("-version", "print PISM version and stop")) {
@@ -252,6 +250,7 @@ int main(int argc, char *argv[]) {
                          "Configuration parameter 'input.file' cannot be empty");
     }
 
+    config->resolve_filenames();
     print_config(*ctx->log(), 3, *config);
 
     std::string usage =
