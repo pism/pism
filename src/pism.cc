@@ -253,6 +253,13 @@ int main(int argc, char *argv[]) {
     config->resolve_filenames();
     print_config(*ctx->log(), 3, *config);
 
+    {
+      // Insert extra command-line options into the PETSc options database.
+      PetscErrorCode ierr = PetscOptionsInsertString(NULL, // default option database
+                                                     config->get_string("petsc_options").c_str());
+      PISM_CHK(ierr, "PetscOptionsInsertString");
+    }
+
     std::string usage =
       "  pism -i IN.nc [-bootstrap] [-regional] [OTHER PISM & PETSc OPTIONS]\n"
       "where:\n"
