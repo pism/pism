@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2025 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2026 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -160,8 +160,6 @@ std::shared_ptr<Context> context(MPI_Comm com, const std::string &prefix,
   config->resolve_filenames();
 
   logger->set_threshold(static_cast<int>(config->get_number("output.runtime.verbosity")));
-
-  print_config(*logger, 3, *config);
 
   auto time = std::make_shared<Time>(com, config, *logger, sys);
 
