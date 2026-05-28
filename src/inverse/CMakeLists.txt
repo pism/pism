@@ -14,6 +14,7 @@ add_library (inverse OBJECT
   TaoUtil.cc
   functional/IPFunctional.cc
   functional/IPGroundedIceH1NormFunctional.cc
+  functional/IPHuberMisfit2V.cc
   functional/IPLogRatioFunctional.cc
   functional/IPLogRelativeFunctional.cc
   functional/IPMeanSquareFunctional.cc

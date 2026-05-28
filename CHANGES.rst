@@ -33,10 +33,16 @@ Changes since v2.3.2
    
 - To add CMake build options, pass --config-settings repeatedly::
     pip install --no-build-isolation . \
-    -C cmake.define.Pism_DEBUG=ON \
     -C cmake.define.Pism_USE_PROJ=ON \
-    -C cmake.define.Pism_USE_YAC=ON \
-    -C cmake.build-type=Debug 
+    -C cmake.define.Pism_USE_YAC=ON
+
+- Add a Huber-loss option for the inversion misfit functional, selectable with
+  `-inv_state_func huber`. It penalizes velocity residuals quadratically below a
+  threshold (`inverse.huber.delta`, default 100 m/year) and linearly above it, so
+  isolated outliers in the observed velocity cannot dominate the descent direction.
+  Implemented as `IPHuberMisfit2V` and wired into the TAO Tikhonov inversion path
+  (`tikhonov_lmvm`, `tikhonov_blmvm`); it is not compatible with the Gauss-Newton
+  SSA solver, which requires an inner-product functional.
 
 Changes from 2.3.0 to 2.3.1
 ===========================

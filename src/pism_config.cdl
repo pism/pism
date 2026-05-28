@@ -1530,6 +1530,12 @@ netcdf pism_config {
     pism_config:inverse.design.param_trunc_tauc0_type = "number";
     pism_config:inverse.design.param_trunc_tauc0_units = "Pascal";
 
+    pism_config:inverse.huber.delta = 100;
+    pism_config:inverse.huber.delta_doc = "Transition threshold for the Huber misfit functional. Velocity-residual magnitudes below this value are penalized quadratically (L2-like); residuals above this value are penalized linearly (L1-like). Used only when inverse.state_func = huber. Smaller values are more aggressive at downweighting outliers but also flatten the gradient near small residuals.";
+    pism_config:inverse.huber.delta_option = "inv_huber_delta";
+    pism_config:inverse.huber.delta_type = "number";
+    pism_config:inverse.huber.delta_units = "m year-1";
+
     pism_config:inverse.log_ratio_scale = 10;
     pism_config:inverse.log_ratio_scale_doc = "Reference scale for log-ratio functionals";
     pism_config:inverse.log_ratio_scale_option = "inv_log_ratio_scale";
@@ -1543,7 +1549,7 @@ netcdf pism_config {
     pism_config:inverse.max_iterations_units = "count";
 
     pism_config:inverse.state_func = "meansquare";
-    pism_config:inverse.state_func_choices = "meansquare,log_ratio,log_relative";
+    pism_config:inverse.state_func_choices = "meansquare,log_ratio,log_relative,huber";
     pism_config:inverse.state_func_doc = "functional used for inversion design variables";
     pism_config:inverse.state_func_option = "inv_state_func";
     pism_config:inverse.state_func_type = "keyword";
