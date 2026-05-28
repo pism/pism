@@ -24,6 +24,14 @@ The emitted scripts:
 import argparse
 import os
 
+from add_latlon import ensure_obs_latlon
+
+# Path to add_latlon.py invoked as a CLI from generated shell scripts: it
+# adds CF lat/lon bounds to the PISM target state file at runtime, since
+# CDO's remapycon needs cell-corner coords on both source and target.
+_ADD_LATLON_CLI = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "add_latlon.py"))
+
 
 # --- CLI ------------------------------------------------------------------
 
@@ -73,9 +81,11 @@ SCRIPTDIR  = "run_prep_scripts"
 S3_BUCKET  = "https://pism-cloud-data.s3.amazonaws.com/inverse"
 
 GRID_FILE  = f"grid_{RGI_ID}.nc"
-OBS_FILE   = f"obs_{RGI_ID}_0.nc"
+OBS_FILE   = f"obs_{RGI_ID}.nc"
+OBS0_FILE   = f"obs_{RGI_ID}_0.nc"
 CLIM_FILE  = f"era5_wgs84_{RGI_ID}.nc"
 
+v_max = 1000.0
 
 def bootfile_for(thk):
     """Per-ice-thickness bootstrap file name."""
@@ -137,7 +147,6 @@ HYBRID_PHYSICS = [
     "-stress_balance.model", "ssa+sia",
     "-stress_balance.ssa.method", "fd",
     "-stress_balance.sia.flow_law", "isothermal_glen",
-    "-stress_balance.sia.max_diffusivity", "100000.0",
     "-stress_balance.sia.surface_gradient_method", "eta",
     "-stress_balance.ssa.flow_law", "isothermal_glen",
 ]
@@ -161,7 +170,7 @@ DIFFUSE_HYDRO = [
 ROUTING_HYDRO = [
     "-hydrology.model", "routing",
     "-basal_yield_stress.add_transportable_water", "yes",
-    "-basal_yield_stress.mohr_coulomb.till_log_factor_transportable_water", "1.0",
+    "-basal_yield_stress.mohr_coulomb.till_log_factor_transportable_water", "10.0",
 ]
 
 
@@ -198,27 +207,27 @@ def common_physics_for(thk):
         "-basal_resistance.pseudo_plastic.u_threshold", "100m/yr",
         "-basal_yield_stress.model", "mohr_coulomb",
         "-basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden", "0.025",
-        "-basal_yield_stress.mohr_coulomb.till_phi_default", "40",
+        "-basal_yield_stress.mohr_coulomb.till_phi_default", "35",
         "-calving.methods", "float_kill",
         "-energy.model", "none",
         "-geometry.front_retreat.use_cfl", "yes",
         "-geometry.part_grid.enabled", "yes",
         "-geometry.remove_icebergs", "yes",
         "-grid.Lbz", "0",
-        "-grid.Lz", "2000",
+        "-grid.Lz", "1200",
         "-grid.Mbz", "1",
-        "-grid.Mz", "101",
+        "-grid.Mz", "61",
         "-grid.dx", RES,
         "-grid.dy", RES,
         "-grid.file", GRID_FILE,
-        "-stress_balance.sia.bed_smoother.range", RES,
+        "-stress_balance.sia.bed_smoother.range", str(1000),
         "-grid.registration", "center",
         "-input.bootstrap", "yes",
         "-input.file", boot,
         "-input.forcing.buffer_size", "390",
         "-input.forcing.time_extrapolation", "yes",
         "-surface.force_to_thickness.file", boot,
-        "-surface.force_to_thickness.alpha", "0.99",
+        "-surface.force_to_thickness.alpha", "0.5",
         "-surface.force_to_thickness.ice_free_alpha_factor", "10",
         "-surface.models", "pdd,forcing",
         "-time.calendar", "standard",
@@ -291,16 +300,22 @@ for thk in ICE_THICKNESS:
             # -bp_ksp_monitor) so the cmdline assembles cleanly.
             run_line = " ".join(p for p in cmd_parts if p != "")
 
-            rename     = SOLVERS_TABLE[sb]["rename"]
-            attributes = "-a _FillValue,u_observed,d,, -a _FillValue,v_observed,d,,"
+            OBS_LATLON_FILE = OBS_FILE.replace(".nc", "_latlon.nc")
+            ensure_obs_latlon(OBS_FILE, OBS_LATLON_FILE)
+            ofile_latlon = ofile.replace(".nc", "_latlon.nc")
+
             post = (
                 f"\n# --- Post-process: produce the inversion-friendly file ---\n"
                 f"cdo -O setmisstoc,0 {ofile} {ofile_0}\n"
-                #f"ncrename {rename} {ofile_0}\n"
-                #f"ncatted {attributes} {ofile_0}\n"
                 f"ncks -A -v pism_config {ofile} {ofile_0}\n"
             )
-
+            post_misfit = (
+                f"\n# --- Post-process: adjust misfit_weight ---\n"
+                f"python {_ADD_LATLON_CLI} {ofile} {ofile_latlon}\n"
+                f"cdo remapycon,{ofile_latlon} {OBS_LATLON_FILE} {OBS0_FILE}\n"
+                f"ncks -A -v velbase_mag {ofile} {OBS0_FILE}\n"
+                f"""ncap2 -O -s "vel_misfit_weight=float(vel_misfit_weight); where(velbase_mag > {v_max}) vel_misfit_weight=0.1" {OBS0_FILE} {OBS0_FILE}\n"""
+                )
             with open(runscript, "w") as f:
                 f.write(HEADER)
                 if MODE == "sbatch":
@@ -312,7 +327,8 @@ for thk in ICE_THICKNESS:
                 f.write(f"# --- Ensure output directory exists ---\n")
                 f.write(f"mkdir -p {OUTPUT_DIR}\n\n")
                 f.write(run_line + "\n")
-                f.write(post)
+                f.write(post + "\n")
+                f.write(post_misfit + "\n")
 
             os.chmod(runscript, 0o755)
             count += 1

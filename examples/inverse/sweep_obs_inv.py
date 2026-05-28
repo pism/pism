@@ -31,7 +31,7 @@ RESTART_FILE = args.restart
 OUTPUT_DIR = args.output_dir.rstrip("/")
 NP = int(os.environ.get("NP", 40 if MODE == "sbatch" else 8))
 SCRIPTDIR = os.path.dirname(os.path.abspath(__file__))
-OBS = "obs_RGI2000-v7.0-C-01-04374.nc"
+OBS = "obs_RGI2000-v7.0-C-01-04374_0.nc"
 state = args.STATEFILE[0]
 
 SBATCH_HEADER = """\
@@ -64,6 +64,7 @@ COMMON_PHYSICS = [
     "-hydrology.model", "null",
     "-hydrology.null_diffuse_till_water", "",
     "-energy.model", "none",
+    
 ]
 
 BLATTER_PHYSICS = [
@@ -91,10 +92,11 @@ BLATTER_PHYSICS = [
 HYBRID_PHYSICS = [
     "-stress_balance.model", "ssa+sia",
     "-stress_balance.ssa.method", "fem",
-    "-stress_balance.sia.flow_law", "isothermal_glen",
+    "-stress_balance.sia.flow_law", "gpbld",
     "-stress_balance.sia.max_diffusivity", "100000.0",
     "-stress_balance.sia.surface_gradient_method", "eta",
     "-stress_balance.ssa.flow_law", "isothermal_glen",
+    "-stress_balance.ssa.dirichlet_bc", "",
     "-remove_sia", "",
 ]
 
@@ -102,13 +104,14 @@ SSA_PHYSICS = [
     "-stress_balance.model", "ssa",
     "-stress_balance.ssa.method", "fem",
     "-stress_balance.ssa.flow_law", "isothermal_glen",
+    "-stress_balance.ssa.dirichlet_bc", "",
 ]
 
 max_iter = 250
 scriptdir = "run_obs_scripts"
 os.makedirs(scriptdir, exist_ok=True)
 
-pyscript = "pismi.py"
+pyscript = "pismi"
 
 solvers = {
     "ssa": {"inv_flag": ["-inv_design", "tauc"], "physics": SSA_PHYSICS},
@@ -116,76 +119,80 @@ solvers = {
     "blatter": {"inv_flag": ["-inv_design", "tauc"], "physics": BLATTER_PHYSICS},
 }
 
-
-penalties = [1, 10, 100]
-h1_values = [1]
-l2_values = [0, 0.1, 1.0]
-hscales = ["1e3", "5e3", "1e4", "5e4"]
+penalties = [1, 10, 100, 1000]
+h1_values = [0.1, 1]
+l2_values = [0]
+hscales = ["1e2", "1e3", "1e4"]
 vscales = [100]
-
+huberscales = ["1e2", "1e8"]
 count = 0
 
 for sb, params in solvers.items():
-    for penalty, h1, l2, hscale, vscale in itertools.product(
-            penalties, h1_values, l2_values, hscales, vscales):
+    for func in ["meansquare", "huber"]:
+        for penalty, h1, l2, hscale, vscale, huberscale in itertools.product(
+                penalties, h1_values, l2_values, hscales, vscales, huberscales):
 
-        # Output filename includes the optional output dir. When OUTPUT_DIR
-        # is "." this reduces to a plain filename in the cwd.
-        outfile = f"{OUTPUT_DIR}/inv_obs_{sb}_it_{max_iter}_p_{penalty}_h1_{h1}_l2_{l2}_ls_{hscale}_vs_{vscale}.nc"
-        jobname = f"inv_obs_{sb}_it_{max_iter}_p_{penalty}_h1_{h1}_l2_{l2}_ls_{hscale}_vs_{vscale}"
-        runscript = os.path.join(scriptdir, f"{jobname}.sh")
+            # Output filename includes the optional output dir. When OUTPUT_DIR
+            # is "." this reduces to a plain filename in the cwd.
+            outfile = f"{OUTPUT_DIR}/inv_obs_{sb}_it_{max_iter}_{func}_p_{penalty}_h1_{h1}_l2_{l2}_ls_{hscale}_vs_{vscale}_hubers_{huberscale}.nc"
+            jobname = f"inv_obs_{sb}_it_{max_iter}_{func}_p_{penalty}_h1_{h1}_l2_{l2}_ls_{hscale}_vs_{vscale}_hubers_{huberscale}"
+            runscript = os.path.join(scriptdir, f"{jobname}.sh")
 
-        # If restarting, extract zeta_inv from the restart file into a
-        # temporary inv_data file so pismi picks it up as the initial guess.
-        restart_cmds = ""
-        inv_data = OBS
-        if RESTART_FILE is not None:
-            inv_data = f"inv_data_restart_{sb}.nc"
-            restart_cmds = (
-                f"# Extract tauc (last time, squeezed to 2D) from restart file,\n"
-                f"# rename to tauc_prior, and merge into a copy of the obs file.\n"
-                f"# Using tauc (not zeta_inv) avoids NaN issues in ice-free regions.\n"
-                f"ncks -O -d time,-1 -v tauc {RESTART_FILE} _tauc_tmp.nc\n"
-                f"ncwa -O -a time _tauc_tmp.nc _tauc_tmp.nc\n"
-                f"ncrename -v tauc,tauc_prior _tauc_tmp.nc\n"
-                f"cp {OBS} {inv_data}\n"
-                f"ncks -A -C -v tauc_prior _tauc_tmp.nc {inv_data}\n"
-                f"rm -f _tauc_tmp.nc\n"
-            )
+            # If restarting, extract zeta_inv from the restart file into a
+            # temporary inv_data file so pismi picks it up as the initial guess.
+            restart_cmds = ""
+            inv_data = OBS
+            if RESTART_FILE is not None:
+                inv_data = f"inv_data_restart_{sb}.nc"
+                restart_cmds = (
+                    f"# Extract tauc (last time, squeezed to 2D) from restart file,\n"
+                    f"# rename to tauc_prior, and merge into a copy of the obs file.\n"
+                    f"# Using tauc (not zeta_inv) avoids NaN issues in ice-free regions.\n"
+                    f"ncks -O -d time,-1 -v tauc {RESTART_FILE} _tauc_tmp.nc\n"
+                    f"ncwa -O -a time _tauc_tmp.nc _tauc_tmp.nc\n"
+                    f"ncrename -v tauc,tauc_prior _tauc_tmp.nc\n"
+                    f"cp {OBS} {inv_data}\n"
+                    f"ncks -A -C -v tauc_prior _tauc_tmp.nc {inv_data}\n"
+                    f"rm -f _tauc_tmp.nc\n"
+                )
 
-        cmd_parts = [
-            RUN_CMD, "python", os.path.join(SCRIPTDIR, pyscript),
-            "-i", state,
-            "-inv_data", inv_data,
-            "-o", outfile,
-            *params["inv_flag"],
-            "-inverse.stress_balance.velocity_scale", str(vscale),
-            "-inverse.stress_balance.length_scale", hscale,
-            "-inverse.design.cH1", str(h1),
-            "-inverse.design.cL2", str(l2),
-            "-inverse.max_iterations", str(max_iter),
-            "-inverse.design.param", "exp",
-            "-inverse.stress_balance.method", "tikhonov_lmvm",
-            "-inverse.tikhonov.penalty_weight", str(penalty),
-            "-inverse.use_zeta_fixed_mask", "yes",
-            "-inverse.adjoint.method", "exact",
-            "-inv_grounded_ice_tauc",
-            "-inverse.state_func", "meansquare",
-            *COMMON_PHYSICS,
-            *params["physics"],
-        ]
+            cmd_parts = [
+                RUN_CMD, pyscript,
+                "-i", state,
+                "-inv_data", inv_data,
+                "-o", outfile,
+                "-options_left", "",
+                *params["inv_flag"],
+                "-inverse.stress_balance.velocity_scale", str(vscale),
+                "-inverse.stress_balance.length_scale", hscale,
+                "-inverse.design.cH1", str(h1),
+                "-inverse.design.cL2", str(l2),
+                "-inverse.max_iterations", str(max_iter),
+                "-inverse.design.param", "exp",
+                "-inverse.stress_balance.method", "tikhonov_blmvm",
+                " -inverse.stress_balance.tauc_min", "1e4",                                    
+                "-inverse.stress_balance.tauc_max", "5e7",
+                "-inverse.tikhonov.penalty_weight", str(penalty),
+                "-inverse.use_zeta_fixed_mask", "yes",
+                "-inverse.adjoint.method", "exact",
+                "-inv_grounded_ice_tauc",
+                "-inverse.state_func", func,
+                "-inverse.huber.delta", huberscale,
+                *COMMON_PHYSICS,
+                *params["physics"],
+            ]
 
-        with open(runscript, "w") as f:
-            f.write(HEADER)
-            f.write(f"#SBATCH --job-name={jobname}\n\n")
-            f.write(f"# --- Ensure output directory exists ---\n")
-            f.write(f"mkdir -p {OUTPUT_DIR}\n\n")
-            if restart_cmds:
-                f.write(restart_cmds)
-            f.write(" ".join(cmd_parts) + "\n")
+            with open(runscript, "w") as f:
+                f.write(HEADER)
+                f.write(f"#SBATCH --job-name={jobname}\n\n")
+                f.write(f"# --- Ensure output directory exists ---\n")
+                f.write(f"mkdir -p {OUTPUT_DIR}\n\n")
+                if restart_cmds:
+                    f.write(restart_cmds)
+                f.write(" ".join(cmd_parts) + "\n")
 
-        os.chmod(runscript, 0o755)
-        count += 1
+            os.chmod(runscript, 0o755)
+            count += 1
 
 print(f"\nGenerated {count} scripts in {scriptdir}/\n")
 

@@ -85,7 +85,7 @@ SSA_PHYSICS = [
     "-stress_balance.ssa.dirichlet_bc", "",
 ]
 
-max_iter = 5000
+max_iter = 2500
 scriptdir = "run_obs_scripts"
 os.makedirs(scriptdir, exist_ok=True)
 
@@ -94,7 +94,7 @@ solvers = {
     "blatter": {"inv_flag": ["-inv_design", "tauc"], "physics": BLATTER_PHYSICS},
 }
 
-penalties = [10, 100, 1000, 10000, 1000000]
+penalties = [0.1, 1, 10, 100, 1000, 10000, 1000000]
 h1_values = [1]
 l2_values = [0]
 hscales = ["50e3"]
@@ -148,10 +148,8 @@ for sb, params in solvers.items():
             "-inverse.max_iterations", str(max_iter),
             "-inverse.design.param", "exp",
             "-inverse.stress_balance.method", "tikhonov_lmvm",
-            "-inverse.tikhonov.atol", "1e-30",
             "-inverse.tikhonov.penalty_weight", str(penalty),
-            "-inverse.tikhonov.rtol", "1e-30",
-            "-inverse.use_zeta_fixed_mask", "no",
+            "-inverse.use_zeta_fixed_mask", "yes",
             "-inverse.adjoint.method", "approximate",
             "-inv_grounded_ice_tauc",
             *COMMON_PHYSICS,

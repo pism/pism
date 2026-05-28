@@ -262,7 +262,7 @@ def fix_xy_attrs(ds):
             ds[c].encoding["dtype"] = "float64"
     return ds
 
-obs_jib = obs_jib.fillna(0).isel(vel_time=1)
+obs_jib = obs_jib.fillna(0)
 boot_ds = fix_xy_attrs(obs_jib[["bed", "thickness", "surface_grimp"]])
 boot_ds["bed"].attrs.update({"standard_name": "bedrock_altitude", "units": "m"})
 boot_ds["surface_grimp"].attrs.update({"standard_name": "surface_altitude", "units": "m"})
@@ -270,8 +270,8 @@ encoding = {v: {"_FillValue": None} for v in (boot_ds.data_vars and boot_ds.coor
 boot_ds.to_netcdf("boot_jako.nc", encoding=encoding)
 
 obs_ds = fix_xy_attrs(
-    obs_jib[["vx_timeseries", "vy_timeseries", "zeta_fixed_mask"]]
-    .rename_vars({"vx_timeseries": "u_observed", "vy_timeseries": "v_observed"})
+    obs_jib[["vx_mosaic", "vy_mosaic", "zeta_fixed_mask"]]
+    .rename_vars({"vx_mosaic": "u_observed", "vy_mosaic": "v_observed"})
     .fillna(0)
 )
 encoding = {v: {"_FillValue": None} for v in (obs_ds.data_vars and obs_ds.coords)}
