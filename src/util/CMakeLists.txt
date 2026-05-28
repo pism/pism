@@ -85,6 +85,11 @@ if(Pism_USE_YAC)
     PROPERTIES
     INCLUDE_DIRECTORIES "${YAXT_INCLUDE_DIRS}")
   target_sources(util PRIVATE yaxt_wrapper.c)
+
+  set_source_files_properties(yac_utilities.cc
+    PROPERTIES
+    INCLUDE_DIRECTORIES "${YAC_INCLUDE_DIRS}")
+  target_sources(util PRIVATE yac_utilities.cc)
 endif()
 
 if(Pism_DEBUG)

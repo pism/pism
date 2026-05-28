@@ -8,7 +8,7 @@ set -x
 # using ~/local/build/pnetcdf as a build directory.
 
 version=1.14.1
-prefix=${prefix:-$HOME/local/pnetcdf}
+prefix=${prefix:-$HOME/local/}
 build_dir=${build_dir:-$HOME/local/build/pnetcdf/}
 url=https://parallel-netcdf.github.io/Release/pnetcdf-${version}.tar.gz
 

@@ -137,7 +137,8 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
 
 #if (Pism_USE_YAC == 1)
   if (pism::yac_component_defined("pism_output")) {
-    auto yac_writer = std::make_shared<YacOutputWriter>(m_grid->com, *m_config);
+    auto yac_writer = std::make_shared<YacOutputWriter>(m_grid->com, *m_config,
+                                                        m_grid->get_mapping_info()["proj_params"]);
 
     m_snapshot_writer = yac_writer;
     m_spatial_writer  = yac_writer;

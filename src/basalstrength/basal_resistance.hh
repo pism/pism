@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __basal_resistance_hh
-#define __basal_resistance_hh
+#ifndef PISM_BASAL_RESISTANCE_HH
+#define PISM_BASAL_RESISTANCE_HH
 
 #include "pism/util/Units.hh"
 
@@ -69,5 +69,5 @@ protected:
 
 } // end of namespace pism
 
-#endif /* __basal_resistance_hh */
+#endif /* PISM_BASAL_RESISTANCE_HH */
 

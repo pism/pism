@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __BedSmoother_hh
-#define __BedSmoother_hh
+#ifndef PISM_BedSmoother_hh
+#define PISM_BedSmoother_hh
 
 #include <petsc.h>
 
@@ -130,5 +130,5 @@ protected:
 } // end of namespace stressbalance
 } // end of namespace pism
 
-#endif  // __BedSmoother_hh
+#endif  // PISM_BedSmoother_hh
 

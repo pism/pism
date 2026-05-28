@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _ICEREGIONALMODEL_H_
-#define _ICEREGIONALMODEL_H_
+#ifndef PISM_ICEREGIONALMODEL_HH
+#define PISM_ICEREGIONALMODEL_HH
 
 #include <memory>               // shared_ptr
 
@@ -67,4 +67,4 @@ private:
 
 } // end of namespace pism
 
-#endif /* _ICEREGIONALMODEL_H_ */
+#endif /* PISM_ICEREGIONALMODEL_HH */

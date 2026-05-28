@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _DISTRIBUTED_H_
-#define _DISTRIBUTED_H_
+#ifndef PISM_DISTRIBUTED_HH
+#define PISM_DISTRIBUTED_HH
 
 #include "pism/hydrology/Routing.hh"
 
@@ -99,4 +99,4 @@ private:
 } // end of namespace hydrology
 } // end of namespace pism
 
-#endif /* _DISTRIBUTED_H_ */
+#endif /* PISM_DISTRIBUTED_HH */

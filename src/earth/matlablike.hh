@@ -17,8 +17,8 @@
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef __matlablike_hh
-#define __matlablike_hh
+#ifndef PISM_matlablike_hh
+#define PISM_matlablike_hh
 
 #include "pism/external/cubature/cubature.h"  /* for 'integrand' type */
 

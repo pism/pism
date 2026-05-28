@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __enthSystem_hh
-#define __enthSystem_hh
+#ifndef PISM_enthSystem_hh
+#define PISM_enthSystem_hh
 
 #include <vector>
 

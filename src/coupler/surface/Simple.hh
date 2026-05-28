@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PSSIMPLE_H_
-#define _PSSIMPLE_H_
+#ifndef PISM_SURFACE_SIMPLE_HH
+#define PISM_SURFACE_SIMPLE_HH
 
 #include "pism/coupler/SurfaceModel.hh"
 
@@ -58,4 +58,4 @@ protected:
 } // end of namespace surface
 } // end of namespace pism
 
-#endif /* _PSSIMPLE_H_ */
+#endif /* PISM_SURFACE_SIMPLE_HH */

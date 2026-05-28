@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2018, 2021, 2022, 2025 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2018, 2021, 2022, 2025, 2026 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -17,8 +17,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __AtmosphereModel
-#define __AtmosphereModel
+#ifndef PISM_ATMOSPHERE_MODEL_HH
+#define PISM_ATMOSPHERE_MODEL_HH
 
 #include <vector>
 
@@ -81,7 +81,7 @@ protected:
 
   virtual DiagnosticList spatial_diagnostics_impl() const;
   virtual TSDiagnosticList scalar_diagnostics_impl() const;
-protected:
+
   mutable std::vector<double> m_ts_times;
 
   std::shared_ptr<AtmosphereModel> m_input_model;
@@ -93,4 +93,4 @@ protected:
 } // end of namespace atmosphere
 } // end of namespace pism
 
-#endif  // __AtmosphereModel
+#endif  // PISM_ATMOSPHERE_MODEL_HH

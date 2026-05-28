@@ -420,6 +420,8 @@ std::array<unsigned, 2> nprocs(unsigned int size, unsigned int Mx,
 
 std::vector<unsigned int> ownership_ranges(unsigned int Mx, unsigned int Nx);
 
+std::vector<double> subset(unsigned int xs, unsigned int xm, const std::vector<double> &coords);
+
 } // namespace grid
 
 } // end of namespace pism

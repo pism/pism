@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _POFACTORY_H_
-#define _POFACTORY_H_
+#ifndef PISM_OCEAN_FACTORY_HH
+#define PISM_OCEAN_FACTORY_HH
 
 #include "pism/coupler/util/PCFactory.hh"
 #include "pism/coupler/OceanModel.hh"
@@ -32,4 +32,4 @@ public:
 } // end of namespace ocean
 } // end of namespace pism
 
-#endif /* _POFACTORY_H_ */
+#endif /* PISM_OCEAN_FACTORY_HH */

@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _MASK_H_
-#define _MASK_H_
+#ifndef PISM_MASK_HH
+#define PISM_MASK_HH
 
 // the following three includes are needed here because of inlined code
 #include "pism/util/Config.hh"
@@ -154,4 +154,4 @@ protected:
 
 } // end of namespace pism
 
-#endif /* _MASK_H_ */
+#endif /* PISM_MASK_HH */

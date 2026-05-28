@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PAYEARLYCYCLE_H_
-#define _PAYEARLYCYCLE_H_
+#ifndef PISM_ATM_YEARLYCYCLE_HH
+#define PISM_ATM_YEARLYCYCLE_HH
 
 #include "pism/coupler/AtmosphereModel.hh"
 
@@ -67,4 +67,4 @@ protected:
 } // end of namespace atmosphere
 } // end of namespace pism
 
-#endif /* _PAYEARLYCYCLE_H_ */
+#endif /* PISM_ATM_YEARLYCYCLE_HH */

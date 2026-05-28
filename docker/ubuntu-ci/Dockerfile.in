@@ -72,6 +72,7 @@ RUN set -eux; \
     python3-netcdf4 \
     python3-numpy \
     python3-pip \
+    python3-pyproj \
     python3-scipy \
     python3-setuptools \
     python3-sphinx \
@@ -99,6 +100,25 @@ RUN <<EOF
     set -eux
     . $HOME/local/pism/bin/activate
     python3 -m pip install "mpi4py>=4.0.0"
+EOF
+
+# Install xarray
+RUN <<EOF
+    echo "Install xarray"
+    set -eux
+    . $HOME/local/pism/bin/activate
+    python3 -m pip install xarray
+EOF
+
+# Build the oldest supported PETSc version. The goal is to check if PISM's C++ code
+# compiles with PETSc 3.15. We do not support PISM's Python bindings with old PETSc
+# versions, so we build PETSc without petsc4py here.
+COPY old-petsc.sh /tmp/
+RUN <<EOF
+    echo "Install PETSc 3.15"
+    set -eux
+    cd /tmp && version=3.15.0 ./old-petsc.sh
+    rm -rf ~/local/build
 EOF
 
 # Install parallel HDF5, NetCDF and PnetCDF by building them from sources.
@@ -163,17 +183,6 @@ RUN <<EOF
     rm -rf ~/local/build
 EOF
 
-# Build the oldest supported PETSc version. The goal is to check if PISM's C++ code
-# compiles with PETSc 3.15. We do not support PISM's Python bindings with old PETSc
-# versions, so we build PETSc without petsc4py here.
-COPY old-petsc.sh /tmp/
-RUN <<EOF
-    echo "Install PETSc 3.15"
-    set -eux
-    cd /tmp && version=3.15.0 ./old-petsc.sh
-    rm -rf ~/local/build
-EOF
-
 # Build the current PETSc version with 64-bit indices
 COPY petsc-64bit.sh /tmp/
 RUN <<EOF
@@ -186,8 +195,10 @@ EOF
 
 # OMPI_MCA_plm_rsh_agent="" is needed to silence OpenMPI
 ARG HOME=/home/builder
-ARG YAC_DIR=$HOME/local/yac
+ARG YAC_DIR=$HOME/local/
 ENV PETSC_DIR="$HOME/local/petsc"
+# set PATH to activate the venv in ~/local/pism:
+ENV PATH=$HOME/local/pism/bin:$PATH
 ENV PYTHONPATH="$PETSC_DIR/lib:$YAC_DIR/lib/python3.12/site-packages" \
     OMPI_MCA_plm_rsh_agent="" \
     OMPI_MCA_rmaps_base_oversubscribe=yes

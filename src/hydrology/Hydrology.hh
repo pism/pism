@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2023, 2025 PISM Authors
+// Copyright (C) 2012-2023, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PISMHYDROLOGY_H_
-#define _PISMHYDROLOGY_H_
+#ifndef PISM_HYDROLOGY_HH
+#define PISM_HYDROLOGY_HH
 
 #include "pism/util/array/Vector.hh"
 #include "pism/util/Component.hh"
@@ -215,4 +215,4 @@ void check_bounds(const array::Scalar& W, double W_max);
 } // end of namespace hydrology
 } // end of namespace pism
 
-#endif /* _PISMHYDROLOGY_H_ */
+#endif /* PISM_HYDROLOGY_HH */

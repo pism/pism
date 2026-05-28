@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PFMCONSTANT_H_
-#define _PFMCONSTANT_H_
+#ifndef PISM_FRONTAL_MELT_CONSTANT_HH
+#define PISM_FRONTAL_MELT_CONSTANT_HH
 
 #include "pism/coupler/FrontalMelt.hh"
 
@@ -45,4 +45,4 @@ private:
 
 } // end of namespace frontalmelt
 } // end of namespace pism
-#endif /* _PFMCONSTANT_H_ */
+#endif /* PISM_FRONTAL_MELT_CONSTANT_HH */

@@ -37,11 +37,6 @@ Pism_BUILD_DOCS = "OFF"
 Pism_USE_PARALLEL_NETCDF4 = "YES"
 Pism_USE_PROJ = "YES"
 Pism_USE_YAC = "YES"
-# Switch CMakeLists.txt into "scikit-build-core layout" mode. Inside
-# CMakeLists.txt this reads the SKBUILD_*_DIR cache variables that
-# scikit-build-core publishes via CMakeInit.txt and points the GNU install
-# dirs and PISM_PYTHON_MODULE_DIR at the right wheel components.
-Pism_USE_SKBUILD_LAYOUT = "ON"
 # RPATH that survives the move out of scikit-build-core's staging dir.
 # CMake auto-translates $ORIGIN to @loader_path on macOS.
 #   bin/pismr             -> ../lib/libpism.so

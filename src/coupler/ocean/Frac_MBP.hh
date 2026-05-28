@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef _FRAC_MBP_H_
-#define _FRAC_MBP_H_
+#ifndef PISM_FRAC_MBP_HH
+#define PISM_FRAC_MBP_HH
 
 #include "pism/coupler/OceanModel.hh"
 
@@ -51,4 +51,4 @@ private:
 } // end of namespace ocean
 } // end of namespace pism
 
-#endif /* _FRAC_MBP_H_ */
+#endif /* PISM_FRAC_MBP_HH */

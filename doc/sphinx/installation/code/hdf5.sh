@@ -8,7 +8,7 @@ set -x
 # using ~/local/build/hdf5 as the build directory.
 
 version=1.12.0
-prefix=${prefix:-$HOME/local/hdf5}
+prefix=${prefix:-$HOME/local/}
 build_dir=${build_dir:-$HOME/local/build/hdf5}
 hdf5_site=https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.12
 url=${hdf5_site}/hdf5-${version}/src/hdf5-${version}.tar.gz

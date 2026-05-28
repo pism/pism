@@ -1,4 +1,4 @@
-/* Copyright (C) 2015 PISM Authors
+/* Copyright (C) 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,22 +17,20 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef PISM_MAT_HH
-#define PISM_MAT_HH
+#ifndef PISM_YAC_UTILITIES_H
+#define PISM_YAC_UTILITIES_H
 
-#include <petscmat.h>
-
-#include "pism/util/Wrapper.hh"
+#include <vector>
+#include <string>
 
 namespace pism {
-namespace petsc {
-class Mat : public Wrapper< ::Mat > {
-public:
-  Mat();
-  Mat(::Mat m);
-  ~Mat();
-};
-} // end of namespace petsc
-} // end of namespace pism
 
-#endif /* PISM_MAT_HH */
+/*!
+ * Define a YAC grid given X and Y coordinates of cell centers of the *local* patch.
+ */
+int define_yac_grid(const std::vector<double> &x, const std::vector<double> &y,
+                    const std::string &grid_name, const std::string &projection);
+
+}
+
+#endif /* PISM_YAC_UTILITIES_H */

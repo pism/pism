@@ -32,11 +32,6 @@ lib_prefix=$HOME/local
 # Installation prefix
 install_dir=/opt/pism
 
-hdf5_dir=${lib_prefix}/hdf5
-netcdf_dir=${lib_prefix}/netcdf
-pnetcdf_dir=${lib_prefix}/pnetcdf
-yac_dir=${lib_prefix}/yac
-
 git config --global --add safe.directory ${source_dir}
 
 cmake -S ${source_dir} \
@@ -47,7 +42,7 @@ cmake -S ${source_dir} \
       -DCMAKE_C_COMPILER=icx \
       -DCMAKE_C_FLAGS="-Werror -Rno-debug-disables-optimization" \
       -DCMAKE_INSTALL_PREFIX=${install_dir} \
-      -DCMAKE_PREFIX_PATH="${hdf5_dir};${netcdf_dir};${pnetcdf_dir};${yac_dir}" \
+      -DCMAKE_PREFIX_PATH="${lib_prefix}" \
       -DPism_BUILD_ICEBIN=YES \
       -DPism_BUILD_PYTHON_BINDINGS=YES \
       -DPism_PEDANTIC_WARNINGS=YES \
