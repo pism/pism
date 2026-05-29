@@ -62,7 +62,6 @@ COMMON_PHYSICS = [
     "-basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden", "0.025",
     "-basal_yield_stress.mohr_coulomb.till_phi_default", "40",
     "-hydrology.model", "null",
-    "-hydrology.null_diffuse_till_water", "",
     "-energy.model", "none",
     
 ]
@@ -93,7 +92,6 @@ HYBRID_PHYSICS = [
     "-stress_balance.model", "ssa+sia",
     "-stress_balance.ssa.method", "fem",
     "-stress_balance.sia.flow_law", "gpbld",
-    "-stress_balance.sia.max_diffusivity", "100000.0",
     "-stress_balance.sia.surface_gradient_method", "eta",
     "-stress_balance.ssa.flow_law", "isothermal_glen",
     "-stress_balance.ssa.dirichlet_bc", "",
@@ -124,7 +122,7 @@ h1_values = [0.1, 1]
 l2_values = [0]
 hscales = ["1e2", "1e3", "1e4"]
 vscales = [100]
-huberscales = ["1e2", "1e8"]
+huberscales = ["1e2"]
 count = 0
 
 for sb, params in solvers.items():
