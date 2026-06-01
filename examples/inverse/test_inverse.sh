@@ -21,7 +21,7 @@ ncks -A -v pism_config isoglen_maffezzoli/state_hybrid_maffezzoli_null_g500m_RGI
 # --- Post-process: adjust misfit_weight ---
 python add_latlon.py isoglen_maffezzoli/state_hybrid_maffezzoli_null_g500m_RGI2000-v7.0-C-01-04374_id_0_1980-01-01_1985-01-01.nc isoglen_maffezzoli/state_hybrid_maffezzoli_null_g500m_RGI2000-v7.0-C-01-04374_id_0_1980-01-01_1985-01-01_latlon.nc
 python add_latlon.py obs_RGI2000-v7.0-C-01-04374.nc obs_RGI2000-v7.0-C-01-04374_latlon.nc
-cdo remapycon,isoglen_maffezzoli/state_hybrid_maffezzoli_null_g500m_RGI2000-v7.0-C-01-04374_id_0_1980-01-01_1985-01-01_latlon.nc obs_RGI2000-v7.0-C-01-04374_latlon.nc obs_RGI2000-v7.0-C-01-04374_0.nc
+cdo setmisstoc,0 -remapycon,isoglen_maffezzoli/state_hybrid_maffezzoli_null_g500m_RGI2000-v7.0-C-01-04374_id_0_1980-01-01_1985-01-01_latlon.nc obs_RGI2000-v7.0-C-01-04374_latlon.nc obs_RGI2000-v7.0-C-01-04374_0.nc
 ncks -A -v velbase_mag isoglen_maffezzoli/state_hybrid_maffezzoli_null_g500m_RGI2000-v7.0-C-01-04374_id_0_1980-01-01_1985-01-01.nc obs_RGI2000-v7.0-C-01-04374_0.nc
 ncap2 -O -s "vel_misfit_weight=float(vel_misfit_weight); where(velbase_mag > 1000.0) vel_misfit_weight=0.1" obs_RGI2000-v7.0-C-01-04374_0.nc obs_RGI2000-v7.0-C-01-04374_0.nc
 
