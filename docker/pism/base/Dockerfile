@@ -70,11 +70,10 @@ EOF
 RUN <<EOF
     echo "Install geopandas and rioxarray"
     set -eux
-    . /opt/pism/bin/activate
-    python3 -m pip install "geopandas>=1.1.2"
-    python3 -m pip install "rioxarray>=0.21.0"
+    python3 -m pip install --break-system-packages "geopandas>=1.1.2"
+    python3 -m pip install --break-system-packages "rioxarray>=0.21.0"
 EOF
-
+  
 FROM pism-runtime AS pism-base
 
 RUN <<EOF
