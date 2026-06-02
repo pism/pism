@@ -67,14 +67,27 @@ RUN <<EOF
     rm -rf /var/lib/apt/lists/*
 EOF
 
-# Install recent of geopandas and rioxarray
+# Create a venv for Python packages we cannot install via apt-get. Built
+# here in pism-runtime so the venv ships in the final runtime image; later
+# stages (pism-base) inherit it. --system-site-packages keeps apt-managed
+# python3-{netcdf4,cftime,pyproj,numpy} importable without rebuilds.
+RUN python3 -m venv --system-site-packages /opt/pism
+ENV VIRTUAL_ENV=/opt/pism
+ENV PATH=/opt/pism/bin:$PATH
+
+# Install recent geopandas and rioxarray into the venv. Doing this inside
+# the venv (not --break-system-packages on system Python) avoids pip
+# trying to uninstall apt's numpy 1.x to make room for numpy 2.x — apt
+# packages have no pip RECORD file, so that uninstall fails. In the venv,
+# pip manages a fresh numpy 2.x without touching system packages.
 RUN <<EOF
     echo "Install geopandas and rioxarray"
     set -eux
-    python3 -m pip install --break-system-packages "geopandas>=1.1.2"
-    python3 -m pip install --break-system-packages "rioxarray>=0.21.0"
+    . /opt/pism/bin/activate
+    python3 -m pip install "geopandas>=1.1.2"
+    python3 -m pip install "rioxarray>=0.21.0"
 EOF
-  
+
 FROM pism-runtime AS pism-base
 
 RUN <<EOF
@@ -192,10 +205,8 @@ RUN <<EOF
     rm -rf /opt/petsc/share/petsc
 EOF
 
-# Create a venv for Python stuff that we cannot install using apt-get:
-RUN python3 -m venv --system-site-packages /opt/pism
-
-# Install a more recent mpi4py version
+# Install a more recent mpi4py version into the /opt/pism venv
+# (created earlier in the pism-runtime stage).
 RUN <<EOF
     echo "Install mpi4py"
     set -eux
