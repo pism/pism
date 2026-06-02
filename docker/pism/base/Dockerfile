@@ -104,6 +104,7 @@ RUN <<EOF
     make \
     pkg-config \
     python3 \
+    python3-xarray \
     python3-dev \
     python3-netcdf4 \
     python3-numpy \
@@ -191,4 +192,13 @@ RUN <<EOF
     set -eux
     . /opt/pism/bin/activate
     python3 -m pip install "mpi4py>=4.0.0"
+EOF
+
+# Install recent of geopandas and rioxarray
+RUN <<EOF
+    echo "Install geopandas and rioxarray"
+    set -eux
+    . /opt/pism/bin/activate
+    python3 -m pip install "geopandas>=1.1.2"
+    python3 -m pip install "rioxarray>=0.21.0"
 EOF
