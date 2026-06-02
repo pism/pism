@@ -14,6 +14,8 @@ Changes since v2.3.0
 - Add `pism_ismip7_writer`: an asynchronous writer that splits "spatial" output files,
   writing one variable per file as requested by ISMIP7 and automatically interpolating
   onto an ISMIP7-Greenland grid.
+- Add `pism_kitp_writer`: an asynchronous writer that allows masking spatial data using
+  geopandas geometries and adding them as a "basin" dimension.
 
 Changes since v2.2.8
 ====================
