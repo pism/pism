@@ -1,0 +1,19 @@
+name: Mirror DKRZ repos
+on:
+  schedule:
+    - cron: "0 6 * * 1"        # weekly, Mondays
+  workflow_dispatch:
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        repo: [yaxt, yac]
+    steps:
+      - name: Mirror ${{ matrix.repo }}
+        env:
+          PUSH_TOKEN: ${{ secrets.MIRROR_PUSH_TOKEN }}   # PAT with repo write on pism/${repo}-mirror
+        run: |
+          git clone --bare https://gitlab.dkrz.de/dkrz-sw/${{ matrix.repo }}.git src.git
+          cd src.git
+          git push --mirror https://x-access-token:${PUSH_TOKEN}@github.com/pism/${{ matrix.repo }}-mirror.git
