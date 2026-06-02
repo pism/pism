@@ -8,7 +8,8 @@ on:
       - '!docker/**'            # except for things in docker/
       - 'docker/pism/*'         # but include stuff in docker/pism (but not
                                 # sub-directories since '*' does not match '/')
-
+      - 'docker/pism/base/**'   # rebuild pism:dev when the base image changes
+      
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
