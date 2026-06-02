@@ -84,8 +84,14 @@ RUN <<EOF
     echo "Install geopandas and rioxarray"
     set -eux
     . /opt/pism/bin/activate
-    python3 -m pip install "geopandas>=1.1.2"
-    python3 -m pip install "rioxarray>=0.21.0"
+    # One pip call so the resolver sees the full constraint set; splitting
+    # geopandas and rioxarray into two installs has been observed to drop
+    # python-dateutil (a pandas hard dep) on resolver second-pass. The
+    # extras here are belt-and-suspenders.
+    python3 -m pip install \
+        "geopandas>=1.1.2" \
+        "rioxarray>=0.21.0" \
+        "python-dateutil>=2.8.2"
 EOF
 
 FROM pism-runtime AS pism-base
