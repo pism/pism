@@ -59,6 +59,7 @@ RUN <<EOF
     python3 \
     python3-netcdf4 \
     python3-numpy \
+    python3-pip \
     python3-pyproj \
     python3-venv \
     ""
