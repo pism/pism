@@ -81,17 +81,25 @@ ENV PATH=/opt/pism/bin:$PATH
 # packages have no pip RECORD file, so that uninstall fails. In the venv,
 # pip manages a fresh numpy 2.x without touching system packages.
 RUN <<EOF
-    echo "Install geopandas and rioxarray"
+    echo "Install Python packages into the venv"
     set -eux
     . /opt/pism/bin/activate
     # One pip call so the resolver sees the full constraint set; splitting
-    # geopandas and rioxarray into two installs has been observed to drop
-    # python-dateutil (a pandas hard dep) on resolver second-pass. The
-    # extras here are belt-and-suspenders.
+    # the installs across multiple calls has been observed to drop
+    # transitive deps (e.g. python-dateutil) on resolver second-pass.
+    #
+    # netCDF4, cftime, pyproj are also installed here so the venv has
+    # numpy-2.x-compatible builds. The corresponding apt packages
+    # (python3-netcdf4, python3-cftime, python3-pyproj) were built against
+    # apt's numpy 1.26.4 and crash with a dtype size ABI error if loaded
+    # by a Python whose numpy resolves to the venv's 2.x copy.
     python3 -m pip install \
         "geopandas>=1.1.2" \
         "rioxarray>=0.21.0" \
-        "python-dateutil>=2.8.2"
+        "python-dateutil>=2.8.2" \
+        "netCDF4>=1.7" \
+        "cftime>=1.6" \
+        "pyproj>=3.6"
 EOF
 
 FROM pism-runtime AS pism-base
