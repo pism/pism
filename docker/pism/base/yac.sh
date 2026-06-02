@@ -15,7 +15,7 @@ cd ${build_dir}
 
 yac_version=${yac_version:-3.15.0}
 git clone -b release-${yac_version} \
-    https://github.com/pism/yac-mirror.git
+    https://github.com/pism/yac-mirror.git yac
 
 cd yac
 

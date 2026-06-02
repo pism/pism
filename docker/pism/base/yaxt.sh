@@ -14,7 +14,7 @@ cd ${build_dir}
 
 yaxt_version=${yaxt_version:-0.11.5.1}
 git clone -b release-${yaxt_version} \
-    https://github.com/pism/yaxt-mirror.git
+    https://github.com/pism/yaxt-mirror.git yaxt
 
 cd yaxt
 
