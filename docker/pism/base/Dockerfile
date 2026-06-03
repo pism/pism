@@ -67,32 +67,33 @@ RUN <<EOF
     rm -rf /var/lib/apt/lists/*
 EOF
 
-# Create a venv for Python packages we cannot install via apt-get. Built
-# here in pism-runtime so the venv ships in the final runtime image; later
-# stages (pism-base) inherit it. --system-site-packages keeps apt-managed
-# python3-{netcdf4,cftime,pyproj,numpy} importable without rebuilds.
-RUN python3 -m venv --system-site-packages /opt/pism
+# Create a self-contained venv for the Python packages we ship. Built
+# here in pism-runtime so the venv lands in the final runtime image;
+# later stages (pism-base) inherit it.
+#
+# Deliberately NOT --system-site-packages: with that flag, pip's
+# resolver sees apt's python3-{netcdf4,cftime,pyproj,numpy} as
+# "already satisfied" by stale 1.x-numpy-linked builds and silently
+# refuses to upgrade them (it can't uninstall apt-managed files — no
+# RECORD). The venv then has numpy 2.x but apt's C extensions, which
+# crash with "numpy.dtype size changed" at import time. A fully
+# isolated venv avoids the resolver wandering into /usr/lib at all.
+RUN python3 -m venv /opt/pism
 ENV VIRTUAL_ENV=/opt/pism
 ENV PATH=/opt/pism/bin:$PATH
 
-# Install recent geopandas and rioxarray into the venv. Doing this inside
-# the venv (not --break-system-packages on system Python) avoids pip
-# trying to uninstall apt's numpy 1.x to make room for numpy 2.x — apt
-# packages have no pip RECORD file, so that uninstall fails. In the venv,
-# pip manages a fresh numpy 2.x without touching system packages.
+# Install the Python packages we ship into the venv. One pip call so the
+# resolver sees the full constraint set — splitting into multiple calls
+# has been observed to drop transitive deps (e.g. python-dateutil) on
+# resolver second-pass. netCDF4 / cftime / pyproj all have numpy-linked
+# C extensions; pip wheels here are built against numpy 2.x and match
+# the venv's numpy, so they import cleanly. apt's python3-{netcdf4,
+# cftime,pyproj} stay in /usr/lib/python3/dist-packages for the system
+# Python but are not visible from the venv.
 RUN <<EOF
     echo "Install Python packages into the venv"
     set -eux
     . /opt/pism/bin/activate
-    # One pip call so the resolver sees the full constraint set; splitting
-    # the installs across multiple calls has been observed to drop
-    # transitive deps (e.g. python-dateutil) on resolver second-pass.
-    #
-    # netCDF4, cftime, pyproj are also installed here so the venv has
-    # numpy-2.x-compatible builds. The corresponding apt packages
-    # (python3-netcdf4, python3-cftime, python3-pyproj) were built against
-    # apt's numpy 1.26.4 and crash with a dtype size ABI error if loaded
-    # by a Python whose numpy resolves to the venv's 2.x copy.
     python3 -m pip install \
         "geopandas>=1.1.2" \
         "rioxarray>=0.21.0" \
