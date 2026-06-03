@@ -59,48 +59,11 @@ RUN <<EOF
     python3 \
     python3-netcdf4 \
     python3-numpy \
-    python3-pip \
     python3-pyproj \
     python3-venv \
     ""
 
     rm -rf /var/lib/apt/lists/*
-EOF
-
-# Create a self-contained venv for the Python packages we ship. Built
-# here in pism-runtime so the venv lands in the final runtime image;
-# later stages (pism-base) inherit it.
-#
-# Deliberately NOT --system-site-packages: with that flag, pip's
-# resolver sees apt's python3-{netcdf4,cftime,pyproj,numpy} as
-# "already satisfied" by stale 1.x-numpy-linked builds and silently
-# refuses to upgrade them (it can't uninstall apt-managed files — no
-# RECORD). The venv then has numpy 2.x but apt's C extensions, which
-# crash with "numpy.dtype size changed" at import time. A fully
-# isolated venv avoids the resolver wandering into /usr/lib at all.
-RUN python3 -m venv /opt/pism
-ENV VIRTUAL_ENV=/opt/pism
-ENV PATH=/opt/pism/bin:$PATH
-
-# Install the Python packages we ship into the venv. One pip call so the
-# resolver sees the full constraint set — splitting into multiple calls
-# has been observed to drop transitive deps (e.g. python-dateutil) on
-# resolver second-pass. netCDF4 / cftime / pyproj all have numpy-linked
-# C extensions; pip wheels here are built against numpy 2.x and match
-# the venv's numpy, so they import cleanly. apt's python3-{netcdf4,
-# cftime,pyproj} stay in /usr/lib/python3/dist-packages for the system
-# Python but are not visible from the venv.
-RUN <<EOF
-    echo "Install Python packages into the venv"
-    set -eux
-    . /opt/pism/bin/activate
-    python3 -m pip install \
-        "geopandas>=1.1.2" \
-        "rioxarray>=0.21.0" \
-        "python-dateutil>=2.8.2" \
-        "netCDF4>=1.7" \
-        "cftime>=1.6" \
-        "pyproj>=3.6"
 EOF
 
 FROM pism-runtime AS pism-base
@@ -141,13 +104,15 @@ RUN <<EOF
     make \
     pkg-config \
     python3 \
-    python3-xarray \
     python3-dev \
+    python3-geopandas \
     python3-netcdf4 \
     python3-numpy \
     python3-pip \
+    python3-rioxarray \
     python3-setuptools \
     python3-venv \
+    python3-xarray \
     ssh \
     swig \
     ""
@@ -220,12 +185,13 @@ RUN <<EOF
     rm -rf /opt/petsc/share/petsc
 EOF
 
-# Install a more recent mpi4py version into the /opt/pism venv
-# (created earlier in the pism-runtime stage).
+# Create a venv for Python stuff that we cannot install using apt-get:
+RUN python3 -m venv --system-site-packages /opt/pism
+
+# Install a more recent mpi4py version
 RUN <<EOF
     echo "Install mpi4py"
     set -eux
     . /opt/pism/bin/activate
     python3 -m pip install "mpi4py>=4.0.0"
 EOF
-
