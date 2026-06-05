@@ -1530,6 +1530,11 @@ netcdf pism_config {
     pism_config:inverse.design.param_trunc_tauc0_type = "number";
     pism_config:inverse.design.param_trunc_tauc0_units = "Pascal";
 
+    pism_config:inverse.file = "";
+    pism_config:inverse.file_doc = "Input file name for observations";
+    pism_config:inverse.file_option = "inv_data";
+    pism_config:inverse.file_type = "string";
+
     pism_config:inverse.huber.delta = 100;
     pism_config:inverse.huber.delta_doc = "Transition threshold for the Huber misfit functional. Velocity-residual magnitudes below this value are penalized quadratically (L2-like); residuals above this value are penalized linearly (L1-like). Used only when inverse.state_func = huber. Smaller values are more aggressive at downweighting outliers but also flatten the gradient near small residuals.";
     pism_config:inverse.huber.delta_option = "inv_huber_delta";
