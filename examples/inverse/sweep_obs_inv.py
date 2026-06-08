@@ -62,7 +62,7 @@ COMMON_PHYSICS = [
     "-basal_yield_stress.mohr_coulomb.till_effective_fraction_overburden", "0.025",
     "-basal_yield_stress.mohr_coulomb.till_phi_default", "40",
     "-hydrology.model", "null",
-    "-energy.model", "none",
+    "-energy.model", "enthalpy",
     
 ]
 
@@ -81,7 +81,7 @@ BLATTER_PHYSICS = [
     "-stress_balance.blatter.coarsening_factor", "3",
     "-stress_balance.blatter.use_eta_transform", "yes",
     "-stress_balance.calving_front_stress_bc", "yes",
-    "-stress_balance.blatter.flow_law", "isothermal_glen",
+    "-stress_balance.blatter.flow_law", "gpbld",
     "-time_stepping.adaptive_ratio", "10",
     "-inv_adj_ksp_type", "gmres",
     "-inv_adj_pc_type", "jacobi",
@@ -93,7 +93,7 @@ HYBRID_PHYSICS = [
     "-stress_balance.ssa.method", "fem",
     "-stress_balance.sia.flow_law", "gpbld",
     "-stress_balance.sia.surface_gradient_method", "eta",
-    "-stress_balance.ssa.flow_law", "isothermal_glen",
+    "-stress_balance.ssa.flow_law", "gpbld",
     "-stress_balance.ssa.dirichlet_bc", "",
     "-remove_sia", "",
 ]
@@ -101,7 +101,7 @@ HYBRID_PHYSICS = [
 SSA_PHYSICS = [
     "-stress_balance.model", "ssa",
     "-stress_balance.ssa.method", "fem",
-    "-stress_balance.ssa.flow_law", "isothermal_glen",
+    "-stress_balance.ssa.flow_law", "gpbld",
     "-stress_balance.ssa.dirichlet_bc", "",
 ]
 
