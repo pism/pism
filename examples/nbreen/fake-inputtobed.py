@@ -2,18 +2,18 @@
 
 from PISMNC import PISMDataset as PNC
 import numpy as np
-import netCDF4 as NC
+import xarray as xr
 
 inname = "pismnbreen.nc"
 outname = "fakesummerevent.nc"
 
-innc = NC.Dataset(inname, 'r')
+innc = xr.open_dataset(inname, decode_times=False, decode_cf=False)
 
 nc = PNC(outname, 'w', format='NETCDF3_CLASSIC')
 
 def get(name):
     global innc
-    return np.squeeze(innc.variables[name][:])
+    return np.squeeze(innc[name].values)
 
 x = get('x')
 y = get('y')
@@ -28,7 +28,7 @@ def drainage(t):
     return np.exp(-(t - 180.0) ** 2 / 80.0) * 20.0 * C
 
 year = 2012
-nc.variables['time'].units = "days since {}-1-1".format(year)
+nc.ds["time"].attrs["units"] = "days since {}-1-1".format(year)
 
 water_density = 1000.0
 # generate space-time bogus summer runoff event; mask where bmelt > 0
@@ -38,7 +38,7 @@ for a in range(1, 366):
     nc.write("water_input_rate", inputthisday, True)
 
 # Set attributes
-nc.variables["water_input_rate"].units = "kg m^-2 year^-1"
+nc.ds["water_input_rate"].attrs["units"] = "kg m^-2 year^-1"
 
 nc.close()
 innc.close()

@@ -98,7 +98,7 @@ if __name__ == '__main__':
     design_prior_scale = PISM.OptionReal(sys, "-design_prior_scale",
                                          "initial guess for design variable to be this factor of the true value",
                                          "1",
-                                         design_prior_scale)
+                                         design_prior_scale).value()
 
     design_prior_const = PISM.OptionReal(sys, "-design_prior_const",
                                          "initial guess for design variable to be this constant",
@@ -122,7 +122,7 @@ if __name__ == '__main__':
                                      "m/year",
                                       500.0)
 
-    generate_ssa_observed = PISM.OptionBool("-generate_ssa_observed",
+    generate_observed = PISM.OptionBool("-generate_observed",
                                              "generate observed SSA velocities")
 
     is_regional = PISM.OptionBool("-regional",
@@ -189,7 +189,7 @@ if __name__ == '__main__':
             vecs.hardav_prior.set(design_prior_const)
         else:
             vecs.hardav_prior.copy_from(vecs.hardav)
-            vecs.hardav_prior.scale(hardav_prior_scale)
+            vecs.hardav_prior.scale(design_prior_scale)
 
         hardav_true = vecs.hardav
         hardav_true.metadata(0).set_name('hardav_true')
@@ -197,17 +197,17 @@ if __name__ == '__main__':
         hardav_true.metadata().set_units_without_validation("Pa s^(1/3)")
         vecs.markForWriting(hardav_true)
 
-    vel_ssa_observed = vel_ssa    # vel_ssa = ssa_run.solve() earlier
+    vel_observed = vel_ssa    # vel_ssa = ssa_run.solve() earlier
 
-    vel_ssa_observed.metadata(0).set_name("u_ssa_observed")
-    vel_ssa_observed.metadata(0).long_name("x-component of 'observed' SSA velocities")
+    vel_observed.metadata(0).set_name("u_observed")
+    vel_observed.metadata(0).long_name("x-component of 'observed' SSA velocities")
 
-    vel_ssa_observed.metadata(1).set_name("v_ssa_observed")
-    vel_ssa_observed.metadata(1).long_name("y-component of 'observed' SSA velocities")
+    vel_observed.metadata(1).set_name("v_observed")
+    vel_observed.metadata(1).long_name("y-component of 'observed' SSA velocities")
 
-    if generate_ssa_observed:
-        vecs.markForWriting(vel_ssa_observed)
-        final_velocity = vel_ssa_observed
+    if generate_observed:
+        vecs.markForWriting(vel_observed)
+        final_velocity = vel_observed
     else:
         sia_solver = PISM.SIAFD
         if is_regional:
@@ -224,7 +224,7 @@ if __name__ == '__main__':
                                                               "observed surface velocities",
                                                               stencil_width=1)
         vel_surface_observed.copy_from(vel_sia_observed)
-        vel_surface_observed.add(1., vel_ssa_observed)
+        vel_surface_observed.add(1., vel_observed)
         vecs.markForWriting(vel_surface_observed)
         final_velocity = vel_surface_observed
 

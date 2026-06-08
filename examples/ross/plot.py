@@ -6,10 +6,10 @@ from argparse import ArgumentParser
 
 # Import all necessary modules here so that if it fails, it fails early.
 try:
-    import netCDF4 as NC
-except:
-    print("netCDF4 is not installed!")
-    sys.exit(1)
+    import xarray as xr
+except ImportError:
+    print("xarray is not installed!")
+    exit(1)
 
 # Set up the option parser
 parser = ArgumentParser()
@@ -28,8 +28,8 @@ else:
     exit(1)
 
 try:
-    nc = NC.Dataset(pism_output, 'r')
-except:
+    nc = xr.open_dataset(pism_output, decode_times=False, decode_cf=False)
+except Exception:
     print("file %s not found" % pism_output)
     import sys
     exit(1)
@@ -37,7 +37,7 @@ except:
 
 def get(name):
     global nc
-    return np.squeeze(nc.variables[name][:])
+    return np.squeeze(nc[name].values)
 
 
 def floating(a):

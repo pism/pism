@@ -1475,6 +1475,22 @@ netcdf pism_config {
     pism_config:input.regrid.vars_option = "regrid_vars";
     pism_config:input.regrid.vars_type = "string";
 
+    pism_config:inverse.adjoint.method = "approximate";
+    pism_config:inverse.adjoint.method_choices = "exact,incomplete,approximate";
+    pism_config:inverse.adjoint.method_doc = "Adjoint method for Blatter inversions. 'approximate': KSPSolve on the symmetrized Newton Jacobian (fast, any preconditioner). 'incomplete': KSPSolve on a separately assembled Picard Jacobian (truly symmetric, any preconditioner). 'exact': KSPSolveTranspose on the Newton Jacobian (requires transpose-compatible preconditioner, e.g. -inv_adj_pc_type jacobi).";
+    pism_config:inverse.adjoint.method_option = "inv_adjoint_method";
+    pism_config:inverse.adjoint.method_type = "keyword";
+
+    pism_config:inverse.alternating_cycles = 0;
+    pism_config:inverse.alternating_cycles_doc = "Number of (tauc->hardav) alternation cycles in pismi.py; 0 = single-design-var run. (Parsed but not yet wired; the loop body is implemented alongside Blatter-hardav forward-problem Jacobian math.)";
+    pism_config:inverse.alternating_cycles_type = "integer";
+    pism_config:inverse.alternating_cycles_units = "count";
+
+    pism_config:inverse.alternating_misfit_tol = 0.01;
+    pism_config:inverse.alternating_misfit_tol_doc = "Relative misfit improvement below which alternating co-inversion stops early.";
+    pism_config:inverse.alternating_misfit_tol_type = "number";
+    pism_config:inverse.alternating_misfit_tol_units = "pure number";
+
     pism_config:inverse.design.cH1     = 0;
     pism_config:inverse.design.cH1_doc = "weight of derivative part of an H1 norm for inversion design variables";
     pism_config:inverse.design.cH1_option = "inv_design_cH1";
@@ -1514,6 +1530,17 @@ netcdf pism_config {
     pism_config:inverse.design.param_trunc_tauc0_type = "number";
     pism_config:inverse.design.param_trunc_tauc0_units = "Pascal";
 
+    pism_config:inverse.file = "";
+    pism_config:inverse.file_doc = "Input file name for observations";
+    pism_config:inverse.file_option = "inv_data";
+    pism_config:inverse.file_type = "string";
+
+    pism_config:inverse.huber.delta = 100;
+    pism_config:inverse.huber.delta_doc = "Transition threshold for the Huber misfit functional. Velocity-residual magnitudes below this value are penalized quadratically (L2-like); residuals above this value are penalized linearly (L1-like). Used only when inverse.state_func = huber. Smaller values are more aggressive at downweighting outliers but also flatten the gradient near small residuals.";
+    pism_config:inverse.huber.delta_option = "inv_huber_delta";
+    pism_config:inverse.huber.delta_type = "number";
+    pism_config:inverse.huber.delta_units = "m year-1";
+
     pism_config:inverse.log_ratio_scale = 10;
     pism_config:inverse.log_ratio_scale_doc = "Reference scale for log-ratio functionals";
     pism_config:inverse.log_ratio_scale_option = "inv_log_ratio_scale";
@@ -1526,58 +1553,58 @@ netcdf pism_config {
     pism_config:inverse.max_iterations_type = "integer";
     pism_config:inverse.max_iterations_units = "count";
 
-    pism_config:inverse.ssa.hardav_max = 1e10;
-    pism_config:inverse.ssa.hardav_max_doc = "Maximum allowed value of hardav for inversions with bound constraints";
-    pism_config:inverse.ssa.hardav_max_type = "number";
-    pism_config:inverse.ssa.hardav_max_units = "Pascal second^(1/3)";
-
-    pism_config:inverse.ssa.hardav_min = 0;
-    pism_config:inverse.ssa.hardav_min_doc = "Minimum allowed value of hardav for inversions with bound constraints";
-    pism_config:inverse.ssa.hardav_min_type = "number";
-    pism_config:inverse.ssa.hardav_min_units = "Pascal second^(1/3)";
-
-    pism_config:inverse.ssa.length_scale = 50e3;
-    pism_config:inverse.ssa.length_scale_doc = "typical length scale for rescaling derivative norms";
-    pism_config:inverse.ssa.length_scale_type = "number";
-    pism_config:inverse.ssa.length_scale_units = "meters";
-
-    pism_config:inverse.ssa.method = "tikhonov_lmvm";
-    pism_config:inverse.ssa.method_choices = "sd,nlcg,ign,tikhonov_lmvm,tikhonov_cg,tikhonov_blmvm,tikhonov_lcl,tikhonov_gn";
-    pism_config:inverse.ssa.method_doc = "algorithm to use for SSA inversions";
-    pism_config:inverse.ssa.method_option = "inv_method";
-    pism_config:inverse.ssa.method_type = "keyword";
-
-    pism_config:inverse.ssa.tauc_max = 5e7;
-    pism_config:inverse.ssa.tauc_max_doc = "Maximum allowed value of tauc for inversions with bound constraints";
-    pism_config:inverse.ssa.tauc_max_type = "number";
-    pism_config:inverse.ssa.tauc_max_units = "Pascal";
-
-    pism_config:inverse.ssa.tauc_min = 0;
-    pism_config:inverse.ssa.tauc_min_doc = "Minimum allowed value of tauc for inversions with bound constraints";
-    pism_config:inverse.ssa.tauc_min_type = "number";
-    pism_config:inverse.ssa.tauc_min_units = "Pascal";
-
-    pism_config:inverse.ssa.tv_exponent = 1.2;
-    pism_config:inverse.ssa.tv_exponent_doc = "Lebesgue exponent for pseudo-TV norm";
-    pism_config:inverse.ssa.tv_exponent_option = "inv_ssa_tv_exponent";
-    pism_config:inverse.ssa.tv_exponent_type = "number";
-    pism_config:inverse.ssa.tv_exponent_units = "pure number";
-
-    pism_config:inverse.ssa.velocity_eps = 0.1;
-    pism_config:inverse.ssa.velocity_eps_doc = "tiny size of ice velocities during inversion";
-    pism_config:inverse.ssa.velocity_eps_type = "number";
-    pism_config:inverse.ssa.velocity_eps_units = "meter / year";
-
-    pism_config:inverse.ssa.velocity_scale = 100;
-    pism_config:inverse.ssa.velocity_scale_doc = "typical size of ice velocities expected during inversion";
-    pism_config:inverse.ssa.velocity_scale_type = "number";
-    pism_config:inverse.ssa.velocity_scale_units = "meter / year";
-
     pism_config:inverse.state_func = "meansquare";
-    pism_config:inverse.state_func_choices = "meansquare,log_ratio,log_relative";
+    pism_config:inverse.state_func_choices = "meansquare,log_ratio,log_relative,huber";
     pism_config:inverse.state_func_doc = "functional used for inversion design variables";
     pism_config:inverse.state_func_option = "inv_state_func";
     pism_config:inverse.state_func_type = "keyword";
+
+    pism_config:inverse.stress_balance.hardav_max = 1e10;
+    pism_config:inverse.stress_balance.hardav_max_doc = "Maximum allowed value of hardav for inversions with bound constraints";
+    pism_config:inverse.stress_balance.hardav_max_type = "number";
+    pism_config:inverse.stress_balance.hardav_max_units = "Pascal second^(1/3)";
+
+    pism_config:inverse.stress_balance.hardav_min = 0;
+    pism_config:inverse.stress_balance.hardav_min_doc = "Minimum allowed value of hardav for inversions with bound constraints";
+    pism_config:inverse.stress_balance.hardav_min_type = "number";
+    pism_config:inverse.stress_balance.hardav_min_units = "Pascal second^(1/3)";
+
+    pism_config:inverse.stress_balance.length_scale = 50e3;
+    pism_config:inverse.stress_balance.length_scale_doc = "typical length scale for rescaling derivative norms";
+    pism_config:inverse.stress_balance.length_scale_type = "number";
+    pism_config:inverse.stress_balance.length_scale_units = "meters";
+
+    pism_config:inverse.stress_balance.method = "tikhonov_lmvm";
+    pism_config:inverse.stress_balance.method_choices = "sd,nlcg,ign,tikhonov_lmvm,tikhonov_cg,tikhonov_blmvm,tikhonov_lcl,tikhonov_gn";
+    pism_config:inverse.stress_balance.method_doc = "algorithm to use for stress balance inversions";
+    pism_config:inverse.stress_balance.method_option = "inv_method";
+    pism_config:inverse.stress_balance.method_type = "keyword";
+
+    pism_config:inverse.stress_balance.tauc_max = 5e7;
+    pism_config:inverse.stress_balance.tauc_max_doc = "Maximum allowed value of tauc for inversions with bound constraints";
+    pism_config:inverse.stress_balance.tauc_max_type = "number";
+    pism_config:inverse.stress_balance.tauc_max_units = "Pascal";
+
+    pism_config:inverse.stress_balance.tauc_min = 0;
+    pism_config:inverse.stress_balance.tauc_min_doc = "Minimum allowed value of tauc for inversions with bound constraints";
+    pism_config:inverse.stress_balance.tauc_min_type = "number";
+    pism_config:inverse.stress_balance.tauc_min_units = "Pascal";
+
+    pism_config:inverse.stress_balance.tv_exponent = 1.2;
+    pism_config:inverse.stress_balance.tv_exponent_doc = "Lebesgue exponent for pseudo-TV norm";
+    pism_config:inverse.stress_balance.tv_exponent_option = "inv_ssa_tv_exponent";
+    pism_config:inverse.stress_balance.tv_exponent_type = "number";
+    pism_config:inverse.stress_balance.tv_exponent_units = "pure number";
+
+    pism_config:inverse.stress_balance.velocity_eps = 0.1;
+    pism_config:inverse.stress_balance.velocity_eps_doc = "tiny size of ice velocities during inversion";
+    pism_config:inverse.stress_balance.velocity_eps_type = "number";
+    pism_config:inverse.stress_balance.velocity_eps_units = "meter / year";
+
+    pism_config:inverse.stress_balance.velocity_scale = 100;
+    pism_config:inverse.stress_balance.velocity_scale_doc = "typical size of ice velocities expected during inversion";
+    pism_config:inverse.stress_balance.velocity_scale_type = "number";
+    pism_config:inverse.stress_balance.velocity_scale_units = "meter / year";
 
     pism_config:inverse.tikhonov.adaptive = "false";
     pism_config:inverse.tikhonov.adaptive_doc = "Adaptive Tikhonov threshold";

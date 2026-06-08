@@ -265,84 +265,104 @@ def test():
         plt.show()
 
 
-def fill_variable(nc, name):
-    "Fill missing values in one variable."
+def _get_fill(da):
+    "Return _FillValue from attrs or encoding (xarray moves it after CF decoding)."
+    return da.attrs.get("_FillValue", da.encoding.get("_FillValue"))
+
+
+def _masked_view(da):
+    """Return a 2D or 3D ``numpy.ma.array`` view of ``da``, masking entries
+    equal to ``_FillValue`` (or ``missing_value`` as a fallback). Returns
+    ``None`` if neither attribute is present."""
+    fill = _get_fill(da)
+    missing = da.attrs.get("missing_value", da.encoding.get("missing_value"))
+    raw = np.asarray(da.values)
+    if fill is None and missing is None:
+        return None
+    if fill is not None:
+        mask = np.isclose(raw, fill)
+    else:
+        mask = np.isclose(raw, missing)
+    return np.ma.array(raw, mask=mask)
+
+
+def fill_variable(ds, name):
+    "Fill missing values in one variable of an xarray Dataset (in place)."
     PETSc.Sys.Print("Processing %s..." % name)
     t0 = time()
 
-    var = nc.variables[name]
+    if name not in ds:
+        PETSc.Sys.Print("Variable %s not found; skipping." % name)
+        return
+
+    da = ds[name]
+    masked = _masked_view(da)
+    if masked is None:
+        PETSc.Sys.Print("Skipping %s: no _FillValue or missing_value attribute." % name)
+        return
 
     comm = PETSc.COMM_WORLD
     rank = comm.getRank()
 
-    if var.ndim == 3:
+    raw = np.asarray(da.values)
+
+    if masked.ndim == 3:
         A = None
-        n_records = var.shape[0]
+        n_records = masked.shape[0]
         for t in range(n_records):
             PETSc.Sys.Print("Processing record %d/%d..." % (t + 1, n_records))
-            data = var[t, :, :]
-
-            filled_data, A = fill_2d_record(data, A)
+            slab = masked[t, :, :]
+            filled_data, A = fill_2d_record(slab, A)
             if rank == 0:
-                var[t, :, :] = filled_data
-
+                raw[t, :, :] = filled_data
             comm.barrier()
         PETSc.Sys.Print("Time elapsed: %5f seconds." % (time() - t0))
-    elif var.ndim == 2:
-        data = var[:, :]
-
-        filled_data, _ = fill_2d_record(data)
+    elif masked.ndim == 2:
+        filled_data, _ = fill_2d_record(masked)
         if rank == 0:
-            var[:, :] = filled_data
-
+            raw[:, :] = filled_data
         comm.barrier()
         PETSc.Sys.Print("Time elapsed: %5f seconds." % (time() - t0))
     else:
-        PETSc.Sys.Print("Skipping the %dD variable %s." % (var.ndim, name))
+        PETSc.Sys.Print("Skipping the %dD variable %s." % (masked.ndim, name))
         return
 
-    # Remove the _FillValue attribute:
-    try:
-        delattr(var, '_FillValue')
-    except:
-        pass
+    if rank == 0:
+        # Strip _FillValue / missing_value from both attrs and encoding so
+        # they are not re-applied when the file is written out. Set
+        # encoding["_FillValue"] = None explicitly so xarray does not
+        # re-inject a default NaN fill value on serialization.
+        new_attrs = dict(da.attrs)
+        new_attrs.pop('_FillValue', None)
+        new_attrs.pop('missing_value', None)
+        new_encoding = dict(da.encoding)
+        new_encoding['_FillValue'] = None
+        new_encoding.pop('missing_value', None)
+        new = xr.DataArray(raw, dims=da.dims, coords=da.coords,
+                           attrs=new_attrs, name=da.name)
+        new.encoding = new_encoding
+        ds[name] = new
 
-    # Remove the missing_value attribute:
-    try:
-        delattr(var, 'missing_value')
-    except:
-        pass
 
-
-def add_history(nc):
-    "Update the history attribute in a NetCDF file nc."
-    comm = PETSc.COMM_WORLD
-    rank = comm.getRank()
-
-    if rank != 0:
+def add_history(ds):
+    "Update the history attribute on an xarray Dataset (rank 0 only)."
+    if PETSc.COMM_WORLD.getRank() != 0:
         return
-
-    # add history global attribute (after checking if present)
-    historysep = ' '
-    historystr = asctime() + ': ' + historysep.join(sys.argv) + '\n'
-    if 'history' in nc.ncattrs():
-        nc.history = historystr + nc.history  # prepend to history string
+    historystr = asctime() + ': ' + ' '.join(sys.argv) + '\n'
+    if 'history' in ds.attrs:
+        ds.attrs['history'] = historystr + ds.attrs['history']
     else:
-        nc.history = historystr
+        ds.attrs['history'] = historystr
 
 
 if __name__ == "__main__":
     from argparse import ArgumentParser
-    import os
-    import os.path
-    import tempfile
-    import shutil
     from time import time, asctime
 
     try:
-        from netCDF4 import Dataset as NC
-    except:
-        PETSc.Sys.Print("netCDF4 is not installed!")
+        import xarray as xr
+    except ImportError:
+        PETSc.Sys.Print("xarray is not installed!")
         sys.exit(1)
 
     parser = ArgumentParser()
@@ -360,73 +380,50 @@ if __name__ == "__main__":
     input_filename = options.INPUT[0]
     output_filename = options.OUTPUT[0]
 
-    if options.all:
-        nc = NC(input_filename)
-        variables = list(nc.variables.keys())
-        nc.close()
-    else:
-        try:
-            variables = (options.variables).split(',')
-        except:
-            PETSc.Sys.Print("Please specify variables using the -v option.")
-            sys.exit(-1)
-
-    # Done processing command-line options.
-
     comm = PETSc.COMM_WORLD
     rank = comm.getRank()
 
     t0 = time()
 
-    PETSc.Sys.Print("Filling missing values in %s and saving results to %s..." % (input_filename,
-                                                                                  output_filename))
-    if rank == 0:
-        try:
-            PETSc.Sys.Print("Creating a temporary file...")
-            # find the name of the directory with the output file:
-            dirname = os.path.dirname(os.path.abspath(output_filename))
-            (handle, tmp_filename) = tempfile.mkstemp(prefix="fill_missing_",
-                                                      suffix=".nc",
-                                                      dir=dirname)
-
-            os.close(handle)  # mkstemp returns a file handle (which we don't need)
-        except IOError:
-            PETSc.Sys.Print("ERROR: Can't create %s, Exiting..." % tmp_filename)
-
-        try:
-            PETSc.Sys.Print("Copying input file %s to %s..." % (input_filename,
-                                                                tmp_filename))
-            shutil.copy(input_filename, tmp_filename)
-        except IOError:
-            PETSc.Sys.Print("ERROR: Can't copy %s, Exiting..." % input_filename)
+    PETSc.Sys.Print("Filling missing values in %s and saving results to %s..."
+                    % (input_filename, output_filename))
 
     try:
-        if rank == 0:
-            nc = NC(tmp_filename, 'a')
-        else:
-            nc = NC(input_filename, 'r')
+        # decode_cf=False keeps _FillValue/missing_value as raw attrs and the
+        # data unmasked, so we can build our own masked view per variable.
+        ds = xr.open_dataset(input_filename, decode_times=False,
+                             decode_cf=False).load()
+        ds.close()
     except Exception as message:
-        PETSc.Sys.Print(message)
+        PETSc.Sys.Print(str(message))
         PETSc.Sys.Print("Note: %s was not modified." % output_filename)
         sys.exit(-1)
 
-    add_history(nc)
+    if options.all:
+        variables = list(ds.data_vars)
+    else:
+        if not options.variables:
+            PETSc.Sys.Print("Please specify variables using the -v option.")
+            sys.exit(-1)
+        variables = options.variables.split(',')
+
+    add_history(ds)
 
     for name in variables:
         try:
-            fill_variable(nc, name)
+            fill_variable(ds, name)
         except Exception as message:
-            PETSc.Sys.Print("ERROR:", message)
+            PETSc.Sys.Print("ERROR: %s" % message)
             PETSc.Sys.Print("Note: %s was not modified." % output_filename)
             sys.exit(-1)
-    nc.close()
 
-    try:
-        if rank == 0:
-            shutil.move(tmp_filename, output_filename)
-    except:
-        PETSc.Sys.Print("Error moving %s to %s. Exiting..." % (tmp_filename,
-                                                               output_filename))
-        sys.exit(-1)
+    if rank == 0:
+        try:
+            ds.to_netcdf(output_filename, mode="w")
+        except Exception as message:
+            PETSc.Sys.Print("Error writing %s: %s. Exiting..."
+                            % (output_filename, message))
+            sys.exit(-1)
+    comm.barrier()
 
     PETSc.Sys.Print("Total time elapsed: %5f seconds." % (time() - t0))

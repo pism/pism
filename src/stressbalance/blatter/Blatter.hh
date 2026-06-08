@@ -148,12 +148,19 @@ protected:
 
   void compute_jacobian(DMDALocalInfo *info, const Vector2d ***x, Mat A, Mat J);
 
+  //! Assemble the Picard (incomplete) Jacobian by temporarily setting
+  //! m_use_picard and calling SNESComputeJacobian. The result is symmetric.
+  void compute_picard_jacobian(Mat J);
+
   void jacobian_dirichlet(const DMDALocalInfo &info, Parameters **P, Mat J);
 
   virtual void jacobian_f(const fem::Q1Element3 &element,
                           const Vector2d *u_nodal,
                           const double *B_nodal,
                           double K[2 * fem::q13d::n_chi][2 * fem::q13d::n_chi]);
+
+  //! When true, jacobian_f drops viscosity derivative terms (Picard mode).
+  bool m_use_picard;
 
   virtual void jacobian_basal(const fem::Q1Element3Face &face,
                               const double *tauc_nodal,

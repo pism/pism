@@ -6,12 +6,11 @@
 # usage:  if UAFX_G_D3_C?_??.nc are result NetCDF files then do
 # $ slr_show.py -m UAFX
 
-# try different netCDF modules
 try:
-    from netCDF4 import Dataset as CDF
-except:
-    print("netCDF4 is not installed!")
-    sys.exit(1)
+    import xarray as xr
+except ImportError:
+    print("xarray is not installed!")
+    exit(1)
 
 from numpy import zeros
 import pylab as plt
@@ -57,13 +56,13 @@ dashes = ['-', '--', '-.', '-', '--', '-.', '-', '--', '-.', '-']
 print("control run name is " + NCNAMES[0])
 
 n = len(NCNAMES)
-nc0 = CDF(NCNAMES[0], 'r')
-try:
-    t_units = nc0.variables['tseries'].units
-    t = nc0.variables['tseries'][t_a:t_e]
-except:
-    t_units = nc0.variables['time'].units
-    t = nc0.variables['time'][t_a:t_e]
+nc0 = xr.open_dataset(NCNAMES[0], decode_times=False, decode_cf=False)
+if 'tseries' in nc0.variables:
+    t_units = nc0['tseries'].attrs.get('units', '')
+    t = nc0['tseries'].values[t_a:t_e]
+else:
+    t_units = nc0['time'].attrs.get('units', '')
+    t = nc0['time'].values[t_a:t_e]
 nc0.close()
 
 # convert to years if t is in seconds
@@ -74,8 +73,8 @@ ice_volume_glacierized = zeros((len(t), n))
 ivolshift = zeros((len(t), n - 1))
 
 for j in range(n):
-    nc = CDF(NCNAMES[j], 'r')
-    ice_volume_glacierized[:, j] = nc.variables['ice_volume_glacierized'][t_a:t_e]
+    nc = xr.open_dataset(NCNAMES[j], decode_times=False, decode_cf=False)
+    ice_volume_glacierized[:, j] = nc['ice_volume_glacierized'].values[t_a:t_e]
     nc.close()
 
 for j in range(n - 1):

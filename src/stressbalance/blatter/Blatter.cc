@@ -327,6 +327,8 @@ Blatter::Blatter(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor
 
   m_eta_transform = m_config->get_flag("stress_balance.blatter.use_eta_transform");
 
+  m_use_picard = false;
+
   m_glen_exponent = m_flow_law->exponent();
 
   double E = m_config->get_number("stress_balance.blatter.enhancement_factor");

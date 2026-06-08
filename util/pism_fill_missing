@@ -168,18 +168,62 @@ def laplace(data, mask, eps1, eps2, initial_guess='mean', max_iter=10000):
     return
 
 
+def _missing_mask(data, da):
+    """Compute a boolean missing-value mask for ``data`` based on ``da``'s
+    CF attributes (``valid_range``, ``valid_min``/``valid_max``, ``_FillValue``,
+    or ``missing_value``).
+
+    Returns ``(mask, label)`` where ``label`` is a human-readable description
+    of which attribute drove the masking, or ``(None, None)`` if no
+    fill/valid attribute is present.
+    """
+    # _FillValue can live either in attrs (decode_cf=False) or in encoding
+    # (xarray's default after CF decoding).
+    attrs = dict(da.attrs)
+    fill = attrs.get("_FillValue", da.encoding.get("_FillValue"))
+
+    if "valid_range" in attrs:
+        rng = attrs["valid_range"]
+        mask = (data >= rng[0]) & (data <= rng[1])
+        return mask, "valid_range = %s" % (rng,)
+
+    if "valid_min" in attrs and "valid_max" in attrs:
+        vmin, vmax = attrs["valid_min"], attrs["valid_max"]
+        mask = (data < vmin) | (data > vmax)
+        return mask, "valid_min = %f, valid_max = %f" % (vmin, vmax)
+
+    if "valid_min" in attrs:
+        vmin = attrs["valid_min"]
+        return data < vmin, "valid_min = %f" % vmin
+
+    if "valid_max" in attrs:
+        vmax = attrs["valid_max"]
+        return data > vmax, "valid_max = %f" % vmax
+
+    if fill is not None:
+        if fill <= 0:
+            mask = data <= fill + 2 * finfo(float).eps
+        else:
+            mask = data >= fill - 2 * finfo(float).eps
+        return mask, "_FillValue = %f" % fill
+
+    if "missing_value" in attrs:
+        missing = attrs["missing_value"]
+        mask = abs(data - missing) < 2 * finfo(float).eps
+        return mask, "missing_value = %f (deprecated)" % missing
+
+    return None, None
+
+
 if __name__ == "__main__":
     from optparse import OptionParser
     from sys import argv, exit
-    from shutil import copy, move
-    from tempfile import mkstemp
-    from os import close
     from time import time, asctime
     try:
-        from netCDF4 import Dataset as NC
-    except:
-        print("netCDF4 is not installed!")
-        sys.exit(1)
+        import xarray as xr
+    except ImportError:
+        print("xarray is not installed!")
+        exit(1)
 
     parser = OptionParser()
 
@@ -200,19 +244,19 @@ if __name__ == "__main__":
 
     (options, args) = parser.parse_args()
 
-    if options.input_filename == "":
+    if not options.input_filename:
         print("""Please specify the input file name
 (using the -f or --file command line option).""")
         exit(-1)
     input_filename = options.input_filename
 
-    if options.variables == "":
+    if not options.variables:
         print("""Please specify the list of variables to process
 (using the -v or --variables command line option).""")
         exit(-1)
     variables = (options.variables).split(',')
 
-    if options.output_filename == "":
+    if not options.output_filename:
         print("""Please specify the output file name
 (using the -o or --out_file command line option).""")
         exit(-1)
@@ -222,179 +266,92 @@ if __name__ == "__main__":
 
     # Done processing command-line options.
 
-    print("Creating the temporary file...")
+    print("Loading %s ..." % input_filename)
     try:
-        (handle, tmp_filename) = mkstemp()
-        close(handle)  # mkstemp returns a file handle (which we don't need)
-        copy(input_filename, tmp_filename)
-    except IOError:
-        print("ERROR: Can't create %s, Exiting..." % tmp_filename)
-
-    try:
-        nc = NC(tmp_filename, 'a')
+        # decode_cf=False keeps _FillValue / missing_value as raw attrs and
+        # leaves the data un-masked, so we can apply our own missing-value
+        # logic below.
+        ds = xr.open_dataset(input_filename, decode_times=False,
+                             decode_cf=False).load()
+        ds.close()
     except Exception as message:
         print(message)
         print("Note: %s was not modified." % output_filename)
         exit(-1)
 
     # add history global attribute (after checking if present)
-    historysep = ' '
-    historystr = asctime() + ': ' + historysep.join(argv) + '\n'
-    if 'history' in nc.ncattrs():
-        nc.history = historystr + nc.history  # prepend to history string
+    historystr = asctime() + ': ' + ' '.join(argv) + '\n'
+    if 'history' in ds.attrs:
+        ds.attrs['history'] = historystr + ds.attrs['history']
     else:
-        nc.history = historystr
+        ds.attrs['history'] = historystr
 
     t_zero = time()
     for name in variables:
         print("Processing %s..." % name)
         try:
-            var = nc.variables[name]
+            if name not in ds:
+                print("Variable %s not found; skipping." % name)
+                continue
 
-            attributes = ["valid_range", "valid_min", "valid_max",
-                          "_FillValue", "missing_value"]
-            adict = {}
-            print("Reading attributes...")
-            for attribute in attributes:
-                print("* %15s -- " % attribute, end=' ')
-                if attribute in var.ncattrs():
-                    adict[attribute] = getattr(var, attribute)
-                    print("found")
-                else:
-                    print("not found")
+            da = ds[name]
+            data = asarray(squeeze(da.values))
 
-            if (var.ndim == 3):
-                nt = var.shape[0]
-                for t in range(0, nt):
+            if data.ndim == 3:
+                nt = data.shape[0]
+                for t in range(nt):
                     print("\nInterpolating time step %i of %i\n" % (t, nt))
-
-                    data = asarray(squeeze(var[t, :, :].data))
-
-                    if "valid_range" in adict:
-                        range = adict["valid_range"]
-                        mask = ((data >= range[0]) & (data <= range[1]))
-                        print("Using the valid_range attribute; range = ", range)
-
-                    elif "valid_min" in adict and "valid_max" in adict:
-                        valid_min = adict["valid_min"]
-                        valid_max = adict["valid_max"]
-                        mask = ((data < valid_min) | (data > valid_max))
-                        print("""Using valid_min and valid_max attributes.
-        valid_min = %10f, valid_max = %10f.""" % (valid_min, valid_max))
-
-                    elif "valid_min" in adict:
-                        valid_min = adict["valid_min"]
-                        mask = data < valid_min
-                        print("Using the valid_min attribute; valid_min = %10f" % valid_min)
-
-                    elif "valid_max" in adict:
-                        valid_max = adict["valid_max"]
-                        mask = data > valid_max
-                        print("Using the valid_max attribute; valid_max = %10f" % valid_max)
-
-                    elif "_FillValue" in adict:
-                        fill_value = adict["_FillValue"]
-                        if fill_value <= 0:
-                            mask = data <= fill_value + 2 * finfo(float).eps
-                        else:
-                            mask = data >= fill_value - 2 * finfo(float).eps
-                        print("Using the _FillValue attribute; _FillValue = %10f" % fill_value)
-
-                    elif "missing_value" in adict:
-                        missing = adict["missing_value"]
-                        mask = abs(data - missing) < 2 * finfo(float).eps
-                        print("""Using the missing_value attribute; missing_value = %10f
-        Warning: this attribute is deprecated by the NUG.""" % missing)
-
-                    else:
+                    slab = asarray(data[t, :, :])
+                    mask, label = _missing_mask(slab, da)
+                    if mask is None:
                         print("No missing values found. Skipping this variable...")
                         continue
-
+                    print("Using %s" % label)
                     count = int(sum(mask))
                     if count == 0:
                         print("No missing values found. Skipping this variable...")
                         continue
                     print("Filling in %5d missing values..." % count)
                     t0 = time()
-                    laplace(data, mask, -1, eps, initial_guess=options.initial_guess)
-                    var[t, :, :] = data
-
-                    # now REMOVE missing_value and _FillValue attributes
-                    try:
-                        delattr(var, '_FillValue')
-                    except:
-                        pass
-                    try:
-                        delattr(var, 'missing_value')
-                    except:
-                        pass
+                    laplace(slab, mask, -1, eps,
+                            initial_guess=options.initial_guess)
+                    data[t, :, :] = slab
                     print("This took %5f seconds." % (time() - t0))
 
-            elif (var.ndim == 2):
-
-                data = asarray(squeeze(var[:]))
-
-                if "valid_range" in adict:
-                    range = adict["valid_range"]
-                    mask = ((data >= range[0]) & (data <= range[1]))
-                    print("Using the valid_range attribute; range = ", range)
-
-                elif "valid_min" in adict and "valid_max" in adict:
-                    valid_min = adict["valid_min"]
-                    valid_max = adict["valid_max"]
-                    mask = ((data < valid_min) | (data > valid_max))
-                    print("""Using valid_min and valid_max attributes.
-    valid_min = %10f, valid_max = %10f.""" % (valid_min, valid_max))
-
-                elif "valid_min" in adict:
-                    valid_min = adict["valid_min"]
-                    mask = data < valid_min
-                    print("Using the valid_min attribute; valid_min = %10f" % valid_min)
-
-                elif "valid_max" in adict:
-                    valid_max = adict["valid_max"]
-                    mask = data > valid_max
-                    print("Using the valid_max attribute; valid_max = %10f" % valid_max)
-
-                elif "_FillValue" in adict:
-                    fill_value = adict["_FillValue"]
-                    if fill_value <= 0:
-                        mask = data <= fill_value + 2 * finfo(float).eps
-                    else:
-                        mask = data >= fill_value - 2 * finfo(float).eps
-                    print("Using the _FillValue attribute; _FillValue = %10f" % fill_value)
-
-                elif "missing_value" in adict:
-                    missing = adict["missing_value"]
-                    mask = abs(data - missing) < 2 * finfo(float).eps
-                    print("""Using the missing_value attribute; missing_value = %10f
-    Warning: this attribute is deprecated by the NUG.""" % missing)
-
-                else:
+            elif data.ndim == 2:
+                mask, label = _missing_mask(data, da)
+                if mask is None:
                     print("No missing values found. Skipping this variable...")
                     continue
-
+                print("Using %s" % label)
                 count = int(sum(mask))
                 if count == 0:
                     print("No missing values found. Skipping this variable...")
                     continue
                 print("Filling in %5d missing values..." % count)
                 t0 = time()
-                laplace(data, mask, -1, eps, initial_guess=options.initial_guess)
-                var[:] = data
-
-                # now REMOVE missing_value and _FillValue attributes
-                try:
-                    delattr(var, '_FillValue')
-                except:
-                    pass
-                try:
-                    delattr(var, 'missing_value')
-                except:
-                    pass
+                laplace(data, mask, -1, eps,
+                        initial_guess=options.initial_guess)
                 print("This took %5f seconds." % (time() - t0))
             else:
                 print('wrong shape')
+                continue
+
+            # Write the modified data back into the dataset, preserving the
+            # original dims/attrs/encoding. Set encoding["_FillValue"] = None
+            # explicitly so xarray does NOT re-inject a default NaN fill on
+            # serialization (the whole point is that missing values are gone).
+            new_attrs = dict(da.attrs)
+            new_attrs.pop('_FillValue', None)
+            new_attrs.pop('missing_value', None)
+            new_encoding = dict(da.encoding)
+            new_encoding['_FillValue'] = None
+            new_encoding.pop('missing_value', None)
+            new = xr.DataArray(data.reshape(da.shape),
+                               dims=da.dims, coords=da.coords,
+                               attrs=new_attrs, name=da.name)
+            new.encoding = new_encoding
+            ds[name] = new
 
         except Exception as message:
             print("ERROR:", message)
@@ -402,10 +359,9 @@ if __name__ == "__main__":
             exit(-1)
 
     print("Processing all the variables took %5f seconds." % (time() - t_zero))
-    nc.close()
+
     try:
-        move(tmp_filename, output_filename)
-    except:
-        print("Error moving %s to %s. Exiting..." % (tmp_filename,
-                                                     output_filename))
+        ds.to_netcdf(output_filename, mode="w")
+    except Exception as message:
+        print("Error writing %s: %s. Exiting..." % (output_filename, message))
         exit(-1)

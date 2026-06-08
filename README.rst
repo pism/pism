@@ -34,16 +34,15 @@ Download and Install
 --------------------
 
 See the section `Installing PISM <pism-installation_>`_ on ``pism.io``.
-
-You can install PISM prerequisites using conda::
-
+You can install PISM requisites using conda::
+  
   git clone https://github.com/pism/pism.git
   cd pism
   conda env create -f environment.yml
   conda activate pism
 
 Then build PISM::
-
+  
   CMAKE_BUILD_PARALLEL_LEVEL=8 python -m pip install --no-build-isolation -v .
 
 
@@ -67,8 +66,8 @@ Want to contribute? Great! See `Contributing to PISM <pism-contributing_>`_.
 .. _doi: https://doi.org/10.5281/zenodo.1199019
 .. |gpl| image:: https://img.shields.io/badge/License-GPL-green.svg
 .. _gpl: https://opensource.org/licenses/GPL-3.0
-.. |cipism| image:: https://circleci.com/gh/pism/pism/tree/dev.svg?style=svg
-.. _cipism: https://circleci.com/gh/pism/pism/tree/dev
+.. |cipism| image:: https://circleci.com/gh/pism/pism/tree/main.svg?style=svg
+.. _cipism: https://circleci.com/gh/pism/pism/tree/main
 .. _uaf: http://www.uaf.edu/
 .. _pik: http://www.pik-potsdam.de/
 .. _pism-manual: http://www.pism.io/docs

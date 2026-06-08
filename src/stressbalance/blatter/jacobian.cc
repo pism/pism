@@ -105,10 +105,19 @@ void Blatter::jacobian_f(const fem::Q1Element3 &element,
           F_vu = 2.0 * psi.dy * phi.dx + psi.dx * phi.dy,
           F_vv = 4.0 * psi.dy * phi.dy + psi.dx * phi.dx + psi.dz * phi.dz;
 
-        K[t * 2 + 0][s * 2 + 0] += W * (eta * F_uu + eta_u * F_u);
-        K[t * 2 + 0][s * 2 + 1] += W * (eta * F_uv + eta_v * F_u);
-        K[t * 2 + 1][s * 2 + 0] += W * (eta * F_vu + eta_u * F_v);
-        K[t * 2 + 1][s * 2 + 1] += W * (eta * F_vv + eta_v * F_v);
+        if (m_use_picard) {
+          // Picard: drop viscosity derivative terms (symmetric)
+          K[t * 2 + 0][s * 2 + 0] += W * eta * F_uu;
+          K[t * 2 + 0][s * 2 + 1] += W * eta * F_uv;
+          K[t * 2 + 1][s * 2 + 0] += W * eta * F_vu;
+          K[t * 2 + 1][s * 2 + 1] += W * eta * F_vv;
+        } else {
+          // Newton: includes viscosity derivative terms
+          K[t * 2 + 0][s * 2 + 0] += W * (eta * F_uu + eta_u * F_u);
+          K[t * 2 + 0][s * 2 + 1] += W * (eta * F_uv + eta_v * F_u);
+          K[t * 2 + 1][s * 2 + 0] += W * (eta * F_vu + eta_u * F_v);
+          K[t * 2 + 1][s * 2 + 1] += W * (eta * F_vv + eta_v * F_v);
+        }
       }
     }
   } // end of the loop over q
@@ -350,6 +359,48 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
     ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY); PISM_CHK(ierr, "MatAssemblyBegin");
     ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY); PISM_CHK(ierr, "MatAssemblyEnd");
   }
+}
+
+/*!
+ * Assemble the Picard (incomplete) Jacobian for adjoint solves.
+ *
+ * Temporarily sets m_use_picard=true so that jacobian_f drops the viscosity
+ * derivative terms, producing a truly symmetric element matrix. Uses manual
+ * global-to-local scatter (not SNESComputeJacobian) to avoid MG hierarchy
+ * issues.
+ */
+void Blatter::compute_picard_jacobian(Mat J) {
+  PetscErrorCode ierr;
+
+  DMDALocalInfo info;
+  ierr = DMDAGetLocalInfo(m_da, &info);
+  PISM_CHK(ierr, "DMDAGetLocalInfo");
+
+  Vec x_local;
+  ierr = DMGetLocalVector(m_da, &x_local);
+  PISM_CHK(ierr, "DMGetLocalVector");
+
+  ierr = DMGlobalToLocalBegin(m_da, m_x, INSERT_VALUES, x_local);
+  PISM_CHK(ierr, "DMGlobalToLocalBegin");
+  ierr = DMGlobalToLocalEnd(m_da, m_x, INSERT_VALUES, x_local);
+  PISM_CHK(ierr, "DMGlobalToLocalEnd");
+
+  const Vector2d ***X = nullptr;
+  ierr = DMDAVecGetArrayRead(m_da, x_local, &X);
+  PISM_CHK(ierr, "DMDAVecGetArrayRead");
+
+  bool was_picard = m_use_picard;
+  m_use_picard = true;
+
+  compute_jacobian(&info, X, J, J);
+
+  m_use_picard = was_picard;
+
+  ierr = DMDAVecRestoreArrayRead(m_da, x_local, &X);
+  PISM_CHK(ierr, "DMDAVecRestoreArrayRead");
+
+  ierr = DMRestoreLocalVector(m_da, &x_local);
+  PISM_CHK(ierr, "DMRestoreLocalVector");
 }
 
 PetscErrorCode Blatter::jacobian_callback(DMDALocalInfo *info,

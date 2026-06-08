@@ -8,9 +8,9 @@ import math
 #from numpy import *
 import numpy as np
 try:
-    from netCDF4 import Dataset as NC
-except:
-    print("netCDF4 is not installed!")
+    import xarray as xr
+except ImportError:
+    print("xarray is not installed!")
     sys.exit(1)
 
 
@@ -126,12 +126,7 @@ land_ice_area_fraction_retreat = np.zeros_like(thk)
 land_ice_area_fraction_retreat[thk > 0] = 1
 land_ice_area_fraction_retreat[topg > 0] = 1
 
-##### define dimensions in NetCDF file #####
-ncfile = NC(WRIT_FILE, 'w', format='NETCDF3_CLASSIC')
-xdim = ncfile.createDimension('x', nx)
-ydim = ncfile.createDimension('y', ny)
-
-##### define variables, set attributes, write data #####
+##### build the dataset #####
 # format: ['units', 'long_name', 'standard_name', '_FillValue', array]
 
 vars = {'y':   	['m',
@@ -171,18 +166,22 @@ vars = {'y':   	['m',
                                             land_ice_area_fraction_retreat]
         }
 
-for name in list(vars.keys()):
-    [_, _, _, fill_value, data] = vars[name]
-    if name in ['x', 'y']:
-        var = ncfile.createVariable(name, 'f4', (name,))
+ds = xr.Dataset()
+encoding = {}
+for name, (units, long_name, std_name, fill_value, data) in vars.items():
+    attrs = {}
+    if units:     attrs["units"] = units
+    if long_name: attrs["long_name"] = long_name
+    if std_name:  attrs["standard_name"] = std_name
+    if name in ("x", "y"):
+        ds = ds.assign_coords({name: (name, np.asarray(data, dtype="f4"), attrs)})
     else:
-        var = ncfile.createVariable(name, 'f4', ('y', 'x'), fill_value=fill_value)
-    for each in zip(['units', 'long_name', 'standard_name'], vars[name]):
-        if each[1]:
-            setattr(var, each[0], each[1])
-    var[:] = data
+        ds[name] = xr.DataArray(np.asarray(data, dtype="f4"),
+                                dims=("y", "x"), attrs=attrs)
+        if fill_value is not None:
+            encoding[name] = {"_FillValue": np.float32(fill_value)}
 
-# finish up
-ncfile.close()
+ds.to_netcdf(WRIT_FILE, mode="w", format="NETCDF3_CLASSIC",
+             encoding=encoding)
 print("NetCDF file ", WRIT_FILE, " created")
 print('')

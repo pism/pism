@@ -57,11 +57,11 @@ if __name__ == "__main__":
     use_tauc_prior = PISM.OptionBool("-inv_use_tauc_prior",
                                      "Use tauc_prior from inverse data file as initial guess.")
 
-    ssarun = PISM.invert.ssa.SSAForwardRunFromInputFile(input_filename, inv_data_filename, 'tauc')
-    ssarun.setup()
+    run = PISM.invert.ssa.SSAForwardRunFromInputFile(input_filename, inv_data_filename, 'tauc')
+    run.setup()
 
-    vecs = ssarun.modeldata.vecs
-    grid = ssarun.grid
+    vecs = run.modeldata.vecs
+    grid = run.grid
 
     # Determine the prior guess for tauc. This can be one of
     # a) tauc from the input file (default)
@@ -84,17 +84,24 @@ if __name__ == "__main__":
 
     # Convert tauc_prior -> zeta_prior
     zeta = PISM.Scalar2(grid, "zeta")
-    ssarun.designVariableParameterization().convertFromDesignVariable(tauc_prior, zeta)
-    ssarun.ssa.linearize_at(zeta)
+    run.designVariableParameterization().convertFromDesignVariable(tauc_prior, zeta)
+    run.solver.linearize_at(zeta)
 
     vel_ssa_observed = None
-    vel_ssa_observed = PISM.model.create2dVelocityVec(grid, '_ssa_observed', stencil_width=2)
-    if PISM.util.fileHasVariable(inv_data_filename, "u_ssa_observed"):
+    vel_ssa_observed = PISM.model.create2dVelocityVec(grid, '_observed', stencil_width=2)
+    if PISM.util.fileHasVariable(inv_data_filename, "u_observed"):
         vel_ssa_observed.regrid(inv_data_filename, True)
+    elif PISM.util.fileHasVariable(inv_data_filename, "u_ssa_observed"):
+        vel_ssa_observed.metadata(0).set_name("u_ssa_observed")
+        vel_ssa_observed.metadata(1).set_name("v_ssa_observed")
+        vel_ssa_observed.regrid(inv_data_filename, True)
+        vel_ssa_observed.metadata(0).set_name("u_observed")
+        vel_ssa_observed.metadata(1).set_name("v_observed")
     else:
         if not PISM.util.fileHasVariable(inv_data_filename, "u_surface_observed"):
             PISM.verbPrintf(
-                1, context.com, "Neither u/v_ssa_observed nor u/v_surface_observed is available in %s.\nAt least one must be specified.\n" % inv_data_filename)
+                1, context.com, "No observed velocities found in %s.\n"
+                "Expected u/v_observed, u/v_ssa_observed, or u/v_surface_observed.\n" % inv_data_filename)
             exit(1)
         vel_surface_observed = PISM.model.create2dVelocityVec(grid, '_surface_observed', stencil_width=2)
         vel_surface_observed.regrid(inv_data_filename, True)
@@ -113,10 +120,10 @@ if __name__ == "__main__":
         vel_ssa_observed.copy_from(vel_surface_observed)
         vel_ssa_observed.add(-1, vel_sia_observed)
 
-    (designFunctional, stateFunctional) = PISM.invert.ssa.createTikhonovFunctionals(ssarun)
+    (designFunctional, stateFunctional) = PISM.invert.ssa.createTikhonovFunctionals(run)
     eta = config.get_number("inverse.tikhonov.penalty_weight")
 
-    solver_gn = PISM.IP_SSATaucTikhonovGNSolver(ssarun.ssa, zeta, vel_ssa_observed, eta, designFunctional, stateFunctional)
+    solver_gn = PISM.IP_SSATaucTikhonovGNSolver(run.solver, zeta, vel_ssa_observed, eta, designFunctional, stateFunctional)
 
     seed = PISM.OptionInteger("-inv_seed", "random generator seed", 0)
     if seed.is_set():

@@ -16,6 +16,9 @@ requires-python = ">=3.9"
 dependencies = ["petsc4py", "mpi4py", "numpy"]
 dynamic = ["version"]
 
+[project.scripts]
+pismi = "PISM.pismi:main"
+
 [project.urls]
 Homepage = "https://www.pism.io"
 

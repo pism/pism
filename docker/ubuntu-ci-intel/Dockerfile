@@ -71,6 +71,7 @@ RUN <<EOF
     python3-scipy \
     python3-setuptools \
     python3-venv \
+    python3-xarray \
     ssh \
     swig \
     ""

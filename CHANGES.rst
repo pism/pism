@@ -14,10 +14,59 @@ Changes since v2.3.0
 - Add `pism_ismip7_writer`: an asynchronous writer that splits "spatial" output files,
   writing one variable per file as requested by ISMIP7 and automatically interpolating
   onto an ISMIP7-Greenland grid.
-- Add `pism_kitp_writer`: an asynchronous writer that allows masking spatial data using
-  geopandas geometries and adding them as a "basin" dimension.
+- Add a top-level `pyproject.toml` so PISM can be built and installed via
+  `pip install --no-build-isolation .` using scikit-build-core. This installs the
+  `pism` CLI, `libpism`, and the `PISM` and `siple` Python packages into the active
+  Python environment. The standalone `cmake -B build && cmake --install build` flow
+  continues to work unchanged. `petsc4py`, `mpi4py`, NetCDF, FFTW, GSL, and PETSc must
+  be available on the host before invoking pip; build isolation is disabled because
+  `petsc4py` cannot be built from sdist without `PETSC_DIR`/`PETSC_ARCH` set.
+- Fix a macOS import failure in the Python bindings ("initialization of `_cpp` did
+  not return an extension module"). The SWIG extension is now linked against
+  CMake's `Python3::Module` target instead of `${Python3_LIBRARIES}`, so it no longer
+  links `libpython` directly. On macOS, both the interpreter and `libpython` contain
+  `_PyRuntime`; under two-level namespaces, an extension bound to `libpython`
+  resolved to the uninitialized copy and failed at import time.
+- Scope the Clang-only `-fstandalone-debug` flag to C++ compilations only, so a
+  mixed C/C++ toolchain (e.g., conda's GCC for C with Clang for C++) no longer
+  fails to build C sources such as `calcalcs.c`.
+- Caveat: pip's wheel-build path runs cmake --install into the staging area and
+  then throws the staging away. The pism_config.nc and other configure-time files stay
+  in the wheel-tag build dir, so most tests should still run — but tests that
+  reference the install prefix (or hardcoded staging paths from the discarded
+  CMAKE_INSTALL_PREFIX) may misbehave. If you want a clean ctest run that mirrors
+  a developer build rather than a wheel build, do a separate plain-CMake configure
+  into a fresh dir::
+     
+     cmake -S . -B build-dev -DPism_BUILD_PYTHON_BINDINGS=ON
+     cmake --build build-dev -j
+     ctest --test-dir build-dev
+   
+- To add CMake build options, pass --config-settings repeatedly::
+    pip install --no-build-isolation . \
+    -C cmake.define.Pism_USE_PROJ=ON \
+    -C cmake.define.Pism_USE_YAC=ON
+>>>>>>> feature/inverse
 
-Changes since v2.2.8
+- Add a Huber-loss option for the inversion misfit functional, selectable with
+  `-inv_state_func huber`. It penalizes velocity residuals quadratically below a
+  threshold (`inverse.huber.delta`, default 100 m/year) and linearly above it, so
+  isolated outliers in the observed velocity cannot dominate the descent direction.
+  Implemented as `IPHuberMisfit2V` and wired into the TAO Tikhonov inversion path
+  (`tikhonov_lmvm`, `tikhonov_blmvm`); it is not compatible with the Gauss-Newton
+  SSA solver, which requires an inner-product functional.
+
+Changes from 2.3.0 to 2.3.1
+===========================
+
+- Fix a bug in `-energy none`: previous versions failed to preserve enthalpy set during
+  initialization. Note: this bug did not affect runs using the `isothermal_glen` flow law.
+- Fix one of regression tests for PICO (failed if PISM is built without PROJ).
+- Improve the code initializing PETSc.
+- Update the YAC version in the build script to 3.15.0.
+- Attempt to fix tagging of Docker images uploaded to the GitHub Container Registry.
+
+Changes since v2.2.3
 ====================
 
 - Rename configuration parameters and command-line options related to reporting
@@ -170,9 +219,16 @@ Changes since v2.1
   "paleo" mode of dEBM-simple (1: the old code used the wrong perihelion longitude
   definition; 2: the solar declination formula contained a typo).
 
-Changes since v2.0
-==================
+Changes since v2.0.7
+====================
 
+- Implement the diurnal energy balance model dEBM-simple (see M. Zeitz, R. Reese, J.
+  Beckmann, U. Krebs-Kanzow, and R. Winkelmann, "Impact of the melt-albedo feedback on the
+  future evolution of the Greenland Ice Sheet with PISM-dEBM-simple," The Cryosphere, vol.
+  15, no. 12, pp. 5739-5764, Dec. 2021, doi: 10.5194/tc-15-5739-2021.)
+- Implement the isochronal layer tracing scheme (see A. Born and A. Robinson, "Modeling
+  the Greenland englacial stratigraphy," The Cryosphere, vol. 15, no. 9, pp. 4539-4556,
+  2021, doi: 10.5194/tc-15-4539-2021.)
 - Support 2D precipitation offsets in `-atmosphere ...,delta_P`. If the input file set
   using `atmosphere.delta_P.file` contains a scalar time series `delta_P`, use that as a
   time-dependent constant-in-space forcing. If the input file contains a 2D variable
@@ -182,20 +238,11 @@ Changes since v2.0
   time-dependent constant-in-space forcing. If the input file contains a 2D variable
   `delta_T`, use that as a time-and-space-dependent forcing.
 - Refactor utility classes used to store 2D and 3D arrays.
-- Remove a misguided energy conservation attempt that turned out to be harmful
-  (occasionally).
-- Fix a bug in the code reading periodic time-dependent forcing.
-- Update pre-processing scripts in `examples/std-greenland`.
-- Fix the scaling of the `uplift` diagnostic in `-bed_def given`.
-- Fix GSL-related build issues (unable to find GSL when it is installed in a non-standard
-  location).
 - Fix documentation of `...till_effective_fraction_overburden`.
 - Use `realpath()` to resolve relative file names. Now configuration parameters ending in
   `.file`, when saved to output files and in PISM output to `stdout`, contain *absolute*
   file names. This will make it easier to reproduce runs based on an output file.
 - Support checkpointing the HTCondor way (see commit 3740c41df).
-- Stop with an error message if a NetCDF variable in an input file contains not-a-number
-  or infinity.
 - Use `-list_diagnostics all` to print the list of all diagnostics, `-list_diagnostics
   spatial` for 2D and 3D variables, and `-list_diagnostics scalar` for scalar time series.
 - Support piecewise-constant temporal interpolation of near-surface air temperatures in
@@ -204,6 +251,21 @@ Changes since v2.0
 - Extrapolate sliding velocities computed by the SSAFD solver to improve the initial guess
   used when the ice front advances (set
   :config:`stress_balance.ssa.fd.extrapolate_at_margins` to `false` to disable).
+- Fix a bug reported by Christian Rodehacke: calving mechanisms should not remove ice at
+  ice fronts adjacent to isolated patches of ice-free water (see issue #521).
+- Implement UNO2, UNO3 and a couple of related transport methods (not used, but available
+  for future use; see J.-G. Li, "Upstream Nonoscillatory Advection Schemes," Monthly
+  Weather Review, vol. 136, no. 12, pp. 4709-4729, Dec. 2008, doi:
+  10.1175/2008mwr2451.1.).
+- Add diagnostics `tendency_of_ice_{amount,mass}_due_to_frontal_melt` and
+  `tendency_of_ice_{amount,mass}_due_to_forced_retreat`. Rename diagnostic
+  `max_sliding_vel` to `max_horizontal_vel`.
+- Generate `pism.pc` and `pismicebin.pc` for use with `pkg-config`. This will make it
+  easier to use PISM as a library (to couple to a GCM, for example).
+- PISM's build system uses `pkg-config` to look for some of the required libraries.
+- Add the ability to use ocean model components implemented in Python.
+- Add CITATION.cff to properly acknowledge all contributions and to make it easier to cite
+  PISM.
 
 Changes since v1.2
 ==================
@@ -316,6 +378,38 @@ Changes since v1.2
   a uniform grid (as in PISM). This change improves the approximation for some
   combinations of grounding line shapes and grid resolutions. (This issue was reported by
   Ronja Reese.)
+
+Changes from v1.2.1 to v1.2.2
+=============================
+
+- Use `time.time()` instead of `time.clock()` in `examples/python/ssa_forward.py`
+  (contributed by Moritz Kreuzer).
+- von Mises calving is applied at both floating and grounded ice fronts.
+- Update the list of Debian (Ubuntu) packages in the installation manual.
+- Use "python3" instead of "python" in all Python scripts. This is needed
+  to support Ubuntu 20.04, for example.
+- Support Clang 10.0 and GCC 9.3.
+- Formally require PROJ 6.0 or newer. PISM v1.2 required PROJ 5.0 or later, but it turns
+  out that there are significant differences between PROJ 5.x and 6.x that make supporting
+  both version too complicated.
+- Fix `issue 462`_ (asymmetric `gl_mask` even though ice geometry is symmetric).
+- Update the minimal NetCDF version required by PISM (4.4 instead of 4.1).
+
+Changes from v1.2 to v1.2.1
+===========================
+
+- Use better notation for different lapse rates in the manual.
+- Fix bugs in the fracture density code and a related scrips.
+- Fix the orographic precipitation model.
+- Continue after warning about missing "units" in an input file
+- Stop if `-ocean_kill_file` is set.
+- Update all scripts that used `-ocean_kill_file` and use `-front_retreat_file` instead.
+- Improve regression tests.
+- Remove some old or unused code.
+- Fix #454 (PICO initialization fails with dummy values).
+- Use high yield stress in all ice-free areas (see #456).
+- Set stress_balance.ssa.fd.max_speed to about the speed of light. See #455. The default
+  value of this parameter should be high enough to disable this mechanism.
 
 Changes from v1.1 to v1.2
 =========================
@@ -526,7 +620,7 @@ Diagnostics
 
   It did *not* affect ice dynamics.
 - Implement 2D and scalar grounding line flux diagnostics `grounding_line_flux`. See
-  `issue #300`_.
+  `issue 300`_.
 - Rename `ocean_pressure_difference` to `ice_margin_pressure_difference`.
 
 Input and output
@@ -560,6 +654,42 @@ Other
   v6.1.1.)
 - Add contributing guidelines to the User's Manual.
 
+Changes from v1.1.3 to v1.1.4
+=============================
+
+- PISM can be built with PROJ v6. (We define `ACCEPT_USE_OF_DEPRECATED_PROJ_API_H`. This
+  workaround will break once PROJ drops the deprecated API completely. See `issue 409`_.)
+- Fix a minor bug in the `routing` hydrology model (improper indexing in the code
+  computing hydraulic conductivity).
+
+Changes from v1.1.2 to v1.1.3
+=============================
+
+- Minor fixes of PISM's documentation.
+- Fix an unreported bug in the computation of the `flux` diagnostic. This bug affected
+  PISM's diagnostic variables `flux`, `velbar`, `velbar_mag`, and `vonmises_stress` (which
+  uses `velbar`).
+
+  It did *not* affect ice dynamics.
+
+Changes from v1.1.1 to v1.1.2
+=============================
+
+- Fix an unreported bug in `-surface ...,forcing`: PISM was ignoring the time step
+  restriction associated with this mechanism; large `surface.force_to_thickness.alpha`
+  could lead to uncontrolled growth of ice thickness.
+- Update the `-atmosphere pik` temperature parameterization for compatibility with paleo
+  simulations by Albrecht et al.
+- Switch to an unconditionally-stable method for the approximation of the heat equation in
+  columns of the bedrock thermal layer (backward Euler time discretization instead of
+  explicit time stepping).
+
+Changes from v1.1 to v1.1.1
+===========================
+
+- PISM supports CMake 3.1 again (v1.1 required CMake 3.13 for no good reason).
+- Fix PISM's `-regional` runs: disable ice flow, surface mass balance, and basal mass
+  balance effects on ice geometry in "no model" areas.
 
 Changes from v1.0 to v1.1
 =========================
@@ -1128,15 +1258,20 @@ Miscellaneous
 .. _issue 350: https://github.com/pism/pism/issues/350
 .. _issue 351: https://github.com/pism/pism/issues/351
 .. _issue 370: https://github.com/pism/pism/issues/370
+.. _issue 375: https://github.com/pism/pism/issues/375
 .. _issue 390: https://github.com/pism/pism/issues/390
 .. _issue 394: https://github.com/pism/pism/issues/394
 .. _issue 400: https://github.com/pism/pism/issues/400
 .. _issue 402: https://github.com/pism/pism/issues/402
 .. _issue 363: https://github.com/pism/pism/issues/363
+.. _issue 409: https://github.com/pism/pism/issues/409
 .. _issue 405: https://github.com/pism/pism/issues/405
 .. _issue 422: https://github.com/pism/pism/issues/422
 .. _issue 424: https://github.com/pism/pism/issues/424
+.. _issue 462: https://github.com/pism/pism/issues/462
 .. _issue 407: https://github.com/pism/pism/issues/407
+.. _issue 506: https://github.com/pism/pism/issues/506
+.. _issue 512: https://github.com/pism/pism/issues/512
 .. _issue 525: https://github.com/pism/pism/issues/525
 .. _issue 529: https://github.com/pism/pism/issues/529
 .. _issue 568: https://github.com/pism/pism/issues/568

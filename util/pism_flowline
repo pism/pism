@@ -19,12 +19,13 @@
 # pism_flowline -c -o bar.nc pism_output.nc
 # \endcode
 
+import sys
 from optparse import OptionParser
 
 try:
-    from netCDF4 import Dataset as CDF
-except:
-    print("netCDF4 is not installed!")
+    import xarray as xr
+except ImportError:
+    print("xarray is not installed!")
     sys.exit(1)
 
 import numpy as np
@@ -33,179 +34,131 @@ from sys import argv, exit
 from time import asctime
 
 
-def get_slice(dimensions, x=None, y=None):
-    """Get an x- or y-slice of a variable."""
-    All = slice(None)
-
-    if not dimensions:
-        return All   # so that it does not break processing "mapping"
-
-    index_list = [All] * len(dimensions)
-
-    if x != None:
-        try:
-            index_list[dimensions.index('x')] = x
-        except:
-            pass
-
-    if y != None:
-        try:
-            index_list[dimensions.index('y')] = y
-        except:
-            pass
-
-    return index_list
+def _strip_attrs(da):
+    """Return a copy of attrs without _FillValue (it lives in encoding)."""
+    a = dict(da.attrs)
+    a.pop("_FillValue", None)
+    return a
 
 
-def permute(variable, output_order=('t', 'z', 'zb', 'y', 'x')):
-    """Permute dimensions of a NetCDF variable to match the output storage order."""
-    input_dimensions = variable.dimensions
-
-    # filter out irrelevant dimensions
-    dimensions = [x for x in output_order if x in input_dimensions]
-
-    # create the mapping
-    mapping = [dimensions.index(x) for x in input_dimensions]
-
-    if mapping:
-        return np.transpose(variable[:], mapping)
-    else:
-        return variable[:]              # so that it does not break processing "mapping"
+def _permute(da, output_order=("t", "z", "zb", "y", "x")):
+    """Permute dimensions of a DataArray to match the output storage order."""
+    dims = [d for d in output_order if d in da.dims]
+    return da.transpose(*dims) if dims else da
 
 
-def copy_dim(nc1, nc2, name, direction):
-    """Copy a dimension from nc1 to nc2."""
-    if (name == direction):
-        return
-    dim1 = nc1.dimensions[name]
-    dim2 = nc2.createDimension(name, len(dim1))
-
-
-def copy_attributes(var1, var2):
-    """Copy attributes of var1 to var2. Skips _FillValue."""
-    for each in var1.ncattrs():
-        if each != "_FillValue":
-            setattr(var2, each, getattr(var1, each))
-
-
-def process(input, output, direction, collapse):
-    """Process the file 'input', expanding or collapsing data according to
-    'action' and 'direction'. Saves result in 'output'."""
-    try:
-        nc = CDF(input)
-    except:
-        print("ERROR: Can't open %s" % input)
-        exit(1)
-
-    try:
-        out = CDF(output, 'w', format="NETCDF3_CLASSIC")
-    except:
-        print("ERROR: Can't open %s" % output)
-        exit(1)
-
-    copy_attributes(nc, out)
-
-    for name in list(nc.dimensions.keys()):
-        copy_dim(nc, out, name, direction)
-
-    if collapse:
-        for name in list(nc.variables.keys()):
-            if name == direction:
-                continue
-            collapse_var(nc, out, name, direction)
-        message = "Collapsed using pism_flowline"
-    else:
-        out.createDimension(direction, 3)
-
-        if direction == 'x':
-            dim = 'y'
-        else:
-            dim = 'x'
-
-        var1 = nc.variables[dim]
-        delta = np.diff(var1[:])[0]
-
-        var2 = out.createVariable(direction, 'f8', (direction,))
-        var2.axis = "%s" % direction.upper()
-        var2.long_name = "%s-coordinate in Cartesian system" % direction.upper()
-        var2.standard_name = "projection_%s_coordinate" % direction
-        var2.units = var1.units
-        var2[:] = [-delta, 0, delta]
-
-        for name in list(nc.variables.keys()):
-            expand_var(nc, out, name, direction)
-
-    message = asctime() + ': ' + ' '.join(argv) + '\n'
-    if 'history' in out.ncattrs():
-        out.history = message + out.history  # prepend to history string
-    else:
-        out.history = message
-    out.close()
-
-
-def collapse_var(nc, out, name, direction):
-    """Saves a collapsed (according to 'direction')
-    copy of a variable 'name' in 'nc' to 'out'."""
-    var1 = nc.variables[name]
-    N = (len(nc.dimensions[direction]) - 1) / 2
+def collapse_var(ds_in, ds_out, name, direction):
+    """Save a collapsed (along ``direction``) copy of variable ``name``
+    from ``ds_in`` into ``ds_out`` (the middle slice)."""
+    da = ds_in[name]
+    N = (ds_in.sizes[direction] - 1) // 2
 
     print("Processing %s..." % name)
-    dims = var1.dimensions
-    if len(dims) > 1:                   # only collapse spatial fields
-        dims = [x for x in dims if x != direction]
 
-    try:
-        fill_value = var1._FillValue
-        var2 = out.createVariable(name, var1.dtype,
-                                  dimensions=dims, fill_value=fill_value)
-    except:
-        var2 = out.createVariable(name, var1.dtype,
-                                  dimensions=dims)
+    if len(da.dims) > 1 and direction in da.dims:
+        sliced = da.isel({direction: N}, drop=True)
+    else:
+        sliced = da
 
-    copy_attributes(var1, var2)
-
-    if direction == 'x':
-        var2[:] = var1[get_slice(var1.dimensions, x=N)]
-    elif direction == 'y':
-        var2[:] = var1[get_slice(var1.dimensions, y=N)]
+    ds_out[name] = sliced
 
 
-def expand_var(nc, out, name, direction):
-    """Saves an expanded (according to 'direction')
-    copy of a variable 'name' in 'nc' to 'out'."""
+def expand_var(ds_in, ds_out, name, direction):
+    """Save an expanded (along ``direction``) copy of variable ``name``
+    from the 1D flowline ``ds_in`` into ``ds_out``."""
     if name == direction:
         return
 
-    var1 = nc.variables[name]
-
+    da = ds_in[name]
     print("Processing %s..." % name)
 
-    # Copy coordinate variables and stop:
-    if name in ['t', 'z', 'y', 'x', 'zb']:
-        var2 = out.createVariable(name, var1.dtype, (name,))
-        var2[:] = var1[:]
-        copy_attributes(var1, var2)
+    # Coordinate variables: copy verbatim.
+    if name in ("t", "z", "y", "x", "zb"):
+        ds_out[name] = da
         return
 
-    dims = var1.dimensions
-    if len(dims) == 1:
-        dims = ('y', 'x')
-    elif len(dims) == 2:
-        dims = ('t', 'y', 'x')
-    elif len(dims) == 3:
-        if name == "litho_temp":        # litho_temp is the only variable depending on 'zb'.
-            dims = ('t', 'zb', 'y', 'x')
+    # Choose target dims based on the input rank, mirroring the original
+    # heuristic in the netCDF4 implementation.
+    if len(da.dims) == 1:
+        target_dims = ("y", "x")
+    elif len(da.dims) == 2:
+        target_dims = ("t", "y", "x")
+    elif len(da.dims) == 3:
+        if name == "litho_temp":  # only variable depending on 'zb'
+            target_dims = ("t", "zb", "y", "x")
         else:
-            dims = ('t', 'z', 'y', 'x')
+            target_dims = ("t", "z", "y", "x")
+    else:
+        # Pass through unchanged.
+        ds_out[name] = da
+        return
 
-    var2 = out.createVariable(name, var1.dtype, dims)
-    copy_attributes(var1, var2)
+    permuted = _permute(da).values
+    pos = target_dims.index(direction)
+    # Insert a singleton axis at the position of ``direction`` and broadcast
+    # to size 3 along it. The other dims already follow output_order.
+    new_shape = list(permuted.shape)
+    new_shape.insert(pos, 1)
+    target_shape = list(new_shape)
+    target_shape[pos] = 3
+    out = np.broadcast_to(permuted.reshape(new_shape), target_shape).copy()
 
-    for j in range(3):
-        if direction == 'x':
-            var2[get_slice(var2.dimensions, x=j)] = permute(var1)
-        elif direction == 'y':
-            var2[get_slice(var2.dimensions, y=j)] = permute(var1)
+    new = xr.DataArray(out, dims=target_dims, attrs=_strip_attrs(da), name=name)
+    if "_FillValue" in da.encoding:
+        new.encoding["_FillValue"] = da.encoding["_FillValue"]
+    ds_out[name] = new
+
+
+def process(input_path, output_path, direction, collapse):
+    """Process the file ``input_path``, expanding or collapsing data
+    according to ``collapse`` and ``direction``. Saves result in
+    ``output_path``."""
+    try:
+        ds_in = xr.open_dataset(input_path, decode_times=False,
+                                decode_cf=False).load()
+        ds_in.close()
+    except Exception:
+        print("ERROR: Can't open %s" % input_path)
+        exit(1)
+
+    ds_out = xr.Dataset(attrs=dict(ds_in.attrs))
+
+    if collapse:
+        for name in list(ds_in.variables):
+            if name == direction:
+                continue
+            collapse_var(ds_in, ds_out, name, direction)
+    else:
+        # Build the synthetic transverse coordinate variable: three points
+        # at (-delta, 0, delta) using the original perpendicular spacing.
+        perp = "y" if direction == "x" else "x"
+        perp_var = ds_in[perp]
+        delta = float(np.diff(np.asarray(perp_var.values))[0])
+        dvals = np.array([-delta, 0.0, delta], dtype="f8")
+
+        ds_out = ds_out.assign_coords({
+            direction: (direction, dvals, {
+                "axis": direction.upper(),
+                "long_name": "%s-coordinate in Cartesian system" % direction.upper(),
+                "standard_name": "projection_%s_coordinate" % direction,
+                "units": perp_var.attrs.get("units", "m"),
+            })
+        })
+
+        for name in list(ds_in.variables):
+            expand_var(ds_in, ds_out, name, direction)
+
+    message = asctime() + ': ' + ' '.join(argv) + '\n'
+    if "history" in ds_out.attrs:
+        ds_out.attrs["history"] = message + ds_out.attrs["history"]
+    else:
+        ds_out.attrs["history"] = message
+
+    try:
+        ds_out.to_netcdf(output_path, mode="w", format="NETCDF3_CLASSIC")
+    except Exception as e:
+        print("ERROR: Can't write %s: %s" % (output_path, e))
+        exit(1)
 
 
 parser = OptionParser()
@@ -236,13 +189,12 @@ if not opts.direction:
     if opts.collapse or (not opts.expand):
         opts.direction = 'y'
     else:
-        nc = CDF(args[0])
         try:
-            x = nc.variables['x']
-            opts.direction = 'y'
-        except:
+            with xr.open_dataset(args[0], decode_times=False,
+                                 decode_cf=False) as probe:
+                opts.direction = 'y' if 'x' in probe.variables else 'x'
+        except Exception:
             opts.direction = 'x'
-        nc.close()
 elif opts.direction not in ['x', 'y']:
     print("ERROR: Please specify direction using the -d option. (Choose one of x,y.)")
     exit(1)

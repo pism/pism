@@ -17,16 +17,17 @@ $PYTHONEXEC build_tiny.py -Mx 9 -My 9 -o ${tiny}
 inv_data=`mktemp -u inv-data-XXXX.nc` || exit 1
 $PYTHONEXEC make_synth_ssa.py -i ${tiny} -o ${inv_data} \
               -pseudo_plastic -pseudo_plastic_q 0.25 -regional \
-              -ssa_dirichlet_bc -generate_ssa_observed -ssa_method fem \
+              -ssa_dirichlet_bc -generate_observed -ssa_method fem \
               -design_prior_const 70000 -inv_ssa tauc
 
 # Run the inversion code
 output=`mktemp -u tiny-tikhonov-lmvm-XXXX.nc` || exit 1
 $PYTHONEXEC pismi.py \
               -i ${tiny} -pseudo_plastic -pseudo_plastic_q 0.25 -inv_data ${inv_data} \
-              -o ${output} -regional -ssa_dirichlet_bc -inv_use_tauc_prior \
+              -o ${output} -regional -ssa_dirichlet_bc \
               -inv_design_param trunc -inv_design_cL2 1 -inv_design_cH1 0 \
-              -inv_method tikhonov_lmvm -tikhonov_penalty 6e-2 -report_coverage
+              -inv_method tikhonov_lmvm -tikhonov_penalty 6e-2 \
+              -stress_balance.model ssa+sia
 
 # Check if we succeeded
 $PYTHONEXEC verify_ssa_inv.py ${output} --desired_misfit 10 --misfit_tolerance .5 --iter_max 120

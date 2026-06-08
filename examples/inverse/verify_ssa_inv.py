@@ -18,7 +18,7 @@
 # along with PISM; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-help_description = """Verifies that the end result of an SSA inversion using 'pismi.py'
+help_description = """Verifies that the end result of an SSA inversion using 'pismi_ssa.py'
 terminates after an expected number of iterations and with an expected final misfit."""
 help_epilog = """E.g.
 
@@ -46,11 +46,10 @@ def success():
     exit(0)
 
 
-netCDF = None
 try:
-    import netCDF4 as netCDF
-except:
-    fail('Unable to import netCDF4.')
+    import xarray as xr
+except ImportError:
+    fail('Unable to import xarray.')
     exit(1)
 
 import argparse
@@ -69,14 +68,20 @@ args = parser.parse_args()
 
 inv_filename = args.inv_filename
 try:
-    data = netCDF.Dataset(inv_filename)
-except:
+    data = xr.open_dataset(inv_filename, decode_times=False, decode_cf=False)
+except Exception:
     fail('Unable to open inversion file "%s"\nPerhaps the inversion run failed to converge, or terminated unexpectedly.' % inv_filename)
 
-# Grab the misfit history from the file.
-misfit = data.variables.get('inv_ssa_misfit')
-if misfit is None:
-    fail('Inversion file %s missing misfit history variable "inv_ssa_misfit".\nPerhaps the inversion run failed to converge, or terminated unexpectedly.' % inv_filename)
+# Grab the misfit history. MisfitLogger records `inv_misfit` (RMS velocity,
+# m/year) when `inverse.state_func == "meansquare"` and `inv_J_misfit`
+# (dimensionless) otherwise. Accept either so this verifier works regardless
+# of the configured state functional.
+for misfit_var in ("inv_misfit", "inv_J_misfit"):
+    if misfit_var in data.variables:
+        misfit = data[misfit_var].values
+        break
+else:
+    fail('Inversion file %s missing misfit history variable (looked for "inv_misfit" and "inv_J_misfit").\nPerhaps the inversion run failed to converge, or terminated unexpectedly.' % inv_filename)
 
 desired_misfit = args.desired_misfit
 

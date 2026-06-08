@@ -7,15 +7,13 @@
 
 import sys
 import time
-import subprocess
 import argparse
-import shlex
 import numpy as np
 
 try:
-    from netCDF4 import Dataset as CDF
-except:
-    print("netCDF4 is not installed!")
+    import xarray as xr
+except ImportError:
+    print("xarray is not installed!")
     sys.exit(1)
 
 parser = argparse.ArgumentParser(description='Preprocess for validation using constant flux experiment from Sayag & Worster (2013).  Creates PISM-readable bootstrap file and a configuration overrides file.',
@@ -29,9 +27,6 @@ args = parser.parse_args()
 
 def create_config():
     print("  creating PISM-readable config override file gumparams.nc ...")
-    nc = CDF("gumparams.nc", 'w')
-    config = nc.createVariable("pism_overrides", 'i4')
-
     attrs = {
         "constants.standard_gravity": 9.81,
         "constants.standard_gravity_doc": "m s-2; = g",
@@ -72,13 +67,9 @@ def create_config():
         "flow_law.isothermal_Glen.ice_softness": 9.7316e-09,  # vs (e.g.) 4e-25 Pa-3 s-1 for ice
         "flow_law.isothermal_Glen.ice_softness_doc": "Pa-n s-1; = A_0 = B_0^(-n) = (2 x 11.4 Pa s^(1/n))^(-n);  Sayag & Worster (2013) give B_0/2 = tilde mu = 11.4 +- 0.25 Pa s^(1/n)"
     }
-
-    keys = list(attrs.keys())
-    keys.sort()
-    for k in keys:
-        config.setncattr(k, attrs[k])
-
-    nc.close()
+    sorted_attrs = {k: attrs[k] for k in sorted(attrs)}
+    ds = xr.Dataset({"pism_overrides": ((), np.int32(0), sorted_attrs)})
+    ds.to_netcdf("gumparams.nc", mode="w")
 
 
 create_config()
@@ -104,71 +95,49 @@ y = np.linspace(-Ly - dy / 2.0, Ly + dy / 2.0, My)
 # create dummy fields
 [xx, yy] = np.meshgrid(x, y)  # if there were "ndgrid" in numpy we would use it
 
-topg = np.zeros((Mx, My))
-thk = np.zeros((Mx, My))  # no fluid on table at start
-artm = np.zeros((Mx, My)) + 273.15 + temp  # 20 degrees Celsius
+topg = np.zeros((My, Mx))
+thk = np.zeros((My, Mx))  # no fluid on table at start
+artm = np.zeros((My, Mx)) + 273.15 + temp  # 20 degrees Celsius
 
 # smb = flux as m s-1, but scaled so that the total is correct even on a coarse grid
-smb = np.zeros((Mx, My))
+smb = np.zeros((My, Mx))
 smb[xx ** 2 + yy ** 2 <= pipeR ** 2 + 1.0e-10] = 1.0
-smbpos = sum(sum(smb))
+smbpos = float(smb.sum())
 if smbpos == 0:
     print("gridding ERROR: no cells have positive input flux ... ending now")
     sys.exit(1)
 else:
-    print("  input flux > 0 at %d cells ..." % smbpos)
+    print("  input flux > 0 at %d cells ..." % int(smbpos))
 smb = (flux / (smbpos * dx * dy)) * smb  # [flux] = kg s-1  so now  [smb] = kg m-2 s-1
 
-# Write the data:
-nc = CDF(args.o, "w", format='NETCDF3_CLASSIC')  # for netCDF4 module
+ds = xr.Dataset(
+    coords={
+        "x": ("x", x.astype("f4"), {
+            "units": "m", "long_name": "easting",
+            "standard_name": "projection_x_coordinate"}),
+        "y": ("y", y.astype("f4"), {
+            "units": "m", "long_name": "northing",
+            "standard_name": "projection_y_coordinate"}),
+    },
+    data_vars={
+        "topg": (("y", "x"), topg.astype("f4"),
+                 {"units": "m", "standard_name": "bedrock_altitude"}),
+        "thk":  (("y", "x"), thk.astype("f4"),
+                 {"units": "m", "standard_name": "land_ice_thickness"}),
+        "climatic_mass_balance": (("y", "x"), smb.astype("f4"),
+                                  {"units": "kg m-2 s-1",
+                                   "standard_name": "land_ice_surface_specific_mass_balance_flux"}),
+        "ice_surface_temp": (("y", "x"), artm.astype("f4"),
+                             {"units": "kelvin"}),
+    },
+    attrs={
+        "Conventions": "CF-1.4",
+        "history": time.asctime() + ': ' + ' '.join(sys.argv) + '\n',
+    },
+)
 
-# Create dimensions x and y
-nc.createDimension("x", size=Mx)
-nc.createDimension("y", size=My)
-
-x_var = nc.createVariable("x", 'f4', dimensions=("x",))
-x_var.units = "m"
-x_var.long_name = "easting"
-x_var.standard_name = "projection_x_coordinate"
-x_var[:] = x
-
-y_var = nc.createVariable("y", 'f4', dimensions=("y",))
-y_var.units = "m"
-y_var.long_name = "northing"
-y_var.standard_name = "projection_y_coordinate"
-y_var[:] = y
-
-fill_value = np.nan
-
-
-def def_var(nc, name, units, fillvalue):
-    # dimension transpose is standard: "float thk(y, x)" in NetCDF file
-    var = nc.createVariable(name, 'f', dimensions=("y", "x"), fill_value=fillvalue)
-    var.units = units
-    return var
-
-
-bed_var = def_var(nc, "topg", "m", fill_value)
-bed_var.standard_name = "bedrock_altitude"
-bed_var[:] = topg
-
-thk_var = def_var(nc, "thk", "m", fill_value)
-thk_var.standard_name = "land_ice_thickness"
-thk_var[:] = thk
-
-smb_var = def_var(nc, "climatic_mass_balance", "kg m-2 s-1", fill_value)
-smb_var.standard_name = "land_ice_surface_specific_mass_balance_flux"
-smb_var[:] = smb
-
-artm_var = def_var(nc, "ice_surface_temp", "kelvin", fill_value)
-artm_var[:] = artm
-
-# set global attributes
-nc.Conventions = 'CF-1.4'
-historysep = ' '
-historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
-setattr(nc, 'history', historystr)
-
-nc.close()
+encoding = {n: {"_FillValue": np.float32(np.nan)}
+            for n in ("topg", "thk", "climatic_mass_balance", "ice_surface_temp")}
+ds.to_netcdf(args.o, mode="w", format="NETCDF3_CLASSIC", encoding=encoding)
 
 print('  ... PISM-bootable NetCDF file %s written' % args.o)

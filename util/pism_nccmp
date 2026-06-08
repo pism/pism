@@ -59,41 +59,44 @@ def usagefailure(message):
     exit(2)
 
 
-def compare_vars(nc1, nc2, name, tol, relative=False):
-    from numpy import squeeze, isnan, ma, finfo, fabs
-    import numpy
+def compare_vars(ds1, ds2, name, tol, relative=False):
+    import numpy as np
 
-    try:
-        var1 = ma.array(squeeze(nc1.variables[name][:]))
-    except:
+    if name not in ds1.variables:
         usagefailure("ERROR: VARIABLE '%s' NOT FOUND IN FILE 1" % name)
-    try:
-        var2 = ma.array(squeeze(nc2.variables[name][:]))
-    except:
+    if name not in ds2.variables:
         usagefailure("ERROR: VARIABLE '%s' NOT FOUND IN FILE 2" % name)
 
-    try:
-        mask = var1.mask | var2.mask
-    except:
-        usagefailure("ERROR: VARIABLE '%s' OF INCOMPATIBLE SHAPES (?) IN FILES" % name)
+    a = np.squeeze(ds1[name].values)
+    b = np.squeeze(ds2[name].values)
+
+    if a.shape != b.shape:
+        usagefailure("ERROR: VARIABLE '%s' OF INCOMPATIBLE SHAPES IN FILES" % name)
+
+    # mask_and_scale (xarray default) turns _FillValue / missing_value into NaN.
+    # Combine NaN locations from both arrays.
+    if np.issubdtype(a.dtype, np.floating):
+        mask = np.isnan(a) | np.isnan(b)
+    else:
+        mask = np.zeros(a.shape, dtype=bool)
 
     if mask.all():
         print('Variable %10s: no values to compare.' % name)
         return
 
-    var1 = ma.array(var1, mask=mask)
-    var2 = ma.array(var2, mask=mask)
+    a = np.ma.array(a, mask=mask)
+    b = np.ma.array(b, mask=mask)
 
     try:
-        delta = abs(var1 - var2).max()
+        delta = abs(a - b).max()
     except TypeError:
-        if (var1 == var2).all():
+        if (a == b).all():
             delta = 0
         else:
             delta = 1
 
     if relative:
-        denom = max(abs(var1).max(), abs(var2).max())
+        denom = max(abs(a).max(), abs(b).max())
         print("Variable %s: difference = %e, denominator = %e" % (name, delta, denom))
         if denom > 0:
             delta = delta / denom
@@ -105,7 +108,7 @@ def compare_vars(nc1, nc2, name, tol, relative=False):
     # for all practical purposes, but is not zero, so we give up on
     # bit-for-bit equality here.
     if delta > tol:
-        if tol == 0.0 and delta < 10 * finfo(float).tiny:
+        if tol == 0.0 and delta < 10 * np.finfo(float).tiny:
             print("Variable %s: Treating %e as zero." % (name, delta))
             return
         print("Variable %s: delta = %e, tol = %e" % (name, delta, tol))
@@ -114,41 +117,35 @@ def compare_vars(nc1, nc2, name, tol, relative=False):
 
 def compare(file1, file2, variables, exclude, tol, relative):
     try:
-        from netCDF4 import Dataset as NC
-    except:
-        print("netCDF4 is not installed!")
+        import xarray as xr
+    except ImportError:
+        print("xarray is not installed!")
         exit(1)
 
     print("Comparing %s and %s" % (file1, file2))
 
-    from numpy import unique, r_
+    import numpy as np
 
     try:
-        nc1 = NC(file1, 'r')
-    except:
+        ds1 = xr.open_dataset(file1, decode_times=False, decode_cf=False)
+    except Exception:
         usagefailure("ERROR: FILE '%s' CANNOT BE OPENED FOR READING" % file1)
     try:
-        nc2 = NC(file2, 'r')
-    except:
+        ds2 = xr.open_dataset(file2, decode_times=False, decode_cf=False)
+    except Exception:
         usagefailure("ERROR: FILE '%s' CANNOT BE OPENED FOR READING" % file2)
 
-    if (exclude == False):
-        if len(variables) == 0:
-            vars1 = list(nc1.variables.keys())
-            vars2 = list(nc2.variables.keys())
-            variables = unique(r_[vars1, vars2])
+    all_vars = np.unique(np.r_[list(ds1.variables), list(ds2.variables)])
 
-        for each in variables:
-            compare_vars(nc1, nc2, each, tol, relative)
+    if not exclude:
+        targets = variables if variables else all_vars
+        for each in targets:
+            compare_vars(ds1, ds2, each, tol, relative)
     else:
-        vars1 = list(nc1.variables.keys())
-        vars2 = list(nc2.variables.keys())
-        vars = unique(r_[vars1, vars2])
-
-        for each in vars:
-            if (each in variables):
+        for each in all_vars:
+            if each in variables:
                 continue
-            compare_vars(nc1, nc2, each, tol, relative)
+            compare_vars(ds1, ds2, each, tol, relative)
 
 
 if __name__ == "__main__":

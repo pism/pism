@@ -78,6 +78,7 @@ RUN set -eux; \
     python3-sphinx \
     python3-sphinxcontrib.bibtex \
     python3-venv \
+    python3-xarray \
     swig \
     tex-gyre \
     texlive-fonts-recommended \
