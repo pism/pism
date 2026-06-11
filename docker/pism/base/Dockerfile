@@ -57,7 +57,7 @@ RUN <<EOF
     libpython3.12 \
     libudunits2-0 \
     python3 \
-    python4-geopandas \
+    python3-geopandas \
     python3-netcdf4 \
     python3-numpy \
     python3-pyproj \
