@@ -57,12 +57,9 @@ RUN <<EOF
     libpython3.12 \
     libudunits2-0 \
     python3 \
-    python3-geopandas \
     python3-netcdf4 \
     python3-numpy \
     python3-pyproj \
-    python3-rioxarray \
-    python3-xarray \
     python3-venv \
     ""
 
@@ -108,13 +105,10 @@ RUN <<EOF
     pkg-config \
     python3 \
     python3-dev \
-    python3-geopandas \
     python3-netcdf4 \
     python3-numpy \
     python3-pip \
-    python3-rioxarray \
     python3-setuptools \
-    python3-xarray \
     python3-venv \
     ssh \
     swig \
