@@ -253,6 +253,7 @@ install(PROGRAMS
   util/pism_nc2cdo
   util/pism_nccmp
   util/pism_plot_profiling
+  util/pismi
   DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/examples

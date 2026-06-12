@@ -3,6 +3,9 @@
 Changes since v2.3.0
 ====================
 
+- Install a `pismi` executable from a CMake build so the inverse modeling driver can be run
+  as `pismi ...` regardless of whether PISM was installed via CMake or `pip install .`
+  (previously a CMake install required `python -m PISM.pismi ...`).
 - Fix a bug in the code implementing `energy.model` "none": it failed to preserve enthalpy
   set during initialization.
 - Update PnetCDF version to 1.14.1 to support GCC 15 and newer.
