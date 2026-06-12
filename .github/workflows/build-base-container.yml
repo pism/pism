@@ -1,10 +1,10 @@
 name: Build a "base" container (dev branch)
 
 on:
+  workflow_dispatch:        # manual: gh workflow run build-base-container.yml --ref dev
   push:
     branches:
       - dev
-      - feature/inverse
     paths:
       - 'docker/pism/base/**'
 
