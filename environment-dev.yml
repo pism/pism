@@ -40,7 +40,7 @@ dependencies:
   - pre-commit
   # Docs
   - sphinx
-  - sphixcontrib-bibtex
+  - sphinxcontrib-bibtex
   # Python / analysis
   - pip
   - pip:
