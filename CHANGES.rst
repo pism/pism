@@ -49,7 +49,6 @@ Changes since v2.3.0
     pip install --no-build-isolation . \
     -C cmake.define.Pism_USE_PROJ=ON \
     -C cmake.define.Pism_USE_YAC=ON
->>>>>>> feature/inverse
 
 - Add a Huber-loss option for the inversion misfit functional, selectable with
   `-inv_state_func huber`. It penalizes velocity residuals quadratically below a
