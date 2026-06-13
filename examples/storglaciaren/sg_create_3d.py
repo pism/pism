@@ -22,12 +22,12 @@
 import sys
 import time
 import numpy as np
-from pyproj import Proj
 from sys import stderr
 
 write = stderr.write
 
 import xarray as xr
+import rioxarray
 
 from optparse import OptionParser
 
@@ -41,6 +41,7 @@ parser = OptionParser()
 parser.usage = "usage: %prog [options]"
 parser.description = "Preprocess Storglaciaren files."
 
+dst_crs = "EPSG:3021"
 
 (options, args) = parser.parse_args()
 
@@ -109,12 +110,7 @@ n1 = n0 + (Me - 1) * dn
 easting = np.linspace(e0, e1, Ne)
 northing = np.linspace(n0, n1, Me)
 
-# convert to lat/lon
-
 ee, nn = np.meshgrid(easting, northing)
-
-projection = Proj(init="epsg:3021")
-longitude, latitude = projection(ee, nn, inverse=True)
 
 write("Coordinates of the lower-left grid corner:\n"
       "  easting  = %.0f\n"
@@ -165,7 +161,7 @@ acab_max = 2.5  # m/a
 acab_min = -3.0  # m/a
 acab_up = easting.min() + 200  # m; location of upstream end of linear acab
 acab_down = easting.max() - 900  # m;location of downstream end of linear acab
-acab = np.ones_like(longitude)
+acab = np.ones_like(m_thk)
 acab[:] = acab_min
 acab[:] = acab_max - (acab_max - acab_min) * (easting - acab_up) / (acab_down - acab_up)
 acab[m_thk < 1] = acab_min
@@ -190,21 +186,14 @@ ds = xr.Dataset(
                "standard_name": "projection_y_coordinate"}),
     },
     data_vars={
-        "lon": (("y", "x"), longitude.astype("f4"),
-                {"units": "degrees_east", "standard_name": "longitude"}),
-        "lat": (("y", "x"), latitude.astype("f4"),
-                {"units": "degrees_north", "standard_name": "latitude"}),
-        "topg": (("y", "x"), m_bed.astype("f4"),
+        "bed": (("y", "x"), m_bed.astype("f4"),
                  {"units": "m", "valid_min": bed_valid_min,
-                  "standard_name": "bedrock_altitude",
-                  "coordinates": "lat lon"}),
-        "thk":  (("y", "x"), m_thk.astype("f4"),
+                  "standard_name": "bedrock_altitude"}),
+        "thickness":  (("y", "x"), m_thk.astype("f4"),
                  {"units": "m", "valid_min": thk_valid_min,
-                  "standard_name": "land_ice_thickness",
-                  "coordinates": "lat lon"}),
-        "usurf_from_dem": (("y", "x"), m_dem.astype("f4"),
-                           {"units": "m", "standard_name": "surface_altitude",
-                            "coordinates": "lat lon"}),
+                  "standard_name": "land_ice_thickness"}),
+        "surface": (("y", "x"), m_dem.astype("f4"),
+                           {"units": "m", "standard_name": "surface_altitude"}),
         "ftt_mask": (("y", "x"), np.ones_like(m_bed, dtype="f4"),
                      {"units": ""}),
         "climatic_mass_balance": (("y", "x"), (acab * ice_density).astype("f4"),
@@ -216,13 +205,8 @@ ds = xr.Dataset(
     attrs={
         "Conventions": "CF-1.4",
         "history": time.asctime() + ': ' + ' '.join(sys.argv) + '\n',
-        # PROJ string equivalent to EPSG 3021
-        "proj": "+proj=tmerc +lat_0=0 +lon_0=15.80827777777778 +k=1 +x_0=1500000 +y_0=0 +ellps=bessel +towgs84=419.384,99.3335,591.345,0.850389,1.81728,-7.86224,-0.99496 +units=m +no_defs",
     },
 )
-
-encoding = {n: {"_FillValue": np.float32(fill_value)}
-            for n in ("topg", "thk", "usurf_from_dem", "ftt_mask",
-                      "climatic_mass_balance", "ice_surface_temp")}
-ds.to_netcdf(ncfile, mode="w", format="NETCDF3_CLASSIC", encoding=encoding)
+ds = ds.rio.write_crs(dst_crs).rio.set_spatial_dims(x_dim="x", y_dim="y")
+ds.to_netcdf(ncfile)
 write('Done writing NetCDF file %s!\n' % ncfile)
