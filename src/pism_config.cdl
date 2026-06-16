@@ -2393,6 +2393,15 @@ netcdf pism_config {
     pism_config:surface.cache.update_interval_type = "integer";
     pism_config:surface.cache.update_interval_units = "365days";
 
+    pism_config:surface.debm_enhanced.file = "";
+    pism_config:surface.debm_enhanced.file_doc = "Name of the file containing the daily surface insolation field (variable :var:`insolation`, units `J m-2`) used by the ``debm_enhanced`` surface model. Create it with :file:`util/pism_compute_insolation`. Required when ``-surface debm_enhanced`` is selected.";
+    pism_config:surface.debm_enhanced.file_option = "debm_enhanced_file";
+    pism_config:surface.debm_enhanced.file_type = "string";
+
+    pism_config:surface.debm_enhanced.periodic = "no";
+    pism_config:surface.debm_enhanced.periodic_doc = "If true, interpret the ``debm_enhanced`` insolation forcing as periodic in time (an annual cycle that repeats)";
+    pism_config:surface.debm_enhanced.periodic_type = "flag";
+
     pism_config:surface.debm_simple.air_temp_all_precip_as_rain = 275.15;
     pism_config:surface.debm_simple.air_temp_all_precip_as_rain_doc = "Threshold temperature above which all precipitation is interpreted as rain; must exceed :config:`surface.debm_simple.air_temp_all_precip_as_snow`";
     pism_config:surface.debm_simple.air_temp_all_precip_as_rain_type = "number";

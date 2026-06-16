@@ -20,11 +20,17 @@
 #define PISM_DEBM_SIMPLE_H
 
 #include <memory>
+#include <vector>
 
 #include "pism/coupler/surface/DEBMSimplePointwise.hh"
 #include "pism/coupler/SurfaceModel.hh"
 
 namespace pism {
+
+namespace array {
+class AccessScope;
+}
+
 namespace surface {
 
 //! @brief A class implementing a temperature-index (positive degree-day) scheme
@@ -60,15 +66,38 @@ public:
   const array::Scalar &atmosphere_transmissivity() const;
 
   const DEBMSimplePointwise& pointwise_model() const;
-private:
+
+protected:
+  // Overridable seams used by dEBM-enhanced (DEBMEnhanced) to substitute a prescribed
+  // insolation field for the analytic dEBM-simple insolation. The base-class
+  // implementations reproduce standard dEBM-simple behavior.
+
   virtual void init_impl(const Geometry &geometry);
+
+  //! Hook called once per update, before the per-cell loop. The base class does nothing;
+  //! dEBM-enhanced updates its insolation forcing and registers it for access.
+  virtual void update_insolation_input(double t, double dt,
+                                       const std::vector<double> &ts,
+                                       array::AccessScope &list);
+
+  //! Insolation *energy* (J m^-2) reaching the surface during each sub-step at the cell
+  //! (i, j). The base class computes it from orbital parameters (analytic dEBM-simple);
+  //! dEBM-enhanced interpolates a prescribed daily field.
+  virtual void insolation_energy_series(int i, int j,
+                                        const std::vector<DEBMSimpleOrbitalParameters> &orbital,
+                                        const std::vector<double> &ts,
+                                        double dt_sub,
+                                        double latitude,
+                                        std::vector<double> &result) const;
+
+  virtual DiagnosticList spatial_diagnostics_impl() const;
+
+private:
   virtual void update_impl(const Geometry &geometry, double t, double dt);
   virtual MaxTimestep max_timestep_impl(double t) const;
 
   virtual std::set<VariableMetadata> state_impl() const;
   virtual void write_state_impl(const OutputFile &output) const;
-
-  virtual DiagnosticList spatial_diagnostics_impl() const;
 
   virtual const array::Scalar &mass_flux_impl() const;
   virtual const array::Scalar &temperature_impl() const;
