@@ -244,6 +244,7 @@ install(PROGRAMS
   util/pism_adjust_timeline
   util/pism_async_writer
   util/pism_check_stationarity
+  util/pism_compute_insolation
   util/pism_create_timeline
   util/pism_fill_missing
   util/pism_fill_missing_petsc

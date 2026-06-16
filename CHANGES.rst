@@ -3,6 +3,11 @@
 Changes since v2.3.0
 ====================
 
+- Add the `debm_enhanced` surface model: dEBM-simple with the insolation-driven melt
+  computed from a prescribed daily, terrain-shaded surface-insolation field (variable
+  `insolation`, `J m-2`) read from `surface.debm_enhanced.file` instead of the analytic
+  top-of-atmosphere parameterization. Generate the input with `util/pism_compute_insolation`.
+  All other parameters are shared with `surface.debm_simple.*`.
 - Install a `pismi` executable from a CMake build so the inverse modeling driver can be run
   as `pismi ...` regardless of whether PISM was installed via CMake or `pip install .`
   (previously a CMake install required `python -m PISM.pismi ...`).

@@ -279,7 +279,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
   int N = static_cast<int>(timeseries_length(dt));
 
   const double dtseries = dt / N;
-  std::vector<double> ts(N), T(N), S(N), P(N), Alb(N);
+  std::vector<double> ts(N), T(N), S(N), P(N), Alb(N), E(N);
   std::vector<DEBMSimpleOrbitalParameters> orbital(N);
 
   for (int k = 0; k < N; ++k) {
@@ -321,6 +321,9 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
     m_input_albedo->init_interpolation(ts);
     list.add(*m_input_albedo);
   }
+
+  // Let derived classes (dEBM-enhanced) update and register a prescribed insolation field.
+  this->update_insolation_input(t, dt, ts, list);
 
   double
     ice_density    = m_config->get_number("constants.ice.density"),
@@ -383,6 +386,10 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
         }
       }
 
+      // insolation energy reaching the surface during each sub-step (analytic in
+      // dEBM-simple; a prescribed field in dEBM-enhanced)
+      this->insolation_energy_series(i, j, orbital, ts, dtseries, latitude, E);
+
       {
         double next_snow_depth_reset = m_next_balance_year_start;
 
@@ -421,14 +428,14 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
           DEBMSimpleMelt melt_info{};
           if (not mask::ice_free_ocean(cell_type)) {
 
-            melt_info = m_model.melt(orbital[k].solar_declination,
-                                     orbital[k].distance_factor,
-                                     dtseries,
-                                     S[k],
-                                     T[k],
-                                     surfelev,
-                                     latitude,
-                                     (bool)m_input_albedo ? Alb[k] : albedo);
+            melt_info = m_model.melt_from_insolation(orbital[k].solar_declination,
+                                                     latitude,
+                                                     E[k],
+                                                     dtseries,
+                                                     S[k],
+                                                     T[k],
+                                                     surfelev,
+                                                     (bool)m_input_albedo ? Alb[k] : albedo);
           }
 
           auto changes = m_model.step(ice_thickness,
@@ -499,6 +506,33 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
     compute_next_balance_year_start(time().current());
 }
 
+void DEBMSimple::update_insolation_input(double t, double dt,
+                                         const std::vector<double> &ts,
+                                         array::AccessScope &list) {
+  // dEBM-simple computes insolation analytically and needs no prescribed input field.
+  (void)t;
+  (void)dt;
+  (void)ts;
+  (void)list;
+}
+
+void DEBMSimple::insolation_energy_series(int i, int j,
+                                          const std::vector<DEBMSimpleOrbitalParameters> &orbital,
+                                          const std::vector<double> &ts,
+                                          double dt_sub,
+                                          double latitude,
+                                          std::vector<double> &result) const {
+  // analytic top-of-atmosphere insolation energy per sub-step (depends on time and
+  // latitude, not on the prescribed field); identical to the original dEBM-simple behavior.
+  (void)i;
+  (void)j;
+  (void)ts;
+  for (size_t k = 0; k < orbital.size(); ++k) {
+    result[k] = m_model.insolation_energy(orbital[k].solar_declination,
+                                          orbital[k].distance_factor,
+                                          latitude, dt_sub);
+  }
+}
 
 const array::Scalar &DEBMSimple::mass_flux_impl() const {
   return m_mass_flux;
