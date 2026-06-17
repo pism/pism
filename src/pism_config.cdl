@@ -2398,9 +2398,35 @@ netcdf pism_config {
     pism_config:surface.debm_enhanced.file_option = "debm_enhanced_file";
     pism_config:surface.debm_enhanced.file_type = "string";
 
+    pism_config:surface.debm_enhanced.horizon.ephemeris_dt = 600;
+    pism_config:surface.debm_enhanced.horizon.ephemeris_dt_doc = "Sub-daily time step used to sample and trapezoidally integrate the terrain-shaded surface insolation over each day when the ``debm_enhanced`` insolation is computed internally (i.e. ``surface.debm_enhanced.file`` is empty).";
+    pism_config:surface.debm_enhanced.horizon.ephemeris_dt_type = "number";
+    pism_config:surface.debm_enhanced.horizon.ephemeris_dt_units = "seconds";
+
+    pism_config:surface.debm_enhanced.horizon.max_distance = 5000;
+    pism_config:surface.debm_enhanced.horizon.max_distance_doc = "Maximum ray-march distance for the terrain-horizon computation used by the internally-computed ``debm_enhanced`` insolation.";
+    pism_config:surface.debm_enhanced.horizon.max_distance_type = "number";
+    pism_config:surface.debm_enhanced.horizon.max_distance_units = "m";
+
+    pism_config:surface.debm_enhanced.horizon.n_directions = 360;
+    pism_config:surface.debm_enhanced.horizon.n_directions_doc = "Number of azimuth directions (clockwise from north) sampled by the terrain-horizon computation used by the internally-computed ``debm_enhanced`` insolation.";
+    pism_config:surface.debm_enhanced.horizon.n_directions_type = "integer";
+    pism_config:surface.debm_enhanced.horizon.n_directions_units = "count";
+
+    pism_config:surface.debm_enhanced.horizon.step = 100;
+    pism_config:surface.debm_enhanced.horizon.step_doc = "Ray-march step length for the terrain-horizon computation used by the internally-computed ``debm_enhanced`` insolation.";
+    pism_config:surface.debm_enhanced.horizon.step_type = "number";
+    pism_config:surface.debm_enhanced.horizon.step_units = "m";
+
     pism_config:surface.debm_enhanced.periodic = "no";
     pism_config:surface.debm_enhanced.periodic_doc = "If true, interpret the ``debm_enhanced`` insolation forcing as periodic in time (an annual cycle that repeats)";
     pism_config:surface.debm_enhanced.periodic_type = "flag";
+
+    pism_config:surface.debm_enhanced.update_interval = 10.0;
+    pism_config:surface.debm_enhanced.update_interval_doc = "Interval between recomputations of the internally-computed terrain horizon, which depends on the (evolving) ice surface elevation. Used only when ``surface.debm_enhanced.file`` is empty. Set to zero to recompute the horizon at every time step.";
+    pism_config:surface.debm_enhanced.update_interval_type = "number";
+    pism_config:surface.debm_enhanced.update_interval_units = "365days";
+    pism_config:surface.debm_enhanced.update_interval_valid_min = 0.0;
 
     pism_config:surface.debm_simple.air_temp_all_precip_as_rain = 275.15;
     pism_config:surface.debm_simple.air_temp_all_precip_as_rain_doc = "Threshold temperature above which all precipitation is interpreted as rain; must exceed :config:`surface.debm_simple.air_temp_all_precip_as_snow`";

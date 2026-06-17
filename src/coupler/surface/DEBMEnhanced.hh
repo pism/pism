@@ -30,9 +30,12 @@ namespace pism {
 namespace array {
 class Forcing;
 class AccessScope;
+class Scalar;
 } // namespace array
 
 namespace surface {
+
+class TerrainInsolation;
 
 //! @brief dEBM-enhanced: dEBM-simple with the insolation-driven melt computed from a
 //! prescribed daily surface-insolation field rather than the analytic top-of-atmosphere
@@ -52,7 +55,7 @@ class DEBMEnhanced : public DEBMSimple {
 public:
   DEBMEnhanced(std::shared_ptr<const Grid> g,
                std::shared_ptr<atmosphere::AtmosphereModel> input);
-  virtual ~DEBMEnhanced() = default;
+  virtual ~DEBMEnhanced();
 
 protected:
   void init_impl(const Geometry &geometry) override;
@@ -71,11 +74,33 @@ protected:
   DiagnosticList spatial_diagnostics_impl() const override;
 
 private:
-  //! prescribed daily surface insolation energy (J m-2), read from a file
+  //! true when no input file is given and the insolation is computed internally
+  bool m_compute_internally;
+
+  //! prescribed daily surface insolation energy (J m-2), read from a file (file path)
   std::shared_ptr<array::Forcing> m_input_insolation;
 
   std::string m_insolation_file;
   bool m_insolation_periodic;
+
+  //! terrain-horizon + shaded-insolation engine (internal-compute path)
+  std::unique_ptr<TerrainInsolation> m_terrain;
+
+  //! daily surface insolation energy (J m-2) computed internally for the current update
+  std::shared_ptr<array::Scalar> m_computed_insolation;
+
+  //! per-cell latitude (degrees north), cached from the geometry at initialization
+  const array::Scalar *m_latitude;
+
+  //! ice surface elevation, cached from the geometry at initialization (the horizon is
+  //! recomputed from this evolving field every m_update_interval)
+  const array::Scalar *m_surface_elevation;
+
+  //! interval (seconds) between recomputations of the terrain horizon
+  double m_update_interval;
+
+  //! model time (seconds) of the most recent horizon computation
+  double m_t_last_horizon;
 
   //! seconds in a day, used to convert daily energy to per-sub-step energy
   double m_seconds_per_day;
