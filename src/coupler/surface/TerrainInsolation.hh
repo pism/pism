@@ -83,6 +83,7 @@ private:
   double m_ephemeris_dt;
   double m_solar_constant;
   bool m_use_sky_view;
+  double m_diffuse_fraction;
 
   // azimuth sample directions (radians, clockwise from north), used as Array3D levels
   std::vector<double> m_azimuth;

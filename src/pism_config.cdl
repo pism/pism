@@ -2389,6 +2389,13 @@ netcdf pism_config {
     pism_config:surface.cache.update_interval_type = "integer";
     pism_config:surface.cache.update_interval_units = "365days";
 
+    pism_config:surface.debm_enhanced.diffuse_fraction = 0.2;
+    pism_config:surface.debm_enhanced.diffuse_fraction_doc = "Fraction of the internally-computed ``debm_enhanced`` surface insolation treated as isotropic diffuse sky radiation (scaled by the sky-view factor); the remainder is direct beam subject to terrain shading. Applies only when ``surface.debm_enhanced.use_sky_view_factor`` is true.";
+    pism_config:surface.debm_enhanced.diffuse_fraction_type = "number";
+    pism_config:surface.debm_enhanced.diffuse_fraction_units = "1";
+    pism_config:surface.debm_enhanced.diffuse_fraction_valid_max = 1.0;
+    pism_config:surface.debm_enhanced.diffuse_fraction_valid_min = 0.0;
+
     pism_config:surface.debm_enhanced.file = "";
     pism_config:surface.debm_enhanced.file_doc = "Name of the file containing the daily surface insolation field (variable :var:`insolation`, units `J m-2`) used by the ``debm_enhanced`` surface model. Create it with :file:`util/pism_compute_insolation`. Required when ``-surface debm_enhanced`` is selected.";
     pism_config:surface.debm_enhanced.file_option = "debm_enhanced_file";
