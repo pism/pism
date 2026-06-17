@@ -11,7 +11,9 @@ then combines the single solar track with the per-pixel horizon and normals to
 produce a flux field ``(time, y, x)``, which is integrated to daily energy.
 
 The output is a CF-style NetCDF file carrying physical units, the projection
-(CRS / grid mapping), and ``time`` bounds.
+(CRS / grid mapping), and ``time`` bounds. Alongside the time-varying
+``insolation`` it also stores the static terrain ``horizon`` map
+``(azimuth, y, x)``, which has no time dimension.
 
 Examples
 --------
@@ -118,7 +120,7 @@ def compute_daily_insolation(
     chunk_size: int = 32,
     batch_size: int = 512,
     n_jobs: int = -1,
-) -> xr.DataArray:
+) -> tuple[xr.DataArray, xr.DataArray]:
     """Compute the daily integrated insolation field over a DEM.
 
     Parameters
@@ -146,9 +148,13 @@ def compute_daily_insolation(
 
     Returns
     -------
-    xarray.DataArray
+    daily : xarray.DataArray
         Daily integrated insolation with dimensions ``(time, y, x)`` and units
         of joules per square metre (one value per UTC day).
+    horizon : xarray.DataArray
+        The terrain horizon map with dimensions ``(azimuth, y, x)`` in degrees.
+        This is a static field (no time dimension): the per-pixel terrain
+        horizon angle in each azimuth direction.
 
     Notes
     -----
@@ -184,11 +190,16 @@ def compute_daily_insolation(
     stop64 = np.datetime64(stop.replace(tzinfo=None))
     keep = np.flatnonzero(daily["time"].values < stop64)
     daily = daily.isel(time=keep)
-    return daily
+    return daily, horizon
 
 
-def to_cf_dataset(daily: xr.DataArray, dem: xr.DataArray, start: datetime) -> xr.Dataset:
-    """Wrap the daily insolation field in a CF-style dataset.
+def to_cf_dataset(
+    daily: xr.DataArray,
+    horizon: xr.DataArray,
+    dem: xr.DataArray,
+    start: datetime,
+) -> xr.Dataset:
+    """Wrap the daily insolation and horizon fields in a CF-style dataset.
 
     Adds physical units, the projection (CRS / grid mapping inherited from the
     DEM), and explicit ``time`` bounds spanning each UTC day.
@@ -197,6 +208,10 @@ def to_cf_dataset(daily: xr.DataArray, dem: xr.DataArray, start: datetime) -> xr
     ----------
     daily : xarray.DataArray
         Daily insolation with dimensions ``(time, y, x)`` and units J m-2.
+    horizon : xarray.DataArray
+        Terrain horizon map with dimensions ``(azimuth, y, x)`` in degrees. It
+        is written as a static variable: it has no time dimension because the
+        terrain horizon does not change over the simulated period.
     dem : xarray.DataArray
         Source DEM, used to copy the CRS / grid mapping onto the output.
     start : datetime.datetime
@@ -206,8 +221,9 @@ def to_cf_dataset(daily: xr.DataArray, dem: xr.DataArray, start: datetime) -> xr
     Returns
     -------
     xarray.Dataset
-        Dataset with a single ``insolation`` variable, a ``time_bnds`` variable,
-        a CF grid-mapping variable, and ``Conventions`` set.
+        Dataset with an ``insolation`` variable, a static ``horizon`` variable,
+        a ``time_bnds`` variable, a CF grid-mapping variable, and
+        ``Conventions`` set.
     """
     daily = daily.rename("insolation").fillna(0)
     daily.attrs.update(
@@ -222,12 +238,31 @@ def to_cf_dataset(daily: xr.DataArray, dem: xr.DataArray, start: datetime) -> xr
     )
     out = daily.to_dataset()
 
+    # Static horizon field (azimuth, y, x), no time dimension. Drop the inbound
+    # grid-mapping coordinate so it does not clash with the one written below.
+    horizon = horizon.rename("horizon").drop_vars("spatial_ref", errors="ignore")
+    horizon.attrs = {
+        "long_name": "terrain horizon elevation angle",
+        "units": "degrees",
+        "comment": (
+            "Per-pixel maximum terrain elevation angle in each azimuth direction "
+            "(clockwise from North), used to mask direct-beam insolation. Static "
+            "field: independent of time."
+        ),
+    }
+    out["horizon"] = horizon
+
     # Explicit time bounds: each daily value represents [day_start, day_start + 1 day).
     t = out["time"].values
     bounds = np.stack([t, t + np.timedelta64(1, "D")], axis=1)
     out["time_bnds"] = (("time", "bnds"), bounds)
     out["time"].attrs["bounds"] = "time_bnds"
     out["time"].attrs["long_name"] = "time"
+
+    # Azimuth coordinate metadata for the horizon map.
+    if "azimuth" in out.coords:
+        out["azimuth"].attrs.setdefault("units", "degrees")
+        out["azimuth"].attrs.setdefault("long_name", "azimuth angle clockwise from North")
 
     # Projection / grid mapping copied from the DEM.
     out = out.rio.write_crs(dem.rio.crs)
@@ -238,13 +273,14 @@ def to_cf_dataset(daily: xr.DataArray, dem: xr.DataArray, start: datetime) -> xr
     out = strip_inherited_encoding(out)
 
     # Clean, explicit encoding. Time and its bounds share one epoch so they stay
-    # consistent; the data variable is compressed.
+    # consistent; the data variables are compressed.
     time_units = f"days since {start:%Y-%m-%d %H:%M:%S}"
     for name in ("time", "time_bnds"):
         out[name].encoding.update(
             units=time_units, calendar="proleptic_gregorian", dtype="float64"
         )
     out["insolation"].encoding.update(zlib=True, complevel=4, dtype="float32")
+    out["horizon"].encoding.update(zlib=True, complevel=4, dtype="float32")
 
     # Spatial coordinate metadata.
     for axis, standard_name in (("x", "projection_x_coordinate"),
@@ -375,8 +411,8 @@ def main(argv: list[str] | None = None) -> None:
     stop = parse_iso_utc(args.end)
 
     dem = load_dem(args.INFILE, variable=args.variable)
-    daily = compute_daily_insolation(dem, start, stop, timestep=args.timestep)
-    out = to_cf_dataset(daily, dem, start=start).load()  # materialize before writing
+    daily, horizon = compute_daily_insolation(dem, start, stop, timestep=args.timestep)
+    out = to_cf_dataset(daily, horizon, dem, start=start).load()  # materialize before writing
 
     try:
         write_netcdf(out, args.OUTFILE)
@@ -392,7 +428,10 @@ def main(argv: list[str] | None = None) -> None:
         )
         raise
 
-    print(f"Wrote daily insolation ({dict(out['insolation'].sizes)}) to {args.OUTFILE}")
+    print(
+        f"Wrote daily insolation ({dict(out['insolation'].sizes)}) and "
+        f"horizon ({dict(out['horizon'].sizes)}) to {args.OUTFILE}"
+    )
 
 
 if __name__ == "__main__":
