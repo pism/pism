@@ -21,6 +21,19 @@
 #include <cmath>
 #include <limits>
 
+// Credits
+// -------
+// ray_horizon() and surface_normal() are C++ re-implementations of algorithms from the
+// "solshade" package by Aman Chokshi (https://github.com/amanchokshi/solshade, MIT License,
+// (c) 2025 Aman Chokshi; Chokshi et al., Journal of Open Source Software,
+// doi:10.21105/joss.09944): compute_horizon_map / _compute_horizon and
+// compute_slope_aspect_normals (solshade/terrain.py).
+//
+// sky_view_factor() implements Dozier & Frew (1990), not solshade (see the function).
+//
+// sun_position() is standard topocentric solar geometry; only the East-North-Up sun-vector
+// convention follows solshade (solshade/solar.py).
+
 namespace pism {
 namespace surface {
 namespace terrain {
@@ -52,6 +65,8 @@ double sample_bilinear(const double *dem, int Mx, int My, double fi, double fj) 
          (1.0 - a) * b * z01 + a * b * z11;
 }
 
+// Adapted from solshade's compute_horizon_map / _compute_horizon (solshade/terrain.py).
+// See the per-file credits at the top of this file.
 double ray_horizon(const double *dem, int Mx, int My, double dx, double dy,
                    int i0, int j0, double azimuth, double step, double max_distance) {
   const double z0 = dem[j0 * Mx + i0];
@@ -81,6 +96,9 @@ double ray_horizon(const double *dem, int Mx, int My, double dx, double dy,
   return std::isfinite(best) ? best : 0.0;
 }
 
+// Adapted from solshade's compute_slope_aspect_normals (solshade/terrain.py): equivalent to
+// its slope/aspect -> ENU normal, written directly in terms of the gradients. See the
+// per-file credits at the top of this file.
 void surface_normal(double dzdE, double dzdN, double &nE, double &nN, double &nU) {
   // Upward normal to the surface z = f(E, N) is proportional to (-f_E, -f_N, 1).
   double norm = std::sqrt(dzdE * dzdE + dzdN * dzdN + 1.0);
@@ -89,6 +107,9 @@ void surface_normal(double dzdE, double dzdN, double &nE, double &nN, double &nU
   nU = 1.0 / norm;
 }
 
+// Standard topocentric solar geometry (textbook spherical astronomy). The ENU sun-vector
+// convention (E = cos(alt) sin(az), N = cos(alt) cos(az), U = sin(alt)) matches solshade's
+// solar.py; the altitude/azimuth formulas themselves are standard.
 void sun_position(double latitude, double declination, double hour_angle,
                   double &altitude, double &azimuth) {
   const double sl = std::sin(latitude), cl = std::cos(latitude);
@@ -118,6 +139,11 @@ void sun_position(double latitude, double declination, double hour_angle,
   azimuth = A;
 }
 
+// Implements the slope-corrected sky-view factor of Dozier & Frew (1990), "Rapid
+// calculation of terrain parameters for radiation modeling from digital elevation data",
+// IEEE Trans. Geosci. Remote Sens. 28(5):963-969, doi:10.1109/36.58986. The same
+// formulation is used by TopoCalc (https://github.com/USDA-ARS-NWRC/topocalc). Not from
+// solshade.
 double sky_view_factor(const double *horizon, const double *azimuth, int n_dir,
                        double slope, double aspect) {
   const double cs = std::cos(slope);
