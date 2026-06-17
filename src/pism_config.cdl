@@ -2396,13 +2396,8 @@ netcdf pism_config {
     pism_config:surface.debm_enhanced.diffuse_fraction_valid_max = 1.0;
     pism_config:surface.debm_enhanced.diffuse_fraction_valid_min = 0.0;
 
-    pism_config:surface.debm_enhanced.file = "";
-    pism_config:surface.debm_enhanced.file_doc = "Name of the file containing the daily surface insolation field (variable :var:`insolation`, units `J m-2`) used by the ``debm_enhanced`` surface model. Create it with :file:`util/pism_compute_insolation`. Required when ``-surface debm_enhanced`` is selected.";
-    pism_config:surface.debm_enhanced.file_option = "debm_enhanced_file";
-    pism_config:surface.debm_enhanced.file_type = "string";
-
     pism_config:surface.debm_enhanced.horizon.ephemeris_dt = 600;
-    pism_config:surface.debm_enhanced.horizon.ephemeris_dt_doc = "Sub-daily time step used to sample and trapezoidally integrate the terrain-shaded surface insolation over each day when the ``debm_enhanced`` insolation is computed internally (i.e. ``surface.debm_enhanced.file`` is empty).";
+    pism_config:surface.debm_enhanced.horizon.ephemeris_dt_doc = "Sub-daily time step used to sample and trapezoidally integrate the terrain-shaded surface insolation over each day.";
     pism_config:surface.debm_enhanced.horizon.ephemeris_dt_type = "number";
     pism_config:surface.debm_enhanced.horizon.ephemeris_dt_units = "seconds";
 
@@ -2421,12 +2416,8 @@ netcdf pism_config {
     pism_config:surface.debm_enhanced.horizon.step_type = "number";
     pism_config:surface.debm_enhanced.horizon.step_units = "m";
 
-    pism_config:surface.debm_enhanced.periodic = "no";
-    pism_config:surface.debm_enhanced.periodic_doc = "If true, interpret the ``debm_enhanced`` insolation forcing as periodic in time (an annual cycle that repeats)";
-    pism_config:surface.debm_enhanced.periodic_type = "flag";
-
     pism_config:surface.debm_enhanced.update_interval = 10.0;
-    pism_config:surface.debm_enhanced.update_interval_doc = "Interval between recomputations of the internally-computed terrain horizon, which depends on the (evolving) ice surface elevation. Used only when ``surface.debm_enhanced.file`` is empty. Set to zero to recompute the horizon at every time step.";
+    pism_config:surface.debm_enhanced.update_interval_doc = "Interval between recomputations of the terrain horizon, which depends on the (evolving) ice surface elevation. Set to zero to recompute the horizon at every time step.";
     pism_config:surface.debm_enhanced.update_interval_type = "number";
     pism_config:surface.debm_enhanced.update_interval_units = "365days";
     pism_config:surface.debm_enhanced.update_interval_valid_min = 0.0;
