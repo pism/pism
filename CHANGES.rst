@@ -17,7 +17,8 @@ Changes since v2.3.0
   evolving geometry, is recomputed every `surface.debm_enhanced.update_interval` (default
   10 years). `horizon` and `sky_view_factor` diagnostics are available in this mode (the
   sky-view factor uses the slope-corrected Dozier & Frew (1990) formula and is not yet used
-  by the melt computation, which remains direct-beam).
+  by the melt computation, which remains direct-beam). The sky-view factor can be turned off
+  with `surface.debm_enhanced.use_sky_view_factor`.
 - Install a `pismi` executable from a CMake build so the inverse modeling driver can be run
   as `pismi ...` regardless of whether PISM was installed via CMake or `pip install .`
   (previously a CMake install required `python -m PISM.pismi ...`).
