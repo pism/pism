@@ -200,8 +200,9 @@ DiagnosticList DEBMEnhanced::spatial_diagnostics_impl() const {
   // expose the insolation actually driving the melt
   if (m_compute_internally) {
     result["prescribed_insolation"] = Diagnostic::wrap(*m_computed_insolation);
-    // and the static terrain horizon map (azimuth, y, x)
+    // and the static terrain horizon map (azimuth, y, x) and sky-view factor (y, x)
     result["horizon"] = Diagnostic::wrap(m_terrain->horizon());
+    result["sky_view_factor"] = Diagnostic::wrap(m_terrain->sky_view());
   } else {
     result["prescribed_insolation"] = Diagnostic::wrap(*m_input_insolation);
   }
