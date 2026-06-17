@@ -43,6 +43,7 @@ TerrainInsolation::TerrainInsolation(std::shared_ptr<const Grid> grid)
   m_ephemeris_dt  = config->get_number("surface.debm_enhanced.horizon.ephemeris_dt");
   m_solar_constant = config->get_number("surface.debm_simple.solar_constant");
   m_use_sky_view  = config->get_flag("surface.debm_enhanced.use_sky_view_factor");
+  m_diffuse_fraction = config->get_number("surface.debm_enhanced.diffuse_fraction");
 
   if (m_n_directions < 1) {
     throw RuntimeError(PISM_ERROR_LOCATION,
@@ -201,6 +202,9 @@ void TerrainInsolation::daily_insolation(double declination, double distance_fac
 
   array::AccessScope scope{ &latitude, &result, m_normal_e.get(), m_normal_n.get(),
                             m_normal_u.get(), m_horizon.get() };
+  if (m_use_sky_view) {
+    scope.add(*m_sky_view);
+  }
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
@@ -211,6 +215,12 @@ void TerrainInsolation::daily_insolation(double declination, double distance_fac
     const double nU = (*m_normal_u)(i, j);
     const double *column = m_horizon->get_column(i, j);
 
+    // Split into a direct-beam fraction (terrain-shaded) and an isotropic diffuse fraction
+    // (reduced by the sky-view factor). With the sky-view factor disabled the diffuse term
+    // is dropped and the result is pure direct beam.
+    const double f_diff = m_use_sky_view ? m_diffuse_fraction : 0.0;
+    const double svf = m_use_sky_view ? (*m_sky_view)(i, j) : 0.0;
+
     double energy = 0.0;
     for (int m = 0; m < M; ++m) {
       // hour angle sweeps the full day, midpoint rule over [-pi, pi)
@@ -220,23 +230,27 @@ void TerrainInsolation::daily_insolation(double declination, double distance_fac
       terrain::sun_position(lat, declination, H, altitude, azimuth);
 
       if (altitude <= 0.0) {
-        continue; // Sun below the astronomical horizon
-      }
-      if (altitude <= horizon_at(column, azimuth)) {
-        continue; // shadowed by surrounding terrain
+        continue; // Sun below the astronomical horizon: no direct and no diffuse
       }
 
-      double cos_alt = std::cos(altitude);
-      double sE = cos_alt * std::sin(azimuth);
-      double sN = cos_alt * std::cos(azimuth);
-      double sU = std::sin(altitude);
+      // top-of-atmosphere horizontal irradiance, the basis for the diffuse component
+      double toa_horizontal = m_solar_constant * distance_factor * std::sin(altitude);
 
-      double mu = nE * sE + nN * sN + nU * sU;
-      if (mu <= 0.0) {
-        continue; // surface faces away from the Sun
+      // diffuse: isotropic sky scaled by the sky-view factor; reaches shadowed cells too
+      energy += f_diff * toa_horizontal * svf * dt;
+
+      // direct beam: only when the Sun clears the local horizon and lights the surface
+      if (altitude > horizon_at(column, azimuth)) {
+        double cos_alt = std::cos(altitude);
+        double sE = cos_alt * std::sin(azimuth);
+        double sN = cos_alt * std::cos(azimuth);
+        double sU = std::sin(altitude);
+
+        double mu = nE * sE + nN * sN + nU * sU;
+        if (mu > 0.0) {
+          energy += (1.0 - f_diff) * m_solar_constant * distance_factor * mu * dt;
+        }
       }
-
-      energy += m_solar_constant * distance_factor * mu * dt;
     }
 
     result(i, j) = energy;
