@@ -169,6 +169,12 @@ double TerrainInsolation::horizon_at(const double *column, double azimuth) const
   return column[k0] * (1.0 - frac) + column[k1] * frac;
 }
 
+// The per-timestep shadow test, Lambertian cosine projection (max(0, normal . sun)), and
+// inverse-square distance scaling are adapted from solshade's compute_flux_timeseries
+// (solshade/irradiance.py): https://github.com/amanchokshi/solshade (MIT License,
+// (c) 2025 Aman Chokshi; Chokshi et al., JOSS, doi:10.21105/joss.09944). Here they are
+// integrated over the diurnal cycle to a daily energy, and the solar position and
+// distance factor come from PISM's own DEBMSimplePointwise instead of an ephemeris.
 void TerrainInsolation::daily_insolation(double declination, double distance_factor,
                                          const array::Scalar &latitude,
                                          array::Scalar &result) const {
