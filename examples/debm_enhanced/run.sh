@@ -54,7 +54,7 @@ mpirun -np 8 pism -i bootfile_RGI2000-v7.0-C-01-04374.nc \
        -output.spatial.times weekly
 cdo yearmean debm_simple.nc debm_simple_ym.nc
 
-for df in 0 0.2 0.4; do
+for df in 0.0 0.2 0.4; do
 mpirun -np 8 pism -i bootfile_RGI2000-v7.0-C-01-04374.nc \
        -energy.model none \
        -grid.dx 500m \
@@ -62,10 +62,12 @@ mpirun -np 8 pism -i bootfile_RGI2000-v7.0-C-01-04374.nc \
        -input.bootstrap yes  \
        -input.forcing.time_extrapolation yes \
        -stress_balance.model none \
-       -atmosphere.models given \
+       -atmosphere.models given,elevation_change \
+       -atmosphere.elevation_change.file era5_wgs84_RGI2000-v7.0-C-01-04374.nc \
+       -atmosphere.elevation_change.temperature_lapse_rate 6 \
        -atmosphere.given.file era5_wgs84_RGI2000-v7.0-C-01-04374.nc \
        -atmosphere.given.periodic yes \
-       -surface debm_enhanced,elevation_change \
+       -surface debm_enhanced \
        -surface.debm_enhanced.diffuse_fraction $df \
        -surface.debm_simple.std_dev.file era5_wgs84_RGI2000-v7.0-C-01-04374.nc \
        -surface.debm_simple.std_dev.periodic yes \
