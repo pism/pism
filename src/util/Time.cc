@@ -570,6 +570,10 @@ auto Time::parse_interval_length(const std::string &spec) const -> Interval {
     return {86400.0, SIMPLE};
   }
 
+  if (spec == "weekly") {
+    return {604800.0, SIMPLE};
+  }
+  
   if (spec == "monthly") {
     return {1.0, MONTHLY};
   }
