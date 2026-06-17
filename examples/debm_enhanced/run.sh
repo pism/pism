@@ -1,8 +1,10 @@
 #!/bin/bash
-for for f in bootfile_RGI2000-v7.0-C-01-04374.nc era5_wgs84_RGI2000-v7.0-C-01-04374.nc insolation_RGI2000-v7.0-C-01-04374.nc; do
+
+for f in bootfile_RGI2000-v7.0-C-01-04374.nc era5_wgs84_RGI2000-v7.0-C-01-04374.nc insolation_RGI2000-v7.0-C-01-04374.nc; do
     wget -nc https://pism-cloud-data.s3.amazonaws.com/debm_enhanced/$f;
 done
 
+    
 mpirun -np 8 pism -i bootfile_RGI2000-v7.0-C-01-04374.nc \
        -input.bootstrap yes  \
        -grid.dx 500m \
@@ -19,8 +21,8 @@ mpirun -np 8 pism -i bootfile_RGI2000-v7.0-C-01-04374.nc \
        -time.end 2001-01-01 \
        -time.calendar standard \
        -output.spatial.file pdd.nc \
-       -output.spatial.vars pdd_fluxes,effective_air_temp,effective_precipitation,climatic_mass_balance \
-       -output.spatial.times daily
+       -output.spatial.vars mass_fluxes,pdd_fluxes,effective_air_temp,effective_precipitation,climatic_mass_balance \
+       -output.spatial.times monthly
 
 mpirun -np 8 pism -i bootfile_RGI2000-v7.0-C-01-04374.nc \
        -input.bootstrap yes  \
@@ -47,8 +49,8 @@ mpirun -np 8 pism -i bootfile_RGI2000-v7.0-C-01-04374.nc \
        -time.end 2001-01-01 \
        -time.calendar standard \
        -output.spatial.file debm_simple.nc \
-       -output.spatial.vars pdd_fluxes,effective_air_temp,effective_precipitation,climatic_mass_balance \
-       -output.spatial.times daily
+       -output.spatial.vars mass_fluxes,pdd_fluxes,effective_air_temp,effective_precipitation,climatic_mass_balance \
+       -output.spatial.times monthly
 
 
 mpirun -np 8 pism -i bootfile_RGI2000-v7.0-C-01-04374.nc \
@@ -77,5 +79,5 @@ mpirun -np 8 pism -i bootfile_RGI2000-v7.0-C-01-04374.nc \
        -time.end 2001-01-01 \
        -time.calendar standard \
        -output.spatial.file debm_enhanced.nc \
-       -output.spatial.vars pdd_fluxes,effective_air_temp,effective_precipitation,climatic_mass_balance,insolation \
-       -output.spatial.times daily
+       -output.spatial.vars mass_fluxes,pdd_fluxes,effective_air_temp,effective_precipitation,climatic_mass_balance,insolation \
+       -output.spatial.times monthly
