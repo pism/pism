@@ -20,7 +20,6 @@
 #define PISM_DEBM_ENHANCED_H
 
 #include <memory>
-#include <string>
 #include <vector>
 
 #include "pism/coupler/surface/DEBMSimple.hh"
@@ -28,7 +27,6 @@
 namespace pism {
 
 namespace array {
-class Forcing;
 class AccessScope;
 class Scalar;
 } // namespace array
@@ -38,17 +36,18 @@ namespace surface {
 class TerrainInsolation;
 
 //! @brief dEBM-enhanced: dEBM-simple with the insolation-driven melt computed from a
-//! prescribed daily surface-insolation field rather than the analytic top-of-atmosphere
+//! terrain-shaded surface-insolation field rather than the analytic top-of-atmosphere
 //! parameterization.
 /*!
  * dEBM-enhanced reuses all of dEBM-simple (temperature- and offset-driven melt, albedo,
  * refreezing, snow bookkeeping, diagnostics). The only difference is the source of the
  * insolation energy that drives the insolation-melt term: instead of the analytic
- * top-of-atmosphere insolation, it reads a daily, terrain-shaded surface-insolation field
- * (variable `insolation`, units J m-2) precomputed by `util/pism_compute_insolation`.
+ * top-of-atmosphere insolation, it computes a daily, terrain-shaded surface-insolation field
+ * from the ice surface elevation (terrain horizon, surface normals, and sky-view factor
+ * combined with PISM's analytic solar geometry). See `TerrainInsolation`.
  *
  * All physical parameters are shared with dEBM-simple (the `surface.debm_simple.*`
- * configuration namespace); only the input file is configured under
+ * configuration namespace); the terrain-insolation options are under
  * `surface.debm_enhanced.*`.
  */
 class DEBMEnhanced : public DEBMSimple {
@@ -74,19 +73,10 @@ protected:
   DiagnosticList spatial_diagnostics_impl() const override;
 
 private:
-  //! true when no input file is given and the insolation is computed internally
-  bool m_compute_internally;
-
-  //! prescribed daily surface insolation energy (J m-2), read from a file (file path)
-  std::shared_ptr<array::Forcing> m_input_insolation;
-
-  std::string m_insolation_file;
-  bool m_insolation_periodic;
-
-  //! terrain-horizon + shaded-insolation engine (internal-compute path)
+  //! terrain-horizon + shaded-insolation engine
   std::unique_ptr<TerrainInsolation> m_terrain;
 
-  //! daily surface insolation energy (J m-2) computed internally for the current update
+  //! daily surface insolation energy (J m-2) computed for the current update
   std::shared_ptr<array::Scalar> m_computed_insolation;
 
   //! per-cell latitude (degrees north), cached from the geometry at initialization
@@ -101,9 +91,6 @@ private:
 
   //! model time (seconds) of the most recent horizon computation
   double m_t_last_horizon;
-
-  //! seconds in a day, used to convert daily energy to per-sub-step energy
-  double m_seconds_per_day;
 };
 
 } // end of namespace surface

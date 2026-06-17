@@ -56,9 +56,10 @@ public:
   //! Gather the DEM and compute the horizon map and surface normals (one-time).
   void init(const array::Scalar &surface_elevation);
 
-  //! Daily integrated terrain-shaded surface insolation (J m-2) for a day with the given
-  //! solar `declination` (radians) and `distance_factor` (= (d_bar/d)^2). `latitude` is
-  //! the per-cell latitude field (radians); `result` is overwritten.
+  //! Daily-mean terrain-shaded surface insolation rate (W m-2) for a day with the given
+  //! solar `declination` (radians) and `distance_factor` (= (d_bar/d)^2): the diurnal
+  //! insolation integral divided by the length of the day. `latitude` is the per-cell
+  //! latitude field (degrees north); `result` is overwritten.
   void daily_insolation(double declination, double distance_factor,
                         const array::Scalar &latitude, array::Scalar &result) const;
 

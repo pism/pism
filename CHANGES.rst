@@ -4,23 +4,19 @@ Changes since v2.3.0
 ====================
 
 - Add the `debm_enhanced` surface model: dEBM-simple with the insolation-driven melt
-  computed from a prescribed daily, terrain-shaded surface-insolation field (variable
-  `insolation`, `J m-2`) read from `surface.debm_enhanced.file` instead of the analytic
-  top-of-atmosphere parameterization. Generate the input with `util/pism_compute_insolation`.
-  All other parameters are shared with `surface.debm_simple.*`.
-- Allow the `debm_enhanced` surface model to compute the terrain-shaded insolation
-  internally when `surface.debm_enhanced.file` is empty (instead of reading a precomputed
-  file). The terrain horizon and surface normals are computed from the ice surface
-  elevation and combined with PISM's analytic solar geometry to produce the daily surface
-  insolation. The horizon ray-casting is controlled by `surface.debm_enhanced.horizon.*`
-  (`n_directions`, `max_distance`, `step`, `ephemeris_dt`) and, because it depends on the
-  evolving geometry, is recomputed every `surface.debm_enhanced.update_interval` (default
-  10 years). `horizon` and `sky_view_factor` diagnostics are available in this mode. The
-  insolation is split into a direct-beam component (terrain-shaded) and an isotropic diffuse
-  component reduced by the sky-view factor (slope-corrected Dozier & Frew, 1990); the diffuse
-  share is `surface.debm_enhanced.diffuse_fraction` (default 0.2) and the whole sky-view
-  treatment can be disabled with `surface.debm_enhanced.use_sky_view_factor` (reverting to
-  pure direct beam).
+  computed from a terrain-shaded surface-insolation field instead of the analytic
+  top-of-atmosphere parameterization. The terrain horizon and surface normals are computed
+  from the ice surface elevation and combined with PISM's analytic solar geometry to produce
+  the daily surface insolation. The horizon ray-casting is controlled by
+  `surface.debm_enhanced.horizon.*` (`n_directions`, `max_distance`, `step`, `ephemeris_dt`)
+  and, because it depends on the evolving geometry, is recomputed every
+  `surface.debm_enhanced.update_interval` (default 10 years). The insolation is split into a
+  direct-beam component (terrain-shaded) and an isotropic diffuse component reduced by the
+  sky-view factor (slope-corrected Dozier & Frew, 1990); the diffuse share is
+  `surface.debm_enhanced.diffuse_fraction` (default 0.2) and the whole sky-view treatment can
+  be disabled with `surface.debm_enhanced.use_sky_view_factor` (reverting to pure direct
+  beam). `horizon` and `sky_view_factor` diagnostics are available. All other parameters are
+  shared with `surface.debm_simple.*`.
 - Install a `pismi` executable from a CMake build so the inverse modeling driver can be run
   as `pismi ...` regardless of whether PISM was installed via CMake or `pip install .`
   (previously a CMake install required `python -m PISM.pismi ...`).

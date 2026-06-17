@@ -253,7 +253,9 @@ void TerrainInsolation::daily_insolation(double declination, double distance_fac
       }
     }
 
-    result(i, j) = energy;
+    // store the daily-mean insolation rate (W m-2), matching dEBM-simple's "insolation"
+    // diagnostic units (the melt code multiplies this rate by the sub-step length)
+    result(i, j) = energy / seconds_per_day;
   }
 }
 

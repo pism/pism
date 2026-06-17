@@ -8,15 +8,9 @@ particular the internally-computed terrain-shaded insolation. For the underlying
 ## Overview
 
 `debm_enhanced` is dEBM-simple with the insolation that drives the insolation-melt term
-replaced by a terrain-shaded surface-insolation field. It has two modes, selected by whether
-`surface.debm_enhanced.file` is set:
-
-- **prescribed file** (`surface.debm_enhanced.file` non-empty): read a daily `insolation`
-  field from a NetCDF file (e.g. produced by `util/pism_compute_insolation`), via
-  `array::Forcing`. This is the original behavior.
-- **internal computation** (`surface.debm_enhanced.file` empty): compute the terrain horizon,
-  surface normals, sky-view factor, and the daily terrain-shaded insolation from the ice
-  surface elevation, in C++. This note is about that path.
+replaced by a terrain-shaded surface-insolation field computed internally from the ice
+surface elevation. At initialization it builds the terrain horizon, surface normals, and
+sky-view factor; each time step it computes the daily terrain-shaded insolation.
 
 Everything else (temperature/offset melt, albedo, refreezing, snow bookkeeping, the
 atmospheric transmissivity, the empirical melt factors) is inherited unchanged from
@@ -26,7 +20,7 @@ dEBM-simple (`surface.debm_simple.*`).
 
 | File | Role |
 |---|---|
-| `src/coupler/surface/DEBMEnhanced.{hh,cc}` | the surface model; branches on file-vs-internal; owns the engine and drives it from the dEBM-simple seams |
+| `src/coupler/surface/DEBMEnhanced.{hh,cc}` | the surface model; owns the engine and drives it from the dEBM-simple seams |
 | `src/coupler/surface/TerrainInsolation.{hh,cc}` | engine: gathers the DEM, builds horizon / normals / sky-view factor, computes the daily insolation |
 | `src/coupler/surface/terrain_insolation_kernel.{hh,cc}` | pure (PISM-free) numerical kernels: bilinear sampling, ray-march horizon, surface normal, sun position, sky-view factor |
 
@@ -74,29 +68,32 @@ dEBM-simple (`surface.debm_simple.*`).
    present-day orbit (`DEBMSimplePointwise::solar_declination_present_day` and
    `distance_factor_present_day`; `distance_factor = (d̄/d)² = 1/R²`). No ephemeris/Skyfield.
 3. **Daily insolation field** `TerrainInsolation::daily_insolation(declination,
-   distance_factor, latitude, result)` (see below), stored as the daily `insolation`
-   (`J m⁻²`).
+   distance_factor, latitude, result)` (see below), stored as the daily-mean `insolation`
+   rate (`W m⁻²`, matching dEBM-simple's `insolation` diagnostic units).
 
 ### Per cell — `DEBMEnhanced::insolation_energy_series(i, j, …)`
 
-The daily energy is apportioned to each dEBM-simple sub-step of length `dt_sub`:
-`result[k] = insolation(i, j) · dt_sub / seconds_per_day`. This matches the units contract of
-the prescribed-file path exactly, so the downstream melt core (`melt_from_insolation`, which
-applies `atmosphere_transmissivity` and the melt factors) is unchanged.
+The daily-mean rate is converted to the energy reaching the surface during each dEBM-simple
+sub-step of length `dt_sub` (seconds): `result[k] = insolation(i, j) · dt_sub`. The downstream
+dEBM-simple melt core (`melt_from_insolation`, which applies `atmosphere_transmissivity` and
+the melt factors) consumes this exactly as it consumes dEBM-simple's analytic insolation.
 
 ## The daily insolation integral
 
 `daily_insolation` integrates the diurnal cycle for the day's fixed declination `δ` and
-distance factor `df`. Because the integral runs over a full day (hour angle `H` swept over
-`[−π, π)` with `M = 86400 / ephemeris_dt` midpoint samples), it is **independent of
-longitude**. For each sample the Sun altitude `a` and azimuth `A` come from `sun_position`
+distance factor `df`, then divides by the length of the day to a **daily-mean rate**
+(`W m⁻²`). Because the integral runs over a full day (hour angle `H` swept over `[−π, π)` with
+`M = 86400 / ephemeris_dt` midpoint samples), it is **independent of longitude**. For each
+sample the Sun altitude `a` and azimuth `A` come from `sun_position`
 (`sin a = sin φ sin δ + cos φ cos δ cos H`, standard azimuth), and the surface flux is split
 into direct and diffuse:
 
 ```
-I(i,j) = Σ_samples  [ (1 − f) · S₀·df · max(0, n·s) · 1[a > 0 and a > horizon(A)]      (direct)
-                    +      f  · S₀·df · sin a · SVF · 1[a > 0]                  ] · Δt  (diffuse)
+I(i,j) = (1/T) · Σ_samples [ (1 − f) · S₀·df · max(0, n·s) · 1[a>0 and a>horizon(A)]   (direct)
+                           +     f  · S₀·df · sin a · SVF · 1[a>0]            ] · Δt    (diffuse)
 ```
+
+where `T` = 86400 s (so the leading `(1/T)·Σ…Δt` is the daily average).
 
 - `S₀` = `surface.debm_simple.solar_constant` (1361 W m⁻²); `s` = ENU Sun unit vector;
   `n·s` = cosine of incidence on the tilted surface.
@@ -114,8 +111,6 @@ dEBM-simple melt core, not here. `f` is a fixed fraction, not derived from cloud
 
 | Parameter | Default | Meaning |
 |---|---|---|
-| `file` | `""` | prescribed daily insolation file; empty → compute internally |
-| `periodic` | `no` | treat the prescribed forcing as a repeating annual cycle (file mode) |
 | `horizon.n_directions` | `360` | azimuth directions for the horizon ray-march |
 | `horizon.max_distance` | `5000` m | maximum ray-march distance |
 | `horizon.step` | `100` m | ray-march step length |
@@ -124,9 +119,11 @@ dEBM-simple melt core, not here. `f` is a fixed fraction, not derived from cloud
 | `use_sky_view_factor` | `yes` | compute the sky-view factor and apply the diffuse split (off → pure direct beam) |
 | `diffuse_fraction` | `0.2` | isotropic diffuse share `f`, scaled by the sky-view factor |
 
-## Diagnostics (internal mode)
+## Diagnostics
 
-- `prescribed_insolation` — the daily insolation field actually driving the melt (`J m⁻²`).
+- `insolation` — the daily-mean terrain-shaded insolation rate driving the melt (`W m⁻²`).
+  This replaces dEBM-simple's analytic `insolation` diagnostic (also `W m⁻²`, but a mean over
+  the melt period rather than a daily mean).
 - `horizon` — the terrain horizon map `(azimuth, y, x)`, radians.
 - `sky_view_factor` — the sky-view factor `(y, x)`, in `[0, 1]` (only if `use_sky_view_factor`).
 
