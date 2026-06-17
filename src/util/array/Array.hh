@@ -86,7 +86,7 @@ T interpolate(const F &field, double x, double y) {
   int i_left = 0, i_right = 0, j_bottom = 0, j_top = 0;
   grid->compute_point_neighbors(x, y, i_left, i_right, j_bottom, j_top);
 
-  auto w = grid->compute_interp_weights(x, y);
+  auto w = grid->interpolation_weights(x, y);
 
   return (w[0] * field(i_left,  j_bottom) +
           w[1] * field(i_right, j_bottom) +
