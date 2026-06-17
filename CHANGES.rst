@@ -8,6 +8,14 @@ Changes since v2.3.0
   `insolation`, `J m-2`) read from `surface.debm_enhanced.file` instead of the analytic
   top-of-atmosphere parameterization. Generate the input with `util/pism_compute_insolation`.
   All other parameters are shared with `surface.debm_simple.*`.
+- Allow the `debm_enhanced` surface model to compute the terrain-shaded insolation
+  internally when `surface.debm_enhanced.file` is empty (instead of reading a precomputed
+  file). The terrain horizon and surface normals are computed from the ice surface
+  elevation and combined with PISM's analytic solar geometry to produce the daily surface
+  insolation. The horizon ray-casting is controlled by `surface.debm_enhanced.horizon.*`
+  (`n_directions`, `max_distance`, `step`, `ephemeris_dt`) and, because it depends on the
+  evolving geometry, is recomputed every `surface.debm_enhanced.update_interval` (default
+  10 years). A `horizon` diagnostic is available in this mode.
 - Install a `pismi` executable from a CMake build so the inverse modeling driver can be run
   as `pismi ...` regardless of whether PISM was installed via CMake or `pip install .`
   (previously a CMake install required `python -m PISM.pismi ...`).

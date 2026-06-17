@@ -72,4 +72,6 @@ add_library (boundary OBJECT
   ./surface/DEBMEnhanced.cc
   ./surface/DEBMSimple.cc
   ./surface/DEBMSimplePointwise.cc
+  ./surface/TerrainInsolation.cc
+  ./surface/terrain_insolation_kernel.cc
   )
