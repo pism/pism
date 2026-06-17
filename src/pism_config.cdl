@@ -2424,6 +2424,10 @@ netcdf pism_config {
     pism_config:surface.debm_enhanced.update_interval_units = "365days";
     pism_config:surface.debm_enhanced.update_interval_valid_min = 0.0;
 
+    pism_config:surface.debm_enhanced.use_sky_view_factor = "yes";
+    pism_config:surface.debm_enhanced.use_sky_view_factor_doc = "If true, compute the terrain sky-view factor (Dozier & Frew, 1990) and expose it as the ``sky_view_factor`` diagnostic when the ``debm_enhanced`` insolation is computed internally. Currently diagnostic only: the melt computation remains direct-beam, so this flag has no effect on results yet.";
+    pism_config:surface.debm_enhanced.use_sky_view_factor_type = "flag";
+
     pism_config:surface.debm_simple.air_temp_all_precip_as_rain = 275.15;
     pism_config:surface.debm_simple.air_temp_all_precip_as_rain_doc = "Threshold temperature above which all precipitation is interpreted as rain; must exceed :config:`surface.debm_simple.air_temp_all_precip_as_snow`";
     pism_config:surface.debm_simple.air_temp_all_precip_as_rain_type = "number";

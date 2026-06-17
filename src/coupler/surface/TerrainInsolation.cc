@@ -42,6 +42,7 @@ TerrainInsolation::TerrainInsolation(std::shared_ptr<const Grid> grid)
   m_step          = config->get_number("surface.debm_enhanced.horizon.step");
   m_ephemeris_dt  = config->get_number("surface.debm_enhanced.horizon.ephemeris_dt");
   m_solar_constant = config->get_number("surface.debm_simple.solar_constant");
+  m_use_sky_view  = config->get_flag("surface.debm_enhanced.use_sky_view_factor");
 
   if (m_n_directions < 1) {
     throw RuntimeError(PISM_ERROR_LOCATION,
@@ -64,11 +65,13 @@ TerrainInsolation::TerrainInsolation(std::shared_ptr<const Grid> grid)
   m_normal_n = std::make_shared<array::Scalar>(m_grid, "surface_normal_n");
   m_normal_u = std::make_shared<array::Scalar>(m_grid, "surface_normal_u");
 
-  m_sky_view = std::make_shared<array::Scalar>(m_grid, "sky_view_factor");
-  m_sky_view->metadata(0)
-      .long_name("sky-view factor (fraction of the diffuse sky hemisphere visible "
-                 "from the terrain-shaded, tilted surface)")
-      .units("1");
+  if (m_use_sky_view) {
+    m_sky_view = std::make_shared<array::Scalar>(m_grid, "sky_view_factor");
+    m_sky_view->metadata(0)
+        .long_name("sky-view factor (fraction of the diffuse sky hemisphere visible "
+                   "from the terrain-shaded, tilted surface)")
+        .units("1");
+  }
 }
 
 const array::Array3D &TerrainInsolation::horizon() const {
@@ -77,6 +80,10 @@ const array::Array3D &TerrainInsolation::horizon() const {
 
 const array::Scalar &TerrainInsolation::sky_view() const {
   return *m_sky_view;
+}
+
+bool TerrainInsolation::sky_view_enabled() const {
+  return m_use_sky_view;
 }
 
 void TerrainInsolation::init(const array::Scalar &surface_elevation) {
@@ -118,7 +125,10 @@ void TerrainInsolation::init(const array::Scalar &surface_elevation) {
   std::vector<double> column(m_n_directions);
 
   array::AccessScope scope{ m_normal_e.get(), m_normal_n.get(), m_normal_u.get(),
-                            m_sky_view.get(), m_horizon.get() };
+                            m_horizon.get() };
+  if (m_use_sky_view) {
+    scope.add(*m_sky_view);
+  }
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
@@ -145,11 +155,13 @@ void TerrainInsolation::init(const array::Scalar &surface_elevation) {
 
     // sky-view factor from the horizon and the surface slope/aspect (the latter recovered
     // from the unit normal: slope = acos(nU), aspect = atan2(nE, nN), clockwise from north)
-    double slope = std::acos(nU < -1.0 ? -1.0 : (nU > 1.0 ? 1.0 : nU));
-    double aspect = std::atan2(nE, nN);
-    (*m_sky_view)(i, j) =
-        terrain::sky_view_factor(column.data(), m_azimuth.data(), m_n_directions, slope,
-                                 aspect);
+    if (m_use_sky_view) {
+      double slope = std::acos(nU < -1.0 ? -1.0 : (nU > 1.0 ? 1.0 : nU));
+      double aspect = std::atan2(nE, nN);
+      (*m_sky_view)(i, j) =
+          terrain::sky_view_factor(column.data(), m_azimuth.data(), m_n_directions, slope,
+                                   aspect);
+    }
   }
 }
 

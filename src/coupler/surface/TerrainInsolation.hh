@@ -67,7 +67,11 @@ public:
 
   //! Sky-view factor (y, x), in [0, 1]: the fraction of the diffuse sky hemisphere visible
   //! from each cell, accounting for the terrain horizon and the surface slope/aspect.
+  //! Only valid (computed) when sky_view_enabled() is true.
   const array::Scalar &sky_view() const;
+
+  //! Whether the sky-view factor is computed (surface.debm_enhanced.use_sky_view_factor).
+  bool sky_view_enabled() const;
 
 private:
   std::shared_ptr<const Grid> m_grid;
@@ -78,6 +82,7 @@ private:
   double m_step;
   double m_ephemeris_dt;
   double m_solar_constant;
+  bool m_use_sky_view;
 
   // azimuth sample directions (radians, clockwise from north), used as Array3D levels
   std::vector<double> m_azimuth;

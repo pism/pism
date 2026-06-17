@@ -202,7 +202,9 @@ DiagnosticList DEBMEnhanced::spatial_diagnostics_impl() const {
     result["prescribed_insolation"] = Diagnostic::wrap(*m_computed_insolation);
     // and the static terrain horizon map (azimuth, y, x) and sky-view factor (y, x)
     result["horizon"] = Diagnostic::wrap(m_terrain->horizon());
-    result["sky_view_factor"] = Diagnostic::wrap(m_terrain->sky_view());
+    if (m_terrain->sky_view_enabled()) {
+      result["sky_view_factor"] = Diagnostic::wrap(m_terrain->sky_view());
+    }
   } else {
     result["prescribed_insolation"] = Diagnostic::wrap(*m_input_insolation);
   }
