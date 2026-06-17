@@ -62,6 +62,18 @@ void surface_normal(double dzdE, double dzdN, double &nE, double &nN, double &nU
 void sun_position(double latitude, double declination, double hour_angle,
                   double &altitude, double &azimuth);
 
+//! Sky-view factor: the fraction of isotropic diffuse sky irradiance received by a tilted,
+//! horizon-obstructed surface relative to an unobstructed horizontal surface, in [0, 1].
+//!
+//! Implements the slope-corrected formula of Dozier & Frew (1990). `horizon[k]` is the
+//! terrain horizon elevation angle (radians, from horizontal) in azimuth `azimuth[k]`
+//! (radians, clockwise from north), for `n_dir` equally-spaced directions. `slope` and
+//! `aspect` (radians; aspect = downslope azimuth, clockwise from north) describe the
+//! surface tilt. A horizontal, unobstructed surface returns 1; a flat surface with uniform
+//! horizon elevation h returns cos(h)^2.
+double sky_view_factor(const double *horizon, const double *azimuth, int n_dir,
+                       double slope, double aspect);
+
 } // end of namespace terrain
 } // end of namespace surface
 } // end of namespace pism

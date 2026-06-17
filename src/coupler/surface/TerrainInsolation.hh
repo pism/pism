@@ -65,6 +65,10 @@ public:
   //! Terrain horizon map (azimuth, y, x), elevation angle in radians.
   const array::Array3D &horizon() const;
 
+  //! Sky-view factor (y, x), in [0, 1]: the fraction of the diffuse sky hemisphere visible
+  //! from each cell, accounting for the terrain horizon and the surface slope/aspect.
+  const array::Scalar &sky_view() const;
+
 private:
   std::shared_ptr<const Grid> m_grid;
 
@@ -85,6 +89,7 @@ private:
   std::shared_ptr<array::Scalar> m_normal_e;      // east component of surface normal
   std::shared_ptr<array::Scalar> m_normal_n;      // north component
   std::shared_ptr<array::Scalar> m_normal_u;      // up component
+  std::shared_ptr<array::Scalar> m_sky_view;      // sky-view factor, in [0, 1]
 
   double horizon_at(const double *column, double azimuth) const;
 };
