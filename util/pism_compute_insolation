@@ -1,0 +1,438 @@
+#!/usr/bin/env python3
+# -*- mode: python -*-
+"""Compute daily terrain-shaded solar insolation over a DEM.
+
+The spatial variability of insolation comes entirely from the terrain: the
+local horizon (topographic shading) and the surface normals (slope/aspect).
+The Sun's apparent position varies negligibly across a glacier-sized domain
+(the Sun is ~1 AU away), so the solar ephemeris is evaluated once at the domain
+centre and reused for every grid point. ``solshade.compute_flux_timeseries``
+then combines the single solar track with the per-pixel horizon and normals to
+produce a flux field ``(time, y, x)``, which is integrated to daily energy.
+
+The output is a CF-style NetCDF file carrying physical units, the projection
+(CRS / grid mapping), and ``time`` bounds. Alongside the time-varying
+``insolation`` it also stores the static terrain ``horizon`` map
+``(azimuth, y, x)``, which has no time dimension.
+
+Examples
+--------
+Run with all defaults::
+
+    pism_compute_insolation
+
+Override input, output, and the date range::
+
+    pism_compute_insolation -i dem.nc -o insol_2010.nc \\
+        --start 2010-01-01T00:00:00Z --end 2011-01-01T00:00:00Z
+"""
+from __future__ import annotations
+
+import argparse
+import os
+from datetime import datetime
+from pathlib import Path
+
+import numpy as np
+import rioxarray  # noqa: F401  -- registers the `.rio` accessor on xarray objects
+import xarray as xr
+from pyproj import Transformer
+
+from solshade.irradiance import compute_energy_metrics, compute_flux_timeseries
+from solshade.solar import compute_solar_ephem
+from solshade.terrain import compute_horizon_map, compute_slope_aspect_normals
+from solshade.utils import parse_iso_utc
+
+DEFAULT_INPUT = (
+    "/Users/andy/base/pism-terra/frank_forward/"
+    "RGI2000-v7.0-C-01-04374/input/bootfile_RGI2000-v7.0-C-01-04374.nc"
+)
+DEFAULT_OUTPUT = "insolation.nc"
+DEFAULT_START = "2000-01-01T00:00:00Z"
+DEFAULT_END = "2001-01-01T00:00:00Z"
+DEFAULT_VARIABLE = "surface"
+
+
+def load_dem(path: Path, variable: str = DEFAULT_VARIABLE) -> xr.DataArray:
+    """Load a DEM from a NetCDF file and attach its CRS.
+
+    Parameters
+    ----------
+    path : pathlib.Path
+        Path to a NetCDF file that contains the DEM and a CF grid-mapping
+        variable with a ``crs_wkt`` attribute.
+    variable : str, optional
+        Name of the elevation variable to read. Default is ``"surface"``.
+
+    Returns
+    -------
+    xarray.DataArray
+        The DEM with its CRS written via :mod:`rioxarray` (``.rio.crs`` set).
+
+    Raises
+    ------
+    KeyError
+        If ``variable`` or the grid-mapping variable is absent from the file.
+    """
+    ds = xr.open_dataset(path)
+    mapping_var = ds.rio.grid_mapping
+    crs = ds[mapping_var].attrs["crs_wkt"]
+    ds = ds.rio.write_crs(crs)
+    return ds[variable]
+
+
+def domain_center_lonlat(dem: xr.DataArray) -> tuple[float, float]:
+    """Return the geographic longitude/latitude of the DEM's centre pixel.
+
+    Parameters
+    ----------
+    dem : xarray.DataArray
+        DEM with a projected CRS attached (see :func:`load_dem`).
+
+    Returns
+    -------
+    lon : float
+        Longitude of the domain centre in degrees east (WGS84).
+    lat : float
+        Latitude of the domain centre in degrees north (WGS84).
+    """
+    ny, nx = dem.shape[-2:]
+    cy, cx = ny // 2, nx // 2
+    x, y = dem.rio.transform() * (cx + 0.5, cy + 0.5)
+    crs = dem.rio.crs
+    if crs and crs.to_epsg() != 4326:
+        transformer = Transformer.from_crs(crs, "EPSG:4326", always_xy=True)
+        lon, lat = transformer.transform(x, y)
+    else:
+        lon, lat = x, y
+    return float(lon), float(lat)
+
+
+def compute_daily_insolation(
+    dem: xr.DataArray,
+    start: datetime,
+    stop: datetime,
+    *,
+    timestep: int = 3600,
+    n_directions: int = 360,
+    max_distance: float = 2000.0,
+    step: float = 20.0,
+    chunk_size: int = 32,
+    batch_size: int = 512,
+    n_jobs: int = -1,
+) -> tuple[xr.DataArray, xr.DataArray]:
+    """Compute the daily integrated insolation field over a DEM.
+
+    Parameters
+    ----------
+    dem : xarray.DataArray
+        Input DEM with a projected CRS attached.
+    start, stop : datetime.datetime
+        UTC start and end of the simulated period. ``stop`` must be strictly
+        after ``start``.
+    timestep : int, optional
+        Solar-ephemeris sampling step in seconds. Default is ``3600`` (hourly).
+    n_directions : int, optional
+        Number of azimuth directions for the horizon map. Default ``360``.
+    max_distance : float, optional
+        Maximum search distance for the horizon, in DEM units. Default ``2000``.
+    step : float, optional
+        Horizon ray-marching step in DEM units. Default ``20``.
+    chunk_size : int, optional
+        Tile size used by the parallel horizon computation. Default ``32``.
+    batch_size : int, optional
+        Number of time steps per joblib batch in the flux computation.
+        Default ``512``.
+    n_jobs : int, optional
+        Number of parallel workers (``-1`` uses all cores). Default ``-1``.
+
+    Returns
+    -------
+    daily : xarray.DataArray
+        Daily integrated insolation with dimensions ``(time, y, x)`` and units
+        of joules per square metre (one value per UTC day).
+    horizon : xarray.DataArray
+        The terrain horizon map with dimensions ``(azimuth, y, x)`` in degrees.
+        This is a static field (no time dimension): the per-pixel terrain
+        horizon angle in each azimuth direction.
+
+    Notes
+    -----
+    The solar ephemeris is evaluated only at the domain centre
+    (see :func:`domain_center_lonlat`); all spatial structure originates from
+    the per-pixel ``horizon`` and ``normals`` terrain fields.
+    """
+    horizon = compute_horizon_map(
+        dem,
+        n_directions=n_directions,
+        max_distance=max_distance,
+        step=step,
+        chunk_size=chunk_size,
+        n_jobs=n_jobs,
+    )
+    _slope, _aspect, normals = compute_slope_aspect_normals(dem)
+
+    lon, lat = domain_center_lonlat(dem)
+    times, alt, az, au, enu = compute_solar_ephem(
+        lat=lat, lon=lon, startutc=start, stoputc=stop, timestep=timestep
+    )
+
+    flux = compute_flux_timeseries(
+        horizon, alt, az, au, enu, normals, times, batch_size=batch_size, n_jobs=n_jobs
+    )
+    daily, _total, _peak, _doy = compute_energy_metrics(flux)
+
+    # ``compute_solar_ephem`` samples [start, stop] as a CLOSED interval, so a
+    # full-year request (e.g. 2000-01-01..2001-01-01) includes one extra sample
+    # at ``stop`` that ``resample("1D")`` bins into a spurious, single-sample
+    # (=0) trailing day. Enforce the half-open range [start, stop) by keeping
+    # only days that begin strictly before ``stop``.
+    stop64 = np.datetime64(stop.replace(tzinfo=None))
+    keep = np.flatnonzero(daily["time"].values < stop64)
+    daily = daily.isel(time=keep)
+    return daily, horizon
+
+
+def to_cf_dataset(
+    daily: xr.DataArray,
+    horizon: xr.DataArray,
+    dem: xr.DataArray,
+    start: datetime,
+) -> xr.Dataset:
+    """Wrap the daily insolation and horizon fields in a CF-style dataset.
+
+    Adds physical units, the projection (CRS / grid mapping inherited from the
+    DEM), and explicit ``time`` bounds spanning each UTC day.
+
+    Parameters
+    ----------
+    daily : xarray.DataArray
+        Daily insolation with dimensions ``(time, y, x)`` and units J m-2.
+    horizon : xarray.DataArray
+        Terrain horizon map with dimensions ``(azimuth, y, x)`` in degrees. It
+        is written as a static variable: it has no time dimension because the
+        terrain horizon does not change over the simulated period.
+    dem : xarray.DataArray
+        Source DEM, used to copy the CRS / grid mapping onto the output.
+    start : datetime.datetime
+        UTC start of the period; used as the reference epoch for the encoded
+        ``time`` and ``time_bnds`` variables.
+
+    Returns
+    -------
+    xarray.Dataset
+        Dataset with an ``insolation`` variable, a static ``horizon`` variable,
+        a ``time_bnds`` variable, a CF grid-mapping variable, and
+        ``Conventions`` set.
+    """
+    daily = daily.rename("insolation").fillna(0)
+    daily.attrs.update(
+        long_name="daily integrated terrain-shaded surface insolation",
+        units="J m-2",
+        cell_methods="time: sum",
+        comment=(
+            "Trapezoidal time integral over each UTC day of top-of-atmosphere "
+            "shortwave flux projected onto the terrain (slope/aspect) and masked "
+            "by the local horizon. No atmospheric attenuation is applied."
+        ),
+    )
+    out = daily.to_dataset()
+
+    # Static horizon field (azimuth, y, x), no time dimension. Drop the inbound
+    # grid-mapping coordinate so it does not clash with the one written below.
+    horizon = horizon.rename("horizon").drop_vars("spatial_ref", errors="ignore")
+    horizon.attrs = {
+        "long_name": "terrain horizon elevation angle",
+        "units": "degrees",
+        "comment": (
+            "Per-pixel maximum terrain elevation angle in each azimuth direction "
+            "(clockwise from North), used to mask direct-beam insolation. Static "
+            "field: independent of time."
+        ),
+    }
+    out["horizon"] = horizon
+
+    # Explicit time bounds: each daily value represents [day_start, day_start + 1 day).
+    t = out["time"].values
+    bounds = np.stack([t, t + np.timedelta64(1, "D")], axis=1)
+    out["time_bnds"] = (("time", "bnds"), bounds)
+    out["time"].attrs["bounds"] = "time_bnds"
+    out["time"].attrs["long_name"] = "time"
+
+    # Azimuth coordinate metadata for the horizon map.
+    if "azimuth" in out.coords:
+        out["azimuth"].attrs.setdefault("units", "degrees")
+        out["azimuth"].attrs.setdefault("long_name", "azimuth angle clockwise from North")
+
+    # Projection / grid mapping copied from the DEM.
+    out = out.rio.write_crs(dem.rio.crs)
+
+    # Drop any encoding inherited from the input file (stale chunk sizes,
+    # _FillValue, compression flags, ...). Carrying these onto freshly shaped
+    # arrays is a common cause of "NetCDF: HDF error" at write time.
+    out = strip_inherited_encoding(out)
+
+    # Clean, explicit encoding. Time and its bounds share one epoch so they stay
+    # consistent; the data variables are compressed.
+    time_units = f"days since {start:%Y-%m-%d %H:%M:%S}"
+    for name in ("time", "time_bnds"):
+        out[name].encoding.update(
+            units=time_units, calendar="proleptic_gregorian", dtype="float64"
+        )
+    out["insolation"].encoding.update(zlib=True, complevel=4, dtype="float32")
+    out["horizon"].encoding.update(zlib=True, complevel=4, dtype="float32")
+
+    # Spatial coordinate metadata.
+    for axis, standard_name in (("x", "projection_x_coordinate"),
+                                ("y", "projection_y_coordinate")):
+        if axis in out.coords:
+            out[axis].attrs.setdefault("units", "m")
+            out[axis].attrs.setdefault("standard_name", standard_name)
+
+    out.attrs["Conventions"] = "CF-1.10"
+    return out
+
+
+#: Encoding keys that are commonly inherited from a source NetCDF file and that
+#: can break writing when the derived array has a different shape or dtype.
+INHERITED_ENCODING_KEYS = (
+    "chunksizes", "contiguous", "preferred_chunks", "original_shape", "source",
+    "zlib", "complevel", "shuffle", "fletcher32", "szip", "zstd", "blosc",
+    "_FillValue", "missing_value", "dtype", "scale_factor", "add_offset",
+)
+
+
+def strip_inherited_encoding(dataset: xr.Dataset) -> xr.Dataset:
+    """Remove per-variable encoding inherited from the source file.
+
+    Variables derived from an opened NetCDF file keep that file's ``encoding``
+    (chunk sizes, ``_FillValue``, compression flags, ...). When the derived
+    array has a new shape or dtype, those stale entries make the NetCDF/HDF5
+    writer fail with a generic ``NetCDF: HDF error``. This clears them so the
+    writer (or our own clean encoding) takes over.
+
+    Parameters
+    ----------
+    dataset : xarray.Dataset
+        Dataset to sanitize, modified in place.
+
+    Returns
+    -------
+    xarray.Dataset
+        The same dataset, for chaining.
+    """
+    for name in dataset.variables:
+        dataset[name].encoding = {
+            key: value
+            for key, value in dataset[name].encoding.items()
+            if key not in INHERITED_ENCODING_KEYS
+        }
+    return dataset
+
+
+def write_netcdf(dataset: xr.Dataset, path: Path) -> None:
+    """Write *dataset* to *path* atomically.
+
+    The dataset is written to a temporary file in the same directory and then
+    renamed over *path*. This avoids leaving a half-written (corrupt) file if
+    the process is interrupted, and avoids clobbering an output file that may
+    still be open elsewhere.
+
+    Parameters
+    ----------
+    dataset : xarray.Dataset
+        Dataset to write.
+    path : pathlib.Path
+        Destination NetCDF file.
+    """
+    path = Path(path)
+    tmp = path.with_name(path.name + ".tmp")
+    if tmp.exists():
+        tmp.unlink()
+    dataset.to_netcdf(tmp, engine="netcdf4")
+    os.replace(tmp, path)
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    """Parse command-line arguments.
+
+    Parameters
+    ----------
+    argv : list of str, optional
+        Argument list to parse. Defaults to ``sys.argv[1:]``.
+
+    Returns
+    -------
+    argparse.Namespace
+        Parsed arguments: ``input``, ``output``, ``start``, ``end``,
+        ``variable``, ``timestep``.
+    """
+    parser = argparse.ArgumentParser(
+        description=__doc__.splitlines()[0],
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument(
+        "INFILE", type=Path, default=DEFAULT_INPUT,
+        help="Input NetCDF file containing the DEM.",
+    )
+    parser.add_argument(
+        "OUTFILE", type=Path, default=DEFAULT_OUTPUT,
+        help="Output NetCDF file for the daily insolation.",
+    )
+    parser.add_argument(
+        "-s", "--start", default=DEFAULT_START,
+        help="UTC start datetime (ISO 8601, e.g. 2000-01-01T00:00:00Z).",
+    )
+    parser.add_argument(
+        "-e", "--end", default=DEFAULT_END,
+        help="UTC end datetime (ISO 8601, e.g. 2001-01-01T00:00:00Z).",
+    )
+    parser.add_argument(
+        "-v", "--variable", default=DEFAULT_VARIABLE,
+        help="Name of the DEM (elevation) variable in the input file.",
+    )
+    parser.add_argument(
+        "--timestep", type=int, default=3600,
+        help="Solar-ephemeris sampling step in seconds.",
+    )
+    return parser.parse_args(argv)
+
+
+def main(argv: list[str] | None = None) -> None:
+    """Command-line entry point.
+
+    Parameters
+    ----------
+    argv : list of str, optional
+        Argument list to parse. Defaults to ``sys.argv[1:]``.
+    """
+    args = parse_args(argv)
+    start = parse_iso_utc(args.start)
+    stop = parse_iso_utc(args.end)
+
+    dem = load_dem(args.INFILE, variable=args.variable)
+    daily, horizon = compute_daily_insolation(dem, start, stop, timestep=args.timestep)
+    out = to_cf_dataset(daily, horizon, dem, start=start).load()  # materialize before writing
+
+    try:
+        write_netcdf(out, args.OUTFILE)
+    except Exception:
+        import pickle
+
+        checkpoint = Path(args.OUTFILE).with_suffix(".pkl")
+        with open(checkpoint, "wb") as handle:
+            pickle.dump(out, handle)
+        print(
+            f"NetCDF write failed; dataset pickled to {checkpoint} "
+            "so the expensive computation is not lost."
+        )
+        raise
+
+    print(
+        f"Wrote daily insolation ({dict(out['insolation'].sizes)}) and "
+        f"horizon ({dict(out['horizon'].sizes)}) to {args.OUTFILE}"
+    )
+
+
+if __name__ == "__main__":
+    main()

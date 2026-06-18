@@ -2389,6 +2389,43 @@ netcdf pism_config {
     pism_config:surface.cache.update_interval_type = "integer";
     pism_config:surface.cache.update_interval_units = "365days";
 
+    pism_config:surface.debm_enhanced.diffuse_fraction = 0.2;
+    pism_config:surface.debm_enhanced.diffuse_fraction_doc = "Fraction of the internally-computed ``debm_enhanced`` surface insolation treated as isotropic diffuse sky radiation (scaled by the sky-view factor); the remainder is direct beam subject to terrain shading. Applies only when ``surface.debm_enhanced.use_sky_view_factor`` is true.";
+    pism_config:surface.debm_enhanced.diffuse_fraction_type = "number";
+    pism_config:surface.debm_enhanced.diffuse_fraction_units = "1";
+    pism_config:surface.debm_enhanced.diffuse_fraction_valid_max = 1.0;
+    pism_config:surface.debm_enhanced.diffuse_fraction_valid_min = 0.0;
+
+    pism_config:surface.debm_enhanced.horizon.ephemeris_dt = 600;
+    pism_config:surface.debm_enhanced.horizon.ephemeris_dt_doc = "Sub-daily time step used to sample and trapezoidally integrate the terrain-shaded surface insolation over each day.";
+    pism_config:surface.debm_enhanced.horizon.ephemeris_dt_type = "number";
+    pism_config:surface.debm_enhanced.horizon.ephemeris_dt_units = "seconds";
+
+    pism_config:surface.debm_enhanced.horizon.max_distance = 5000;
+    pism_config:surface.debm_enhanced.horizon.max_distance_doc = "Maximum ray-march distance for the terrain-horizon computation used by the internally-computed ``debm_enhanced`` insolation.";
+    pism_config:surface.debm_enhanced.horizon.max_distance_type = "number";
+    pism_config:surface.debm_enhanced.horizon.max_distance_units = "m";
+
+    pism_config:surface.debm_enhanced.horizon.n_directions = 360;
+    pism_config:surface.debm_enhanced.horizon.n_directions_doc = "Number of azimuth directions (clockwise from north) sampled by the terrain-horizon computation used by the internally-computed ``debm_enhanced`` insolation.";
+    pism_config:surface.debm_enhanced.horizon.n_directions_type = "integer";
+    pism_config:surface.debm_enhanced.horizon.n_directions_units = "count";
+
+    pism_config:surface.debm_enhanced.horizon.step = 100;
+    pism_config:surface.debm_enhanced.horizon.step_doc = "Ray-march step length for the terrain-horizon computation used by the internally-computed ``debm_enhanced`` insolation.";
+    pism_config:surface.debm_enhanced.horizon.step_type = "number";
+    pism_config:surface.debm_enhanced.horizon.step_units = "m";
+
+    pism_config:surface.debm_enhanced.update_interval = 10.0;
+    pism_config:surface.debm_enhanced.update_interval_doc = "Interval between recomputations of the terrain horizon, which depends on the (evolving) ice surface elevation. Set to zero to recompute the horizon at every time step.";
+    pism_config:surface.debm_enhanced.update_interval_type = "number";
+    pism_config:surface.debm_enhanced.update_interval_units = "365days";
+    pism_config:surface.debm_enhanced.update_interval_valid_min = 0.0;
+
+    pism_config:surface.debm_enhanced.use_sky_view_factor = "yes";
+    pism_config:surface.debm_enhanced.use_sky_view_factor_doc = "If true, compute the terrain sky-view factor (Dozier & Frew, 1990) and expose it as the ``sky_view_factor`` diagnostic when the ``debm_enhanced`` insolation is computed internally. Currently diagnostic only: the melt computation remains direct-beam, so this flag has no effect on results yet.";
+    pism_config:surface.debm_enhanced.use_sky_view_factor_type = "flag";
+
     pism_config:surface.debm_simple.air_temp_all_precip_as_rain = 275.15;
     pism_config:surface.debm_simple.air_temp_all_precip_as_rain_doc = "Threshold temperature above which all precipitation is interpreted as rain; must exceed :config:`surface.debm_simple.air_temp_all_precip_as_snow`";
     pism_config:surface.debm_simple.air_temp_all_precip_as_rain_type = "number";

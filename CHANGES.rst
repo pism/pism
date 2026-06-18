@@ -3,6 +3,20 @@
 Changes since v2.3.0
 ====================
 
+- Add the `debm_enhanced` surface model: dEBM-simple with the insolation-driven melt
+  computed from a terrain-shaded surface-insolation field instead of the analytic
+  top-of-atmosphere parameterization. The terrain horizon and surface normals are computed
+  from the ice surface elevation and combined with PISM's analytic solar geometry to produce
+  the daily surface insolation. The horizon ray-casting is controlled by
+  `surface.debm_enhanced.horizon.*` (`n_directions`, `max_distance`, `step`, `ephemeris_dt`)
+  and, because it depends on the evolving geometry, is recomputed every
+  `surface.debm_enhanced.update_interval` (default 10 years). The insolation is split into a
+  direct-beam component (terrain-shaded) and an isotropic diffuse component reduced by the
+  sky-view factor (slope-corrected Dozier & Frew, 1990); the diffuse share is
+  `surface.debm_enhanced.diffuse_fraction` (default 0.2) and the whole sky-view treatment can
+  be disabled with `surface.debm_enhanced.use_sky_view_factor` (reverting to pure direct
+  beam). `horizon` and `sky_view_factor` diagnostics are available. All other parameters are
+  shared with `surface.debm_simple.*`.
 - Install a `pismi` executable from a CMake build so the inverse modeling driver can be run
   as `pismi ...` regardless of whether PISM was installed via CMake or `pip install .`
   (previously a CMake install required `python -m PISM.pismi ...`).
@@ -49,7 +63,6 @@ Changes since v2.3.0
     pip install --no-build-isolation . \
     -C cmake.define.Pism_USE_PROJ=ON \
     -C cmake.define.Pism_USE_YAC=ON
->>>>>>> feature/inverse
 
 - Add a Huber-loss option for the inversion misfit functional, selectable with
   `-inv_state_func huber`. It penalizes velocity residuals quadratically below a
