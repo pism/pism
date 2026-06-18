@@ -24,6 +24,7 @@
 #include "pism/util/Config.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
+#include "pism/util/Profiling.hh"
 #include "pism/util/array/Array3D.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/error_handling.hh"
@@ -88,6 +89,8 @@ bool TerrainInsolation::sky_view_enabled() const {
 }
 
 void TerrainInsolation::init(const array::Scalar &surface_elevation) {
+  const auto &profiling = m_grid->ctx()->profiling();
+
   const int Mx = static_cast<int>(m_grid->Mx());
   const int My = static_cast<int>(m_grid->My());
   const double dx = m_grid->dx();
@@ -96,6 +99,7 @@ void TerrainInsolation::init(const array::Scalar &surface_elevation) {
   // Gather the full DEM onto rank 0, then broadcast it to every rank. The result is a
   // contiguous, row-major (dem[j * Mx + i]) copy of the global surface elevation that lets
   // each rank ray-march its owned cells without any ghost communication.
+  profiling.begin("surface.debm_enhanced.gather_dem");
   m_dem.resize(static_cast<size_t>(Mx) * static_cast<size_t>(My));
 
   auto work0 = surface_elevation.allocate_proc0_copy();
@@ -118,9 +122,11 @@ void TerrainInsolation::init(const array::Scalar &surface_elevation) {
   int ierr = MPI_Bcast(m_dem.data(), static_cast<int>(m_dem.size()), MPI_DOUBLE, 0,
                        m_grid->com);
   PISM_CHK(ierr, "MPI_Bcast");
+  profiling.end("surface.debm_enhanced.gather_dem");
 
   // Compute surface normals (centred differences on the global DEM, one-sided at the
-  // domain boundary) and the horizon map for every owned cell.
+  // domain boundary) and the horizon map (the dominant cost) for every owned cell.
+  profiling.begin("surface.debm_enhanced.horizon");
   const double *dem = m_dem.data();
 
   std::vector<double> column(m_n_directions);
@@ -164,6 +170,7 @@ void TerrainInsolation::init(const array::Scalar &surface_elevation) {
                                    aspect);
     }
   }
+  profiling.end("surface.debm_enhanced.horizon");
 }
 
 //! Periodic linear interpolation of a horizon column at the given azimuth (radians).
@@ -199,6 +206,9 @@ void TerrainInsolation::daily_insolation(double declination, double distance_fac
     M = 1;
   }
   const double dt = seconds_per_day / M;
+
+  const auto &profiling = m_grid->ctx()->profiling();
+  profiling.begin("surface.debm_enhanced.daily_insolation");
 
   array::AccessScope scope{ &latitude, &result, m_normal_e.get(), m_normal_n.get(),
                             m_normal_u.get(), m_horizon.get() };
@@ -257,6 +267,8 @@ void TerrainInsolation::daily_insolation(double declination, double distance_fac
     // diagnostic units (the melt code multiplies this rate by the sub-step length)
     result(i, j) = energy / seconds_per_day;
   }
+
+  profiling.end("surface.debm_enhanced.daily_insolation");
 }
 
 } // end of namespace surface

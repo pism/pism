@@ -29,7 +29,7 @@
 // doi:10.21105/joss.09944): compute_horizon_map / _compute_horizon and
 // compute_slope_aspect_normals (solshade/terrain.py).
 //
-// sky_view_factor() implements Dozier & Frew (1990), not solshade (see the function).
+// sky_view_factor() implements Dozier & Frew (1990)
 //
 // sun_position() is standard topocentric solar geometry; only the East-North-Up sun-vector
 // convention follows solshade (solshade/solar.py).
