@@ -1,12 +1,19 @@
 .. default-role:: literal
 
+Changes from 2.3.2 to 2.3.3
+===========================
+
+- Fix `util/pism_plot_profiling` so it no longer fails with a `KeyError` on PETSc
+  `-log_view` output that references events not declared in the file's preamble (e.g.
+  `PetscBarrier`, `MatMult MF`). The file is now executed with auto-vivifying dictionaries
+  instead of imported as a module.
 Changes from 2.3.1 to 2.3.2
 ===========================
 
 - Improve code initializing `YacOutputWriter`.
 - Fix a bug in `YacOutputWriter::define_yac_grid()` that resulted in a crash when PISM is
   built with MPICH.
-- Update PnetCDF version in the build script to 1.14.1 to support GCC 15 and newer. 
+- Update PnetCDF version in the build script to 1.14.1 to support GCC 15 and newer.
 - Another attempt to fix tagging of Docker images uploaded to the GitHub Container
   Registry.
 
