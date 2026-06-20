@@ -35,6 +35,7 @@
 #include "pism/geometry/Geometry.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/array/Array3D.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh" // pism::printf()
 #include "pism/util/fem/Quadrature.hh"
@@ -679,6 +680,8 @@ void Blatter::init_impl() {
     File input_file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
     bool u_sigma_found = input_file.variable_exists("uvel_sigma");
     bool v_sigma_found = input_file.variable_exists("vvel_sigma");
+    bool u_ssa_found = input_file.variable_exists("u_ssa");
+    bool v_ssa_found = input_file.variable_exists("v_ssa");
     unsigned int start = input_file.nrecords() - 1;
 
     if (u_sigma_found and v_sigma_found) {
@@ -686,6 +689,38 @@ void Blatter::init_impl() {
 
       m_u_sigma->read(input_file, start);
       m_v_sigma->read(input_file, start);
+
+      set_initial_guess(*m_u_sigma, *m_v_sigma);
+    } else if (u_ssa_found and v_ssa_found) {
+      m_log->message(3, "Restarting from u_ssa and v_ssa...\n");
+
+      // The SSA velocity is vertically constant (2D). Read it and use it as a
+      // depth-independent initial guess by filling every sigma level of the 3D guess
+      // with the local SSA value. read() converts the file's units (e.g. "m year-1")
+      // to the "m s^-1" declared on these fields.
+      array::Scalar u_ssa(m_grid, "u_ssa");
+      array::Scalar v_ssa(m_grid, "v_ssa");
+      u_ssa.metadata(0).units("m s^-1");
+      v_ssa.metadata(0).units("m s^-1");
+
+      u_ssa.read(input_file, start);
+      v_ssa.read(input_file, start);
+
+      int Mz = m_u_sigma->levels().size();
+
+      array::AccessScope list{&u_ssa, &v_ssa, m_u_sigma.get(), m_v_sigma.get()};
+
+      for (auto p : m_grid->points()) {
+        const int i = p.i(), j = p.j();
+
+        auto *u = m_u_sigma->get_column(i, j);
+        auto *v = m_v_sigma->get_column(i, j);
+
+        for (int k = 0; k < Mz; ++k) {
+          u[k] = u_ssa(i, j);
+          v[k] = v_ssa(i, j);
+        }
+      }
 
       set_initial_guess(*m_u_sigma, *m_v_sigma);
     } else {
