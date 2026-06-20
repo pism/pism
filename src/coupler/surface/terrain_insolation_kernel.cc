@@ -146,8 +146,6 @@ void sun_position(double latitude, double declination, double hour_angle,
 // solshade.
 double sky_view_factor(const double *horizon, const double *azimuth, int n_dir,
                        double slope, double aspect) {
-  const double cs = std::cos(slope);
-  const double ss = std::sin(slope);
 
   double acc = 0.0;
   for (int k = 0; k < n_dir; ++k) {
@@ -157,8 +155,8 @@ double sky_view_factor(const double *horizon, const double *azimuth, int n_dir,
     double h = horizon[k] > 0.0 ? horizon[k] : 0.0;
     double Hz = 0.5 * M_PI - h; // zenith angle of the visible-sky edge
 
-    acc += cs * std::sin(Hz) * std::sin(Hz) +
-           ss * std::cos(azimuth[k] - aspect) * (Hz - std::sin(Hz) * std::cos(Hz));
+    acc += std::cos(slope) * std::sin(Hz) * std::sin(Hz) +
+           std::sin(slope) * std::cos(azimuth[k] - aspect) * (Hz - std::sin(Hz) * std::cos(Hz));
   }
 
   double svf = acc / n_dir; // (1/2pi) * integral, with d(azimuth) = 2pi/n_dir
