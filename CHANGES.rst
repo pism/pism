@@ -3,6 +3,9 @@
 Changes since v2.3.0
 ====================
 
+- Allow the Blatter stress balance to restart from SSA velocities: if `uvel_sigma` and
+  `vvel_sigma` are not present in the input file but `u_ssa` and `v_ssa` are, use the
+  (vertically constant) SSA velocity as a depth-independent initial guess.
 - Install a `pismi` executable from a CMake build so the inverse modeling driver can be run
   as `pismi ...` regardless of whether PISM was installed via CMake or `pip install .`
   (previously a CMake install required `python -m PISM.pismi ...`).
