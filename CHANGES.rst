@@ -33,6 +33,11 @@ Changes since v2.3.0
 - Scope the Clang-only `-fstandalone-debug` flag to C++ compilations only, so a
   mixed C/C++ toolchain (e.g., conda's GCC for C with Clang for C++) no longer
   fails to build C sources such as `calcalcs.c`.
+- Usage: To ensure `pism_config.nc` gets installed properly, one needs to::
+    
+    CMAKE_BUILD_PARALLEL_LEVEL=8 pip install --no-build-isolation . -vv \
+    --config-settings=cmake.define.Pism_CONFIG_FILE=${CONDA_PREFIX}/share/pism/pism_config.nc
+    
 - Caveat: pip's wheel-build path runs cmake --install into the staging area and
   then throws the staging away. The pism_config.nc and other configure-time files stay
   in the wheel-tag build dir, so most tests should still run — but tests that

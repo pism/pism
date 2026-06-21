@@ -35,8 +35,13 @@ dependencies:
   - scikit-build-core
   - yac=*=*openmpi*
   - yaxt=*=*openmpi*
-  - ncview
+  - wget
   # Python / analysis
+  - cdo
+  - nco
+  - ncview
+  - netcdf4 # needed for asynchronous writing
+  - xarray
   - pip
   - pip:
       - -r requirements.txt
