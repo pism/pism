@@ -10,12 +10,11 @@ Usage:
   mpiexec -n N python3 ismiphom_twin.py [options]
 
 Example:
-  mpiexec -n 4 python3 ismiphom_twin.py \\
-    -Mx 61 -stress_balance.blatter.Mz 5 \\
-    -stress_balance.blatter.coarsening_factor 2 \\
-    -bp_pc_type mg -bp_pc_mg_levels 2 -bp_snes_max_it 200 \\
-    -inv_adj_ksp_type cg -inv_adj_pc_type gamg \\
-    -tao_gatol 1e-20 -tao_grtol 1e-20
+  mpiexec -n 8 python3 ismiphom_twin.py \
+    -Mx 61 -stress_balance.blatter.Mz 5 \
+    -stress_balance.blatter.coarsening_factor 2 \
+    -bp_pc_type mg -bp_pc_mg_levels 2 \
+    -tikhonov_atol 1e-5 -inv_max_it 250
 
 Reference:
   Morlighem et al. (2013), "Inversion of basal friction in Antarctica
@@ -221,9 +220,13 @@ def run_inversion(grid, geometry, enthalpy, yield_stress_true,
         opts.setValue("-inv_adj_ksp_type", "gmres")
         opts.setValue("-inv_adj_pc_type", "gamg")
     else:  # exact
-        # KSPSolveTranspose: needs transpose-compatible PC
-        opts.setValue("-inv_adj_ksp_type", "gmres")
-        opts.setValue("-inv_adj_pc_type", "jacobi")
+        # KSPSolveTranspose on the full Newton Jacobian. Jacobi is far too
+        # weak here (GMRES stalls -> DIVERGED_ITS at 10000 its). Use a direct
+        # LU factorization instead: it supports an exact transpose solve and
+        # is cheap at twin-experiment sizes. MUMPS handles the parallel case.
+        opts.setValue("-inv_adj_ksp_type", "preonly")
+        opts.setValue("-inv_adj_pc_type", "lu")
+        opts.setValue("-inv_adj_pc_factor_mat_solver_type", "mumps")
 
     # Design variable parameterization
     param_name = config.get_string("inverse.design.param")
@@ -409,8 +412,6 @@ def main():
     # For a twin experiment, use large eta to minimize regularization.
     config.set_number("inverse.tikhonov.penalty_weight", 1e6)
     config.set_string("inverse.stress_balance.method", "tikhonov_lmvm")
-    config.set_number("inverse.tikhonov.atol", 1e-20)
-    config.set_number("inverse.tikhonov.rtol", 1e-20)
     # ISMIP-HOM tauc is in Pa·s/m (≈ 3e10), much larger than the default
     # tauc_max of 5e7 Pa. BLMVM clips zeta to [log(tauc_min), log(tauc_max)],
     # which destroys the initial guess if the bounds are too tight.
