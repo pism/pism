@@ -848,13 +848,12 @@ longitude), sampled at steps of :config:`surface.debm_enhanced.horizon.ephemeris
 with
 
 .. math::
-   \begin{align}
+
    I_{\text{dir}} &= (1-f)\, S_0\, df\, \max\!\big(0,\ \hat{\mathbf n}\cdot\hat{\mathbf s}\big)
-   \quad \text{if } a > 0 \text{ and } a > H(A, y, x), \text{ else } 0, \\
+   \quad \text{if } a > 0 \text{ and } a > H(A, y, x), \text{ else } 0,
 
    I_{\text{diff}} &= f\, S_0\, df\, \sin a\ \sigma(y, x)
    \quad \text{if } a > 0, \text{ else } 0,
-   \end{align}
    
 where `T = 86400\,\text{s}`, `S_0` is the solar constant
 (:config:`surface.debm_simple.solar_constant`), `f` is the diffuse fraction
