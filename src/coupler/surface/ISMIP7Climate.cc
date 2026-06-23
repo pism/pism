@@ -95,6 +95,30 @@ ISMIP7::ISMIP7(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
           .units("kelvin m^-1");
     }
 
+    {
+      m_runoff_reference =
+          std::make_shared<array::Forcing>(m_grid, file, "reference_runoff",
+                                           "", // no standard name
+                                           buffer_size, opt.periodic);
+
+      m_runoff_reference->metadata(0)
+          .long_name("reference runoff")
+          .units("kg m^-2 s^-1")
+          .output_units("kg m^-2 year^-1");
+    }
+
+    {
+      m_runoff_gradient =
+          std::make_shared<array::Forcing>(m_grid, file, "runoff_gradient",
+                                           "", // no standard name
+                                           buffer_size, opt.periodic);
+
+      m_runoff_gradient->metadata(0)
+          .long_name("runoff lapse rate")
+          .units("kg m^-2 s^-1 m^-1")
+          .output_units("kg m^-2 year^-1 m^-1");
+    }
+    
   }
 }
 
@@ -135,15 +159,18 @@ void ISMIP7::update_impl(const Geometry &geometry, double t, double dt) {
   array::Forcing &drunoffdz = *m_runoff_gradient;
 
   // outputs
+  array::Scalar &runoff = *m_runoff;
   array::Scalar &T   = *m_temperature;
   array::Scalar &SMB = *m_mass_flux;
 
   // get time-dependent input fields at the current time
   {
+    runoff_ref.update(t, dt);
     drunoffdz.update(t, dt);
     dTdz.update(t, dt);
     dSMBdz.update(t, dt);
 
+    runoff_ref.average(t, dt);
     drunoffdz.average(t, dt);
     dTdz.average(t, dt);
     dSMBdz.average(t, dt);
