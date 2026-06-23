@@ -39,7 +39,17 @@ ISMIP7::ISMIP7(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
   m_mass_flux   = allocate_mass_flux(m_grid);
   m_runoff      = allocate_runoff(m_grid);
 
+  // set metadata of reference fields
+  {
+    m_surface_reference.metadata(0)
+        .long_name("reference surface altitude")
+        .units("m")
+        .standard_name("surface_altitude")
+        .set_time_dependent(false);
 
+    m_surface_reference.metadata()["valid_range"] = { 0.0, m_grid->Lz() };
+  }
+  
   // allocate storage for time-dependent inputs
   ForcingOptions opt(*m_grid->ctx(), "surface.ismip7");
 
@@ -47,11 +57,11 @@ ISMIP7::ISMIP7(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
     unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
 
     File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
-  // set metadata of reference fields
+    // set metadata of reference fields
     
     {
       m_mass_flux_reference =
-          std::make_shared<array::Forcing>(m_grid, file, "climatic_mass_balance_gradient",
+          std::make_shared<array::Forcing>(m_grid, file, "climatic_mass_balance",
                                            "", // no standard name
                                            buffer_size, opt.periodic);
 
@@ -62,20 +72,8 @@ ISMIP7::ISMIP7(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
     }
 
     {
-      m_mass_flux_gradient =
-          std::make_shared<array::Forcing>(m_grid, file, "climatic_mass_balance_gradient",
-                                           "", // no standard name
-                                           buffer_size, opt.periodic);
-
-      m_mass_flux_gradient->metadata(0)
-          .long_name("surface mass balance rate elevation lapse rate")
-          .units("kg m^-2 s^-1 m^-1")
-          .output_units("kg m^-2 year^-1 m^-1");
-    }
-
-    {
       m_temperature_reference =
-          std::make_shared<array::Forcing>(m_grid, file, "reference_temperature",
+          std::make_shared<array::Forcing>(m_grid, file, "ice_surface_temp",
                                            "", // no standard name
                                            buffer_size, opt.periodic);
 
@@ -85,19 +83,8 @@ ISMIP7::ISMIP7(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
     }
 
     {
-      m_temperature_gradient =
-          std::make_shared<array::Forcing>(m_grid, file, "ice_surface_temp_gradient",
-                                           "", // no standard name
-                                           buffer_size, opt.periodic);
-
-      m_temperature_gradient->metadata(0)
-          .long_name("ice surface temperature elevation lapse rate")
-          .units("kelvin m^-1");
-    }
-
-    {
       m_runoff_reference =
-          std::make_shared<array::Forcing>(m_grid, file, "reference_runoff",
+          std::make_shared<array::Forcing>(m_grid, file, "runoff_rate",
                                            "", // no standard name
                                            buffer_size, opt.periodic);
 
@@ -107,11 +94,44 @@ ISMIP7::ISMIP7(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
           .output_units("kg m^-2 year^-1");
     }
 
+    
+  }
+  // allocate storage for time-dependent inputs (gradient)
+  ForcingOptions grad_opt(*m_grid->ctx(), "surface.ismip7.gradient");
+
+  {
+    unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
+
+    File grad_file(m_grid->com, grad_opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
+    
+    {
+      m_mass_flux_gradient =
+          std::make_shared<array::Forcing>(m_grid, grad_file, "climatic_mass_balance_gradient",
+                                           "", // no standard name
+                                           buffer_size, grad_opt.periodic);
+
+      m_mass_flux_gradient->metadata(0)
+          .long_name("surface mass balance rate elevation lapse rate")
+          .units("kg m^-2 s^-1 m^-1")
+          .output_units("kg m^-2 year^-1 m^-1");
+    }
+
+    {
+      m_temperature_gradient =
+          std::make_shared<array::Forcing>(m_grid, grad_file, "ice_surface_temp_gradient",
+                                           "", // no standard name
+                                           buffer_size, grad_opt.periodic);
+
+      m_temperature_gradient->metadata(0)
+          .long_name("ice surface temperature elevation lapse rate")
+          .units("kelvin m^-1");
+    }
+
     {
       m_runoff_gradient =
-          std::make_shared<array::Forcing>(m_grid, file, "runoff_gradient",
+          std::make_shared<array::Forcing>(m_grid, grad_file, "runoff_rate_gradient",
                                            "", // no standard name
-                                           buffer_size, opt.periodic);
+                                           buffer_size, grad_opt.periodic);
 
       m_runoff_gradient->metadata(0)
           .long_name("runoff lapse rate")
@@ -129,19 +149,31 @@ void ISMIP7::init_impl(const Geometry &geometry) {
 
   {
     // File with reference surface elevation, temperature, and climatic mass balance
-    auto reference_filename = m_config->get_string("surface.ismip7.reference_file");
+    auto reference_filename = m_config->get_string("surface.ismip7.reference.file");
     File reference_file(m_grid->com, reference_filename, io::PISM_GUESS, io::PISM_READONLY);
 
+    auto usurf = reference_file.find_variable("usurf", "surface_altitude");
+    m_surface_reference.regrid(reference_file, io::Default::Nil());
   }
 
   {
     ForcingOptions opt(*m_grid->ctx(), "surface.ismip7");
 
-    m_mass_flux_gradient->init(opt.filename, opt.periodic);
+    m_mass_flux_reference->init(opt.filename, opt.periodic);
     
-    m_runoff_gradient->init(opt.filename, opt.periodic);
+    m_runoff_reference->init(opt.filename, opt.periodic);
 
-    m_temperature_gradient->init(opt.filename, opt.periodic);
+    m_temperature_reference->init(opt.filename, opt.periodic);
+  }
+  
+  {
+    ForcingOptions grad_opt(*m_grid->ctx(), "surface.ismip7.gradient");
+
+    m_mass_flux_gradient->init(grad_opt.filename, grad_opt.periodic);
+    
+    m_runoff_gradient->init(grad_opt.filename, grad_opt.periodic);
+
+    m_temperature_gradient->init(grad_opt.filename, grad_opt.periodic);
   }
 }
 
@@ -153,40 +185,45 @@ void ISMIP7::update_impl(const Geometry &geometry, double t, double dt) {
 
   array::Forcing &T_ref   = *m_temperature_reference;
   array::Forcing &SMB_ref = *m_mass_flux_reference;
-  array::Forcing &runoff_ref = *m_runoff_reference;
+  array::Forcing &R_ref = *m_runoff_reference;
+  
   array::Forcing &dTdz   = *m_temperature_gradient;
   array::Forcing &dSMBdz = *m_mass_flux_gradient;
-  array::Forcing &drunoffdz = *m_runoff_gradient;
+  array::Forcing &dRdz = *m_runoff_gradient;
 
   // outputs
-  array::Scalar &runoff = *m_runoff;
+  array::Scalar &R = *m_runoff;
   array::Scalar &T   = *m_temperature;
   array::Scalar &SMB = *m_mass_flux;
 
   // get time-dependent input fields at the current time
   {
-    runoff_ref.update(t, dt);
-    drunoffdz.update(t, dt);
+    dRdz.update(t, dt);
     dTdz.update(t, dt);
     dSMBdz.update(t, dt);
-
-    runoff_ref.average(t, dt);
-    drunoffdz.average(t, dt);
-    dTdz.average(t, dt);
+    R_ref.update(t, dt);
+    T_ref.update(t, dt);
+    SMB_ref.update(t, dt);
+    
+    dRdz.average(t, dt);
     dSMBdz.average(t, dt);
+    dTdz.average(t, dt);
+    R_ref.average(t, dt);
+    T_ref.average(t, dt);
+    SMB_ref.average(t, dt);
   }
 
   // From http://www.climate-cryosphere.org/wiki/index.php?title=ISMIP7-Projections-Greenland:
   // SMB(x,y,t) = SMB_ref(x,y,t) + dSMBdz(x,y,t) * [h(x,y,t) - h_ref(x,y)]
 
-  array::AccessScope list{ &h, &h_ref, &SMB, &SMB_ref, &dSMBdz, &T, &T_ref, &dTdz, &runoff, &runoff_ref, &drunoffdz };
+  array::AccessScope list{ &h, &h_ref, &SMB, &SMB_ref, &dSMBdz, &T, &T_ref, &dTdz, &R, &R_ref, &dRdz };
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     SMB(i, j) = SMB_ref(i, j) + dSMBdz(i, j) * (h(i, j) - h_ref(i, j));
     T(i, j)   = T_ref(i, j) + dTdz(i, j) * (h(i, j) - h_ref(i, j));
-    runoff(i, j)   = runoff_ref(i, j) + drunoffdz(i, j) * (h(i, j) - h_ref(i, j));
+    R(i, j)   = R_ref(i, j) + dRdz(i, j) * (h(i, j) - h_ref(i, j));
   }
 
   dummy_accumulation(SMB, *m_accumulation);

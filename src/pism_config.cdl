@@ -2706,6 +2706,29 @@ netcdf pism_config {
     pism_config:surface.ismip6.reference_file_option = "surface_ismip6_reference_file";
     pism_config:surface.ismip6.reference_file_type = "string";
 
+    pism_config:surface.ismip7.file = "";
+    pism_config:surface.ismip7.file_doc = "Name of the file containing climate forcing fields.";
+    pism_config:surface.ismip7.file_option = "surface_ismip7_file";
+    pism_config:surface.ismip7.file_type = "string";
+
+    pism_config:surface.ismip7.gradient.file = "";
+    pism_config:surface.ismip7.gradient.file_doc = "Name of the file containing gradient climate forcing fields.";
+    pism_config:surface.ismip7.gradient.file_option = "surface_ismip7_gradient_file";
+    pism_config:surface.ismip7.gradient.file_type = "string";
+
+    pism_config:surface.ismip7.gradient.periodic = "no";
+    pism_config:surface.ismip7.gradient.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:surface.ismip7.gradient.periodic_type = "flag";
+    
+    pism_config:surface.ismip7.periodic = "no";
+    pism_config:surface.ismip7.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:surface.ismip7.periodic_type = "flag";
+
+    pism_config:surface.ismip7.reference.file = "";
+    pism_config:surface.ismip7.reference.file_doc = "Name of the file containing reference elevation.";
+    pism_config:surface.ismip7.reference.file_option = "surface_ismip7_reference_file";
+    pism_config:surface.ismip7.reference.file_type = "string";
+
     pism_config:surface.mass_balance_year_start_day = 274;
     pism_config:surface.mass_balance_year_start_day_doc = "day of year for October 1st, beginning of the balance year in northern latitudes.";
     pism_config:surface.mass_balance_year_start_day_type = "integer";
