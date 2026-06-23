@@ -3,6 +3,7 @@
 Changes since v2.3.0
 ====================
 
+- Add a ISMP7 surface model that uses the gradients but not the anomalies, and adds runoff.
 - Install a `pismi` executable from a CMake build so the inverse modeling driver can be run
   as `pismi ...` regardless of whether PISM was installed via CMake or `pip install .`
   (previously a CMake install required `python -m PISM.pismi ...`).
@@ -49,7 +50,6 @@ Changes since v2.3.0
     pip install --no-build-isolation . \
     -C cmake.define.Pism_USE_PROJ=ON \
     -C cmake.define.Pism_USE_YAC=ON
->>>>>>> feature/inverse
 
 - Add a Huber-loss option for the inversion misfit functional, selectable with
   `-inv_state_func huber`. It penalizes velocity residuals quadratically below a
