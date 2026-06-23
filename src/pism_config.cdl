@@ -2423,7 +2423,7 @@ netcdf pism_config {
     pism_config:surface.debm_enhanced.update_interval_valid_min = 0.0;
 
     pism_config:surface.debm_enhanced.use_sky_view_factor = "yes";
-    pism_config:surface.debm_enhanced.use_sky_view_factor_doc = "If true, compute the terrain sky-view factor (Dozier & Frew, 1990) and expose it as the ``sky_view_factor`` diagnostic when the ``debm_enhanced`` insolation is computed internally. Currently diagnostic only: the melt computation remains direct-beam, so this flag has no effect on results yet.";
+    pism_config:surface.debm_enhanced.use_sky_view_factor_doc = "If true, compute the terrain sky-view factor (Dozier & Frew, 1990), expose it as the ``sky_view_factor`` diagnostic, and split the internally-computed ``debm_enhanced`` insolation into a terrain-shaded direct beam plus an isotropic diffuse component (a fraction ``surface.debm_enhanced.diffuse_fraction`` of the horizontal top-of-atmosphere flux, scaled by the sky-view factor). If false, the diffuse fraction is forced to zero and the insolation is pure terrain-shaded direct beam.";
     pism_config:surface.debm_enhanced.use_sky_view_factor_type = "flag";
 
     pism_config:surface.debm_simple.air_temp_all_precip_as_rain = 275.15;
