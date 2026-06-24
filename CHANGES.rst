@@ -10,6 +10,9 @@ Changes since v2.3.0
   `-input.regrid.file` as a warm-start initial guess when bootstrapping (e.g. when moving
   to a finer grid). Previously these fields were silently ignored by the regrid loop and
   the Blatter solver always started from zero on bootstrap.
+- Allow regridding 3D fields whose vertical coordinate is dimensionless (e.g. Blatter's
+  `z_sigma`). `InputGridInfo` previously hard-coded "meters" for any Z dimension and
+  failed with "cannot convert '1' to 'meters'" when reading sigma-coordinate fields.
 - Install a `pismi` executable from a CMake build so the inverse modeling driver can be run
   as `pismi ...` regardless of whether PISM was installed via CMake or `pip install .`
   (previously a CMake install required `python -m PISM.pismi ...`).
