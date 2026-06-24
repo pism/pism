@@ -728,7 +728,35 @@ void Blatter::init_impl() {
                          "uvel_sigma and vvel_sigma not found");
     }
   } else {
-    int ierr = VecSet(m_x, 0.0); PISM_CHK(ierr, "VecSet");
+    // Bootstrap path: try uvel_sigma/vvel_sigma from -input.regrid.file as a
+    // warm start, if both are listed in -input.regrid.vars (or the list is
+    // empty, meaning "all") and present in the file. Otherwise start from zero.
+    auto regrid_filename = m_config->get_string("input.regrid.file");
+    auto regrid_vars     = set_split(m_config->get_string("input.regrid.vars"), ',');
+
+    bool regridded_guess = false;
+    if (not regrid_filename.empty() and
+        (regrid_vars.empty() or
+         (set_member("uvel_sigma", regrid_vars) and
+          set_member("vvel_sigma", regrid_vars)))) {
+
+      File regrid_file(m_grid->com, regrid_filename, io::PISM_GUESS, io::PISM_READONLY);
+      if (regrid_file.variable_exists("uvel_sigma") and
+          regrid_file.variable_exists("vvel_sigma")) {
+        m_log->message(2,
+                       "  blatter: regridding uvel_sigma and vvel_sigma from %s"
+                       " for the initial guess...\n",
+                       regrid_filename.c_str());
+        m_u_sigma->regrid(regrid_file, io::Default::Nil());
+        m_v_sigma->regrid(regrid_file, io::Default::Nil());
+        set_initial_guess(*m_u_sigma, *m_v_sigma);
+        regridded_guess = true;
+      }
+    }
+
+    if (not regridded_guess) {
+      int ierr = VecSet(m_x, 0.0); PISM_CHK(ierr, "VecSet");
+    }
   }
 }
 
