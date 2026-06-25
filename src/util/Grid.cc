@@ -943,7 +943,18 @@ InputGridInfo::InputGridInfo(const File &file, const std::string &variable,
                                           dimension_name.c_str(), file.name().c_str());
           }
         } else {
-          data = io::read_1d_variable(file, dimension_name, "meters", unit_system);
+          // Z axis: usually meters, but a 3D field may use dimensionless
+          // coordinates (e.g. sigma for the Blatter solver). Convert to meters
+          // when the units are length-compatible; otherwise read in the file's
+          // own units.
+          auto z_units = file.read_text_attribute(dimension_name, "units");
+          if (not z_units.empty() and
+              not units::are_convertible(units::Unit(unit_system, z_units),
+                                         units::Unit(unit_system, "meters"))) {
+            data = io::read_1d_variable(file, dimension_name, z_units, unit_system);
+          } else {
+            data = io::read_1d_variable(file, dimension_name, "meters", unit_system);
+          }
         }
 
         v_min  = vector_min(data);

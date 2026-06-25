@@ -92,13 +92,18 @@ def init(testname, L):
     P.y0 = L / 2.0
     P.periodicity = PISM.XY_PERIODIC
     P.z = PISM.DoubleVector(np.linspace(0, 2000, 201))
-    P.horizontal_size_from_options()
+    # Grid size from -Mx / -My (keeping the domain extent set above). Older PISM
+    # had GridParameters.horizontal_size_from_options(); current versions read
+    # both size and extent together, which would override Lx/Ly, so set Mx/My
+    # directly instead.
+    P.Mx = PISM.OptionInteger("-Mx", "grid size in the x direction", 51).value()
+    P.My = PISM.OptionInteger("-My", "grid size in the y direction", 51).value()
 
     # use 3 grid points in the y direction for x-z tests
     if testname in "BD":
         P.My = 3
 
-    P.ownership_ranges_from_options(ctx.size)
+    P.ownership_ranges_from_options(config, ctx.size)
 
     grid = PISM.Grid(ctx.ctx, P)
 
@@ -181,16 +186,25 @@ def run_test(test_name, L, output_file):
 
     try:
         output = PISM.util.prepare_output(output_file)
-        output.set_compression_level(1)
 
-        ds = stress_balance.diagnostics()
-        ds["velsurf"].compute().write(output)
+        # Keep the diagnostics container alive while computing 'velsurf':
+        # `stress_balance.spatial_diagnostics()[...].compute()` chained would free
+        # the container before compute() runs and segfault.
+        diagnostics = stress_balance.spatial_diagnostics()
+        velsurf = diagnostics["velsurf"].compute()
 
-        geometry.ice_thickness.write(output)
-        geometry.bed_elevation.write(output)
-        geometry.ice_surface_elevation.write(output)
+        # Current PISM requires each variable to be defined before it is written
+        # to a "prepared" output file. 'velsurf' is a 2-component (vector) field.
+        def write_variable(v):
+            for k in range(v.ndof()):
+                output.define_variable(v.metadata(k))
+            v.write(output)
 
-        yield_stress.write(output)
+        write_variable(velsurf)
+        write_variable(geometry.ice_thickness)
+        write_variable(geometry.bed_elevation)
+        write_variable(geometry.ice_surface_elevation)
+        write_variable(yield_stress)
     finally:
         output.close()
 

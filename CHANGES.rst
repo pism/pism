@@ -4,6 +4,16 @@ Changes since v2.3.0
 ====================
 
 - Add a ISMP7 surface model that uses the gradients but not the anomalies, and adds runoff.
+- Allow the Blatter stress balance to restart from SSA velocities: if `uvel_sigma` and
+  `vvel_sigma` are not present in the input file but `u_ssa` and `v_ssa` are, use the
+  (vertically constant) SSA velocity as a depth-independent initial guess.
+- Allow the Blatter stress balance to use `uvel_sigma` and `vvel_sigma` from
+  `-input.regrid.file` as a warm-start initial guess when bootstrapping (e.g. when moving
+  to a finer grid). Previously these fields were silently ignored by the regrid loop and
+  the Blatter solver always started from zero on bootstrap.
+- Allow regridding 3D fields whose vertical coordinate is dimensionless (e.g. Blatter's
+  `z_sigma`). `InputGridInfo` previously hard-coded "meters" for any Z dimension and
+  failed with "cannot convert '1' to 'meters'" when reading sigma-coordinate fields.
 - Install a `pismi` executable from a CMake build so the inverse modeling driver can be run
   as `pismi ...` regardless of whether PISM was installed via CMake or `pip install .`
   (previously a CMake install required `python -m PISM.pismi ...`).
