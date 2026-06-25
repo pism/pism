@@ -8,6 +8,11 @@ on:
         required: true
         default: 'dev'
         type: string
+      dockerfile:
+        description: 'Path to the Dockerfile, relative to the repo root'
+        required: true
+        default: 'docker/ubuntu-intel-oneapi/Dockerfile'
+        type: string
 
 env:
   REGISTRY: ghcr.io
@@ -52,7 +57,7 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          file: docker/ubuntu-intel-oneapi/Dockerfile
+          file: ${{ inputs.dockerfile }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
