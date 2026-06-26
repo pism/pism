@@ -3,6 +3,10 @@
 Changes since v2.3.0
 ====================
 
+- Fix `util/pism_plot_profiling` so it no longer fails with a `KeyError` on PETSc
+  `-log_view` output that references events not declared in the file's preamble (e.g.
+  `PetscBarrier`, `MatMult MF`). The file is now executed with auto-vivifying dictionaries
+  instead of imported as a module.
 - Install a `pismi` executable from a CMake build so the inverse modeling driver can be run
   as `pismi ...` regardless of whether PISM was installed via CMake or `pip install .`
   (previously a CMake install required `python -m PISM.pismi ...`).
