@@ -13,7 +13,9 @@ Example:
   mpiexec -n 8 python3 ismiphom_twin.py \
     -Mx 61 -stress_balance.blatter.Mz 5 \
     -stress_balance.blatter.coarsening_factor 2 \
-    -bp_pc_type mg -bp_pc_mg_levels 2 \
+    -bp_ksp_type fgmres -bp_pc_type mg -bp_pc_mg_levels 2 \
+    -bp_mg_coarse_ksp_type gmres -bp_mg_coarse_pc_type gamg \
+    -bp_mg_coarse_ksp_rtol 1e-2 -bp_mg_coarse_ksp_max_it 50 \
     -tikhonov_atol 1e-5 -inv_max_it 250
 
 Reference:

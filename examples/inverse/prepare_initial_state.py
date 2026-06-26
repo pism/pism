@@ -41,7 +41,7 @@ parser.add_argument("mode", nargs="?", default="debug",
                     choices=["debug", "sbatch"])
 parser.add_argument("--start", default="1980-01-01",
                     help="simulation start date (default: %(default)s)")
-parser.add_argument("--end", default="2000-01-01",
+parser.add_argument("--end", default="1990-01-01",
                     help="simulation end date (default: %(default)s)")
 parser.add_argument("--resolution", default="500m",
                     help="grid resolution with units, e.g. 500m (default: %(default)s)")
@@ -122,18 +122,19 @@ RUN_CMD = f"mpirun -np {NP}"
 
 BLATTER_PHYSICS = [
     "-stress_balance.model", "blatter",
-    "-bp_ksp_monitor", "",
+    "-bp_ksp_type", "fgmres",
     "-bp_ksp_rtol", "0.001",
-    "-bp_ksp_view_singularvalues", "",
-    "-bp_mg_coarse_ksp_type", "preonly",
-    "-bp_mg_coarse_pc_type", "lu",
+    "-bp_mg_coarse_ksp_type", "gmres",
+    "-bp_mg_coarse_pc_type", "gamg",
+    "-bp_mg_coarse_ksp_rtol", "1e-2",
+    "-bp_mg_coarse_ksp_max_it", "50",
     "-bp_mg_levels_ksp_type", "richardson",
     "-bp_mg_levels_pc_type", "sor",
     "-bp_pc_mg_levels", "3",
     "-bp_pc_type", "mg",
     "-bp_snes_ksp_ew", "1",
     "-bp_snes_ksp_ew_version", "3",
-    "-bp_snes_monitor_ratio", "",
+    "-bp_snes_monitor", "",
     "-bp_snes_rtol", "0.001",
     "-stress_balance.blatter.Mz", "10",
     "-stress_balance.blatter.coarsening_factor", "3",
