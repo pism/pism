@@ -68,10 +68,14 @@ COMMON_PHYSICS = [
 
 BLATTER_PHYSICS = [
     "-stress_balance.model", "blatter",
+    "-bp_ksp_type", "fgmres",
     "-bp_ksp_rtol", "1e-4",
-    "-bp_mg_coarse_ksp_type", "preonly",
-    "-bp_mg_coarse_pc_type", "lu",
-    "-bp_mg_levels_ksp_type", "chebyshev",
+    "-bp_mg_coarse_ksp_type", "gmres",
+    "-bp_mg_coarse_pc_type", "gamg",
+    "-bp_mg_coarse_ksp_rtol", "1e-2",
+    "-bp_mg_coarse_ksp_max_it", "50",
+    "-bp_mg_levels_ksp_type", "richardson",
+    "-bp_mg_levels_pc_type", "sor",
     "-bp_pc_mg_levels", "3",
     "-bp_pc_type", "mg",
     "-bp_snes_ksp_ew", "0",
