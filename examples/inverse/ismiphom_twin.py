@@ -298,9 +298,14 @@ def run_inversion(grid, geometry, enthalpy, yield_stress_true,
                 "design_value": float(val_design),
                 "state_value": float(val_state),
             })
+            try:
+                gn = gradient.norm(PISM.PETSc.NormType.NORM_2)
+                gnorm = gn[0] if hasattr(gn, "__len__") else float(gn)
+            except Exception:
+                gnorm = float("nan")
             PISM.verbPrintf(2, com,
-                            "  it %3d: state=%10.4e  design=%10.4e\n" %
-                            (it, val_state, val_design))
+                            "  it %3d: state=%10.4e  design=%10.4e  grad=%10.4e\n" %
+                            (it, val_state, val_design, gnorm))
 
     listener = MisfitLogger()
     tikhonov.addListener(listener)
@@ -414,6 +419,18 @@ def main():
     # For a twin experiment, use large eta to minimize regularization.
     config.set_number("inverse.tikhonov.penalty_weight", 1e6)
     config.set_string("inverse.stress_balance.method", "tikhonov_lmvm")
+    # Stopping criteria. The Tikhonov convergence test is
+    #   sumNorm < atol      (TAO_CONVERGED_GATOL), or
+    #   sumNorm < rtol*max(designNorm, stateNorm)   (relative; degenerate here,
+    #     since with large eta the data fit becomes near-perfect, grad_state->0,
+    #     so sumNorm ~ designNorm and the ratio sits near 1).
+    # So atol is the operative criterion. The default 1e-10 is unreachable, so
+    # the solver always ran to max_iterations. Loosen atol to stop once the
+    # gradient is small, and lower the iteration backstop (the twin recovers
+    # tauc long before 1000 iterations). Tune atol to ~10x the gradient plateau
+    # printed by the iteration logger below if it stops too early/late.
+    config.set_number("inverse.tikhonov.atol", 1e-4)
+    config.set_number("inverse.max_iterations", 200)
     # ISMIP-HOM tauc is in Pa·s/m (≈ 3e10), much larger than the default
     # tauc_max of 5e7 Pa. BLMVM clips zeta to [log(tauc_min), log(tauc_max)],
     # which destroys the initial guess if the bounds are too tight.
