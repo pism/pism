@@ -2095,11 +2095,31 @@ netcdf pism_config {
     pism_config:regional.zero_gradient_option = "zero_grad_where_no_model";
     pism_config:regional.zero_gradient_type = "flag";
 
+    pism_config:run_info.contact_email = "";
+    pism_config:run_info.contact_email_doc = "Contact e-mail address. This string is written to output files as the ``contact_email`` global attribute.";
+    pism_config:run_info.contact_email_option = "contact_email";
+    pism_config:run_info.contact_email_type = "string";
+
+    pism_config:run_info.contact_name = "";
+    pism_config:run_info.contact_name_doc = "Contact person's name. This string is written to output files as the ``contact_name`` global attribute.";
+    pism_config:run_info.contact_name_option = "contact_name";
+    pism_config:run_info.contact_name_type = "string";
+
+    pism_config:run_info.group = "";
+    pism_config:run_info.group_doc = "Group or project name. This string is written to output files as the ``group`` global attribute.";
+    pism_config:run_info.group_option = "group";
+    pism_config:run_info.group_type = "string";
+
     pism_config:run_info.institution = "";
     pism_config:run_info.institution_doc = "Institution name. This string is written to output files as the ``institution`` global attribute.";
     pism_config:run_info.institution_option = "institution";
     pism_config:run_info.institution_type = "string";
 
+    pism_config:run_info.model = "PISM";
+    pism_config:run_info.model_doc = "Model name. This string is written to output files as the ``model`` global attribute.";
+    pism_config:run_info.model_option = "model";
+    pism_config:run_info.model_type = "string";
+    
     pism_config:run_info.title = "";
     pism_config:run_info.title_doc = "Free-form string containing a concise description of the current run. This string is written to output files as the ``title`` global attribute.";
     pism_config:run_info.title_option = "title";
