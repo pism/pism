@@ -164,6 +164,7 @@ void IceModel::write_snapshot() {
       m_snapshot_file->append_time(m_time->current());
       write_state(*m_snapshot_file);
       write_state_diagnostics(*m_snapshot_file, m_snapshot_vars);
+      write_state_diagnostics(*m_snapshot_file, m_spatial_vars);
       write_diagnostics(*m_snapshot_file, m_snapshot_vars);
       write_run_stats(*m_snapshot_file);
     }

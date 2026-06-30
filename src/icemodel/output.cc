@@ -139,6 +139,10 @@ void IceModel::init_final_output() {
   }
 #endif
 
+  // includes
+  // - variables from m_output_vars
+  // - state for variables from m_output_vars
+  // - state for variables from m_spatial_vars
   m_output_file_contents = pism::combine(common_metadata(), state_variables());
   m_output_file_contents =
       pism::combine(m_output_file_contents, state_variables_for_diagnostics(m_output_vars));
@@ -167,11 +171,15 @@ void IceModel::write_final_output() {
       define_variables(file, m_output_file_contents);
     }
 
+  // - variables from m_output_vars
+  // - state for variables from m_output_vars
+  // - state for variables from m_spatial_vars
     {
       io::write_config(*m_config, "pism_config", file);
       file.append_time(m_time->current());
       write_state(file);
       write_state_diagnostics(file, m_output_vars);
+      write_state_diagnostics(file, m_spatial_vars);
       write_diagnostics(file, m_output_vars);
       write_run_stats(file);
     }
