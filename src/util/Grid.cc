@@ -1561,6 +1561,9 @@ const VariableMetadata &Grid::get_mapping_info() const {
 void Grid::set_mapping_info(const VariableMetadata &info) {
   m_impl->mapping_info = info;
   m_impl->mapping_info.set_output_type(io::PISM_INT);
+  // Reset variable name to ensure that it is called "mapping" in all output files instead
+  // of possibly inheriting the name from an input file:
+  m_impl->mapping_info.set_name("mapping");
 }
 
 std::shared_ptr<InputInterpolation> Grid::get_interpolation(const std::vector<double> &levels,
