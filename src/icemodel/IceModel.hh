@@ -261,7 +261,7 @@ protected:
   /*!
    * Write state variables of diagnostic quantities in `variable_names` to `file`.
    */
-  void write_state_diagnostics(const OutputFile &file,
+  void write_state_for_diagnostics(const OutputFile &file,
                                const std::set<std::string> &variable_names) const;
 
   void write_run_stats(const OutputFile &file) const;

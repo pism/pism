@@ -178,8 +178,8 @@ void IceModel::write_final_output() {
       io::write_config(*m_config, "pism_config", file);
       file.append_time(m_time->current());
       write_state(file);
-      write_state_diagnostics(file, m_output_vars);
-      write_state_diagnostics(file, m_spatial_vars);
+      write_state_for_diagnostics(file, m_output_vars);
+      write_state_for_diagnostics(file, m_spatial_vars);
       write_diagnostics(file, m_output_vars);
       write_run_stats(file);
     }
@@ -283,7 +283,7 @@ std::string IceModel::save_state_on_error(const std::string &suffix,
     io::write_config(*m_config, "pism_config", file);
     file.append_time(m_time->current());
     write_state(file);
-    write_state_diagnostics(file, variable_names);
+    write_state_for_diagnostics(file, variable_names);
     write_diagnostics(file, variable_names);
     write_run_stats(file);
   }

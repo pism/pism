@@ -3896,7 +3896,7 @@ IceModel::state_variables_for_diagnostics(const std::set<std::string> &variable_
   return result;
 }
 
-void IceModel::write_state_diagnostics(const OutputFile &file,
+void IceModel::write_state_for_diagnostics(const OutputFile &file,
                                        const std::set<std::string> &variable_names) const {
 
   for (const auto &var : variable_names) {
