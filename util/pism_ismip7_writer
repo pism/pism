@@ -503,7 +503,8 @@ class OutputFile:
     def append_time(self, time_seconds):
         """Create one more time record by adding a value to the time dimension."""
         self.time_index = len(self.nc_dataset.dimensions["time"])
-        self.nc_dataset.variables["time"][self.time_index] = time_seconds
+        # ISMIP7 requirement: time is saved in "days"
+        self.nc_dataset.variables["time"][self.time_index] = time_seconds / 86400
 
     def append_history(self, string):
         """Append a `string` to the global attribute 'history'."""
@@ -528,6 +529,14 @@ class OutputFile:
         attributes = metadata["attributes"]
         dimensions = metadata["dimensions"]
 
+        # ISMIP7 requirement: all variables need to be written as single-precision float
+        #
+        # FIXME: overriding this data type saves PISM's snapshots as single-precision
+        # float, so they should not be used to re-start PISM.
+        #
+        # dtype = metadata["dtype"]
+        dtype = "f4"
+
         if name in self.nc_dataset.variables:
             return
 
@@ -540,11 +549,16 @@ class OutputFile:
 
         fill_value = attributes["_FillValue"] if '_FillValue' in attributes else None
         nc_variable = self.nc_dataset.createVariable(name,
-                                                     metadata["dtype"],
+                                                     dtype,
                                                      dimensions,
                                                      compression=compression,
                                                      complevel=self.compression_level,
                                                      fill_value=fill_value)
+
+        # ISMIP7 requirement: time should have units of "days since 1850-01-01"
+        if name == "time" or name == "time_bounds":
+            time_units = attributes["units"]
+            attributes["units"] = time_units.replace("seconds", "days")
 
         ignored_attributes = ['_FillValue']
         for attr, value in attributes.items():
@@ -585,7 +599,11 @@ class OutputFile:
         ndim = len(count)
         hyperslab = [slice(start[i], start[i] + count[i]) for i in range(ndim)]
 
-        self.nc_dataset.variables[name][hyperslab] = array
+        # ISMIP7 requirement: time should have units of "days since 1850-01-01"
+        if name == "time" or name == "time_bounds":
+            self.nc_dataset.variables[name][hyperslab] = array / 86400
+        else:
+            self.nc_dataset.variables[name][hyperslab] = array
 
     def close(self):
         """Close the underlying NetCDF dataset."""
@@ -742,6 +760,8 @@ def main(compression_level, output_grid=None):
             case ServerActions.SET_FILE_ATTRIBUTES.value:
                 logger.debug(f"SET_FILE_ATTRIBUTES {file_name}")
                 global_attrs[file_name] = metadata["attributes"]
+                # ISMIP7 requirement:
+                global_attrs[file_name]["crs"] = output_grid.proj_string
 
             case ServerActions.APPEND_HISTORY.value:
                 logger.debug(f"APPEND_HISTORY {file_name}")

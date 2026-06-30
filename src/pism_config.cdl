@@ -1873,6 +1873,10 @@ netcdf pism_config {
     pism_config:output.ISMIP6_spatial_variables_doc = "Comma-separated list of fields reported by models participating in ISMIP6 simulations.";
     pism_config:output.ISMIP6_spatial_variables_type = "string";
 
+    pism_config:output.asynchronous = "false";
+    pism_config:output.asynchronous_doc = "If ``true`` PISM will use YAC-based asynchronous output code";
+    pism_config:output.asynchronous_type = "flag";
+
     pism_config:output.checkpoint.exit = "no";
     pism_config:output.checkpoint.exit_doc = "If ``true`` PISM will exit with after checkpointing.";
     pism_config:output.checkpoint.exit_type = "flag";

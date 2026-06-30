@@ -3881,7 +3881,7 @@ IceModel::diagnostic_variables(const std::set<std::string> &variable_names) cons
 }
 
 std::set<VariableMetadata>
-IceModel::state_variables_diagnostics(const std::set<std::string> &variable_names) const {
+IceModel::state_variables_for_diagnostics(const std::set<std::string> &variable_names) const {
   std::set<VariableMetadata> result{};
   {
     for (const auto &var : variable_names) {
@@ -3896,7 +3896,7 @@ IceModel::state_variables_diagnostics(const std::set<std::string> &variable_name
   return result;
 }
 
-void IceModel::write_state_diagnostics(const OutputFile &file,
+void IceModel::write_state_for_diagnostics(const OutputFile &file,
                                        const std::set<std::string> &variable_names) const {
 
   for (const auto &var : variable_names) {
