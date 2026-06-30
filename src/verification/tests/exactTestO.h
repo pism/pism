@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2011, 2016 Ed Bueler and Constantine Khroulev
+   Copyright (C) 2011, 2016, 2026 Ed Bueler and Constantine Khroulev
   
    This file is part of PISM.
   
@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef __exactTestO_h
-#define __exactTestO_h 1
+#ifndef PISM_exact_TestO_h
+#define PISM_exact_TestO_h 1
 
 #ifdef __cplusplus
 extern "C"
@@ -54,5 +54,4 @@ struct TestOParameters exactO(double z);
 }
 #endif
 
-#endif  /* __exactTestO_h */
-
+#endif  /* PISM_exact_TestO_h */

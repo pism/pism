@@ -2079,6 +2079,10 @@ netcdf pism_config {
     pism_config:output.use_MKS_doc = "Use MKS units in output files.";
     pism_config:output.use_MKS_type = "flag";
 
+    pism_config:petsc_options = "";
+    pism_config:petsc_options_doc = "Additional command-line options for PETSc";
+    pism_config:petsc_options_type = "string";
+
     pism_config:regional.no_model_strip = 5.0;
     pism_config:regional.no_model_strip_doc = "Default width of the \"no model strip\" in regional setups.";
     pism_config:regional.no_model_strip_option = "no_model_strip";

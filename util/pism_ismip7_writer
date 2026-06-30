@@ -107,6 +107,41 @@ class ISMIP7GreenlandGrid(OutputGrid):
         }
 
 
+class ISMIP7AntarcticGrid(OutputGrid):
+    """Grid defined in 'Appendix 1 – Output grid definition and interpolation' of 'ISMIP6
+    Projections Antarctica'
+
+    See https://theghub.org/groups/ismip6/wiki/ISMIP6-Projections-Antarctica
+
+    """
+
+    def __init__(self, resolution=1000):
+        self.proj_string = "EPSG:3031"
+        x_min = -3040e3
+        x_max = 3040e3
+        y_min = -3040e3
+        y_max = 3040e3
+
+        width_x = (x_max - x_min)
+        Nx = int(width_x / resolution) + 1
+
+        width_y = (y_max - y_min)
+        Ny = int(width_y / resolution) + 1
+
+        self.x = np.linspace(x_min, x_max, Nx)
+        self.y = np.linspace(y_min, y_max, Ny)
+
+        self.mapping_attributes = {
+            "false_easting": 0.0,
+            "false_northing": 0.0,
+            "grid_mapping_name": "polar_stereographic",
+            "latitude_of_projection_origin": -90.0,
+            "proj_params": self.proj_string,
+            "scale_factor_at_projection_origin": 1.0,
+            "standard_parallel": -71.0,
+            "straight_vertical_longitude_from_pole": 0.0,
+        }
+
 class StdGreenlandGrid(OutputGrid):
     """Grid used in Bamber et al., 2001 and by PISM's "std-greenland" example
 
@@ -832,13 +867,21 @@ if __name__ == "__main__":
         help="set compression level for 2D and 3D variables",
     )
 
+    parser.add_argument("-g", "--grid",
+                        dest="grid",
+                        type=str,
+                        choices=["greenland", "antarctica"],
+                        default="greenland",
+                        help="ISMIP7 grid choice: 'greenland' or 'antarctica'")
+
     parser.add_argument(
         "-r",
         "--resolution",
         dest="resolution",
         type=int,
         default=5,
-        help="output grid resolution, km (for ISMIP7, choose one of 20, 10, 5, 2 or 1)",
+        help="output grid resolution, km (for ISMIP7 Greenland, choose one of 20, 10, 5, 2 or 1; " +
+        "for ISMIP7 Antarctica, choose one of 32, 16, 8, 4, 2 or 1)",
     )
 
     options = parser.parse_args()
@@ -848,7 +891,13 @@ if __name__ == "__main__":
         logger = logging.getLogger("pism_output")
 
     try:
-        grid = ISMIP7GreenlandGrid(resolution=options.resolution * 1000.0)
+        if options.grid == "greenland":
+            grid = ISMIP7GreenlandGrid(resolution=options.resolution * 1000.0)
+        elif options.grid == "antarctica":
+            grid = ISMIP7AntarcticGrid(resolution=options.resolution * 1000.0)
+        else:
+            raise ValueError(f"invalid grid choice: {options.grid}")
+
         main(options.compression, output_grid=grid)
     except Exception as e:
         logger.critical(f"ERROR: {e}")

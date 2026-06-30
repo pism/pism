@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004-2006, 2016 Jed Brown and Ed Bueler
+   Copyright (C) 2004-2006, 2016, 2026 Jed Brown and Ed Bueler
   
    This file is part of PISM.
   
@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef __exactTestH_h
-#define __exactTestH_h 1
+#ifndef PISM_exact_TestH_h
+#define PISM_exact_TestH_h 1
 
 #ifdef __cplusplus
 extern "C"
@@ -51,11 +51,11 @@ struct TestHParameters {
   double M;
 };
 
-struct TestHParameters exactH(const double f, const double t, const double r);
+struct TestHParameters exactH(double f, double t, double r);
 
 #ifdef __cplusplus
 }
 #endif
 
 
-#endif  /* __exactTestH_h */
+#endif  /* PISM_exact_TestH_h */

@@ -40,7 +40,6 @@ static char help[] =
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/io/SynchronousOutputWriter.hh"
-#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -50,7 +49,7 @@ static void compute_strain_heating_errors(const array::Array3D &strain_heating,
                                           double &gmax_strain_heating_err,
                                           double &gav_strain_heating_err) {
   double    max_strain_heating_error = 0.0, av_strain_heating_error = 0.0, avcount = 0.0;
-  const int Mz = grid.Mz();
+  auto Mz = grid.Mz();
 
   const double LforFG = 750000; // m
 
@@ -75,12 +74,12 @@ static void compute_strain_heating_errors(const array::Array3D &strain_heating,
         // singularity
         TestFGParameters F = exactFG(0.0, r, grid.z(), 0.0);
 
-        for (int k = 0; k < Mz; k++) {
+        for (unsigned int k = 0; k < Mz; k++) {
           F.Sig[k] *= ice_rho * ice_c; // scale exact strain_heating to J/(s m^3)
         }
-        const int ks = grid.kBelowHeight(thickness(i, j));
+        auto ks = grid.kBelowHeight(thickness(i, j));
         const double *strain_heating_ij = strain_heating.get_column(i, j);
-        for (int k = 0; k < ks; k++) {  // only eval error if below num surface
+        for (unsigned int k = 0; k < ks; k++) {  // only eval error if below num surface
           const double _strain_heating_error = fabs(strain_heating_ij[k] - F.Sig[k]);
           max_strain_heating_error = std::max(max_strain_heating_error, _strain_heating_error);
           avcount += 1.0;
@@ -300,7 +299,7 @@ int main(int argc, char *argv[]) {
     P.Ly = P.Lx;
 
     double Lz = 4000.0;
-    unsigned int Mz = config->get_number("grid.Mz");
+    unsigned int Mz = static_cast<unsigned int>(config->get_number("grid.Mz"));
 
     P.z = grid::compute_vertical_levels(Lz, Mz, grid::EQUAL);
     P.ownership_ranges_from_options(*ctx->config(), ctx->size());

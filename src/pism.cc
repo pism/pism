@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2025 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2026 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -157,11 +157,8 @@ std::shared_ptr<Context> context(MPI_Comm com, const std::string &prefix,
 
   set_config_defaults(*config, testname);
   set_config_from_options(*config);
-  config->resolve_filenames();
 
   logger->set_threshold(static_cast<int>(config->get_number("output.runtime.verbosity")));
-
-  print_config(*logger, 3, *config);
 
   auto time = std::make_shared<Time>(com, config, *logger, sys);
 
@@ -240,7 +237,6 @@ int main(int argc, char *argv[]) {
 
       // process command-line options
       set_config_from_options(*config);
-      config->resolve_filenames();
     }
 
     if (options::Bool("-version", "print PISM version and stop")) {
@@ -254,7 +250,15 @@ int main(int argc, char *argv[]) {
                          "Configuration parameter 'input.file' cannot be empty");
     }
 
+    config->resolve_filenames();
     print_config(*ctx->log(), 3, *config);
+
+    {
+      // Insert extra command-line options into the PETSc options database.
+      PetscErrorCode ierr = PetscOptionsInsertString(NULL, // default option database
+                                                     config->get_string("petsc_options").c_str());
+      PISM_CHK(ierr, "PetscOptionsInsertString");
+    }
 
     std::string usage =
       "  pism -i IN.nc [-bootstrap] [-regional] [OTHER PISM & PETSc OPTIONS]\n"

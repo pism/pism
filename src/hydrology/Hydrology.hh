@@ -162,7 +162,7 @@ protected:
   void compute_basal_melt_rate(const array::CellType &mask,
                                const array::Scalar &basal_melt_rate,
                                array::Scalar &result);
-protected:
+
   // water flux on the regular grid
   array::Vector m_Q;
 

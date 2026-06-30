@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2021, 2023, 2025 PISM Authors
+/* Copyright (C) 2015, 2016, 2021, 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,7 +19,7 @@
 
 #include "pism/rheology/GoldsbyKohlstedt.hh"
 #include <cmath>      // for pow, exp, fabs, M_PI
-#include <memory>     // for __shared_ptr_access
+#include <memory>     // for std::shared_ptr
 #include <stdexcept>  // for runtime_error
 
 namespace pism {
@@ -86,7 +86,7 @@ double GoldsbyKohlstedt::hardness_impl(double enthalpy, double pressure) const {
   return pow(A, m_hardness_power);
 }
 
-double GoldsbyKohlstedt::softness_impl(double , double) const {
+double GoldsbyKohlstedt::softness_impl(double  /*E*/, double /*p*/) const {
   throw std::runtime_error("double GoldsbyKohlstedt::softness is not implemented");
 
 #ifndef __GNUC__
@@ -198,7 +198,7 @@ GoldsbyKohlstedtStripped::GoldsbyKohlstedtStripped(double exponent,
 }
 
 
-double GoldsbyKohlstedtStripped::flow_from_temp(double stress, double temp, double pressure, double) const {
+double GoldsbyKohlstedtStripped::flow_from_temp(double stress, double temp, double pressure, double /*gs*/) const {
   // note value of gs is ignored
   // note pressure only effects the temperature; the "P V" term is dropped
   // note no diffusional flow
