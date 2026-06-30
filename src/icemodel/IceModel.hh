@@ -220,7 +220,7 @@ protected:
    * diagnostic quantities.
    */
   std::set<VariableMetadata>
-  state_variables_diagnostics(const std::set<std::string> &variable_names) const;
+  state_variables_for_diagnostics(const std::set<std::string> &variable_names) const;
 
   /*!
    * Return the set of "common" variables (i.e. ones written to most files): step counter,

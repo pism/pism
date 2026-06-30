@@ -141,9 +141,9 @@ void IceModel::init_final_output() {
 
   m_output_file_contents = pism::combine(common_metadata(), state_variables());
   m_output_file_contents =
-      pism::combine(m_output_file_contents, state_variables_diagnostics(m_output_vars));
+      pism::combine(m_output_file_contents, state_variables_for_diagnostics(m_output_vars));
   m_output_file_contents =
-      pism::combine(m_output_file_contents, state_variables_diagnostics(m_spatial_vars));
+      pism::combine(m_output_file_contents, state_variables_for_diagnostics(m_spatial_vars));
   m_output_file_contents =
       pism::combine(m_output_file_contents, diagnostic_variables(m_output_vars));
 }

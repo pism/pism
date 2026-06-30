@@ -65,9 +65,9 @@ void IceModel::init_snapshots() {
 
   m_snapshot_file_contents = pism::combine(common_metadata(), state_variables());
   m_snapshot_file_contents =
-      pism::combine(m_snapshot_file_contents, state_variables_diagnostics(m_snapshot_vars));
+      pism::combine(m_snapshot_file_contents, state_variables_for_diagnostics(m_snapshot_vars));
   m_snapshot_file_contents =
-      pism::combine(m_snapshot_file_contents, state_variables_diagnostics(m_spatial_vars));
+      pism::combine(m_snapshot_file_contents, state_variables_for_diagnostics(m_spatial_vars));
   m_snapshot_file_contents =
       pism::combine(m_snapshot_file_contents, diagnostic_variables(m_snapshot_vars));
 
