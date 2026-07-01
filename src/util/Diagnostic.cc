@@ -35,7 +35,8 @@ Diagnostic::Diagnostic(std::shared_ptr<const Grid> grid)
   : m_grid(grid),
     m_sys(grid->ctx()->unit_system()),
     m_config(grid->ctx()->config()),
-    m_fill_value(m_config->get_number("output.fill_value")) {
+    m_fill_value(m_config->get_number("output.fill_value")),
+    m_output_use_mks(m_config->get_flag("output.use_MKS")) {
   // empty
 }
 
@@ -57,13 +58,17 @@ void Diagnostic::reset_impl() {
 }
 
 /*!
- * Convert from external (output) units to internal units.
+ * Return fill value in internal units.
  */
-double Diagnostic::to_internal(double x) const {
+double Diagnostic::internal_fill_value() const {
+  if (m_output_use_mks) {
+    return m_fill_value;
+  }
+
   std::string
     out = m_vars.at(0)["output_units"],
     in  = m_vars.at(0)["units"];
-  return convert(m_sys, x, out, in);
+  return convert(m_sys, m_fill_value, out, in);
 }
 
 //! Get the number of NetCDF variables corresponding to a diagnostic quantity.

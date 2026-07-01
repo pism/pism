@@ -186,7 +186,7 @@ public:
         .units("m second^-1")
         .output_units("m day^-1");
     m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
+    m_vars[0]["_FillValue"]   = { internal_fill_value() };
   }
 
 protected:
@@ -209,7 +209,7 @@ public:
         .units("m second^-1")
         .output_units("m year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
+    m_vars[0]["_FillValue"]   = { internal_fill_value() };
     m_vars[0]["comment"]      = "takes into account what part of the front is submerged";
   }
 

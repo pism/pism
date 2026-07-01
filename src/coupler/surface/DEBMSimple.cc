@@ -641,7 +641,7 @@ public:
         .output_units(external_units);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
+    m_vars[0]["_FillValue"] = { internal_fill_value() };
   }
 
 protected:
@@ -695,7 +695,7 @@ public:
         .units(internal_units)
         .output_units(external_units);
     m_vars[0].set_string("cell_methods", "time: mean");
-    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
+    m_vars[0]["_FillValue"] = { internal_fill_value() };
   }
 
 protected:
@@ -748,7 +748,7 @@ public:
         .units(internal_units)
         .output_units(external_units);
     m_vars[0].set_string("cell_methods", "time: mean");
-    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
+    m_vars[0]["_FillValue"] = { internal_fill_value() };
   }
 
 protected:

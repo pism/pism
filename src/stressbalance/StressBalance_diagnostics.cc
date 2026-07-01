@@ -141,7 +141,7 @@ PSB_velbar_mag::PSB_velbar_mag(const StressBalance *m)
       .units("m second^-1")
       .output_units("m year^-1");
 
-  m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
+  m_vars[0]["_FillValue"] = { internal_fill_value() };
   m_vars[0]["valid_min"] = {0.0};
 }
 
@@ -157,7 +157,7 @@ std::shared_ptr<array::Array> PSB_velbar_mag::compute_impl() const {
   const array::Scalar *thickness = m_grid->variables().get_2d_scalar("land_ice_thickness");
 
   // mask out ice-free areas:
-  apply_mask(*thickness, to_internal(m_fill_value), *result);
+  apply_mask(*thickness, internal_fill_value(), *result);
 
   return result;
 }
@@ -254,7 +254,7 @@ PSB_flux_mag::PSB_flux_mag(const StressBalance *m)
       .long_name("magnitude of vertically-integrated horizontal flux of ice")
       .units("m^2 s^-1")
       .output_units("m^2 year^-1");
-  m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
+  m_vars[0]["_FillValue"] = { internal_fill_value() };
   m_vars[0]["valid_min"] = {0.0};
 }
 
@@ -274,7 +274,7 @@ std::shared_ptr<array::Array> PSB_flux_mag::compute_impl() const {
     (*result)(i,j) *= (*thickness)(i,j);
   }
 
-  apply_mask(*thickness, to_internal(m_fill_value), *result);
+  apply_mask(*thickness, internal_fill_value(), *result);
 
   return result;
 }
@@ -287,7 +287,7 @@ PSB_velbase_mag::PSB_velbase_mag(const StressBalance *m)
       .long_name("magnitude of horizontal velocity of ice at base of ice")
       .units("m s^-1")
       .output_units("m year^-1");
-  m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
+  m_vars[0]["_FillValue"] = { internal_fill_value() };
   m_vars[0]["valid_min"] = {0.0};
 }
 
@@ -296,7 +296,7 @@ std::shared_ptr<array::Array> PSB_velbase_mag::compute_impl() const {
 
   compute_magnitude(*array::cast<array::Vector>(PSB_velbase(model).compute()), *result);
 
-  double fill_value = to_internal(m_fill_value);
+  double fill_value = internal_fill_value();
 
   const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
 
@@ -320,12 +320,12 @@ PSB_velsurf_mag::PSB_velsurf_mag(const StressBalance *m)
       .long_name("magnitude of horizontal velocity of ice at ice surface")
       .units("m s^-1")
       .output_units("m year^-1");
-  m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
+  m_vars[0]["_FillValue"] = { internal_fill_value() };
   m_vars[0]["valid_min"] = {0.0};
 }
 
 std::shared_ptr<array::Array> PSB_velsurf_mag::compute_impl() const {
-  double fill_value = to_internal(m_fill_value);
+  double fill_value = internal_fill_value();
 
   auto result = allocate<array::Scalar>("velsurf_mag");
 
@@ -362,12 +362,12 @@ PSB_velsurf::PSB_velsurf(const StressBalance *m)
 
   for (auto &v : m_vars) {
     v.units("m s^-1").output_units("m year^-1");
-    v["_FillValue"] = { to_internal(m_fill_value) };
+    v["_FillValue"] = { internal_fill_value() };
   }
 }
 
 std::shared_ptr<array::Array> PSB_velsurf::compute_impl() const {
-  double fill_value = to_internal(m_fill_value);
+  double fill_value = internal_fill_value();
 
   auto result = allocate<array::Vector>("surf");
 
@@ -493,11 +493,11 @@ PSB_wvelsurf::PSB_wvelsurf(const StressBalance *m) : Diag<StressBalance>(m) {
       .units("m s^-1")
       .output_units("m year^-1");
 
-  m_vars[0]["_FillValue"]  = { to_internal(m_fill_value) };
+  m_vars[0]["_FillValue"]  = { internal_fill_value() };
 }
 
 std::shared_ptr<array::Array> PSB_wvelsurf::compute_impl() const {
-  double fill_value = to_internal(m_fill_value);
+  double fill_value = internal_fill_value();
 
   auto result = allocate<array::Scalar>("wvelsurf");
 
@@ -534,11 +534,11 @@ PSB_wvelbase::PSB_wvelbase(const StressBalance *m) : Diag<StressBalance>(m) {
       .units("m s^-1")
       .output_units("m year^-1");
 
-  m_vars[0]["_FillValue"]  = { to_internal(m_fill_value) };
+  m_vars[0]["_FillValue"]  = { internal_fill_value() };
 }
 
 std::shared_ptr<array::Array> PSB_wvelbase::compute_impl() const {
-  double fill_value = to_internal(m_fill_value);
+  double fill_value = internal_fill_value();
 
   auto result = allocate<array::Scalar>("wvelbase");
 
@@ -578,12 +578,12 @@ PSB_velbase::PSB_velbase(const StressBalance *m) : Diag<StressBalance>(m) {
 
   for (auto &v : m_vars) {
     v.units("m s^-1").output_units("m year^-1");
-    v["_FillValue"]  = { to_internal(m_fill_value) };
+    v["_FillValue"]  = { internal_fill_value() };
   }
 }
 
 std::shared_ptr<array::Array> PSB_velbase::compute_impl() const {
-  double fill_value = to_internal(m_fill_value);
+  double fill_value = internal_fill_value();
 
   auto result = allocate<array::Vector>("base");
 

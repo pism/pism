@@ -69,7 +69,7 @@ public:
     m_vars = { { m_sys, name, *m_grid } };
     m_vars[0].long_name(long_name).units(internal_units).output_units(external_units);
 
-    m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
+    m_vars[0]["_FillValue"]   = { internal_fill_value() };
     m_vars[0]["cell_methods"] = "time: mean";
 
     m_last_amount.metadata()
@@ -172,7 +172,7 @@ public:
     m_vars = { { m_sys, name, *m_grid } };
     m_vars[0].long_name(long_name).units(internal_units).output_units(external_units);
     m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
+    m_vars[0]["_FillValue"]   = { internal_fill_value() };
     m_vars[0]["comment"]      = "positive flux corresponds to ice gain";
   }
 
@@ -231,7 +231,7 @@ public:
         .standard_name(standard_name)
         .units(internal_units)
         .output_units(external_units);
-    m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
+    m_vars[0]["_FillValue"]   = { internal_fill_value() };
     m_vars[0]["cell_methods"] = "time: mean";
     m_vars[0]["comment"]      = "positive flux corresponds to ice gain";
   }
@@ -286,7 +286,7 @@ public:
         .standard_name(standard_name)
         .units(internal_units)
         .output_units(external_units);
-    m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
+    m_vars[0]["_FillValue"]   = { internal_fill_value() };
     m_vars[0]["cell_methods"] = "time: mean";
     m_vars[0]["comment"]      = "positive flux corresponds to ice gain";
   }
@@ -340,7 +340,7 @@ public:
         .long_name(long_name)
         .units(internal_units)
         .output_units(external_units);
-    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
+    m_vars[0]["_FillValue"] = { internal_fill_value() };
     m_vars[0]["cell_methods"] = "time: mean";
     m_vars[0]["comment"] = "positive flux corresponds to ice gain";
   }
@@ -446,7 +446,7 @@ public:
         .units(internal_units)
         .output_units(external_units);
     m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
+    m_vars[0]["_FillValue"]   = { internal_fill_value() };
     m_vars[0]["comment"]      = "positive flux corresponds to ice gain";
   }
 
@@ -504,7 +504,7 @@ public:
         .output_units(external_units);
     m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
+    m_vars[0]["_FillValue"] = { internal_fill_value() };
     m_vars[0]["comment"] = "positive flux corresponds to ice gain";
   }
 
@@ -549,7 +549,7 @@ public:
     m_vars = { { m_sys, name, *m_grid } };
     m_vars[0].long_name("frontal melt flux").units(internal_units).output_units(external_units);
     m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
+    m_vars[0]["_FillValue"] = { internal_fill_value() };
     m_vars[0]["comment"] = "positive flux corresponds to ice gain";
   }
 
@@ -596,7 +596,7 @@ public:
         .units(internal_units)
         .output_units(external_units);
     m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
+    m_vars[0]["_FillValue"] = { internal_fill_value() };
     m_vars[0]["comment"] = "positive flux corresponds to ice gain";
   }
 
@@ -850,7 +850,7 @@ public:
         .units("kg m^-2 s^-1")
         .output_units("kg m^-2 year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
+    m_vars[0]["_FillValue"]   = { internal_fill_value() };
     m_vars[0]["comment"]      = "positive flux corresponds to ice gain";
   }
 
@@ -2475,7 +2475,7 @@ public:
         .units("m s^-1")
         .output_units("m year^-1");
 
-    m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
+    m_vars[0]["_FillValue"]   = { internal_fill_value() };
     m_vars[0]["cell_methods"] = "time: mean";
 
     m_last_thickness.metadata(0)
@@ -3186,7 +3186,7 @@ public:
         .output_units("kg m^-2 year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
+    m_vars[0]["_FillValue"] = { internal_fill_value() };
     m_vars[0]["comment"] =
       "Positive flux corresponds to mass moving from the ocean to"
       " an icy grounded area. This convention makes it easier to compare"
@@ -3226,7 +3226,7 @@ public:
         .output_units("Gt year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
+    m_vars[0]["_FillValue"] = { internal_fill_value() };
     m_vars[0]["comment"] =
         "Negative values correspond to mass moving from an icy grounded area into a lake or ocean."
         " This convention makes it easier to compare to calving, frontal melt, and discharge fluxes.";
