@@ -360,10 +360,8 @@ PSB_velsurf::PSB_velsurf(const StressBalance *m)
       .long_name("y-component of the horizontal velocity of ice at ice surface")
       .standard_name("land_ice_surface_y_velocity"); // InitMIP "standard" name
 
-  auto large_number = to_internal(1e6);
   for (auto &v : m_vars) {
     v.units("m s^-1").output_units("m year^-1");
-    v["valid_range"] = {-large_number, large_number};
     v["_FillValue"] = { to_internal(m_fill_value) };
   }
 }
@@ -408,9 +406,6 @@ PSB_wvel::PSB_wvel(const StressBalance *m) : Diag<StressBalance>(m) {
       .long_name("vertical velocity of ice, relative to geoid")
       .units("m s^-1")
       .output_units("m year^-1");
-
-  auto large_number        = to_internal(1e6);
-  m_vars[0]["valid_range"] = { -large_number, large_number };
 }
 
 std::shared_ptr<array::Array> PSB_wvel::compute(bool zero_above_ice) const {
@@ -498,8 +493,6 @@ PSB_wvelsurf::PSB_wvelsurf(const StressBalance *m) : Diag<StressBalance>(m) {
       .units("m s^-1")
       .output_units("m year^-1");
 
-  auto large_number = to_internal(1e6);
-  m_vars[0]["valid_range"] = { -large_number, large_number };
   m_vars[0]["_FillValue"]  = { to_internal(m_fill_value) };
 }
 
@@ -541,9 +534,6 @@ PSB_wvelbase::PSB_wvelbase(const StressBalance *m) : Diag<StressBalance>(m) {
       .units("m s^-1")
       .output_units("m year^-1");
 
-  auto large_number = to_internal(1e6);
-
-  m_vars[0]["valid_range"] = { -large_number, large_number };
   m_vars[0]["_FillValue"]  = { to_internal(m_fill_value) };
 }
 
@@ -586,13 +576,9 @@ PSB_velbase::PSB_velbase(const StressBalance *m) : Diag<StressBalance>(m) {
       .long_name("y-component of the horizontal velocity of ice at the base of ice")
       .standard_name("land_ice_basal_y_velocity"); // InitMIP "standard" name
 
-  auto fill_value   = to_internal(m_fill_value);
-  auto large_number = to_internal(1e6);
-
   for (auto &v : m_vars) {
     v.units("m s^-1").output_units("m year^-1");
-    v["valid_range"] = { -large_number, large_number };
-    v["_FillValue"]  = { fill_value };
+    v["_FillValue"]  = { to_internal(m_fill_value) };
   }
 }
 

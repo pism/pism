@@ -69,8 +69,6 @@ public:
     m_vars = { { m_sys, name, *m_grid } };
     m_vars[0].long_name(long_name).units(internal_units).output_units(external_units);
 
-    auto large_number         = to_internal(1e6);
-    m_vars[0]["valid_range"]  = { -large_number, large_number };
     m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
     m_vars[0]["cell_methods"] = "time: mean";
 
@@ -2477,9 +2475,6 @@ public:
         .units("m s^-1")
         .output_units("m year^-1");
 
-    auto large_number = to_internal(1e6);
-
-    m_vars[0]["valid_range"]  = { -large_number, large_number };
     m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
     m_vars[0]["cell_methods"] = "time: mean";
 
