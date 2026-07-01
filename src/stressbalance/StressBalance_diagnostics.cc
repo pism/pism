@@ -141,7 +141,7 @@ PSB_velbar_mag::PSB_velbar_mag(const StressBalance *m)
       .units("m second^-1")
       .output_units("m year^-1");
 
-  m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+  m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
   m_vars[0]["valid_min"] = {0.0};
 }
 
@@ -254,7 +254,7 @@ PSB_flux_mag::PSB_flux_mag(const StressBalance *m)
       .long_name("magnitude of vertically-integrated horizontal flux of ice")
       .units("m^2 s^-1")
       .output_units("m^2 year^-1");
-  m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+  m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
   m_vars[0]["valid_min"] = {0.0};
 }
 
@@ -287,7 +287,7 @@ PSB_velbase_mag::PSB_velbase_mag(const StressBalance *m)
       .long_name("magnitude of horizontal velocity of ice at base of ice")
       .units("m s^-1")
       .output_units("m year^-1");
-  m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+  m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
   m_vars[0]["valid_min"] = {0.0};
 }
 
@@ -320,7 +320,7 @@ PSB_velsurf_mag::PSB_velsurf_mag(const StressBalance *m)
       .long_name("magnitude of horizontal velocity of ice at ice surface")
       .units("m s^-1")
       .output_units("m year^-1");
-  m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+  m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
   m_vars[0]["valid_min"] = {0.0};
 }
 
@@ -364,7 +364,7 @@ PSB_velsurf::PSB_velsurf(const StressBalance *m)
   for (auto &v : m_vars) {
     v.units("m s^-1").output_units("m year^-1");
     v["valid_range"] = {-large_number, large_number};
-    v["_FillValue"] = {to_internal(m_fill_value)};
+    v["_FillValue"] = { to_internal(m_fill_value) };
   }
 }
 

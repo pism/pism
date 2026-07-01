@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2022, 2023, 2024, 2025 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2022, 2023, 2024, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -641,8 +641,7 @@ public:
         .output_units(external_units);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
-    m_vars[0].set_number("_FillValue", fill_value);
+    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
   }
 
 protected:
@@ -696,7 +695,7 @@ public:
         .units(internal_units)
         .output_units(external_units);
     m_vars[0].set_string("cell_methods", "time: mean");
-    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
+    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
   }
 
 protected:
@@ -749,7 +748,7 @@ public:
         .units(internal_units)
         .output_units(external_units);
     m_vars[0].set_string("cell_methods", "time: mean");
-    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
+    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
   }
 
 protected:

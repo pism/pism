@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2025 PISM Authors
+// Copyright (C) 2012-2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -43,8 +43,8 @@ public:
         .output_units("Gt year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
-    m_vars[0]["comment"] = "positive flux corresponds to water gain";
+    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
+    m_vars[0]["comment"]    = "positive flux corresponds to water gain";
   }
 
 protected:
@@ -93,8 +93,8 @@ public:
         .units("kg second^-1")
         .output_units("Gt year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
-    m_vars[0]["comment"] = "positive flux corresponds to water gain";
+    m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
+    m_vars[0]["comment"]      = "positive flux corresponds to water gain";
   }
 
 protected:
@@ -119,7 +119,7 @@ public:
         .units("m^2 second^-1")
         .output_units("m^2 year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+    m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
 
     m_flux_magnitude.metadata(0)
         .long_name("magnitude of the subglacial water flux")

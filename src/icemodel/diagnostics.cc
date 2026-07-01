@@ -342,7 +342,7 @@ public:
         .long_name(long_name)
         .units(internal_units)
         .output_units(external_units);
-    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
     m_vars[0]["cell_methods"] = "time: mean";
     m_vars[0]["comment"] = "positive flux corresponds to ice gain";
   }
@@ -506,7 +506,7 @@ public:
         .output_units(external_units);
     m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
     m_vars[0]["comment"] = "positive flux corresponds to ice gain";
   }
 
@@ -3191,7 +3191,7 @@ public:
         .output_units("kg m^-2 year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
     m_vars[0]["comment"] =
       "Positive flux corresponds to mass moving from the ocean to"
       " an icy grounded area. This convention makes it easier to compare"
