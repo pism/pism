@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2025 PISM Authors
+// Copyright (C) 2010--2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -100,7 +100,6 @@ protected:
   virtual std::shared_ptr<array::Array> compute_impl() const = 0;
 
   double to_internal(double x) const;
-  double to_external(double x) const;
 
   /*!
    * Allocate storage for an array of type `T` and copy metadata from `m_vars`.

@@ -66,16 +66,6 @@ double Diagnostic::to_internal(double x) const {
   return convert(m_sys, x, out, in);
 }
 
-/*!
- * Convert from internal to external (output) units.
- */
-double Diagnostic::to_external(double x) const {
-  std::string
-    out = m_vars.at(0)["output_units"],
-    in  = m_vars.at(0)["units"];
-  return convert(m_sys, x, in, out);
-}
-
 //! Get the number of NetCDF variables corresponding to a diagnostic quantity.
 unsigned int Diagnostic::n_variables() const {
   return m_vars.size();
