@@ -69,9 +69,7 @@ public:
     m_vars = { { m_sys, name, *m_grid } };
     m_vars[0].long_name(long_name).units(internal_units).output_units(external_units);
 
-    auto large_number         = to_internal(1e6);
-    m_vars[0]["valid_range"]  = { -large_number, large_number };
-    m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
+    m_vars[0]["_FillValue"]   = { fill_value() };
     m_vars[0]["cell_methods"] = "time: mean";
 
     m_last_amount.metadata()
@@ -109,7 +107,7 @@ protected:
         }
       }
     } else {
-      result->set(m_fill_value);
+      result->set(fill_value());
     }
 
     return result;
@@ -174,7 +172,7 @@ public:
     m_vars = { { m_sys, name, *m_grid } };
     m_vars[0].long_name(long_name).units(internal_units).output_units(external_units);
     m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
+    m_vars[0]["_FillValue"]   = { fill_value() };
     m_vars[0]["comment"]      = "positive flux corresponds to ice gain";
   }
 
@@ -233,7 +231,7 @@ public:
         .standard_name(standard_name)
         .units(internal_units)
         .output_units(external_units);
-    m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
+    m_vars[0]["_FillValue"]   = { fill_value() };
     m_vars[0]["cell_methods"] = "time: mean";
     m_vars[0]["comment"]      = "positive flux corresponds to ice gain";
   }
@@ -288,7 +286,7 @@ public:
         .standard_name(standard_name)
         .units(internal_units)
         .output_units(external_units);
-    m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
+    m_vars[0]["_FillValue"]   = { fill_value() };
     m_vars[0]["cell_methods"] = "time: mean";
     m_vars[0]["comment"]      = "positive flux corresponds to ice gain";
   }
@@ -342,7 +340,7 @@ public:
         .long_name(long_name)
         .units(internal_units)
         .output_units(external_units);
-    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+    m_vars[0]["_FillValue"] = { fill_value() };
     m_vars[0]["cell_methods"] = "time: mean";
     m_vars[0]["comment"] = "positive flux corresponds to ice gain";
   }
@@ -448,7 +446,7 @@ public:
         .units(internal_units)
         .output_units(external_units);
     m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
+    m_vars[0]["_FillValue"]   = { fill_value() };
     m_vars[0]["comment"]      = "positive flux corresponds to ice gain";
   }
 
@@ -506,7 +504,7 @@ public:
         .output_units(external_units);
     m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+    m_vars[0]["_FillValue"] = { fill_value() };
     m_vars[0]["comment"] = "positive flux corresponds to ice gain";
   }
 
@@ -551,7 +549,7 @@ public:
     m_vars = { { m_sys, name, *m_grid } };
     m_vars[0].long_name("frontal melt flux").units(internal_units).output_units(external_units);
     m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
+    m_vars[0]["_FillValue"] = { fill_value() };
     m_vars[0]["comment"] = "positive flux corresponds to ice gain";
   }
 
@@ -598,7 +596,7 @@ public:
         .units(internal_units)
         .output_units(external_units);
     m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
+    m_vars[0]["_FillValue"] = { fill_value() };
     m_vars[0]["comment"] = "positive flux corresponds to ice gain";
   }
 
@@ -758,12 +756,12 @@ protected:
 IceMarginPressureDifference::IceMarginPressureDifference(IceModel *m) : Diag<IceModel>(m) {
 
   /* set metadata: */
-  m_vars                  = { { m_sys, "ice_margin_pressure_difference", *m_grid } };
-  m_vars[0]["_FillValue"] = { m_fill_value };
+  m_vars = { { m_sys, "ice_margin_pressure_difference", *m_grid } };
   m_vars[0]
       .long_name(
           "vertically-averaged pressure difference at ice margins (including calving fronts)")
       .units("Pa");
+  m_vars[0]["_FillValue"] = { fill_value() };
 }
 
 std::shared_ptr<array::Array> IceMarginPressureDifference::compute_impl() const {
@@ -787,6 +785,7 @@ std::shared_ptr<array::Array> IceMarginPressureDifference::compute_impl() const 
   const double rho_ice   = m_config->get_number("constants.ice.density"),
                rho_ocean = m_config->get_number("constants.sea_water.density"),
                g         = m_config->get_number("constants.standard_gravity");
+  double fill = fill_value();
 
   array::AccessScope list{ &H, &bed, &mask, &sea_level, result.get() };
 
@@ -805,7 +804,7 @@ std::shared_ptr<array::Array> IceMarginPressureDifference::compute_impl() const 
 
         delta_p = P_ice - P_water;
       } else {
-        delta_p = m_fill_value;
+        delta_p = fill;
       }
 
       (*result)(i, j) = delta_p;
@@ -852,7 +851,7 @@ public:
         .units("kg m^-2 s^-1")
         .output_units("kg m^-2 year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
+    m_vars[0]["_FillValue"]   = { fill_value() };
     m_vars[0]["comment"]      = "positive flux corresponds to ice gain";
   }
 
@@ -904,7 +903,7 @@ HardnessAverage::HardnessAverage(const IceModel *m) : Diag<IceModel>(m) {
       .set_units_without_validation(
           "Pa s^(1/n)"); // n is the Glen exponent used by the SSA (shallow stress balance) flow law
   m_vars[0]["valid_min"]  = { 0.0 };
-  m_vars[0]["_FillValue"] = { m_fill_value };
+  m_vars[0]["_FillValue"] = { fill_value() };
   m_vars[0]["comment"]    = "units depend on the Glen exponent used by the flow law";
 }
 
@@ -927,6 +926,7 @@ std::shared_ptr<array::Array> HardnessAverage::compute_impl() const {
 
   const array::Array3D &ice_enthalpy = model->energy_balance_model()->enthalpy();
   const array::Scalar &ice_thickness = model->geometry().ice_thickness;
+  double fill = fill_value();
 
   array::AccessScope list{ &cell_type, &ice_enthalpy, &ice_thickness, result.get() };
   ParallelSection loop(m_grid->com);
@@ -940,7 +940,7 @@ std::shared_ptr<array::Array> HardnessAverage::compute_impl() const {
         (*result)(i, j) = rheology::averaged_hardness(*flow_law, H, m_grid->kBelowHeight(H),
                                                       m_grid->z().data(), Eij);
       } else { // put negative value below valid range
-        (*result)(i, j) = m_fill_value;
+        (*result)(i, j) = fill;
       }
     }
   } catch (...) {
@@ -1203,7 +1203,7 @@ IceEnthalpySurface::IceEnthalpySurface(const IceModel *m)
   : Diag<IceModel>(m) {
   m_vars = { { m_sys, "enthalpysurf", *m_grid } };
   m_vars[0].long_name("ice enthalpy at 1m below the ice surface").units("J kg^-1");
-  m_vars[0]["_FillValue"] = {m_fill_value};
+  m_vars[0]["_FillValue"] = {fill_value()};
 }
 
 std::shared_ptr<array::Array> IceEnthalpySurface::compute_impl() const {
@@ -1226,11 +1226,13 @@ std::shared_ptr<array::Array> IceEnthalpySurface::compute_impl() const {
 
   extract_surface(ice_enthalpy, *result, *result);  // slice at 1 m below the surface
 
+  double fill = fill_value();
+
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     if (ice_thickness(i,j) <= 1.0) {
-      (*result)(i,j) = m_fill_value;
+      (*result)(i,j) = fill;
     }
   }
 
@@ -1250,7 +1252,7 @@ IceEnthalpyBasal::IceEnthalpyBasal(const IceModel *m)
   : Diag<IceModel>(m) {
   m_vars = { { m_sys, "enthalpybase", *m_grid } };
   m_vars[0].long_name("ice enthalpy at the base of ice").units("J kg^-1");
-  m_vars[0]["_FillValue"] = {m_fill_value};
+  m_vars[0]["_FillValue"] = {fill_value()};
 }
 
 std::shared_ptr<array::Array> IceEnthalpyBasal::compute_impl() const {
@@ -1260,7 +1262,7 @@ std::shared_ptr<array::Array> IceEnthalpyBasal::compute_impl() const {
 
   extract_surface(model->energy_balance_model()->enthalpy(), 0.0, *result);  // z=0 slice
 
-  apply_mask(model->geometry().ice_thickness, m_fill_value, *result);
+  apply_mask(model->geometry().ice_thickness, fill_value(), *result);
 
   return result;
 }
@@ -1300,7 +1302,7 @@ TemperatureBasal::TemperatureBasal(const IceModel *m, AreaType area_type)
 
   m_vars = { { m_sys, name, *m_grid } };
   m_vars[0].long_name(long_name).standard_name(standard_name).units("kelvin");
-  m_vars[0]["_FillValue"] = { m_fill_value };
+  m_vars[0]["_FillValue"] = { fill_value() };
 }
 
 std::shared_ptr<array::Array> TemperatureBasal::compute_impl() const {
@@ -1315,6 +1317,7 @@ std::shared_ptr<array::Array> TemperatureBasal::compute_impl() const {
   // Now result contains basal enthalpy.
 
   const auto &cell_type = model->geometry().cell_type;
+  double fill = fill_value();
 
   array::AccessScope list{ &cell_type, result.get(), &thickness };
 
@@ -1331,7 +1334,7 @@ std::shared_ptr<array::Array> TemperatureBasal::compute_impl() const {
           (m_area_type == SHELF and cell_type.floating_ice(i, j))) {
         (*result)(i, j) = T;
       } else {
-        (*result)(i, j) = m_fill_value;
+        (*result)(i, j) = fill;
       }
     }
   } catch (...) {
@@ -1357,7 +1360,7 @@ TemperatureSurface::TemperatureSurface(const IceModel *m) : Diag<IceModel>(m) {
       .long_name("ice temperature at 1m below the ice surface")
       .standard_name("temperature_at_ground_level_in_snow_or_firn") // InitMIP "standard" name
       .units("kelvin");
-  m_vars[0]["_FillValue"] = { m_fill_value };
+  m_vars[0]["_FillValue"] = { fill_value() };
 }
 
 std::shared_ptr<array::Array> TemperatureSurface::compute_impl() const {
@@ -1368,6 +1371,7 @@ std::shared_ptr<array::Array> TemperatureSurface::compute_impl() const {
   auto result = array::cast<array::Scalar>(enth);
 
   auto EC = model->ctx()->enthalpy_converter();
+  double fill = fill_value();
 
   // result contains surface enthalpy; note that it is allocated by
   // IceEnthalpySurface::compute().
@@ -1383,7 +1387,7 @@ std::shared_ptr<array::Array> TemperatureSurface::compute_impl() const {
       if (thickness(i, j) > 1) {
         (*result)(i, j) = EC->temperature((*result)(i, j), pressure);
       } else {
-        (*result)(i, j) = m_fill_value;
+        (*result)(i, j) = fill;
       }
     }
   } catch (...) {
@@ -1440,7 +1444,7 @@ protected:
 TemperateIceThickness::TemperateIceThickness(const IceModel *m) : Diag<IceModel>(m) {
   m_vars = { { m_sys, "tempicethk", *m_grid } };
   m_vars[0].long_name("temperate ice thickness (total column content)").units("m");
-  m_vars[0]["_FillValue"] = { m_fill_value };
+  m_vars[0]["_FillValue"] = { fill_value() };
 }
 
 std::shared_ptr<array::Array> TemperateIceThickness::compute_impl() const {
@@ -1454,6 +1458,7 @@ std::shared_ptr<array::Array> TemperateIceThickness::compute_impl() const {
   array::AccessScope list{ &cell_type, result.get(), &ice_enthalpy, &ice_thickness };
 
   auto EC = model->ctx()->enthalpy_converter();
+  double fill = fill_value();
 
   ParallelSection loop(m_grid->com);
   try {
@@ -1482,7 +1487,7 @@ std::shared_ptr<array::Array> TemperateIceThickness::compute_impl() const {
         (*result)(i, j) = H_temperate;
       } else {
         // ice-free
-        (*result)(i, j) = m_fill_value;
+        (*result)(i, j) = fill;
       }
     }
   } catch (...) {
@@ -1505,7 +1510,7 @@ protected:
 TemperateIceThicknessBasal::TemperateIceThicknessBasal(const IceModel *m) : Diag<IceModel>(m) {
   m_vars = { { m_sys, "tempicethk_basal", *m_grid } };
   m_vars[0].long_name("thickness of the basal layer of temperate ice").units("m");
-  m_vars[0]["_FillValue"] = { m_fill_value };
+  m_vars[0]["_FillValue"] = { fill_value() };
 }
 
 /*!
@@ -1520,6 +1525,7 @@ std::shared_ptr<array::Array> TemperateIceThicknessBasal::compute_impl() const {
   const auto &cell_type     = model->geometry().cell_type;
   const auto &ice_enthalpy  = model->energy_balance_model()->enthalpy();
   const auto &ice_thickness = model->geometry().ice_thickness;
+  double fill = fill_value();
 
   array::AccessScope list{ &cell_type, result.get(), &ice_thickness, &ice_enthalpy };
 
@@ -1533,7 +1539,7 @@ std::shared_ptr<array::Array> TemperateIceThicknessBasal::compute_impl() const {
       // if we have no ice, go on to the next grid point (this cell will be
       // marked as "missing" later)
       if (cell_type.ice_free(i, j)) {
-        (*result)(i, j) = m_fill_value;
+        (*result)(i, j) = fill;
         continue;
       }
 
@@ -2477,10 +2483,7 @@ public:
         .units("m s^-1")
         .output_units("m year^-1");
 
-    auto large_number = to_internal(1e6);
-
-    m_vars[0]["valid_range"]  = { -large_number, large_number };
-    m_vars[0]["_FillValue"]   = { to_internal(m_fill_value) };
+    m_vars[0]["_FillValue"]   = { fill_value() };
     m_vars[0]["cell_methods"] = "time: mean";
 
     m_last_thickness.metadata(0)
@@ -2500,7 +2503,7 @@ protected:
       model->geometry().ice_thickness.add(-1.0, m_last_thickness, *result);
       result->scale(1.0 / m_interval_length);
     } else {
-      result->set(m_fill_value);
+      result->set(fill_value());
     }
 
     return result;
@@ -2748,7 +2751,7 @@ HeightAboveFloatation::HeightAboveFloatation(const IceModel *m) : Diag<IceModel>
   // set metadata:
   m_vars = { { m_sys, "height_above_flotation", *m_grid } };
   m_vars[0].long_name("ice thickness in excess of the maximum floating ice thickness").units("m");
-  m_vars[0]["_FillValue"] = { m_fill_value };
+  m_vars[0]["_FillValue"] = { fill_value() };
   m_vars[0]["comment"]    = "shows how close to floatation the ice is at a given location";
 }
 
@@ -2760,6 +2763,7 @@ std::shared_ptr<array::Array> HeightAboveFloatation::compute_impl() const {
 
   const double ice_density   = m_config->get_number("constants.ice.density"),
                ocean_density = m_config->get_number("constants.sea_water.density");
+  double fill = fill_value();
 
   const auto &sea_level      = model->geometry().sea_level_elevation;
   const auto &ice_thickness  = model->geometry().ice_thickness;
@@ -2779,7 +2783,7 @@ std::shared_ptr<array::Array> HeightAboveFloatation::compute_impl() const {
         const double max_floating_thickness = ocean_depth * (ocean_density / ice_density);
         (*result)(i, j)                     = thickness - max_floating_thickness;
       } else {
-        (*result)(i, j) = m_fill_value;
+        (*result)(i, j) = fill;
       }
     }
   } catch (...) {
@@ -2802,7 +2806,7 @@ protected:
 IceMass::IceMass(const IceModel *m) : Diag<IceModel>(m) {
   m_vars = { { m_sys, "ice_mass", *m_grid } };
   m_vars[0].long_name("ice mass per cell").units("kg");
-  m_vars[0]["_FillValue"] = { m_fill_value };
+  m_vars[0]["_FillValue"] = { fill_value() };
 }
 
 std::shared_ptr<array::Array> IceMass::compute_impl() const {
@@ -2819,6 +2823,8 @@ std::shared_ptr<array::Array> IceMass::compute_impl() const {
 
   array::AccessScope list{ &cell_type, result.get(), &ice_thickness };
 
+  double fill = fill_value();
+
   ParallelSection loop(m_grid->com);
   try {
     for (auto p : m_grid->points()) {
@@ -2829,7 +2835,7 @@ std::shared_ptr<array::Array> IceMass::compute_impl() const {
       if (ice_thickness(i, j) > 0.0) {
         (*result)(i, j) = ice_density * ice_thickness(i, j) * cell_area;
       } else {
-        (*result)(i, j) = m_fill_value;
+        (*result)(i, j) = fill;
       }
     } // end of loop over grid points
 
@@ -2964,7 +2970,7 @@ IceViscosity::IceViscosity(IceModel *m) : Diag<IceModel>(m) {
       .units("Pascal second")
       .output_units("kPascal second");
   m_vars[0]["valid_min"]  = { 0.0 };
-  m_vars[0]["_FillValue"] = { m_fill_value };
+  m_vars[0]["_FillValue"] = { fill_value() };
 }
 
 static inline double square(double x) {
@@ -2998,6 +3004,8 @@ std::shared_ptr<array::Array> IceViscosity::compute_impl() const {
   const double dx = m_grid->dx(), dy = m_grid->dy();
   const std::vector<double> &z = m_grid->z();
 
+  double fill = fill_value();
+
   const array::CellType1 &mask = model->geometry().cell_type;
 
   array::AccessScope list{ &U, &V, &W, &ice_enthalpy, &ice_thickness, &mask, result.get() };
@@ -3029,7 +3037,7 @@ std::shared_ptr<array::Array> IceViscosity::compute_impl() const {
       double *viscosity = result->get_column(i, j);
 
       if (ice_free(m.c)) {
-        result->set_column(i, j, m_fill_value);
+        result->set_column(i, j, fill);
         continue;
       }
 
@@ -3037,7 +3045,7 @@ std::shared_ptr<array::Array> IceViscosity::compute_impl() const {
         const double depth = H - z[k];
 
         if (depth < 0.0) {
-          viscosity[k] = m_fill_value;
+          viscosity[k] = fill;
           continue;
         }
 
@@ -3191,7 +3199,7 @@ public:
         .output_units("kg m^-2 year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0]["_FillValue"] = {to_internal(m_fill_value)};
+    m_vars[0]["_FillValue"] = { fill_value() };
     m_vars[0]["comment"] =
       "Positive flux corresponds to mass moving from the ocean to"
       " an icy grounded area. This convention makes it easier to compare"
@@ -3231,7 +3239,7 @@ public:
         .output_units("Gt year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0]["_FillValue"] = { to_internal(m_fill_value) };
+    m_vars[0]["_FillValue"] = { fill_value() };
     m_vars[0]["comment"] =
         "Negative values correspond to mass moving from an icy grounded area into a lake or ocean."
         " This convention makes it easier to compare to calving, frontal melt, and discharge fluxes.";

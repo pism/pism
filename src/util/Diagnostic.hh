@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2025 PISM Authors
+// Copyright (C) 2010--2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -99,8 +99,10 @@ protected:
 
   virtual std::shared_ptr<array::Array> compute_impl() const = 0;
 
-  double to_internal(double x) const;
-  double to_external(double x) const;
+  /*!
+   * _FillValue in internal units
+   */
+  double fill_value() const;
 
   /*!
    * Allocate storage for an array of type `T` and copy metadata from `m_vars`.
@@ -122,8 +124,11 @@ protected:
   std::shared_ptr<const Config> m_config;
   //! metadata corresponding to NetCDF variables
   std::vector<VariableMetadata> m_vars;
+private:
   //! fill value (used often enough to justify storing it)
   double m_fill_value;
+  //! true if we need to use MKS units in output files
+  bool m_output_use_mks;
 };
 
 typedef std::map<std::string, Diagnostic::Ptr> DiagnosticList;
@@ -252,7 +257,7 @@ protected:
       result->copy_from(m_accumulator);
       result->scale(1.0 / m_interval_length);
     } else {
-      result->set(Diagnostic::to_internal(Diagnostic::m_fill_value));
+      result->set(Diagnostic::fill_value());
     }
 
     return result;
