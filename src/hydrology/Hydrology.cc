@@ -43,7 +43,7 @@ public:
         .output_units("Gt year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0]["_FillValue"] = { internal_fill_value() };
+    m_vars[0]["_FillValue"] = { fill_value() };
     m_vars[0]["comment"]    = "positive flux corresponds to water gain";
   }
 
@@ -69,7 +69,7 @@ public:
         .units("m second^-1")
         .output_units("m year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"]   = { internal_fill_value() };
+    m_vars[0]["_FillValue"]   = { fill_value() };
     m_vars[0]["comment"]      = "positive flux corresponds to water gain";
   }
 
@@ -93,7 +93,7 @@ public:
         .units("kg second^-1")
         .output_units("Gt year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"]   = { internal_fill_value() };
+    m_vars[0]["_FillValue"]   = { fill_value() };
     m_vars[0]["comment"]      = "positive flux corresponds to water gain";
   }
 
@@ -119,7 +119,7 @@ public:
         .units("m^2 second^-1")
         .output_units("m^2 year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"]   = { internal_fill_value() };
+    m_vars[0]["_FillValue"]   = { fill_value() };
 
     m_flux_magnitude.metadata(0)
         .long_name("magnitude of the subglacial water flux")
@@ -154,7 +154,7 @@ public:
         .units("kg second^-1")
         .output_units("Gt year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"] = { internal_fill_value() };
+    m_vars[0]["_FillValue"] = { fill_value() };
     m_vars[0]["comment"]    = "positive flux corresponds to water gain";
   }
 
@@ -180,7 +180,7 @@ public:
         .output_units("Gt year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
 
-    m_vars[0]["_FillValue"] = { internal_fill_value() };
+    m_vars[0]["_FillValue"] = { fill_value() };
     m_vars[0]["comment"]    = "positive flux corresponds to water gain";
   }
 
@@ -206,7 +206,7 @@ public:
         .units("kg second^-1")
         .output_units("Gt year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"] = { internal_fill_value() };
+    m_vars[0]["_FillValue"] = { fill_value() };
     m_vars[0]["comment"]    = "positive flux corresponds to water gain";
   }
 
@@ -231,7 +231,7 @@ public:
         .units("kg second^-1")
         .output_units("Gt year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"]   = { internal_fill_value() };
+    m_vars[0]["_FillValue"]   = { fill_value() };
     m_vars[0]["comment"]      = "positive flux corresponds to water gain";
   }
 
@@ -256,7 +256,7 @@ public:
         .units("kg second^-1")
         .output_units("Gt year^-1");
     m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"]   = { internal_fill_value() };
+    m_vars[0]["_FillValue"]   = { fill_value() };
     m_vars[0]["comment"]      = "positive flux corresponds to water gain";
   }
 

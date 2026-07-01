@@ -102,7 +102,7 @@ protected:
   /*!
    * _FillValue in internal units
    */
-  double internal_fill_value() const;
+  double fill_value() const;
 
   /*!
    * Allocate storage for an array of type `T` and copy metadata from `m_vars`.
@@ -124,6 +124,7 @@ protected:
   std::shared_ptr<const Config> m_config;
   //! metadata corresponding to NetCDF variables
   std::vector<VariableMetadata> m_vars;
+private:
   //! fill value (used often enough to justify storing it)
   double m_fill_value;
   //! true if we need to use MKS units in output files
@@ -256,7 +257,7 @@ protected:
       result->copy_from(m_accumulator);
       result->scale(1.0 / m_interval_length);
     } else {
-      result->set(Diagnostic::internal_fill_value());
+      result->set(Diagnostic::fill_value());
     }
 
     return result;

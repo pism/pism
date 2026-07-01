@@ -60,14 +60,20 @@ void Diagnostic::reset_impl() {
 /*!
  * Return fill value in internal units.
  */
-double Diagnostic::internal_fill_value() const {
+double Diagnostic::fill_value() const {
   if (m_output_use_mks) {
     return m_fill_value;
   }
-
   std::string
     out = m_vars.at(0)["output_units"],
     in  = m_vars.at(0)["units"];
+
+  // take care of the trivial case (no conversion needed) and the case when "units" and
+  // "output_units" are same, but are not valid
+  if (in == out) {
+    return m_fill_value;
+  }
+
   return convert(m_sys, m_fill_value, out, in);
 }
 
