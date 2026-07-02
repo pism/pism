@@ -98,6 +98,10 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
   m_output_global_attributes["source"] = pism::version();
   m_output_global_attributes["title"] = m_config->get_string("run_info.title");
   m_output_global_attributes["institution"] = m_config->get_string("run_info.institution");
+  m_output_global_attributes["group"] = m_config->get_string("run_info.group");
+  m_output_global_attributes["model"] = m_config->get_string("run_info.model");
+  m_output_global_attributes["contact_name"] = m_config->get_string("run_info.contact_name");
+  m_output_global_attributes["contact_email"] = m_config->get_string("run_info.contact_email");
   m_output_global_attributes["command"] = args_string();
 
   m_fracture = nullptr;

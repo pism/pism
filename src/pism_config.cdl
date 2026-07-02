@@ -2103,11 +2103,31 @@ netcdf pism_config {
     pism_config:regional.zero_gradient_option = "zero_grad_where_no_model";
     pism_config:regional.zero_gradient_type = "flag";
 
+    pism_config:run_info.contact_email = "";
+    pism_config:run_info.contact_email_doc = "Contact e-mail address. This string is written to output files as the ``contact_email`` global attribute.";
+    pism_config:run_info.contact_email_option = "contact_email";
+    pism_config:run_info.contact_email_type = "string";
+
+    pism_config:run_info.contact_name = "";
+    pism_config:run_info.contact_name_doc = "Contact person's name. This string is written to output files as the ``contact_name`` global attribute.";
+    pism_config:run_info.contact_name_option = "contact_name";
+    pism_config:run_info.contact_name_type = "string";
+
+    pism_config:run_info.group = "";
+    pism_config:run_info.group_doc = "Group or project name. This string is written to output files as the ``group`` global attribute.";
+    pism_config:run_info.group_option = "group";
+    pism_config:run_info.group_type = "string";
+
     pism_config:run_info.institution = "";
     pism_config:run_info.institution_doc = "Institution name. This string is written to output files as the ``institution`` global attribute.";
     pism_config:run_info.institution_option = "institution";
     pism_config:run_info.institution_type = "string";
 
+    pism_config:run_info.model = "PISM";
+    pism_config:run_info.model_doc = "Model name. This string is written to output files as the ``model`` global attribute.";
+    pism_config:run_info.model_option = "model";
+    pism_config:run_info.model_type = "string";
+    
     pism_config:run_info.title = "";
     pism_config:run_info.title_doc = "Free-form string containing a concise description of the current run. This string is written to output files as the ``title`` global attribute.";
     pism_config:run_info.title_option = "title";
@@ -2713,6 +2733,29 @@ netcdf pism_config {
     pism_config:surface.ismip6.reference_file_doc = "Name of the file containing reference climate forcing fields.";
     pism_config:surface.ismip6.reference_file_option = "surface_ismip6_reference_file";
     pism_config:surface.ismip6.reference_file_type = "string";
+
+    pism_config:surface.ismip7.file = "";
+    pism_config:surface.ismip7.file_doc = "Name of the file containing climate forcing fields.";
+    pism_config:surface.ismip7.file_option = "surface_ismip7_file";
+    pism_config:surface.ismip7.file_type = "string";
+
+    pism_config:surface.ismip7.gradient.file = "";
+    pism_config:surface.ismip7.gradient.file_doc = "Name of the file containing gradient climate forcing fields.";
+    pism_config:surface.ismip7.gradient.file_option = "surface_ismip7_gradient_file";
+    pism_config:surface.ismip7.gradient.file_type = "string";
+
+    pism_config:surface.ismip7.gradient.periodic = "no";
+    pism_config:surface.ismip7.gradient.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:surface.ismip7.gradient.periodic_type = "flag";
+    
+    pism_config:surface.ismip7.periodic = "no";
+    pism_config:surface.ismip7.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:surface.ismip7.periodic_type = "flag";
+
+    pism_config:surface.ismip7.reference.file = "";
+    pism_config:surface.ismip7.reference.file_doc = "Name of the file containing reference elevation.";
+    pism_config:surface.ismip7.reference.file_option = "surface_ismip7_reference_file";
+    pism_config:surface.ismip7.reference.file_type = "string";
 
     pism_config:surface.mass_balance_year_start_day = 274;
     pism_config:surface.mass_balance_year_start_day_doc = "day of year for October 1st, beginning of the balance year in northern latitudes.";
