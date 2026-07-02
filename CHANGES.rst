@@ -69,6 +69,9 @@ Changes since v2.3.0
   (`tikhonov_lmvm`, `tikhonov_blmvm`); it is not compatible with the Gauss-Newton
   SSA solver, which requires an inner-product functional.
 
+- Added a new surface coupler `-surface.models ismip7` derived from ISMIP6. This coupler
+  only uses direct forcing and forcing gradients, skipping anomalies.
+
 Changes from 2.3.0 to 2.3.1
 ===========================
 
