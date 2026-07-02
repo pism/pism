@@ -681,7 +681,6 @@ def main(compression_level, output_grid=None):
             if "time_bounds" in ignored:
                 # remove "bounds" from "time":
                 if "bounds" in file_vars["time"]["attributes"]:
-                    # logger.debug(f"removed 'bounds' from 'time' in {fname}")
                     del file_vars["time"]["attributes"]["bounds"]
 
             if output_grid is not None:
@@ -862,6 +861,13 @@ def main(compression_level, output_grid=None):
                     for field in fields_in_file:
                         F = get_file(file_name, field)
                         F.write_variable(array, metadata)
+
+                        # write the end point of time bounds to "time":
+                        if field in ST and variable_name == "time_bounds":
+                            meta = {"variable_name": "time",
+                                    "start": [metadata["start"][0]],
+                                    "count": [1]}
+                            F.write_variable(array[1], meta)
 
                     continue
 
