@@ -17,6 +17,7 @@
 # along with PISM; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
+import copy
 import logging
 
 import netCDF4
@@ -29,6 +30,19 @@ import traceback
 from pyproj import Proj
 
 logger = logging.getLogger("pism_output")
+
+# ISMIP7 "snapshot" variables
+ST = {"lithk", "orog", "topg", "base",
+      "xvelsurf", "yvelsurf", "zvelsurf",
+      "xvelbase", "yvelbase", "zvelbase",
+      "xvelmean", "yvelmean",
+      "litemptop", "litempavg", "litempbotgr", "litempbotfl",
+      "strbasemag",
+      "sftgif", "sftgrf", "sftflf",
+      "tfbase", "deltag"}
+# ISMIP7 "flux" variables
+FL = {"hfgeoubed", "acabf", "libmassbfgr", "libmassbffl",
+      "dlithkdt", "licalvf", "libgroundf", "lifmassbf"}
 
 
 class OutputGrid(object):
@@ -503,8 +517,7 @@ class OutputFile:
     def append_time(self, time_seconds):
         """Create one more time record by adding a value to the time dimension."""
         self.time_index = len(self.nc_dataset.dimensions["time"])
-        # ISMIP7 requirement: time is saved in "days"
-        self.nc_dataset.variables["time"][self.time_index] = time_seconds / 86400
+        self.nc_dataset.variables["time"][self.time_index] = time_seconds
 
     def append_history(self, string):
         """Append a `string` to the global attribute 'history'."""
@@ -529,14 +542,6 @@ class OutputFile:
         attributes = metadata["attributes"]
         dimensions = metadata["dimensions"]
 
-        # ISMIP7 requirement: all variables need to be written as single-precision float
-        #
-        # FIXME: overriding this data type saves PISM's snapshots as single-precision
-        # float, so they should not be used to re-start PISM.
-        #
-        # dtype = metadata["dtype"]
-        dtype = "f4"
-
         if name in self.nc_dataset.variables:
             return
 
@@ -549,16 +554,11 @@ class OutputFile:
 
         fill_value = attributes["_FillValue"] if '_FillValue' in attributes else None
         nc_variable = self.nc_dataset.createVariable(name,
-                                                     dtype,
+                                                     metadata["dtype"],
                                                      dimensions,
                                                      compression=compression,
                                                      complevel=self.compression_level,
                                                      fill_value=fill_value)
-
-        # ISMIP7 requirement: time should have units of "days since 1850-01-01"
-        if name == "time" or name == "time_bounds":
-            time_units = attributes["units"]
-            attributes["units"] = time_units.replace("seconds", "days")
 
         ignored_attributes = ['_FillValue']
         for attr, value in attributes.items():
@@ -599,11 +599,12 @@ class OutputFile:
         ndim = len(count)
         hyperslab = [slice(start[i], start[i] + count[i]) for i in range(ndim)]
 
-        # ISMIP7 requirement: time should have units of "days since 1850-01-01"
-        if name == "time" or name == "time_bounds":
-            self.nc_dataset.variables[name][hyperslab] = array / 86400
-        else:
-            self.nc_dataset.variables[name][hyperslab] = array
+        if name not in self.nc_dataset.variables:
+            return
+
+        logger.debug(f"writing {self.nc_dataset.filepath()}:{name}")
+
+        self.nc_dataset.variables[name][hyperslab] = array
 
     def close(self):
         """Close the underlying NetCDF dataset."""
@@ -655,10 +656,14 @@ def main(compression_level, output_grid=None):
     def get_file(file_name, variable_name):
         if one_var_per_file(file_name):
             fname = new_file_name(file_name, variable_name)
-            ignored = ignored_variables
+            ignored = copy.deepcopy(ignored_variables)
         else:
             fname = file_name
             ignored = set()
+
+        # ISMIP7 requirement: snapshot variables are saved into files without time bounds
+        if one_var_per_file(file_name) and variable_name in ST:
+            ignored.add("time_bounds")
 
         if fname not in files:
             F = OutputFile(fname, mode="w", compression_level=compression_level)
@@ -671,7 +676,13 @@ def main(compression_level, output_grid=None):
 
             # override lengths of x and y dimensions if using a custom output grid
             dims = dimensions[file_name]
-            file_vars = variables[file_name]
+            file_vars = copy.deepcopy(variables[file_name])
+
+            if "time_bounds" in ignored:
+                # remove "bounds" from "time":
+                if "bounds" in file_vars["time"]["attributes"]:
+                    # logger.debug(f"removed 'bounds' from 'time' in {fname}")
+                    del file_vars["time"]["attributes"]["bounds"]
 
             if output_grid is not None:
                 Mx, My = output_grid.size()
@@ -800,6 +811,17 @@ def main(compression_level, output_grid=None):
                 if file_name not in variables:
                     variables[file_name] = {}
 
+                # ISMIP7 requirement: all variables are saved as single-precision float
+                #
+                # FIXME: overriding this data type saves PISM's snapshots as single-precision
+                # float, so they should not be used to re-start PISM.
+                metadata["dtype"] = "f4"
+
+                # ISMIP7 requirement: time should have units of "days since 1850-01-01"
+                if variable_name in ["time", "time_bounds"]:
+                    units = metadata["attributes"]["units"]
+                    metadata["attributes"]["units"] = units.replace("seconds", "days")
+
                 variables[file_name][variable_name] = metadata
 
             case ServerActions.SEND_GRIDDED_VARIABLE.value:
@@ -826,6 +848,10 @@ def main(compression_level, output_grid=None):
                         metadata["start"] = [0]
                         metadata["count"] = [My]
 
+                # ISMIP7 requirement: time_bounds is saved in "days"
+                if variable_name == "time_bounds":
+                    array = array / 86400
+
                 if one_var_per_file(file_name):
                     if variable_name in ignored_variables:
                         continue
@@ -835,7 +861,6 @@ def main(compression_level, output_grid=None):
 
                     for field in fields_in_file:
                         F = get_file(file_name, field)
-                        logger.debug(f"writing {F.nc_dataset.filepath()}:{variable_name}")
                         F.write_variable(array, metadata)
 
                     continue
@@ -852,7 +877,8 @@ def main(compression_level, output_grid=None):
                     for field in fields_in_file:
                         F = get_file(file_name, field)
                         logger.debug(f"writing {F.nc_dataset.filepath()}:time")
-                        F.append_time(metadata["time"])
+                        # ISMIP7 requirement: time is saved in "days"
+                        F.append_time(metadata["time"] / 86400)
 
                     continue
 
