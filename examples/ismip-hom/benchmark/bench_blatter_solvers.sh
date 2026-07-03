@@ -12,9 +12,15 @@
 # Usage:
 #   ./bench_blatter_solvers_local.sh                       # all configs
 #   MX=401 MY=401 ./bench_blatter_solvers_local.sh         # bigger coarse grid
+#   MZ=10 CF=3 ./bench_blatter_solvers_local.sh            # match Greenland production (10->4->2)
 #   NP=8 ./bench_blatter_solvers_local.sh                  # more ranks
 #   TEST=A L_KM=10 ./bench_blatter_solvers_local.sh        # a different experiment
 #   ONLY="baseline_lu gamg" ./bench_blatter_solvers_local.sh   # subset
+#
+# MZ / CF / MG_LEVELS set the Blatter vertical grid and MG depth (they mirror the
+# production stress_balance.blatter.Mz, .coarsening_factor, and -bp_pc_mg_levels).
+# They must be compatible: CF^(MG_LEVELS-1) divides (Mz-1), coarsest grid >= 2.
+# Default 9/2/3 (9->5->3); Greenland production is 10/3/3 (10->4->2).
 #
 set -u
 
@@ -27,10 +33,33 @@ DRIVER="$HERE/ismiphom_solve.py"
 NP="${NP:-4}"
 MX="${MX:-201}"
 MY="${MY:-201}"
+MZ="${MZ:-9}"             # Blatter solver vertical levels (drives MG depth)
+CF="${CF:-2}"             # vertical MG coarsening factor
+MG_LEVELS="${MG_LEVELS:-3}"  # number of vertical MG levels (independent knob, like production)
 TEST="${TEST:-C}"         # ISMIP-HOM experiment (C has sliding -> nonzero BP velocity)
 L_KM="${L_KM:-80}"        # domain side length, km
 OUTDIR="${OUTDIR:-bench_$(date +%Y%m%d_%H%M%S)}"
 ONLY="${ONLY:-}"          # space-separated subset of config names; empty = all
+EXTRA="${EXTRA:-}"        # extra options appended to every run, e.g. EXTRA="-log_view"
+
+# Mz, CF, and MG_LEVELS are independent (as in production), but must be mutually
+# compatible: PISM's Blatter MG semicoarsens in the vertical only, coarsening
+# Mz -> (Mz-1)/CF+1 at each level, so CF^(MG_LEVELS-1) must divide (Mz-1) and the
+# coarsest grid must have >= 2 points. Examples: Mz=9,CF=2,levels=3 -> 9->5->3;
+# Mz=10,CF=3,levels=3 -> 10->4->2 (production). Validate before running.
+{
+  d=1
+  for (( i = 1; i < MG_LEVELS; i++ )); do d=$(( d * CF )); done   # d = CF^(MG_LEVELS-1)
+  coarsest=0
+  (( (MZ - 1) % d == 0 )) && coarsest=$(( (MZ - 1) / d + 1 ))
+  if (( MG_LEVELS < 2 || coarsest < 2 )); then
+    echo "ERROR: Mz=$MZ, CF=$CF, MG_LEVELS=$MG_LEVELS are incompatible." >&2
+    echo "       Need CF^(MG_LEVELS-1)=$d to divide (Mz-1)=$(( MZ - 1 )) with coarsest grid >= 2 points." >&2
+    echo "       e.g. Mz=9 CF=2 MG_LEVELS=3 (9->5->3), or Mz=10 CF=3 MG_LEVELS=3 (10->4->2)." >&2
+    exit 1
+  fi
+  MG_COARSEST=$coarsest
+}
 
 mkdir -p "$OUTDIR/logs"
 
@@ -50,7 +79,7 @@ COMMON=(
   # preconditioner variable; plain GMRES can diverge (DIVERGED_LINEAR_SOLVE).
   -bp_ksp_type fgmres
   -bp_pc_type mg
-  -bp_pc_mg_levels 3
+  -bp_pc_mg_levels "$MG_LEVELS"
   -bp_mg_levels_ksp_type richardson
   -bp_mg_levels_pc_type sor
   -bp_ksp_monitor
@@ -75,6 +104,13 @@ names=(
   gamg_cheb_sor           # gamg + Chebyshev/SOR level smoother
   gamg_cheb_sor_ksp       # the above, with the coarse solve Krylov-wrapped
   hypre                   # BoomerAMG (hypre) on the coarse level           [hypre]
+  # --- preconditioner-reuse variants (build on gamg_ksp; see opts_for notes) ---
+  gamg_ksp_lag            # gamg_ksp, but build the GAMG hierarchy once per solve & reuse
+  gamg_ksp_lag2           # gamg_ksp, rebuild GAMG every 2nd Newton step (persists)
+  gamg_ksp_reuse          # gamg_ksp, rebuild each step but cheaper GAMG re-setup
+  gamg_ksp_lag_reuse      # gamg_ksp, lag within a solve + cheaper re-setup
+  hypre_ksp               # BoomerAMG wrapped in a bounded GMRES coarse solve   [hypre]
+  hypre_ksp_lag           # hypre_ksp, coarse PC built once per solve & reused   [hypre]
 )
 
 # Map a config name to its coarse-grid (and smoother) option string. Implemented
@@ -120,6 +156,58 @@ opts_for () {
     hypre)
       echo "-bp_mg_coarse_ksp_type preonly -bp_mg_coarse_pc_type hypre \
             -bp_mg_coarse_pc_hypre_type boomeramg" ;;
+
+    # ---- Preconditioner-reuse variants -------------------------------------
+    # These build on gamg_ksp (the production baseline). Background: with Newton
+    # + Eisenstat-Walker the Jacobian -- and therefore the coarse GAMG hierarchy
+    # -- is rebuilt on *every* SNES iteration, and on stiff (high-velocity) steps
+    # that AMG setup can dominate the solve. -snes_lag_preconditioner reuses the
+    # hierarchy across Newton steps; EW only rescales the KSP *tolerance*, so it
+    # is unaffected. Use -log_view (EXTRA="-log_view") to see PCSetUp vs KSPSolve.
+    #
+    # -bp_snes_lag_preconditioner -2 : build the PC once at the start of the
+    #    SNESSolve and reuse it for the rest of that solve.
+    gamg_ksp_lag)
+      echo "-bp_mg_coarse_pc_type gamg \
+            -bp_mg_coarse_ksp_type gmres -bp_mg_coarse_ksp_rtol 1e-2 \
+            -bp_mg_coarse_ksp_max_it 50 \
+            -bp_snes_lag_preconditioner -2" ;;
+    # Rebuild the hierarchy every 2nd Newton step; the lag counter persists across
+    # the retry-ladder / parameter-continuation SNESSolves.
+    gamg_ksp_lag2)
+      echo "-bp_mg_coarse_pc_type gamg \
+            -bp_mg_coarse_ksp_type gmres -bp_mg_coarse_ksp_rtol 1e-2 \
+            -bp_mg_coarse_ksp_max_it 50 \
+            -bp_snes_lag_preconditioner 2 -bp_snes_lag_preconditioner_persists true" ;;
+    # Rebuild every step (no lag), but make each GAMG (re)setup cheaper: reuse the
+    # prolongation and coarsen more aggressively. On PETSc < 3.19 replace
+    # -..._aggressive_coarsening 1 with -..._square_graph 1.
+    gamg_ksp_reuse)
+      echo "-bp_mg_coarse_pc_type gamg \
+            -bp_mg_coarse_ksp_type gmres -bp_mg_coarse_ksp_rtol 1e-2 \
+            -bp_mg_coarse_ksp_max_it 50 \
+            -bp_mg_coarse_pc_gamg_reuse_interpolation true \
+            -bp_mg_coarse_pc_gamg_threshold 0.05 \
+            -bp_mg_coarse_pc_gamg_aggressive_coarsening 1" ;;
+    # Combine: lag within a solve AND cheaper re-setup when it does rebuild.
+    gamg_ksp_lag_reuse)
+      echo "-bp_mg_coarse_pc_type gamg \
+            -bp_mg_coarse_ksp_type gmres -bp_mg_coarse_ksp_rtol 1e-2 \
+            -bp_mg_coarse_ksp_max_it 50 \
+            -bp_snes_lag_preconditioner -2 \
+            -bp_mg_coarse_pc_gamg_reuse_interpolation true" ;;
+    # hypre BoomerAMG wrapped in a bounded GMRES coarse solve -- a fair AMG-vs-AMG
+    # comparison against gamg_ksp.
+    hypre_ksp)
+      echo "-bp_mg_coarse_pc_type hypre -bp_mg_coarse_pc_hypre_type boomeramg \
+            -bp_mg_coarse_ksp_type gmres -bp_mg_coarse_ksp_rtol 1e-2 \
+            -bp_mg_coarse_ksp_max_it 50" ;;
+    # hypre coarse PC built once per solve and reused across Newton steps.
+    hypre_ksp_lag)
+      echo "-bp_mg_coarse_pc_type hypre -bp_mg_coarse_pc_hypre_type boomeramg \
+            -bp_mg_coarse_ksp_type gmres -bp_mg_coarse_ksp_rtol 1e-2 \
+            -bp_mg_coarse_ksp_max_it 50 \
+            -bp_snes_lag_preconditioner -2" ;;
     *)
       echo "unknown config '$1'" >&2; return 1 ;;
   esac
@@ -137,15 +225,16 @@ run_one () {
   local out="$OUTDIR/out_${name}.nc"
 
   echo "==========================================================="
-  echo "  $name   (np=$NP, ISMIP-HOM $TEST, L=${L_KM}km, ${MX}x${MY})"
+  echo "  $name   (np=$NP, ISMIP-HOM $TEST, L=${L_KM}km, ${MX}x${MY}, Mz=${MZ}, CF=${CF}, ${MG_LEVELS} MG levels -> coarsest Mz=${MG_COARSEST})"
   echo "==========================================================="
 
   local start end wall
   start=$(date +%s.%N)
   # shellcheck disable=SC2086
-  BENCH_TEST="$TEST" BENCH_L_KM="$L_KM" BENCH_MX="$MX" BENCH_MY="$MY" BENCH_OUT="$out" \
+  BENCH_TEST="$TEST" BENCH_L_KM="$L_KM" BENCH_MX="$MX" BENCH_MY="$MY" \
+  BENCH_MZ="$MZ" BENCH_CF="$CF" BENCH_OUT="$out" \
   mpirun -np "$NP"  python3 "$DRIVER" \
-      "${COMMON[@]}" $(opts_for "$name") > "$log" 2>&1
+      "${COMMON[@]}" $(opts_for "$name") $EXTRA > "$log" 2>&1
   local rc=$?
   end=$(date +%s.%N)
   wall=$(awk "BEGIN{printf \"%.1f\", $end-$start}")

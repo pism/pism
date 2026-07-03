@@ -33,7 +33,16 @@ TEST = os.environ.get("BENCH_TEST", "C").upper()
 L = float(os.environ.get("BENCH_L_KM", "80")) * 1.0e3
 MX = int(os.environ.get("BENCH_MX", "201"))
 MY = int(os.environ.get("BENCH_MY", "201"))
+# Blatter solver vertical resolution and MG coarsening factor. Mz must be
+# MG-compatible: Mz = A*CF^(N-1)+1 (see the note near set_number below). The
+# bench script derives -bp_pc_mg_levels from these to keep them consistent.
+MZ = int(os.environ.get("BENCH_MZ", "9"))
+CF = int(os.environ.get("BENCH_CF", "2"))
 OUT = os.environ.get("BENCH_OUT", "ismiphom_out.nc")
+# Set BENCH_LOGVIEW=1 to print the PETSc -log_view profiling summary explicitly.
+# (PISM owns PetscInitialize/Finalize, so the option-driven -log_view dump does
+# not fire from this embedded driver; calling PETSc.Log.view() ourselves does.)
+LOGVIEW = bool(os.environ.get("BENCH_LOGVIEW"))
 
 ctx = PISM.Context()
 config = ctx.config
@@ -100,9 +109,11 @@ def set_constants(config):
     config.set_string("output.format", "netcdf4_serial")
 
     # Multigrid-compatible vertical grid: Mz = A*C^(N-1)+1. With coarsening
-    # factor 2 and 3 mg levels (-bp_pc_mg_levels 3) this gives 9 -> 5 -> 3.
-    config.set_number("stress_balance.blatter.Mz", 9)
-    config.set_number("stress_balance.blatter.coarsening_factor", 2)
+    # factor 2 and 3 mg levels (-bp_pc_mg_levels 3) the default Mz=9 gives
+    # 9 -> 5 -> 3. Override with BENCH_MZ / BENCH_CF (the bench script derives
+    # a matching -bp_pc_mg_levels).
+    config.set_number("stress_balance.blatter.Mz", MZ)
+    config.set_number("stress_balance.blatter.coarsening_factor", CF)
 
 
 def init(testname, L):
@@ -172,12 +183,21 @@ def main():
     comm = PETSc.COMM_WORLD
     rank = comm.getRank()
 
+    # Start PETSc event logging just before the solve so the summary reflects the
+    # solve itself (assembly vs. KSP/PC), not the one-off setup above.
+    if LOGVIEW:
+        PETSc.Log.begin()
+
     # Time the solve itself (barriers so the timing is not skewed by load imbalance).
     comm.barrier()
     t0 = time.time()
     stress_balance.update(inputs, True)
     comm.barrier()
     solve_seconds = time.time() - t0
+
+    # Emit the profiling summary (collective: all ranks call it, rank 0 prints).
+    if LOGVIEW:
+        PETSc.Log.view()
 
     if rank == 0:
         print("BENCH test=%s L_km=%.0f Mx=%d My=%d Mz=%d solve_seconds=%.2f" %
