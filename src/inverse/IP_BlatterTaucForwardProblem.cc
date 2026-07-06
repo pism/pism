@@ -740,6 +740,16 @@ void IP_BlatterTaucForwardProblem::apply_linearization_transpose(
     PISM_CHK(ierr, "DMDAVecRestoreArray");
   }
 
+  // TEMPORARY diagnostic: is the 2D misfit forcing nonzero, and does it survive the
+  // injection into the 3D adjoint RHS?
+  {
+    auto du_n = du.norm(NORM_2);
+    PetscReal rhs_n = 0.0;
+    ierr = VecNorm(rhs_3d, NORM_2, &rhs_n); PISM_CHK(ierr, "VecNorm");
+    m_log->message(2, "  [diag] ||du(2D)|| = (%g, %g)   ||rhs_3d(after inject)|| = %g\n",
+                   du_n[0], du_n.size() > 1 ? du_n[1] : 0.0, (double)rhs_n);
+  }
+
   // Standalone adjoint KSP (not the SNES's MG KSP).
   // Configure via -inv_adj_ksp_type, -inv_adj_pc_type, etc.
   if (m_ksp.get() == nullptr) {
@@ -840,9 +850,20 @@ void IP_BlatterTaucForwardProblem::apply_linearization_transpose(
                                   KSPConvergedReasons[reason]);
   }
 
+  // TEMPORARY diagnostic: did the adjoint solve produce a nonzero lambda?
+  {
+    PetscReal lam_n = 0.0;
+    ierr = VecNorm(lambda_3d, NORM_2, &lam_n); PISM_CHK(ierr, "VecNorm");
+    m_log->message(2, "  [diag] ||lambda_3d(after adjoint)|| = %g\n", (double)lam_n);
+  }
+
   // Step 3: Compute dzeta = -J_design^T * lambda
   this->apply_jacobian_design_transpose_3d(lambda_3d, dzeta);
   dzeta.scale(-1.0);
+
+  // TEMPORARY diagnostic: nonzero design gradient after the design-transpose?
+  m_log->message(2, "  [diag] ||dzeta(after design-transpose)|| = %g\n",
+                 dzeta.norm(NORM_2)[0]);
 
   m_log->message(2, "Blatter inverse: adjoint solve done.\n");
 
