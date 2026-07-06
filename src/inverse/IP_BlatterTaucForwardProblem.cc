@@ -784,6 +784,11 @@ void IP_BlatterTaucForwardProblem::apply_linearization_transpose(
 
   std::string adjoint_method = m_config->get_string("inverse.adjoint.method");
 
+  // The KSP whose convergence we report below. The "approximate" method reuses the
+  // forward SNES's KSP (with its geometric-multigrid preconditioner); the others use
+  // the standalone m_ksp.
+  KSP active_ksp = m_ksp;
+
   if (adjoint_method == "incomplete") {
     // Incomplete (Picard) adjoint: assemble a separate Picard Jacobian
     // (drops viscosity derivative terms), then KSPSolve. The matrix is
@@ -811,20 +816,18 @@ void IP_BlatterTaucForwardProblem::apply_linearization_transpose(
     PISM_CHK(ierr, "KSPSolve");
 
   } else if (adjoint_method == "approximate") {
-    // Approximate adjoint: KSPSolve on the SNES Jacobian (symmetrized
-    // by the upper-triangle mirror in compute_jacobian). Fast — reuses
-    // the existing matrix, no reassembly. Any preconditioner works if
-    // the matrix is approximately symmetric (GMRES recommended).
-    m_log->message(2, "Blatter inverse: adjoint solve (approximate, KSPSolve)...\n");
+    // Approximate adjoint: reuse the forward SNES's KSP, which already carries the
+    // Newton Jacobian AND its fully-assembled geometric-multigrid preconditioner. A
+    // standalone KSP with a flat preconditioner (jacobi/gamg) cannot converge on the
+    // Blatter operator at ice-sheet scale (it stalls or diverges, and the
+    // preconditioned-norm test can even report false convergence in 1 iteration).
+    // Reusing the forward MG makes the adjoint converge like the forward solve.
+    m_log->message(2, "Blatter inverse: adjoint solve (approximate, forward-MG KSP)...\n");
 
-    Mat J;
-    ierr = SNESGetJacobian(m_snes, &J, NULL, NULL, NULL);
-    PISM_CHK(ierr, "SNESGetJacobian");
+    ierr = SNESGetKSP(m_snes, &active_ksp);
+    PISM_CHK(ierr, "SNESGetKSP");
 
-    ierr = KSPSetOperators(m_ksp, J, J);
-    PISM_CHK(ierr, "KSPSetOperators");
-
-    ierr = KSPSolve(m_ksp, rhs_3d, lambda_3d);
+    ierr = KSPSolve(active_ksp, rhs_3d, lambda_3d);
     PISM_CHK(ierr, "KSPSolve");
 
   } else {
@@ -844,11 +847,11 @@ void IP_BlatterTaucForwardProblem::apply_linearization_transpose(
   }
 
   KSPConvergedReason reason;
-  ierr = KSPGetConvergedReason(m_ksp, &reason);
+  ierr = KSPGetConvergedReason(active_ksp, &reason);
   PISM_CHK(ierr, "KSPGetConvergedReason");
 
   PetscInt ksp_its;
-  ierr = KSPGetIterationNumber(m_ksp, &ksp_its);
+  ierr = KSPGetIterationNumber(active_ksp, &ksp_its);
   PISM_CHK(ierr, "KSPGetIterationNumber");
 
   m_log->message(2, "  Adjoint KSP: %d iterations, reason: %s\n",
