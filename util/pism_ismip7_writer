@@ -811,10 +811,8 @@ def main(compression_level, output_grid=None):
                     variables[file_name] = {}
 
                 # ISMIP7 requirement: all variables are saved as single-precision float
-                #
-                # FIXME: overriding this data type saves PISM's snapshots as single-precision
-                # float, so they should not be used to re-start PISM.
-                metadata["dtype"] = "f4"
+                if one_var_per_file(file_name):
+                    metadata["dtype"] = "f4"
 
                 # ISMIP7 requirement: time should have units of "days since 1850-01-01"
                 if variable_name in ["time", "time_bounds"]:
