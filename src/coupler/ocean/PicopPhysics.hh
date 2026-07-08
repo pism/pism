@@ -45,10 +45,12 @@ public:
   
   double melt_rate(const double M, const double X_hat) const;
   
-  double fresh_water_melt_rate(const double q_sg, const double Gamma_TS, const double t_f_gl, const double alpha) const;
+  double fresh_water_melt_rate(const double q_sg, const double s_a, const double t_a, const double Gamma_TS, const double t_f_gl, const double alpha) const;
   
 private:
 
+  // exchange coefficients
+  double beta_S, beta_T;
   // heat capacity
   double c_p;
   // drag coefficient

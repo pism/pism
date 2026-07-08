@@ -29,7 +29,9 @@ namespace pism {
 namespace ocean {
 
 PicopPhysics::PicopPhysics(const Config &config) {
-  
+
+    beta_S         = config.get_number("ocean.picop.haline_concentration_coefficient");
+    beta_T         = config.get_number("ocean.picop.thermal_expansion_coefficient");
     E0             = config.get_number("ocean.picop.entrainment_coefficient");
     c_p            = config.get_number("constants.fresh_water.specific_heat_capacity");
     Cd             = config.get_number("ocean.picop.drag_coefficient");
@@ -126,13 +128,20 @@ double PicopPhysics::melt_function(const double t_a, const double t_f_gl, const 
   return M0 * g_alpha * pow(t_a - t_f_gl, 2);
 }
 
-double PicopPhysics::fresh_water_melt_rate(const double q_sg, const double Gamma_TS, const double t_f_gl, const double alpha) const {
+//! Equation 13 in Pelle et al (2023)
+double PicopPhysics::fresh_water_melt_rate(const double q_sg,
+                                           const double s_a,
+                                           const double t_a,
+                                           const double Gamma_TS,
+                                           const double t_f_gl,
+                                           const double alpha) const {
   const double CdTS = sqrt(Cd) * Gamma_TS;
   const double E0_sin_alpha = E0 * sin(alpha);
   const double G1 = sqrt(sin(alpha) / (Cd + E0_sin_alpha));
   const double G2 = sqrt(CdTS / (CdTS + E0_sin_alpha));
-
-  return 1 / (L_fw * c_p) * G1 * pow(G2, 1./3.) * pow(g * q_sg, 1./3.) * t_f_gl;
+  const double delta_rho_i = beta_S * s_a - beta_T * t_a;
+  
+  return 1 / (L_fw * c_p) * CdTS0 * G1 * pow(G2, 1./3.) * pow(g * q_sg * delta_rho_i, 1./3.) * t_f_gl;
   
 }
 

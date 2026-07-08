@@ -296,10 +296,9 @@ void Picop::compute_melt_rate(const Inputs &inputs,
       const double M_X = physics.dimensionless_melt_curve(X_hat);
       const double M = physics.melt_function(t_a, t_f_gl, g_alpha);
       const double q_sg = water_flux(i, j);
-      //      const double q_sg = 0.0;
-      const double m_fw = physics.fresh_water_melt_rate(q_sg, Gamma_TS, t_f_gl, alpha);
-      // result(i, j)  = (M_X * M * M) / (M + m_fw) + m_fw ;
-      result(i, j)  = M_X * M ;
+      const double m_fw = physics.fresh_water_melt_rate(q_sg, s_a, t_a, Gamma_TS, t_f_gl, alpha);
+      // Equation 16 in Pelle et al (2023)
+      result(i, j)  = (M_X * M * M) / (M + m_fw) + m_fw ;
     }    
   }
 }
