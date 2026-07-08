@@ -57,6 +57,7 @@ private:
   array::Scalar1 m_grounding_line_elevation;
   array::Scalar1 m_shelf_base_elevation;
   array::Scalar1 m_local_slope;
+  array::Scalar1 m_fresh_water_melt_rate;
   
   const array::Scalar &m_theta_ocean;
   const array::Scalar &m_salinity_ocean;

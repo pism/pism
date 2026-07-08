@@ -45,6 +45,7 @@
 #include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
 #include "pism/stressbalance/StressBalance.hh"
+#include "pism/hydrology/Hydrology.hh"
 
 #include "pism/coupler/ocean/Picop.hh"
 #include "pism/coupler/ocean/PicopPhysics.hh"
@@ -63,6 +64,7 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
     m_grounding_line_elevation(grid, "picop_grounding_line_elevation"),
     m_shelf_base_elevation(grid, "picop_shelf_base_elevation"),
     m_local_slope(grid, "picop_local_slope"),
+    m_fresh_water_melt_rate(grid, "picop_fresh_water_melt_rate"),
     m_theta_ocean(m_pico->get_temperature()),
     m_salinity_ocean(m_pico->get_salinity()),
     m_flow_direction(grid, "ice_flow_direction"),
@@ -90,6 +92,13 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
   m_local_slope.metadata()["_FillValue"] = { 0.0 };
   m_local_slope.set(0.0);
       
+  m_fresh_water_melt_rate.metadata(0)
+      .long_name("PICOP fresh water melt rate")
+      .units("m s^-1")
+      .output_units("m year^-1");
+  m_fresh_water_melt_rate.metadata()["_FillValue"] = {0.0};
+  m_fresh_water_melt_rate.set(0.0);
+
   m_shelf_base_temperature->metadata()["_FillValue"] = {0.0};
 }
 
@@ -188,18 +197,23 @@ void Picop::update_impl(const Inputs &inputs, double t, double dt) {
     return;
   }
 
+  if (inputs.hydrology == nullptr) {
+    // Use outputs from PICOP if the stress balance is not available
+    m_log->message(3,
+                   "WARNING: PICOP requires hydrology routing for plume transport calculations.\n"
+                   );
+  }
+
   m_log->message(3, "  PICOP: Computing plume-based melt rates...\n");
   
   PicopPhysics picop_physics(*m_config);
 
-  
   compute_shelf_base_elevation(inputs, m_shelf_base_elevation);
 
   profiling().begin("ocean.compute_grounding_line_elevation");
   compute_grounding_line_elevation(inputs, m_grounding_line_elevation);
   profiling().end("ocean.compute_grounding_line_elevation");
   
-
   profiling().begin("ocean.compute_local_slope");
   compute_local_slope(inputs, m_local_slope);
   profiling().end("ocean.compute_local_slope");
@@ -240,15 +254,23 @@ void Picop::compute_melt_rate(const Inputs &inputs,
                               const array::Scalar &S_a,
                               array::Scalar1 &result)  {
 
+  m_log->message(2, "flux");
   const auto &ice_surface_elevation = inputs.geometry->ice_surface_elevation;
   const auto &ice_thickness = inputs.geometry->ice_thickness;
   const auto &cell_type = inputs.geometry->cell_type;
-  
-  array::AccessScope scope{&T_a, &S_a, &cell_type,
+
+  array::Scalar &water_flux = m_work;
+
+  m_log->message(2, "flux");
+  compute_magnitude(inputs.hydrology->flux(), water_flux);
+      
+  m_log->message(2, "flux 2");
+  array::AccessScope scope{&T_a, &S_a, &cell_type, &water_flux,
                            &ice_surface_elevation, &ice_thickness,
                            &m_local_slope, &m_grounding_line_elevation,
                            &result};
 
+  m_log->message(2, "flux 3");
   for (auto p : m_grid->points()) {
     int i = p.i(), j = p.j();
 
@@ -271,7 +293,13 @@ void Picop::compute_melt_rate(const Inputs &inputs,
       const double l = physics.length_scaling(t_a, t_f_gl, Gamma_TS, alpha);
       const double g_alpha = physics.geometric_scaling(Gamma_TS, alpha);
       const double X_hat = std::min(std::max(physics.dimensionless_coordinate(z_b, z_gl, l), 0.0), 1.0);
-      result(i, j)  = physics.melt_function(t_a, t_f_gl, g_alpha) * physics.dimensionless_melt_curve(X_hat);
+      const double M_X = physics.dimensionless_melt_curve(X_hat);
+      const double M = physics.melt_function(t_a, t_f_gl, g_alpha);
+      const double q_sg = water_flux(i, j);
+      //      const double q_sg = 0.0;
+      const double m_fw = physics.fresh_water_melt_rate(q_sg, Gamma_TS, t_f_gl, alpha);
+      // result(i, j)  = (M_X * M * M) / (M + m_fw) + m_fw ;
+      result(i, j)  = M_X * M ;
     }    
   }
 }
@@ -642,6 +670,7 @@ DiagnosticList Picop::spatial_diagnostics_impl() const {
 
   DiagnosticList result = {
     { "picop_basal_melt_rate", Diagnostic::wrap(m_basal_melt_rate) },
+    { "picop_fresh_water_melt_rate", Diagnostic::wrap(m_fresh_water_melt_rate) },
     { "picop_grounding_line_elevation", Diagnostic::wrap(m_grounding_line_elevation) },
     { "picop_local_slope", Diagnostic::wrap(m_local_slope) },
     { "picop_temperature", Diagnostic::wrap(m_theta_ocean) },

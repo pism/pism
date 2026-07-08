@@ -4,6 +4,10 @@ Changes since v2.3.0
 ====================
 
 - Added PICOP (PICO + Plume) from Pelle et al (2019). Use `-ocean.models picop`.
+- Fix a segfault when using the PICOP ocean model (`-ocean.models picop`): subglacial
+  hydrology was not passed to the ocean model, so PICOP dereferenced an uninitialized
+  `Inputs::hydrology` pointer when reading subglacial discharge. The `ocean::Inputs` fields
+  now default to `nullptr` so a missing input is caught rather than causing undefined behavior.
 - Add a ISMP7 surface model that uses the gradients but not the anomalies, and adds runoff.
 - Allow the Blatter stress balance to restart from SSA velocities: if `uvel_sigma` and
   `vvel_sigma` are not present in the input file but `u_ssa` and `v_ssa` are, use the

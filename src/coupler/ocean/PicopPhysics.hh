@@ -29,6 +29,8 @@ public:
 
   double characteristic_freezing_point(const double s_a, const double z_gl) const;
 
+  double freezing_point_depth(const double t_a, const double s_a, const double z_gl) const;
+
   double effective_heat_exchange_coefficient(const double t_a, const double t_f_gl, const double alpha) const;
 
   double length_scaling(const double t_a, const double t_f_gl, const double GammaTS, const double alpha) const;
@@ -43,20 +45,28 @@ public:
   
   double melt_rate(const double M, const double X_hat) const;
   
+  double fresh_water_melt_rate(const double q_sg, const double Gamma_TS, const double t_f_gl, const double alpha) const;
+  
 private:
 
+  // heat capacity
+  double c_p;
   // drag coefficient
   double Cd;
   // turbulent heat exchange coefficient
   double CdT, YT;
   // heat exchange parameters
   double CdTS0, gamma1, gamma2;
+  // gravity
+  double g;
   // freezing point coefficients
   double lambda1, lambda2, lambda3;
   // entrainment coefficient
   double E0, M0;
   // scaling coefficients
   double  x0;
+  // latent heat of fusion
+  double L_fw;
 
 };
 

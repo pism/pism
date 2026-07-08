@@ -31,14 +31,17 @@ namespace ocean {
 PicopPhysics::PicopPhysics(const Config &config) {
   
     E0             = config.get_number("ocean.picop.entrainment_coefficient");
+    c_p            = config.get_number("constants.fresh_water.specific_heat_capacity");
     Cd             = config.get_number("ocean.picop.drag_coefficient");
     CdT            = config.get_number("ocean.picop.turbulent_heat_exchange_coefficient");
     CdTS0          = config.get_number("ocean.picop.heat_exchange_parameter");
+    g              = config.get_number("constants.standard_gravity");
     gamma1         = config.get_number("ocean.picop.heat_exchange_parameter_1");
     gamma2         = config.get_number("ocean.picop.heat_exchange_parameter_2");
     lambda1        = config.get_number("ocean.picop.freezing_point_salinity_coefficient");
     lambda2        = config.get_number("ocean.picop.freezing_point_offset", "kelvin");
     lambda3        = config.get_number("ocean.picop.freezing_point_depth_coefficient");
+    L_fw           = config.get_number("constants.fresh_water.latent_heat_of_fusion");
     M0             = config.get_number("ocean.picop.melt_rate_parameter", "m s^-1 kelvin^-2");
     x0             = config.get_number("ocean.picop.dimensionless_scaling_factor");
     YT = CdT / sqrt(Cd);
@@ -49,6 +52,12 @@ PicopPhysics::PicopPhysics(const Config &config) {
 double PicopPhysics::characteristic_freezing_point(const double s_a, const double z) const {
   // in K * g /kg + K  + K / m
   return lambda1 * s_a + lambda2 + lambda3 * z;
+}
+
+//! equation 2 in the PICOP/q_sg paper.
+double PicopPhysics::freezing_point_depth(const double t_a, const double s_a, const double z) const {
+  // in m
+  return (t_a - lambda1 * s_a + lambda2 + lambda3 * z) / lambda3;
 }
 
 //! equation 5 in the PICOP paper.
@@ -115,6 +124,16 @@ double PicopPhysics::melt_rate(const double M, const double X_hat) const {
 double PicopPhysics::melt_function(const double t_a, const double t_f_gl, const double g_alpha) const {
   // m s^-1  delta_kelvin^-2 * 1 * (delta_kelvin)^2
   return M0 * g_alpha * pow(t_a - t_f_gl, 2);
+}
+
+double PicopPhysics::fresh_water_melt_rate(const double q_sg, const double Gamma_TS, const double t_f_gl, const double alpha) const {
+  const double CdTS = sqrt(Cd) * Gamma_TS;
+  const double E0_sin_alpha = E0 * sin(alpha);
+  const double G1 = sqrt(sin(alpha) / (Cd + E0_sin_alpha));
+  const double G2 = sqrt(CdTS / (CdTS + E0_sin_alpha));
+
+  return 1 / (L_fw * c_p) * G1 * pow(G2, 1./3.) * pow(g * q_sg, 1./3.) * t_f_gl;
+  
 }
 
 } // end of namespace ocean

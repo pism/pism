@@ -25,6 +25,10 @@
 
 namespace pism {
 
+namespace hydrology {
+class Hydrology;
+}
+
 namespace stressbalance {
 class StressBalance;
 }
@@ -35,8 +39,9 @@ class StressBalance;
 namespace ocean {
 
 struct Inputs {
-  const Geometry *geometry;
-  const pism::stressbalance::StressBalance *stress_balance;
+  const Geometry *geometry = nullptr;
+  const pism::stressbalance::StressBalance *stress_balance = nullptr;
+  const pism::hydrology::Hydrology *hydrology = nullptr;
 };
 
 //! A very rudimentary PISM ocean model.
