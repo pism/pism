@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _SHALLOWSTRESSBALANCE_H_
-#define _SHALLOWSTRESSBALANCE_H_
+#ifndef PISM_SHALLOWSTRESSBALANCE_HH
+#define PISM_SHALLOWSTRESSBALANCE_HH
 
 #include "pism/util/Component.hh"
 #include "pism/util/array/Vector.hh"
@@ -113,4 +113,4 @@ protected:
 } // end of namespace stressbalance
 } // end of namespace pism
 
-#endif /* _SHALLOWSTRESSBALANCE_H_ */
+#endif /* PISM_SHALLOWSTRESSBALANCE_HH */

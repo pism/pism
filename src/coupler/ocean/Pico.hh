@@ -17,8 +17,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef PISM_PICO_H
-#define PISM_PICO_H
+#ifndef PISM_OCEAN_PICO_HH
+#define PISM_OCEAN_PICO_HH
 
 #include "pism/coupler/ocean/CompleteOceanModel.hh"
 
@@ -133,4 +133,4 @@ private:
 } // end of namespace ocean
 } // end of namespace pism
 
-#endif /* PISM_PICO_H */
+#endif /* PISM_OCEAN_PICO_HH */

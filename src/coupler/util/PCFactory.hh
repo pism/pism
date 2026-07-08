@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PCFACTORY_H_
-#define _PCFACTORY_H_
+#ifndef PISM_PCFACTORY_HH
+#define PISM_PCFACTORY_HH
 
 #include <memory>
 #include <map>
@@ -190,4 +190,4 @@ protected:
 
 } // end of namespace pism
 
-#endif /* _PCFACTORY_H_ */
+#endif /* PISM_PCFACTORY_HH */

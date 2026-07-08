@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PAFACTORY_H_
-#define _PAFACTORY_H_
+#ifndef PISM_ATM_FACTORY_HH
+#define PISM_ATM_FACTORY_HH
 
 #include "pism/coupler/util/PCFactory.hh"
 #include "pism/coupler/AtmosphereModel.hh"
@@ -32,4 +32,4 @@ public:
 } // end of namespace atmosphere
 } // end of namespace pism
 
-#endif /* _PAFACTORY_H_ */
+#endif /* PISM_ATM_FACTORY_HH */

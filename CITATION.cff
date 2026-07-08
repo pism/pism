@@ -6,14 +6,15 @@
 #
 # to list contributors to a `branch` and the number of non-merge commits they made.
 #
-# Output as of 2023-10-25 (branch=dev)
+# Output as of 2026-05-01 (branch=dev)
 #
-# 6981  Constantine Khrulev
-# 1856  Ed Bueler
-#  360  Andy Aschwanden
+# 8154  Constantine Khrulev
+# 1857  Ed Bueler
+#  379  Andy Aschwanden
 #  272  David Maxwell
 #  126  Torsten Albrecht
 #   86  Jed Brown
+#   81  Wilton Jaciel Loch
 #   47  Maria Zeitz
 #   30  Julien Seguinot
 #   22  Elizabeth Fischer
@@ -22,15 +23,16 @@
 #   13  Nathan Shemonski
 #   10  Anders Damsgaard
 #    4  Sebastian Hinck
+#    3  Joseph H Kennedy
+#    3  Ken Mankoff
 #    2  Enrico Degregori
 #    2  Florian Ziemen
-#    2  Joseph H Kennedy
 #    2  Ronja Reese
 #    2  Thomas Kleiner
 #    1  Johannes Feldmann
-#    1  Ken Mankoff
 #    1  Kyle Blum
 #    1  Marijke Habermann
+#    1  Rene Gassmoeller
 #    1  Simon Schöll
 #
 # Running it with branch=main also adds

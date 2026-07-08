@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _IS_H_
-#define _IS_H_
+#ifndef PISM_IS_HH
+#define PISM_IS_HH
 
 #include <petscis.h>
 
@@ -35,4 +35,4 @@ public:
 } // end of namespace petsc
 } // end of namespace pism
 
-#endif /* _IS_H_ */
+#endif /* PISM_IS_HH */

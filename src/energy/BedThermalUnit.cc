@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023, 2024, 2025 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023, 2024, 2025, 2026 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -189,6 +189,13 @@ std::set<VariableMetadata> BedThermalUnit::state_impl() const {
 void BedThermalUnit::write_state_impl(const OutputFile &output) const {
   m_bottom_surface_flux.write(output);
 }
+
+class BTU_geothermal_flux_at_ground_level : public Diag<BedThermalUnit> {
+public:
+  BTU_geothermal_flux_at_ground_level(const BedThermalUnit *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const;
+};
 
 DiagnosticList BedThermalUnit::spatial_diagnostics_impl() const {
   DiagnosticList result = {

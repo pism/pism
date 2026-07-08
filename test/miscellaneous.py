@@ -348,7 +348,7 @@ class SSATrivial(unittest.TestCase):
             def _initPhysics(self):
                 self.modeldata.setPhysics(context.enthalpy_converter)
 
-            def _initSSACoefficients(self):
+            def _initCoefficients(self):
                 self._allocStdSSACoefficients()
                 self._allocateBCs()
 
@@ -363,9 +363,9 @@ class SSATrivial(unittest.TestCase):
                 vecs.vel_bc.set(0.0)
                 vecs.vel_bc_mask.set(1.0)
 
-            def _initSSA(self):
+            def _initSolver(self):
                 # The following ensure that the strength extension is used everywhere
-                se = self.ssa.strength_extension
+                se = self.solver.strength_extension
                 se.set_notional_strength(nu0 * H0)
                 se.set_min_thickness(4000 * 10)
 

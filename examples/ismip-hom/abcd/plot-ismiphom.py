@@ -5,7 +5,7 @@ import matplotlib.pylab as plt
 
 import numpy as np
 from scipy.interpolate import interp2d
-import netCDF4
+import xarray as xr
 
 FS = ['aas1','aas2','cma1','fpa2','ghg1','jvj1','mmr1','oga1','rhi1','rhi3','spr1','ssu1','yko1']
 BP = ['ahu1', 'ahu2', 'bds1', 'cma2', 'fpa1', 'fsa1', 'mbr1', 'rhi2', 'tpa1']
@@ -74,14 +74,14 @@ def plot_pism(ax, experiment, length_scale):
     L = 1e3 * int(length_scale)
 
     try:
-        f = netCDF4.Dataset(filename)
-        x = f.variables["x"][:] / L
+        f = xr.open_dataset(filename, decode_times=False, decode_cf=False)
+        x = f["x"].values / L
         if experiment in "bd":
-            v = f.variables["uvelsurf"][0, 1, :]
+            v = f["uvelsurf"].values[0, 1, :]
             ax.plot(x, v, color="red", lw=2, label="PISM")
         else:
-            V = f.variables["uvelsurf"][0, :, :]
-            y = f.variables["y"][:] / L
+            V = f["uvelsurf"].values[0, :, :]
+            y = f["y"].values / L
             v = interp2d(x, y, V)(x, 0.25)
             ax.plot(x, v, color="red", lw=2, label="PISM")
 

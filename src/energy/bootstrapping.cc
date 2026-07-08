@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2023, 2025 PISM Authors
+/* Copyright (C) 2016, 2017, 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,7 +19,6 @@
 
 #include <algorithm>                       // for min
 #include <cmath>                           // for sqrt, erf, M_PI
-#include <memory>                          // for __shared_ptr_access
 #include "pism/energy/bootstrapping.hh"    // for ice_temperature_guess, ice...
 #include "pism/util/EnthalpyConverter.hh"  // for EnthalpyConverter, Enthalp...
 

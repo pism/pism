@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
-from sys import exit
+import os
 import uuid
+import subprocess
+from sys import exit
 
-# Import all necessary modules here so that if it fails, it fails early.
 try:
-    import netCDF4 as NC
-except:
-    print("netCDF4 is not installed!")
+    import xarray as xr
+except ImportError:
+    print("xarray is not installed!")
     exit(1)
 
-import subprocess
 import numpy as np
-import os
 
 # This seems to be needed by NCO:
 os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
@@ -30,6 +29,21 @@ def run(commands):
         run([commands])
 
 
+def _open(path):
+    """Load a NetCDF file fully into memory and detach the file handle so
+    we can rewrite the same path safely."""
+    ds = xr.open_dataset(path, decode_times=False, decode_cf=False).load()
+    ds.close()
+    return ds
+
+
+def _save_inplace(ds, path):
+    """Crash-safe in-place rewrite via tmp + os.replace."""
+    tmp = path + ".tmp"
+    ds.to_netcdf(tmp, mode="w")
+    os.replace(tmp, path)
+
+
 def preprocess_ice_velocity():
     """
     Download and preprocess the latest Antarctic ice velocity dataset from NASA MEASURES project
@@ -45,7 +59,7 @@ def preprocess_ice_velocity():
         exit(1)
 
 
-    nc = NC.Dataset(input_filename, 'a')
+    ds = _open(input_filename)
 
     # Create x and y coordinate variables and set projection parameters; cut
     # out the Ross area.
@@ -53,36 +67,27 @@ def preprocess_ice_velocity():
     # Metadata provided with the dataset describes the *full* grid, so it is a
     # lot easier to modify this file instead of adding grid information to the
     # "cutout" file.
-    if 'x' not in nc.variables and 'y' not in nc.variables:
-        nx = nc.nx
-        ny = nc.ny
-        x_min = float(nc.xmin.strip().split(' ')[0])
-        y_max = float(nc.ymax.strip().split(' ')[0])
+    if 'x' not in ds.variables and 'y' not in ds.variables:
+        nx = ds.attrs['nx']
+        ny = ds.attrs['ny']
+        x_min = float(ds.attrs['xmin'].strip().split(' ')[0])
+        y_max = float(ds.attrs['ymax'].strip().split(' ')[0])
         x_max = y_max
         y_min = x_min
 
         x = np.linspace(x_min, x_max, nx)
         y = np.linspace(y_max, y_min, ny)
 
-        nc.projection = "+proj=stere +ellps=WGS84 +datum=WGS84 +lon_0=0 +lat_0=-90 +lat_ts=-71 +units=m"
+        ds.attrs["projection"] = "+proj=stere +ellps=WGS84 +datum=WGS84 +lon_0=0 +lat_0=-90 +lat_ts=-71 +units=m"
 
-        try:
-            x_var = nc.createVariable('x', 'f8', ('x',))
-            y_var = nc.createVariable('y', 'f8', ('y',))
-        except Exception as e:
-            x_var = nc.variables['x']
-            y_var = nc.variables['y']
+        ds = ds.assign_coords({
+            "x": ("x", x, {"units": "meters",
+                            "standard_name": "projection_x_coordinate"}),
+            "y": ("y", y, {"units": "meters",
+                            "standard_name": "projection_y_coordinate"}),
+        })
 
-        x_var[:] = x
-        y_var[:] = y
-
-        x_var.units = "meters"
-        x_var.standard_name = "projection_x_coordinate"
-
-        y_var.units = "meters"
-        y_var.standard_name = "projection_y_coordinate"
-
-        nc.close()
+        _save_inplace(ds, input_filename)
 
     if not os.path.exists(output_filename):
 
@@ -97,23 +102,21 @@ def preprocess_ice_velocity():
         run("cdo setmisstoc,0 -setattribute,VX@_FillValue=-1.0f -setattribute,VY@_FillValue=-1.0f {} {}".format(output_filename, tmp_filename))
         run("cdo chname,VX,vx -chname,VY,vy {} {}".format(tmp_filename, output_filename))
 
-        nc = NC.Dataset(output_filename, 'a')
+        ds = _open(output_filename)
 
         # fix units of 'vx' and 'vy'
-        nc.variables['vx'].units = "m / year"
-        nc.variables['vy'].units = "m / year"
+        ds["vx"].attrs["units"] = "m / year"
+        ds["vy"].attrs["units"] = "m / year"
 
         # Compute and save the velocity magnitude
-        if 'magnitude' not in nc.variables:
-            vx = nc.variables['vx'][:]
-            vy = nc.variables['vy'][:]
+        if 'magnitude' not in ds.variables:
+            vx = np.asarray(ds["vx"].values)
+            vy = np.asarray(ds["vy"].values)
+            mag = np.sqrt(vx ** 2 + vy ** 2)
+            ds["v_magnitude"] = xr.DataArray(
+                mag, dims=("y", "x"), attrs={"units": "m / year"})
 
-            magnitude = nc.createVariable('v_magnitude', 'f8', ('y', 'x'))
-            magnitude.units = "m / year"
-
-            magnitude[:] = np.sqrt(vx ** 2 + vy ** 2)
-
-        nc.close()
+        _save_inplace(ds, output_filename)
 
     return output_filename
 
@@ -135,41 +138,41 @@ def preprocess_albmap():
                 "ncrename -O -v temp,%s -v acca,%s %s" % (temp_name, smb_name, output_filename)]
 
     run(commands)
-    
-    nc = NC.Dataset(output_filename, 'a')
+
+    ds = _open(output_filename)
 
     # fix acab
     rho_ice = 910.0             # kg m-3
-    acab = nc.variables[smb_name]
-    acab.standard_name = "land_ice_surface_specific_mass_balance_flux"
-    SMB = acab[:]
+    SMB = np.asarray(ds[smb_name].values)
     SMB[SMB == -9999] = 0
     # convert from m/year to kg m-2 / year:
-    acab[:] = SMB * rho_ice
-    acab.units = "kg m-2 / year"
+    ds[smb_name].attrs["standard_name"] = "land_ice_surface_specific_mass_balance_flux"
+    ds[smb_name].attrs["units"] = "kg m-2 / year"
+    ds[smb_name].values[...] = SMB * rho_ice
 
     # fix artm and topg
-    nc.variables[temp_name].units = "degree_Celsius"
-    nc.variables["topg"].standard_name = "bedrock_altitude"
+    ds[temp_name].attrs["units"] = "degree_Celsius"
+    ds["topg"].attrs["standard_name"] = "bedrock_altitude"
 
     # compute ice thickness
-    if 'thk' not in nc.variables:
-        usrf = nc.variables['usrf'][:]
-        lsrf = nc.variables['lsrf'][:]
+    if 'thk' not in ds.variables:
+        usrf = np.asarray(ds["usrf"].values)
+        lsrf = np.asarray(ds["lsrf"].values)
+        ds["thk"] = xr.DataArray(
+            usrf - lsrf, dims=("y", "x"),
+            attrs={"units": "meters",
+                   "standard_name": "land_ice_thickness"})
 
-        thk = nc.createVariable('thk', 'f8', ('y', 'x'))
-        thk.units = "meters"
-        thk.standard_name = "land_ice_thickness"
-
-        thk[:] = usrf - lsrf
-
-    nc.projection = "+proj=stere +ellps=WGS84 +datum=WGS84 +lon_0=0 +lat_0=-90 +lat_ts=-71 +units=m"
-    nc.close()
+    ds.attrs["projection"] = (
+        "+proj=stere +ellps=WGS84 +datum=WGS84 +lon_0=0 +lat_0=-90 "
+        "+lat_ts=-71 +units=m"
+    )
+    _save_inplace(ds, output_filename)
 
     # Remove usrf and lsrf variables:
     command = "ncks -x -v usrf,lsrf -O %s %s" % (output_filename, output_filename)
     run(command)
-    
+
     return output_filename
 
 
@@ -178,16 +181,20 @@ def final_corrections(filename):
     * replaces missing values with zeros
     * computes Dirichlet B.C. locations
     """
-    nc = NC.Dataset(filename, 'a')
+    ds = _open(filename)
 
     # replace missing values with zeros
     for var in ['u_bc', 'v_bc', 'magnitude']:
-        tmp = nc.variables[var][:]
-        tmp[tmp.mask == True] = 0
-        nc.variables[var][:] = tmp
+        tmp = np.asarray(ds[var].values)
+        fill = ds[var].attrs.get("_FillValue", ds[var].encoding.get("_FillValue"))
+        if fill is not None:
+            tmp[tmp == fill] = 0
+        else:
+            tmp[np.isnan(tmp)] = 0
+        ds[var].values[...] = tmp
 
-    thk = nc.variables['thk'][:]
-    topg = nc.variables['topg'][:]
+    thk = np.asarray(ds["thk"].values).copy()
+    topg = np.asarray(ds["topg"].values).copy()
 
     # compute the grounded/floating mask:
     mask = np.zeros(thk.shape, dtype='i')
@@ -237,22 +244,19 @@ def final_corrections(filename):
     topg[np.logical_or(mask == ocean_icy, mask == ocean_ice_free)] = -2000.0
 
     # cap temperature out in the ocean:
-    temperature = nc.variables[temp_name][:]
+    temperature = np.asarray(ds[temp_name].values).copy()
     temperature[temperature > -20.0] = -20.0
 
-    nc.variables[temp_name][:] = temperature
-    nc.variables['topg'][:] = topg
-    vel_bc_mask_var = nc.createVariable('vel_bc_mask', 'i', ('y', 'x'))
-    vel_bc_mask_var[:] = vel_bc_mask
+    ds[temp_name].values[...] = temperature
+    ds["topg"].values[...] = topg
+    ds["vel_bc_mask"] = xr.DataArray(vel_bc_mask.astype("i4"),
+                                     dims=("y", "x"))
+    bad_bc_mask = np.logical_and(thk < 1.0, vel_bc_mask == 1)
+    ds["bad_bc_mask"] = xr.DataArray(bad_bc_mask.astype("i4"),
+                                     dims=("y", "x"))
+    ds["mask"] = xr.DataArray(mask.astype("i4"), dims=("y", "x"))
 
-    bad_bc_mask_mask = np.logical_and(thk < 1.0, vel_bc_mask == 1)
-    bad_bc_mask_var = nc.createVariable('bad_bc_mask', 'i', ('y', 'x'))
-    bad_bc_mask_var[:] = bad_bc_mask_mask
-
-    mask_var = nc.createVariable('mask', 'i', ('y', 'x'))
-    mask_var[:] = mask
-
-    nc.close()
+    _save_inplace(ds, filename)
 
 
 if __name__ == "__main__":

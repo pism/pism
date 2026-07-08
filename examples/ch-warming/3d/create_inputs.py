@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import netCDF4
+import xarray as xr
 import numpy as np
 
 M = 3                           # grid size
@@ -32,46 +32,28 @@ def T_surface(time, mean, amplitude, summer_peak_day):
     return mean + amplitude * np.cos(2 * np.pi * t)
 
 
-f = netCDF4.Dataset("input.nc", "w")
-
-f.createDimension("x", Mx)
-x = f.createVariable("x", np.float64, ("x",))
-x.units = "meters"
-x[:] = np.linspace(-Lx, Lx, Mx)
-
-f.createDimension("y", My)
-y = f.createVariable("y", np.float64, ("y",))
-y.units = "meters"
-y[:] = np.linspace(-Ly, Ly, My)
-
-f.createDimension("time", n_records)
-
+x = np.linspace(-Lx, Lx, Mx)
+y = np.linspace(-Ly, Ly, My)
 time = np.linspace(0, 1, n_records) * seconds_per_year
 
-t = f.createVariable("time", np.float64, ("time",))
-t.units = "seconds since 1-1-1"
-t[:] = time
-
-H = f.createVariable("thk", np.float64, ("y", "x"))
-H.units = "meters"
-H.long_name = "ice thickness"
-H[:] = H0
-
-b = f.createVariable("topg", np.float64, ("y", "x"))
-b.units = "meters"
-b.long_name = "bed elevation"
-b[:] = b0
-
-T_s = f.createVariable("ice_surface_temp", np.float64, ("y", "x"))
-T_s.units = "kelvin"
-T_s[:] = T_mean_annual
-
-M = f.createVariable("climatic_mass_balance", np.float64, ("y", "x"))
-M.units = "kg m^-2 s^-1"
-M[:] = M0
-
-dT = f.createVariable("delta_T", np.float64, ("time",))
-dT.units = "kelvin"
-dT[:] = T_surface(time, 0.0, T_amplitude, summer_peak_day)
-
-f.close()
+ds = xr.Dataset(
+    coords={
+        "x": ("x", x, {"units": "meters"}),
+        "y": ("y", y, {"units": "meters"}),
+        "time": ("time", time, {"units": "seconds since 1-1-1"}),
+    },
+    data_vars={
+        "thk":  (("y", "x"), np.full((My, Mx), H0),
+                 {"units": "meters", "long_name": "ice thickness"}),
+        "topg": (("y", "x"), np.full((My, Mx), b0),
+                 {"units": "meters", "long_name": "bed elevation"}),
+        "ice_surface_temp": (("y", "x"), np.full((My, Mx), T_mean_annual),
+                             {"units": "kelvin"}),
+        "climatic_mass_balance": (("y", "x"), np.full((My, Mx), M0),
+                                  {"units": "kg m^-2 s^-1"}),
+        "delta_T": (("time",),
+                    T_surface(time, 0.0, T_amplitude, summer_peak_day),
+                    {"units": "kelvin"}),
+    },
+)
+ds.to_netcdf("input.nc", mode="w")

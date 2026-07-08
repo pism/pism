@@ -28,9 +28,9 @@
 from mpl_toolkits.basemap import Basemap
 
 try:
-    from netCDF4 import Dataset as NC
+    import xarray as xr
 except:
-    print("netCDF4 is not installed!")
+    print("xarray is not installed!")
     sys.exit(1)
 
 import numpy as np
@@ -43,7 +43,7 @@ if len(sys.argv) < 2:
     sys.exit(1)
 rootname = sys.argv[1]
 try:
-    nc = NC(rootname + '.nc', 'r')
+    nc = xr.open_dataset(rootname + '.nc', decode_times=False, decode_cf=False)
 except:
     print("ERROR: can't read from file %s.nc ..." % rootname)
     sys.exit(2)
@@ -61,7 +61,7 @@ else:
 bluemarble = False  # if True, use Blue Marble background
 
 if (field == 'velsurf_mag') | (field == 'velbase_mag'):
-    fill = nc.variables[field]._FillValue
+    fill = nc[field].encoding.get('_FillValue', nc[field].attrs.get('_FillValue'))
     logscale = True
     contour100 = True
     myvmin = 1.0
@@ -121,8 +121,8 @@ else:
     sys.exit(3)
 
 # we need to know longitudes and latitudes corresponding to grid
-lon = nc.variables['lon'][:]
-lat = nc.variables['lat'][:]
+lon = nc['lon'].values[:]
+lat = nc['lat'].values[:]
 if field == 'surfvelmag':
     lon = np.squeeze(lon).transpose()
     lat = np.squeeze(lat).transpose()
@@ -130,31 +130,31 @@ if field == 'surfvelmag':
 # x and y *in the dataset* are only used to determine plotting domain
 # dimensions
 if field == 'surfvelmag':
-    x = nc.variables['x1'][:]
-    y = nc.variables['y1'][:]
+    x = nc['x1'].values[:]
+    y = nc['y1'].values[:]
 else:
-    x = nc.variables['x'][:]
-    y = nc.variables['y'][:]
+    x = nc['x'].values[:]
+    y = nc['y'].values[:]
 width = x.max() - x.min()
 height = y.max() - y.min()
 
 # load data
 if field == 'bwprel':
-    thkvar = np.squeeze(nc.variables['thk'][:])
-    myvar = np.squeeze(nc.variables['bwp'][:])
+    thkvar = np.squeeze(nc['thk'].values[:])
+    myvar = np.squeeze(nc['bwp'].values[:])
     myvar = np.ma.array(myvar, mask=(thkvar == 0.0))
     thkvar = np.ma.array(thkvar, mask=(thkvar == 0.0))
     myvar = myvar / (910.0 * 9.81 * thkvar)
 else:
-    myvar = np.squeeze(nc.variables[field][:])
+    myvar = np.squeeze(nc[field].values[:])
 
 # mask out ice free etc.; note 'mask' does not get masked
 if (field == 'surfvelmag'):
     myvar = myvar.transpose()
-    thkvar = np.squeeze(nc.variables['thk'][:]).transpose()
+    thkvar = np.squeeze(nc['thk'].values[:]).transpose()
     myvar = np.ma.array(myvar, mask=(thkvar == 0.0))
 elif (field != 'mask'):
-    maskvar = np.squeeze(nc.variables['mask'][:])
+    maskvar = np.squeeze(nc['mask'].values[:])
     if (field == 'basal_melt_rate_grounded') | (field == 'bwat'):
         myvar[myvar < myvmin] = myvmin
     if (field == 'usurf'):

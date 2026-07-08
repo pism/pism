@@ -3,21 +3,21 @@
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-import netCDF4
+import xarray as xr
 import sys
 # Plots PISM results for the ISMIP-HOM Experiment E.
 
 sliding = sys.argv[1]
 no_slip = sys.argv[2]
 
-f_sliding = netCDF4.Dataset(sliding)
-f_no_slip = netCDF4.Dataset(no_slip)
+f_sliding = xr.open_dataset(sliding, decode_times=False, decode_cf=False)
+f_no_slip = xr.open_dataset(no_slip, decode_times=False, decode_cf=False)
 
 # Surface ice velocity
 
-x = f_sliding.variables["x"][:]
-uvelsurf_sliding = f_sliding.variables["uvelsurf"][:]
-uvelsurf_no_slip = f_no_slip.variables["uvelsurf"][:]
+x = f_sliding["x"].values
+uvelsurf_sliding = f_sliding["uvelsurf"].values
+uvelsurf_no_slip = f_no_slip["uvelsurf"].values
 
 fig, ax = plt.subplots()
 fig.dpi = 100
@@ -34,8 +34,8 @@ fig.savefig("uvelsurf.png")
 # Ice velocity throughout the ice volume
 year = 365.2524 * 86400
 
-topg = f_sliding.variables["topg"][:]
-thk = f_sliding.variables["thk"][:]
+topg = f_sliding["topg"].values
+thk = f_sliding["thk"].values
 
 def plot_uvel(data, thk, topg, title, filename):
     Mz, Mx = data.shape
@@ -65,7 +65,7 @@ def plot_uvel(data, thk, topg, title, filename):
     fig.savefig(filename)
 
 # Sliding case
-uvel_sliding = f_sliding.variables["uvel_sigma"][:,:]
+uvel_sliding = f_sliding["uvel_sigma"].values[:, :]
 uvel_sliding *= year
 
 plot_uvel(uvel_sliding, thk, topg,
@@ -73,7 +73,7 @@ plot_uvel(uvel_sliding, thk, topg,
           "uvel_sliding.png")
 
 # No-slip case
-uvel_no_slip = f_no_slip.variables["uvel_sigma"][:,:]
+uvel_no_slip = f_no_slip["uvel_sigma"].values[:, :]
 uvel_no_slip *= year
 
 plot_uvel(uvel_no_slip, thk, topg,

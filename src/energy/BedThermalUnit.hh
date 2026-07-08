@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2025 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2025, 2026 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PISMBEDTHERMALUNIT_H_
-#define _PISMBEDTHERMALUNIT_H_
+#ifndef PISM_BEDTHERMALUNIT_HH
+#define PISM_BEDTHERMALUNIT_HH
 
 #include "pism/util/Component.hh"
 
@@ -148,15 +148,8 @@ protected:
   array::Scalar m_top_surface_flux;
 };
 
-class BTU_geothermal_flux_at_ground_level : public Diag<BedThermalUnit> {
-public:
-  BTU_geothermal_flux_at_ground_level(const BedThermalUnit *m);
-protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
-};
-
 } // end of namespace energy
 } // end of namespace pism
 
-#endif /* _PISMBEDTHERMALUNIT_H_ */
+#endif /* PISM_BEDTHERMALUNIT_HH */
 

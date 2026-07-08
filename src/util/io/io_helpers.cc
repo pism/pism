@@ -1,4 +1,4 @@
-/* Copyright (C) 2015--2025 PISM Authors
+/* Copyright (C) 2015--2026 PISM Authors
  *
  * This file is part of PISM.
  *

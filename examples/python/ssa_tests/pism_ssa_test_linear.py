@@ -51,7 +51,7 @@ class test_linear(PISM.ssa.SSAExactTestCase):
 
         self.modeldata.setPhysics(enthalpyconverter)
 
-    def _initSSACoefficients(self):
+    def _initCoefficients(self):
         self._allocStdSSACoefficients()
         self._allocateBCs()
 
@@ -78,9 +78,9 @@ class test_linear(PISM.ssa.SSAExactTestCase):
                     vel_bc[i, j].u = u
                     vel_bc[i, j].v = v
 
-    def _initSSA(self):
+    def _initSolver(self):
         # The following ensure that the strength extension is used everywhere
-        se = self.ssa.strength_extension
+        se = self.solver.strength_extension
         se.set_notional_strength(nu0 * H0)
         se.set_min_thickness(4000 * 10)
 

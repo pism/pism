@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2018, 2021, 2023, 2025 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2018, 2021, 2023, 2025, 2026 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -17,8 +17,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __PISMSurfaceModel_hh
-#define __PISMSurfaceModel_hh
+#ifndef PISM_SURFACE_MODEL_HH
+#define PISM_SURFACE_MODEL_HH
 
 /*!
  * This file should contain the class definition and nothing else.
@@ -111,4 +111,4 @@ protected:
 } // end of namespace surface
 } // end of namespace pism
 
-#endif  // __PISMSurfaceModel_hh
+#endif  // PISM_SURFACE_MODEL_HH

@@ -24,3 +24,7 @@ Technical notes
    ocean-th.rst
 
    blatter-pattyn.rst
+
+   inverse-ssa.rst
+
+   inverse-blatter.rst

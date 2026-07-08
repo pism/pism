@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 try:
-    import netCDF4 as netCDF
-except:
-    print("netCDF4 is not installed!")
-    sys.exit(1)
+    import xarray as xr
+except ImportError:
+    print("xarray is not installed!")
+    exit(1)
 from matplotlib import pyplot as pp
 from matplotlib import colors as mc
 from optparse import OptionParser
@@ -28,26 +28,26 @@ parser.add_option("-e", "--tauc_error_cap", type='float', default=0.2,
 (options, args) = parser.parse_args()
 
 try:
-    ds = netCDF.Dataset(options.input_file)
-except:
+    ds = xr.open_dataset(options.input_file, decode_times=False, decode_cf=False)
+except Exception:
     print('ERROR: option -i is required')
     parser.print_help()
     exit(0)
 
 secpera = 3.15569259747e7
-tauc = ds.variables['tauc'][...].squeeze()
-tauc_true = ds.variables['tauc_true'][...].squeeze()
+tauc = np.asarray(ds['tauc'].values).squeeze()
+tauc_true = np.asarray(ds['tauc_true'].values).squeeze()
 
 tauc_diff = tauc - tauc_true
 
-not_ice = abs(ds.variables['mask'][...].squeeze() - 2) > 0.01
+not_ice = abs(np.asarray(ds['mask'].values).squeeze() - 2) > 0.01
 tauc[not_ice] = 0
 tauc_true[not_ice] = 0
 tauc_diff[not_ice] = 0.
 
 
-u_computed = ds.variables['u_computed'][...].squeeze() * secpera
-v_computed = ds.variables['v_computed'][...].squeeze() * secpera
+u_computed = np.asarray(ds['u_computed'].values).squeeze() * secpera
+v_computed = np.asarray(ds['v_computed'].values).squeeze() * secpera
 velbase_mag_computed = np.sqrt(u_computed * u_computed + v_computed * v_computed)
 
 not_sliding = np.logical_and((abs(u_computed) < 10.), (abs(v_computed) < 10.))

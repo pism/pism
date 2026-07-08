@@ -17,8 +17,9 @@
 ``nco``, optional; used in many pre-processing scripts
 ``ncview``, optional; a nice tool for examining NetCDF datasets
 ``python3-dev``, optional; used by PISM's Python bindings
-``python3-netcdf4``, optional; used in most post-processing scripts
+``python3-netcdf4``, optional; used in some test scripts
 ``python3-numpy``, optional; used in some pre- and post-processing scripts
 ``python3-pyproj``, optional; used in some pre-processing scripts
 ``python3-scipy``, optional; used in some pre- and post-processing scripts
+``python3-netcdf4``, optional; used in most post-processing scripts
 ``swig``, optional; used to build PISM's Python bindings

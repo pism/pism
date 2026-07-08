@@ -8,9 +8,9 @@ import getopt
 import math
 import numpy as np
 try:
-    from netCDF4 import Dataset as NC
-except:
-    print("netCDF4 is not installed!")
+    import xarray as xr
+except ImportError:
+    print("xarray is not installed!")
     sys.exit(1)
 
 # geometry setup flowline
@@ -54,8 +54,6 @@ command-line options. (We try to use command-line options whenever we can.)
 '''
 
 filename = "flowline_config.nc"
-nc = NC(filename, 'w', format="NETCDF3_CLASSIC")
-var = nc.createVariable("pism_overrides", 'i')
 attrs = {"geometry.update.use_basal_melt_rate": "no",
          "stress_balance.ssa.compute_surface_gradient_inward": "no",
          "flow_law.isothermal_Glen.ice_softness": (B0) ** -3,
@@ -67,10 +65,8 @@ attrs = {"geometry.update.use_basal_melt_rate": "no",
          "ocean.sub_shelf_heat_flux_into_ice": 0.0,
          "stress_balance.sia.bed_smoother.range": 0.0,
          }
-
-for name, value in attrs.items():
-    var.setncattr(name, value)
-nc.close()
+ds_cfg = xr.Dataset({"pism_overrides": ((), np.int32(0), attrs)})
+ds_cfg.to_netcdf(filename, mode="w", format="NETCDF3_CLASSIC")
 
 
 # grid size: # of boxes
@@ -165,12 +161,7 @@ for i in range(0, nx):
             vel_bc_mask[j, i] = 1.0
 
 
-##### define dimensions in NetCDF file #####
-ncfile = NC(WRIT_FILE, 'w', format='NETCDF3_CLASSIC')
-xdim = ncfile.createDimension('x', nx)
-ydim = ncfile.createDimension('y', ny)
-
-##### define variables, set attributes, write data #####
+##### build the dataset #####
 # format: ['units', 'long_name', 'standard_name', '_FillValue', array]
 
 vars = {'y':   	['m',
@@ -220,18 +211,22 @@ vars = {'y':   	['m',
                  vbar],
         }
 
-for name in list(vars.keys()):
-    [_, _, _, fill_value, data] = vars[name]
-    if name in ['x', 'y']:
-        var = ncfile.createVariable(name, 'f4', (name,))
+ds = xr.Dataset()
+encoding = {}
+for name, (units, long_name, std_name, fill_value, data) in vars.items():
+    a = {}
+    if units:     a["units"] = units
+    if long_name: a["long_name"] = long_name
+    if std_name:  a["standard_name"] = std_name
+    if name in ("x", "y"):
+        ds = ds.assign_coords({name: (name, np.asarray(data, dtype="f4"), a)})
     else:
-        var = ncfile.createVariable(name, 'f4', ('y', 'x'), fill_value=fill_value)
-    for each in zip(['units', 'long_name', 'standard_name'], vars[name]):
-        if each[1]:
-            setattr(var, each[0], each[1])
-    var[:] = data
+        ds[name] = xr.DataArray(np.asarray(data, dtype="f4"),
+                                dims=("y", "x"), attrs=a)
+        if fill_value is not None:
+            encoding[name] = {"_FillValue": np.float32(fill_value)}
 
-# finish up
-ncfile.close()
+ds.to_netcdf(WRIT_FILE, mode="w", format="NETCDF3_CLASSIC",
+             encoding=encoding)
 print("NetCDF file ", WRIT_FILE, " created")
 print('')

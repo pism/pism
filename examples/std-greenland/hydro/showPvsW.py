@@ -7,9 +7,9 @@ import sys
 import argparse
 
 try:
-    from netCDF4 import Dataset as NC
+    import xarray as xr
 except:
-    print("netCDF4 is not installed!")
+    print("xarray is not installed!")
     sys.exit(1)
 
 parser = argparse.ArgumentParser(description='show scatter plot P versus W from a PISM run')
@@ -45,21 +45,21 @@ parser.add_argument('-wmax', type=float, default=None,
 args = parser.parse_args()
 
 try:
-    nc = NC(args.filename, 'r')
+    nc = xr.open_dataset(args.filename, decode_times=False, decode_cf=False)
 except:
     print("ERROR: can't read from file ...")
     sys.exit(1)
 
 print("  reading 'bwprel' field from file %s ..." % (args.filename))
 try:
-    bwprel = nc.variables["bwprel"]
+    bwprel = nc["bwprel"]
 except:
     print("ERROR: variable 'bwprel' not found ...")
     sys.exit(2)
 
 print("  reading 'bwat' field from file %s ..." % (args.filename))
 try:
-    bwat = nc.variables["bwat"]
+    bwat = nc["bwat"]
 except:
     print("ERROR: variable 'bwat' not found ...")
     sys.exit(3)
@@ -67,7 +67,7 @@ except:
 if args.s != None:
     print("  reading '%s' field, for point selection, from file %s ..." % (args.s, args.filename))
     try:
-        ss = nc.variables[args.s]
+        ss = nc[args.s]
     except:
         print("ERROR: variable '%s' not found ..." % (args.s))
         sys.exit(5)
@@ -79,7 +79,7 @@ if args.s != None:
 if args.c != None:
     print("  reading '%s' field, for point color, from file %s ..." % (args.c, args.filename))
     try:
-        cc = nc.variables[args.c]
+        cc = nc[args.c]
     except:
         print("ERROR: variable '%s' not found ..." % (args.c))
         sys.exit(4)

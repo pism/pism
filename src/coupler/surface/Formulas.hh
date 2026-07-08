@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _PSFORMULAS_H_
-#define _PSFORMULAS_H_
+#ifndef PISM_SURFACE_FORMULAS_HH
+#define PISM_SURFACE_FORMULAS_HH
 
 #include "pism/coupler/SurfaceModel.hh"
 
@@ -54,4 +54,4 @@ protected:
 } // end of namespace surface
 } // end of namespace pism
 
-#endif /* _PSFORMULAS_H_ */
+#endif /* PISM_SURFACE_FORMULAS_HH */

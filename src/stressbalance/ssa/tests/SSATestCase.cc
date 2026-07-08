@@ -75,12 +75,7 @@ SSATestCase::SSATestCase(std::shared_ptr<SSA> ssa)
   double fill_value =
       units::convert(sys, m_config->get_number("output.fill_value"), "m year^-1", "m second^-1");
 
-  auto large_number = units::convert(m_sys, 1e6, "m year^-1", "m second^-1");
-
-  m_bc_values.metadata(0)["valid_range"] = { -large_number, large_number };
   m_bc_values.metadata(0)["_FillValue"]  = { fill_value };
-
-  m_bc_values.metadata(1)["valid_range"] = { -large_number, large_number };
   m_bc_values.metadata(1)["_FillValue"]  = { fill_value };
 
   m_bc_values.set(fill_value);

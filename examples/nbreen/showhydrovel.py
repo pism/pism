@@ -7,9 +7,9 @@ import sys
 import argparse
 
 try:
-    from netCDF4 import Dataset as NC
+    import xarray as xr
 except:
-    print("netCDF4 is not installed!")
+    print("xarray is not installed!")
     sys.exit(1)
 
 parser = argparse.ArgumentParser(
@@ -37,36 +37,36 @@ parser.add_argument('-y', action='store_true',
 args = parser.parse_args()
 
 try:
-    nc = NC(args.filename, 'r')
+    nc = xr.open_dataset(args.filename, decode_times=False, decode_cf=False)
 except:
     print("ERROR: can't read from file ...")
     sys.exit(1)
 
 print("  reading x,y axes from file %s ..." % (args.filename))
 if args.t:
-    xvar = nc.variables["y"]  # note x-y swap
-    yvar = nc.variables["x"]
+    xvar = nc["y"]  # note x-y swap
+    yvar = nc["x"]
 else:
-    xvar = nc.variables["x"]
-    yvar = nc.variables["y"]
+    xvar = nc["x"]
+    yvar = nc["y"]
 x = asarray(squeeze(xvar[:]))
 y = asarray(squeeze(yvar[:]))
 
 print("  reading 'bwatvel[2]' field from file %s ..." % (args.filename))
 try:
-    velx = nc.variables["bwatvel[0]"]
+    velx = nc["bwatvel[0]"]
 except:
     print("ERROR: variable 'bwatvel[0]' not found ...")
     sys.exit(2)
 try:
-    vely = nc.variables["bwatvel[1]"]
+    vely = nc["bwatvel[1]"]
 except:
     print("ERROR: variable 'bwatvel[1]' not found ...")
     sys.exit(3)
 
 if args.q:
     try:
-        bwat = nc.variables["bwat"]
+        bwat = nc["bwat"]
     except:
         print("ERROR: variable 'bwat' not found ...")
         sys.exit(6)

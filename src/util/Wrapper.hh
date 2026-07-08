@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _WRAPPER_H_
-#define _WRAPPER_H_
+#ifndef PISM_WRAPPER_HH
+#define PISM_WRAPPER_HH
 
 namespace pism {
 
@@ -46,4 +46,4 @@ private:
 
 } // end of namespace pism
 
-#endif /* _WRAPPER_H_ */
+#endif /* PISM_WRAPPER_HH */

@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _SEA_LEVEL_INITIALIZATION_H_
-#define _SEA_LEVEL_INITIALIZATION_H_
+#ifndef PISM_SEA_LEVEL_INITIALIZATION_HH
+#define PISM_SEA_LEVEL_INITIALIZATION_HH
 
 #include "pism/coupler/SeaLevel.hh"
 
@@ -50,4 +50,4 @@ private:
 } // end of namespace ocean
 } // end of namespace pism
 
-#endif /* _SEA_LEVEL_INITIALIZATION_H_ */
+#endif /* PISM_SEA_LEVEL_INITIALIZATION_HH */

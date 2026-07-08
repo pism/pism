@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _VEC_H_
-#define _VEC_H_
+#ifndef PISM_VEC_HH
+#define PISM_VEC_HH
 
 #include <petscvec.h>
 #include <memory>
@@ -104,4 +104,4 @@ private:
 } // end of namespace pism
 
 
-#endif /* _VEC_H_ */
+#endif /* PISM_VEC_HH */

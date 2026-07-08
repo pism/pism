@@ -16,8 +16,8 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-#ifndef _LOGGER_H_
-#define _LOGGER_H_
+#ifndef PISM_LOGGER_HH
+#define PISM_LOGGER_HH
 
 #include <string>
 #include <memory>
@@ -99,4 +99,4 @@ private:
 
 } // end of namespace pism
 
-#endif /* _LOGGER_H_ */
+#endif /* PISM_LOGGER_HH */

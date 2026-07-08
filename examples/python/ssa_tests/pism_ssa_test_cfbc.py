@@ -83,7 +83,7 @@ class test_cfbc(PISM.ssa.SSAExactTestCase):
 
         self.modeldata.setPhysics(enthalpyconverter)
 
-    def _initSSACoefficients(self):
+    def _initCoefficients(self):
         self._allocStdSSACoefficients()
         self._allocateBCs()
 

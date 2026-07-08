@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2020, 2025 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2020, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef _PISMUNITS_H_
-#define _PISMUNITS_H_
+#ifndef PISM_UNITS_HH
+#define PISM_UNITS_HH
 
 #include <string>
 #include <memory>
@@ -127,4 +127,4 @@ private:
 
 } // end of namespace pism
 
-#endif /* _PISMUNITS_H_ */
+#endif /* PISM_UNITS_HH */

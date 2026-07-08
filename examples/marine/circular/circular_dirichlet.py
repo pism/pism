@@ -76,7 +76,7 @@ variables = {"thk": thk,
 
 piktests_utils.write_data(ncfile, variables)
 
-ncfile.variables["thickness_calving_threshold"].units = "m"
+ncfile.ds["thickness_calving_threshold"].attrs["units"] = "m"
 ncfile.close()
 
 print("Successfully created %s" % options.output_filename)

@@ -43,7 +43,7 @@ class testj(PISM.ssa.SSAExactTestCase):
 
         self.modeldata.setPhysics(enthalpyconverter)
 
-    def _initSSACoefficients(self):
+    def _initCoefficients(self):
         self._allocStdSSACoefficients()
         self._allocateBCs()
 
@@ -81,7 +81,7 @@ class testj(PISM.ssa.SSAExactTestCase):
                     vecs.vel_bc_mask[i, j] = 1
                     vecs.vel_bc[i, j] = [p.u, p.v]
 
-    def _initSSA(self):
+    def _initSolver(self):
         # Test J has a viscosity that is independent of velocity.  So we force a
         # constant viscosity by settting the strength_extension
         # thickness larger than the given ice thickness. (max = 770m).
@@ -89,9 +89,9 @@ class testj(PISM.ssa.SSAExactTestCase):
         nu0 = convert(30.0, "MPa year", "Pa s")
         H0 = 500.0              # 500 m typical thickness
 
-        ssa = self.ssa
-        ssa.strength_extension.set_notional_strength(nu0 * H0)
-        ssa.strength_extension.set_min_thickness(800.)
+        solver = self.solver
+        solver.strength_extension.set_notional_strength(nu0 * H0)
+        solver.strength_extension.set_min_thickness(800.)
 
     def exactSolution(self, i, j, x, y):
         p = PISM.exactJ(x, y)

@@ -10,11 +10,12 @@
 # ^{1/p} }{ t^{n+1} - t^{n+1} } \f] where \f$ X_{i}^{n} \f$ is the value at
 # time \f$ n \f$ and coordinate \f$ i \f$.
 
+import sys
 
 try:
-    from netCDF4 import Dataset as CDF
-except:
-    print("netCDF4 is not installed!")
+    import xarray as xr
+except ImportError:
+    print("xarray is not installed!")
     sys.exit(1)
 
 import numpy as np
@@ -71,28 +72,10 @@ else:
     exit(0)
 
 
-# Opens a netCDF file.
-#
-# Open netCDF file and check that time dimension exists.
-# On success, a pointer to the file is returned, otherwise an error is issued.
-def open_ncfile(infile):
-
-    try:
-        nc = CDF(infile, 'r')
-        try:
-            'time' in list(nc.variables.keys())
-        except:
-            print('Variable t not found in file %s' % infile)
-    except IOError:
-        pass
-
-    return nc
-
-
 # Calculate rate of change.
 #
 # Calculate rate of change of p-norm of variable \f$ X \f$.
-def getRateOfChange(t, X, p, varname):
+def getRateOfChange(ds, t, X, p, varname):
 
     # differenetiate time along time axis
     dt = np.diff(t[::stride], axis=0)
@@ -104,15 +87,15 @@ def getRateOfChange(t, X, p, varname):
         dXp = np.diff(X)
         dXpdt = dXp / dt
     elif Xdim == 3:
-        if 'mask' in list(nc.variables.keys()):
-            mask = np.array(nc.variables['mask'][::stride, :, :])  # (time,y,x)
+        if 'mask' in ds.variables:
+            mask = np.asarray(ds['mask'].values[::stride, :, :])  # (time,y,x)
             k = np.nonzero((mask == 1) ^ (mask == 2) ^ (mask == 3))
             mask2 = np.ones_like(mask)
             mask2[k] = 0
             # use masked values (i.e. ignore ocean and ice-free land)
             X = np.ma.array(data=X[::stride, :, :], mask=mask2)
         else:
-            X = np.array(X[::stride, :, :])
+            X = np.asarray(X[::stride, :, :])
 
         dX = np.diff(X, axis=0)
         nt, ny, nx = dX.shape
@@ -174,11 +157,15 @@ def unit_converter(data, inunit, outunit):
 
 if __name__ == "__main__":
 
-    # Open netCDF file
-    nc = open_ncfile(infile)
+    # decode_times=False keeps PISM's "seconds since 1-1-1" as raw numeric
+    # values; we do the unit conversion explicitly via udunits below.
+    ds = xr.open_dataset(infile, decode_times=False, decode_cf=False)
+
+    if 'time' not in ds.variables:
+        print('Variable t not found in file %s' % infile)
 
     # time variable t
-    t_units = nc.variables['time'].units
+    t_units = ds['time'].attrs.get('units', '')
     try:
         date_prefix = 'since'
         unit_array = t_units.split(date_prefix)
@@ -187,16 +174,19 @@ if __name__ == "__main__":
         unit_array = t_units.split(date_prefix)
     out_units = 'years ' + date_prefix + unit_array[1]
 
-    t = unit_converter(nc.variables['time'][:], t_units, out_units)
-    if varname in list(nc.variables.keys()):
-        var = nc.variables[varname]
+    t = unit_converter(np.asarray(ds['time'].values), t_units, out_units)
+    if varname in ds.variables:
+        var = ds[varname]
     else:
         print("error: variable '%s' not found in %s" % (varname, infile))
         exit(0)
 
+    var_data = np.asarray(var.values)
+    var_units = var.attrs.get('units', '')
+
     # Calculate rate of change from time t, variable var,
     # norm p and variable name varname
-    dVpdt = getRateOfChange(t, var, p, varname)
+    dVpdt = getRateOfChange(ds, t, var_data, p, varname)
 
     # Make plot with log-scale y-axis
     plt.figure()
@@ -204,9 +194,9 @@ if __name__ == "__main__":
     plt.semilogy(t[1::stride], dVpdt, 'b', lw=2)
     plt.plot([t[1:][0], t[1:][-1]], [threshold, threshold], 'r', lw=1)
     plt.xlabel(('time [%s]' % out_units))
-    plt.ylabel(('d %s / dt [%s/a]' % (varname, var.units)))
+    plt.ylabel(('d %s / dt [%s/a]' % (varname, var_units)))
     plt.title(('rate of change of %s' % varname), fontsize=12)
     plt.show()
 
     # eventually, close the file
-    nc.close()
+    ds.close()

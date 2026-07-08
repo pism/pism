@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _GOLDSBYKOHLSTEDT_H_
-#define _GOLDSBYKOHLSTEDT_H_
+#ifndef PISM_GOLDSBYKOHLSTEDT_HH
+#define PISM_GOLDSBYKOHLSTEDT_HH
 
 #include <string>                          // for string
 #include "pism/rheology/FlowLaw.hh"                      // for FlowLaw
@@ -91,4 +91,4 @@ protected:
 } // end of namespace pism
 
 
-#endif /* _GOLDSBYKOHLSTEDT_H_ */
+#endif /* PISM_GOLDSBYKOHLSTEDT_HH */

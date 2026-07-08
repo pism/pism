@@ -125,17 +125,15 @@ DiagnosticList SeaLevel::spatial_diagnostics_impl() const {
 
   if (m_input_model) {
     return combine(result, m_input_model->spatial_diagnostics());
-  } else {
-    return result;
   }
+  return result;
 }
 
 TSDiagnosticList SeaLevel::scalar_diagnostics_impl() const {
   if (m_input_model) {
     return m_input_model->scalar_diagnostics();
-  } else {
-    return {};
   }
+  return {};
 }
 
 } // end of namespace sea_level

@@ -283,32 +283,27 @@ def save(filename, restrict):
     obliquity = np.rad2deg(data[:, 1])
     perihelion_longitude = np.rad2deg(data[:, 2])
 
-    import netCDF4
-    with netCDF4.Dataset(filename, "w") as f:
-        f.createDimension("time", len(time))
-        f.Conventions = "CF-1.8"
-
-        t = f.createVariable("time", np.float64, ("time",))
-        t.long_name = "time"
-        t.axis = "T"
-        t.units = "common_year since 1-1-1" # alias meaning "365days"
-        t.calendar = "365_day"
-        t[:] = time
-
-        ecc = f.createVariable("eccentricity", np.float64, ("time",))
-        ecc.long_name = "Eccentricity of the Earth's orbit"
-        ecc.units = "1"
-        ecc[:] = eccentricity
-
-        ob = f.createVariable("obliquity", np.float64, ("time",))
-        ob.long_name = "Mean obliquity (axial tilt) of the Earth."
-        ob.units = "degrees"
-        ob[:] = obliquity
-
-        pl = f.createVariable("perihelion_longitude", np.float64, ("time",))
-        pl.long_name = "Mean longitude of the perihelion relative to the vernal equinox, in the geocentric ecliptic coordinate system"
-        pl.units = "degrees"
-        pl[:] = perihelion_longitude
+    import xarray as xr
+    ds = xr.Dataset(
+        coords={"time": ("time", np.asarray(time, dtype=np.float64), {
+            "long_name": "time", "axis": "T",
+            "units": "common_year since 1-1-1",  # alias meaning "365days"
+            "calendar": "365_day",
+        })},
+        data_vars={
+            "eccentricity": (("time",), eccentricity.astype(np.float64),
+                             {"long_name": "Eccentricity of the Earth's orbit",
+                              "units": "1"}),
+            "obliquity": (("time",), obliquity.astype(np.float64),
+                          {"long_name": "Mean obliquity (axial tilt) of the Earth.",
+                           "units": "degrees"}),
+            "perihelion_longitude": (("time",), perihelion_longitude.astype(np.float64),
+                                     {"long_name": "Mean longitude of the perihelion relative to the vernal equinox, in the geocentric ecliptic coordinate system",
+                                      "units": "degrees"}),
+        },
+        attrs={"Conventions": "CF-1.8"},
+    )
+    ds.to_netcdf(filename, mode="w")
 
 if __name__ == "__main__":
     from argparse import ArgumentParser

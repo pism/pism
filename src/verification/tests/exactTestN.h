@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2010, 2014, 2016, 2023 Ed Bueler
+   Copyright (C) 2010, 2014, 2016, 2023, 2026 Ed Bueler
   
    This file is part of PISM.
   
@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef __exactTestN_h
-#define __exactTestN_h 1
+#ifndef PISM_exact_TestN_h
+#define PISM_exact_TestN_h 1
 
 #ifdef __cplusplus
 extern "C"
@@ -107,5 +107,4 @@ struct TestNParameters exactN(double x);
 }
 #endif
 
-#endif  /* __exactTestN_h */
-
+#endif  /* PISM_exact_TestN_h */

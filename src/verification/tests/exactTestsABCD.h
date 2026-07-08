@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004-2006, 2016 Jed Brown and Ed Bueler
+   Copyright (C) 2004-2006, 2016, 2026 Jed Brown and Ed Bueler
   
    This file is part of PISM.
   
@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef __exactTestsABCD_h
-#define __exactTestsABCD_h 1
+#ifndef PISM_exact_TestsABCD_h
+#define PISM_exact_TestsABCD_h 1
 
 #ifdef __cplusplus
 extern "C"
@@ -44,18 +44,17 @@ struct TestABCDParameters {
   double H, M;
 };
 
-struct TestABCDParameters exactA(const double r);
+struct TestABCDParameters exactA(double r);
 
-struct TestABCDParameters exactB(const double t, const double r);
+struct TestABCDParameters exactB(double t, double r);
 
-struct TestABCDParameters exactC(const double t, const double r);
+struct TestABCDParameters exactC(double t, double r);
 
-struct TestABCDParameters exactD(const double t, const double r);
+struct TestABCDParameters exactD(double t, double r);
 
 #ifdef __cplusplus
 }
 #endif
 
 
-#endif  /* __exactTestsABCD_h */
-
+#endif  /* PISM_exact_TestsABCD_h */

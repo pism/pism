@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _VECSCATTER_H_
-#define _VECSCATTER_H_
+#ifndef PISM_VECSCATTER_HH
+#define PISM_VECSCATTER_HH
 
 #include <petscvec.h>
 
@@ -35,4 +35,4 @@ public:
 } // end of namespace petsc
 } // end of namespace pism
 
-#endif /* _VECSCATTER_H_ */
+#endif /* PISM_VECSCATTER_HH */

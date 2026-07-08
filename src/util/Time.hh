@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _PISMTIME_H_
-#define _PISMTIME_H_
+#ifndef PISM_TIME_HH
+#define PISM_TIME_HH
 
 #include <vector>
 #include <memory>
@@ -193,4 +193,4 @@ void check_forcing_duration(const Time &time,
 
 } // end of namespace pism
 
-#endif /* _PISMTIME_H_ */
+#endif /* PISM_TIME_HH */

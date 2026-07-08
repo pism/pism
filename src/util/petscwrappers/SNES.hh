@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _SNES_H_
-#define _SNES_H_
+#ifndef PISM_SNES_HH
+#define PISM_SNES_HH
 
 #include <petscsnes.h>
 
@@ -35,4 +35,4 @@ public:
 } // end of namespace petsc
 } // end of namespace pism
 
-#endif /* _SNES_H_ */
+#endif /* PISM_SNES_HH */

@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _NODE_TYPES_H_
-#define _NODE_TYPES_H_
+#ifndef PISM_NODE_TYPES_HH
+#define PISM_NODE_TYPES_HH
 
 namespace pism {
 
@@ -48,4 +48,4 @@ void compute_node_types(const array::Scalar1 &ice_thickness,
 } // end of namespace pism
 
 
-#endif /* _NODE_TYPES_H_ */
+#endif /* PISM_NODE_TYPES_HH */

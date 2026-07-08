@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __enthalpyConverter_hh
-#define __enthalpyConverter_hh
+#ifndef PISM_enthalpyConverter_hh
+#define PISM_enthalpyConverter_hh
 
 #include <vector>
 #include <memory>
@@ -137,5 +137,5 @@ public:
 
 } // end of namespace pism
 
-#endif // __enthalpyConverter_hh
+#endif // PISM_enthalpyConverter_hh
 

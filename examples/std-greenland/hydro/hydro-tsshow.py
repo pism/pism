@@ -11,12 +11,10 @@ from numpy import *
 import pylab as plt
 import sys
 try:
-    import netCDF4 as netCDF
-except:
-    print("netCDF4 is not installed!")
+    import xarray as xr
+except ImportError:
+    print("xarray is not installed!")
     sys.exit(1)
-
-NC = netCDF.Dataset
 
 if len(sys.argv) < 3:
     print("hydro-tsshow.py ERROR: ... FIXME ... exiting")
@@ -35,12 +33,12 @@ plt.figure(figsize=(9, 4))
 
 print("opening file '%s' for reading ..." % tsfile)
 try:
-    ncfile = NC(tsfile, "r")
-except:
+    ncfile = xr.open_dataset(tsfile, decode_times=False, decode_cf=False)
+except Exception:
     print("ERROR: can't open file %s for reading ..." % tsfile)
     sys.exit(2)
 print("  reading 'time' variable ...")
-t = ncfile.variables["time"][:] / secpera
+t = ncfile["time"].values / secpera
 
 n = 3
 style = ['b-',  'g-',  'r-']
@@ -48,7 +46,7 @@ labels = ['ocean_loss', 'ice_free_land_loss', 'negative_thickness_gain']
 for k in range(n):
     varname = 'hydro_' + labels[k]
     print("  reading '%s' variable ..." % varname)
-    var = ncfile.variables[varname][:]
+    var = ncfile[varname].values
     plt.semilogy(t, var / scale, style[k], linewidth=2.5)
     plt.hold(True)
 

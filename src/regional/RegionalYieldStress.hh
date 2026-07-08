@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _REGIONAL_YIELD_STRESS_H_
-#define _REGIONAL_YIELD_STRESS_H_
+#ifndef PISM_REGIONAL_YIELD_STRESS_HH
+#define PISM_REGIONAL_YIELD_STRESS_HH
 
 #include "pism/basalstrength/YieldStress.hh"
 
@@ -60,4 +60,4 @@ private:
 
 } // end of namespace pism
 
-#endif /* _REGIONAL_YIELD_STRESS_H_ */
+#endif /* PISM_REGIONAL_YIELD_STRESS_HH */

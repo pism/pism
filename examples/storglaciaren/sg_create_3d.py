@@ -27,7 +27,7 @@ from sys import stderr
 
 write = stderr.write
 
-from netCDF4 import Dataset as CDF
+import xarray as xr
 
 from optparse import OptionParser
 
@@ -158,63 +158,7 @@ m_thk[m_thk < 0] = 0
 # Output filename
 ncfile = 'pism_storglaciaren_3d.nc'
 
-# Write the data:
-nc = CDF(ncfile, "w", format='NETCDF3_CLASSIC')  # for netCDF4 module
-
-# Create dimensions x and y
-nc.createDimension("x", size=easting.shape[0])
-nc.createDimension("y", size=northing.shape[0])
-
-x = nc.createVariable("x", 'f4', dimensions=("x",))
-x.units = "m"
-x.long_name = "easting"
-x.standard_name = "projection_x_coordinate"
-
-y = nc.createVariable("y", 'f4', dimensions=("y",))
-y.units = "m"
-y.long_name = "northing"
-y.standard_name = "projection_y_coordinate"
-
-x[:] = easting
-y[:] = northing
-
-from scipy.interpolate import griddata
-
-
-def def_var(nc, name, units, fillvalue):
-    var = nc.createVariable(name, 'f', dimensions=("y", "x"), fill_value=fillvalue)
-    var.units = units
-    return var
-
-
-lon_var = def_var(nc, "lon", "degrees_east", None)
-lon_var.standard_name = "longitude"
-lon_var[:] = longitude
-
-lat_var = def_var(nc, "lat", "degrees_north", None)
-lat_var.standard_name = "latitude"
-lat_var[:] = latitude
-
-bed_var = def_var(nc, "topg", "m", fill_value)
-bed_var.valid_min = bed_valid_min
-bed_var.standard_name = "bedrock_altitude"
-bed_var.coordinates = "lat lon"
-bed_var[:] = m_bed
-
-thk_var = def_var(nc, "thk", "m", fill_value)
-thk_var.valid_min = thk_valid_min
-thk_var.standard_name = "land_ice_thickness"
-thk_var.coordinates = "lat lon"
-thk_var[:] = m_thk
-
-dem_var = def_var(nc, "usurf_from_dem", "m", fill_value)
-dem_var.standard_name = "surface_altitude"
-dem_var.coordinates = "lat lon"
-dem_var[:] = m_dem
-
-ftt_mask = def_var(nc, "ftt_mask", "", fill_value)
-ftt_mask[:] = 1
-
+from scipy.interpolate import griddata  # noqa: F401  (kept to match original imports)
 
 # generate (somewhat) reasonable acab
 acab_max = 2.5  # m/a
@@ -222,40 +166,63 @@ acab_min = -3.0  # m/a
 acab_up = easting.min() + 200  # m; location of upstream end of linear acab
 acab_down = easting.max() - 900  # m;location of downstream end of linear acab
 acab = np.ones_like(longitude)
-
 acab[:] = acab_min
-acab[:] = acab_max - (acab_max-acab_min) * (easting - acab_up) / (acab_down - acab_up)
+acab[:] = acab_max - (acab_max - acab_min) * (easting - acab_up) / (acab_down - acab_up)
 acab[m_thk < 1] = acab_min
 
-acab_var = def_var(nc, "climatic_mass_balance", "kg m-2 year-1", fill_value)
-acab_var.standard_name = "land_ice_surface_specific_mass_balance"
-acab_var[:] = acab * ice_density
-
 # Set boundary conditions for Scandinavian-type polythermal glacier
-# ------------------------------------------------------------------------------
-#
 # (A) Surface temperature for temperature equation bc
 T0 = 273.15  # K
 Tma = -6.0  # degC, mean annual air temperature at Tarfala
 zcts = 1300   # m a.s.l.; altitude where CTS is at the surface, projected to topg
 slope = 100    # m; range around which surface temp transition happens
-
-
-# smoothed version; FIXME:  can't we at least have it depend on initial DEM?
-#   additional lapse rate?
 artm = T0 + Tma * (zcts + slope - m_bed) / (2.0 * slope)
-artm[m_bed < zcts-slope] = T0 + Tma
-artm[m_bed > zcts+slope] = T0
+artm[m_bed < zcts - slope] = T0 + Tma
+artm[m_bed > zcts + slope] = T0
 
-artm_var = def_var(nc, "ice_surface_temp", "kelvin", fill_value)
-artm_var[:] = artm
+ds = xr.Dataset(
+    coords={
+        "x": ("x", easting.astype("f4"),
+              {"units": "m", "long_name": "easting",
+               "standard_name": "projection_x_coordinate"}),
+        "y": ("y", northing.astype("f4"),
+              {"units": "m", "long_name": "northing",
+               "standard_name": "projection_y_coordinate"}),
+    },
+    data_vars={
+        "lon": (("y", "x"), longitude.astype("f4"),
+                {"units": "degrees_east", "standard_name": "longitude"}),
+        "lat": (("y", "x"), latitude.astype("f4"),
+                {"units": "degrees_north", "standard_name": "latitude"}),
+        "topg": (("y", "x"), m_bed.astype("f4"),
+                 {"units": "m", "valid_min": bed_valid_min,
+                  "standard_name": "bedrock_altitude",
+                  "coordinates": "lat lon"}),
+        "thk":  (("y", "x"), m_thk.astype("f4"),
+                 {"units": "m", "valid_min": thk_valid_min,
+                  "standard_name": "land_ice_thickness",
+                  "coordinates": "lat lon"}),
+        "usurf_from_dem": (("y", "x"), m_dem.astype("f4"),
+                           {"units": "m", "standard_name": "surface_altitude",
+                            "coordinates": "lat lon"}),
+        "ftt_mask": (("y", "x"), np.ones_like(m_bed, dtype="f4"),
+                     {"units": ""}),
+        "climatic_mass_balance": (("y", "x"), (acab * ice_density).astype("f4"),
+                                  {"units": "kg m-2 year-1",
+                                   "standard_name": "land_ice_surface_specific_mass_balance"}),
+        "ice_surface_temp": (("y", "x"), artm.astype("f4"),
+                             {"units": "kelvin"}),
+    },
+    attrs={
+        "Conventions": "CF-1.4",
+        "history": time.asctime() + ': ' + ' '.join(sys.argv) + '\n',
+        # PROJ string equivalent to EPSG 3021
+        "proj": "+proj=tmerc +lat_0=0 +lon_0=15.80827777777778 +k=1 +x_0=1500000 +y_0=0 +ellps=bessel +towgs84=419.384,99.3335,591.345,0.850389,1.81728,-7.86224,-0.99496 +units=m +no_defs",
+    },
+)
 
-# set global attributes
-nc.Conventions = "CF-1.4"
-historysep = ' '
-historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
-setattr(nc, 'history', historystr)
-# PROJ string equivalent to EPSG 3021
-nc.proj = "+proj=tmerc +lat_0=0 +lon_0=15.80827777777778 +k=1 +x_0=1500000 +y_0=0 +ellps=bessel +towgs84=419.384,99.3335,591.345,0.850389,1.81728,-7.86224,-0.99496 +units=m +no_defs"
-nc.close()
+encoding = {n: {"_FillValue": np.float32(fill_value)}
+            for n in ("topg", "thk", "usurf_from_dem", "ftt_mask",
+                      "climatic_mass_balance", "ice_surface_temp")}
+ds.to_netcdf(ncfile, mode="w", format="NETCDF3_CLASSIC", encoding=encoding)
 write('Done writing NetCDF file %s!\n' % ncfile)

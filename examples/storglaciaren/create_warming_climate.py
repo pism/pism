@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 # Copyright (C) 2017, 2020, 2024 Andy Aschwanden
 
+import os
+import sys
 import numpy as np
 import time
-from netCDF4 import Dataset as NC
+import xarray as xr
 from argparse import ArgumentParser
 
 
@@ -33,55 +35,34 @@ time_interval_since_refdate = (bnds_interval_since_refdate[0:-1] +
 
 infile = args[0]
 
-nc = NC(infile, 'w')
-
-
-def def_var(nc, name, units):
-    var = nc.createVariable(name, 'f', dimensions=('time'))
-    var.units = units
-    return var
-
-
-# create a new dimension for bounds only if it does not yet exist
-time_dim = "time"
-if time_dim not in list(nc.dimensions.keys()):
-    nc.createDimension(time_dim)
-
-# create a new dimension for bounds only if it does not yet exist
-bnds_dim = "nb2"
-if bnds_dim not in list(nc.dimensions.keys()):
-    nc.createDimension(bnds_dim, 2)
-
-# variable names consistent with PISM
-time_var_name = "time"
-bnds_var_name = "time_bnds"
-
-# create time variable
-time_var = nc.createVariable(time_var_name, 'd', dimensions=(time_dim))
-time_var[:] = time_interval_since_refdate
-time_var.bounds = bnds_var_name
-time_var.units = 'years since 1-1-1'
-time_var.calendar = '365_day'
-time_var.standard_name = time_var_name
-time_var.axis = "T"
-
-# create time bounds variable
-time_bnds_var = nc.createVariable(bnds_var_name, 'd', dimensions=(time_dim, bnds_dim))
-time_bnds_var[:, 0] = bnds_interval_since_refdate[0:-1]
-time_bnds_var[:, 1] = bnds_interval_since_refdate[1::]
-
-var = 'delta_T'
-dT_var = def_var(nc, var, "kelvin")
+# Build delta_T time series
 T_0 = 0.
-
 temp = np.zeros_like(time_interval_since_refdate) + T_max
 temp[0:int(t_max/step)] = np.linspace(T_0, T_max, int(t_max / step))
 temp[:] += -np.cos(time_interval_since_refdate * 2 * np.pi) * amplitude
-dT_var[:] = temp
 
-# writing global attributes
-script_command = ' '.join([time.ctime(), ':', __file__.split('/')[-1],
-                           ' '.join([str(x) for x in args])])
-nc.history = script_command
-nc.Conventions = "CF 1.6"
-nc.close()
+# Build the time-bounds array (Nt, 2)
+time_bnds = np.column_stack([bnds_interval_since_refdate[:-1],
+                             bnds_interval_since_refdate[1:]])
+
+ds = xr.Dataset(
+    coords={
+        "time": ("time", time_interval_since_refdate.astype("f8"), {
+            "bounds": "time_bnds",
+            "units": "years since 1-1-1",
+            "calendar": "365_day",
+            "standard_name": "time",
+            "axis": "T",
+        }),
+    },
+    data_vars={
+        "time_bnds": (("time", "nb2"), time_bnds.astype("f8")),
+        "delta_T":   (("time",), temp.astype("f4"), {"units": "kelvin"}),
+    },
+    attrs={
+        "history": " ".join([time.ctime(), ":", os.path.basename(__file__),
+                              " ".join([str(x) for x in args])]),
+        "Conventions": "CF 1.6",
+    },
+)
+ds.to_netcdf(infile, mode="w", unlimited_dims=["time"])

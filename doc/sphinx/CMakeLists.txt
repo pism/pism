@@ -1,5 +1,18 @@
-find_program(SPHINX_EXECUTABLE sphinx-build)
+# Don't look for sphinx-build if it is specified by the user
+if (NOT SPHINX_EXECUTABLE)
+  # Prefer CONDA_PREFIX and VIRTUAL_ENV paths (if set)
+  #
+  # Note: HINTS are searched before system paths.
+  if (DEFINED ENV{CONDA_PREFIX})
+    find_program(SPHINX_EXECUTABLE sphinx-build HINTS $ENV{CONDA_PREFIX}/bin)
+  elseif(DEFINED ENV{VIRTUAL_ENV})
+    find_program(SPHINX_EXECUTABLE sphinx-build HINTS $ENV{VIRTUAL_ENV}/bin)
+  else()
+    find_program(SPHINX_EXECUTABLE sphinx-build)
+  endif()
+endif()
 mark_as_advanced(SPHINX_EXECUTABLE)
+message (STATUS "SPHINX_EXECUTABLE = ${SPHINX_EXECUTABLE}")
 
 # HTML documentation requires Sphinx
 if (SPHINX_EXECUTABLE)

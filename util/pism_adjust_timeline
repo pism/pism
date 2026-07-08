@@ -15,6 +15,7 @@
 # time_1991-2000.nc \endverbatim
 
 import os
+import sys
 from argparse import ArgumentParser
 from dateutil import rrule
 from dateutil.parser import parse
@@ -23,11 +24,10 @@ import time
 import numpy as np
 
 try:
-    import netCDF4 as netCDF
-except:
-    print("netCDF4 is not installed!")
+    import xarray as xr
+except ImportError:
+    print("xarray is not installed!")
     sys.exit(1)
-NC = netCDF.Dataset
 import cftime
 
 # Set up the option parser
@@ -94,8 +94,17 @@ infile = args[0]
 time1 = time.time()
 
 
-nc = NC(infile, "a")
-nt = len(nc.variables["time"])
+# decode_times=False keeps "time" as raw numeric values; decode_cf=False
+# preserves attribute order verbatim so we can rewrite the file in place
+# without spurious changes elsewhere.
+ds = xr.open_dataset(infile, decode_times=False, decode_cf=False).load()
+ds.close()
+
+if "time" in ds.variables:
+    nt = ds.sizes.get("time", ds["time"].size)
+else:
+    print("Input file has no 'time' variable.")
+    sys.exit(1)
 
 time_units = "%s since %s" % (ref_unit, ref_date)
 calendar = options.calendar
@@ -131,45 +140,40 @@ elif interval_type == "start":
 else:
     time_interval_since_refdate = bnds_interval_since_refdate[1:]
 
-# create a new dimension for bounds only if it does not yet exist
-time_dim = "time"
-if time_dim not in list(nc.dimensions.keys()):
-    nc.createDimension(time_dim)
-
-# create a new dimension for bounds only if it does not yet exist
-bnds_dim = "nb2"
-if bnds_dim not in list(nc.dimensions.keys()):
-    nc.createDimension(bnds_dim, 2)
-
 # variable names consistent with PISM
 time_var_name = "time"
 bnds_var_name = "time_bnds"
+bnds_dim = "nb2"
 
-# create time variable
-if time_var_name not in nc.variables:
-    time_var = nc.createVariable(time_var_name, "d", dimensions=(time_dim))
-else:
-    time_var = nc.variables[time_var_name]
-time_var[:] = time_interval_since_refdate
-time_var.bounds = bnds_var_name
-time_var.units = time_units
-time_var.calendar = calendar
-time_var.standard_name = time_var_name
-time_var.axis = "T"
+# Replace the time variable. We rebuild it so the dim is fresh and the
+# stored values are exactly what we computed above.
+time_attrs = {
+    "bounds": bnds_var_name,
+    "units": time_units,
+    "calendar": calendar,
+    "standard_name": time_var_name,
+    "axis": "T",
+}
+ds = ds.assign_coords(
+    {time_var_name: ("time", np.asarray(time_interval_since_refdate, dtype="f8"),
+                     time_attrs)}
+)
 
-# create time bounds variable
-if bnds_var_name not in nc.variables:
-    time_bnds_var = nc.createVariable(bnds_var_name, "d", dimensions=(time_dim, bnds_dim))
-else:
-    time_bnds_var = nc.variables[bnds_var_name]
-time_bnds_var[:, 0] = bnds_interval_since_refdate[0:-1]
-time_bnds_var[:, 1] = bnds_interval_since_refdate[1::]
+# Build the bounds variable as a 2D array (time, nb2)
+bnds = np.column_stack([bnds_interval_since_refdate[:-1],
+                        bnds_interval_since_refdate[1:]]).astype("f8")
+ds[bnds_var_name] = xr.DataArray(bnds, dims=("time", bnds_dim))
 
 # writing global attributes
-script_command = " ".join([time.ctime(), ":", __file__.split("/")[-1], " ".join([str(x) for x in args])])
-nc.history = script_command
-nc.Conventions = "CF 1.5"
-nc.close()
+script_command = " ".join([time.ctime(), ":", os.path.basename(__file__),
+                           " ".join([str(x) for x in args])])
+ds.attrs["history"] = script_command
+ds.attrs["Conventions"] = "CF 1.5"
+
+# In-place rewrite (tmp + replace) so a crash mid-write doesn't corrupt the file.
+tmp = infile + ".tmp"
+ds.to_netcdf(tmp, mode="w", unlimited_dims=["time"])
+os.replace(tmp, infile)
 
 time2 = time.time()
 print("pism_adjust_timeline took {:2.1f}s".format(time2 - time1))

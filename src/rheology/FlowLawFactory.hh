@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __flowlaw_factory
-#define __flowlaw_factory
+#ifndef PISM_flowlaw_factory
+#define PISM_flowlaw_factory
 
 #include <map>
 #include <string>
@@ -57,4 +57,4 @@ private:
 } // end of namespace rheology
 } // end of namespace pism
 
-#endif  // __flowlaw_factory
+#endif  // PISM_flowlaw_factory

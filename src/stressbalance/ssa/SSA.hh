@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef _SSA_H_
-#define _SSA_H_
+#ifndef PISM_SSA_HH
+#define PISM_SSA_HH
 
 #include "pism/stressbalance/ShallowStressBalance.hh"
 #include "pism/util/array/CellType.hh"
@@ -125,4 +125,4 @@ protected:
 } // end of namespace stressbalance
 } // end of namespace pism
 
-#endif /* _SSA_H_ */
+#endif /* PISM_SSA_HH */

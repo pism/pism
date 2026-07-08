@@ -1,0 +1,1145 @@
+#!/usr/bin/env python3
+# Copyright (C) 2025, 2026 PISM Authors
+#
+# This file is part of PISM.
+#
+# PISM is free software; you can redistribute it and/or modify it under the
+# terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 3 of the License, or (at your option) any later
+# version.
+#
+# PISM is distributed in the hope that it will be useful, but WITHOUT ANY
+# WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License
+# along with PISM; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+
+import json
+import logging
+import traceback
+from enum import Enum
+
+from argparse import ArgumentParser
+import geopandas as gpd
+import netCDF4  # noqa: F401
+import numpy as np
+import rioxarray  # noqa: F401
+import xarray as xr
+import yac
+from mpi4py import MPI
+from pyproj import Proj
+
+logger = logging.getLogger("pism_output")
+
+
+class OutputGrid(object):
+    x = None
+    y = None
+    proj_string = None
+    mapping_attributes = {}
+
+    def __init__(self):
+        raise NotImplementedError("Cannot create an instance of OutputGrid: use a derived class")
+
+    def dx(self):
+        return self.x[1] - self.x[0]
+
+    def dy(self):
+        return self.y[1] - self.y[0]
+
+    def size(self):
+        return len(self.x), len(self.y)
+
+    def mapping(self):
+        return self.mapping_attributes
+
+    def lonlat_center(self):
+        xx, yy = np.meshgrid(self.x, self.y)
+
+        return Proj(self.proj_string)(xx, yy, inverse=True, radians=True)
+
+    def lonlat_corner(self):
+        Mx, My = self.size()
+
+        dx = self.dx()
+        x_corner = np.linspace(self.x[0] - 0.5 * dx, self.x[-1] + 0.5 * dx, Mx + 1)
+
+        dy = self.dy()
+        y_corner = np.linspace(self.y[0] - 0.5 * dy, self.y[-1] + 0.5 * dy, My + 1)
+
+        xx, yy = np.meshgrid(x_corner, y_corner)
+
+        return Proj(self.proj_string)(xx, yy, inverse=True, radians=True)
+
+    def to_dataset(self) -> xr.Dataset:
+        """
+        Return the grid as a rioxarray-enabled ``xarray.Dataset``.
+
+        The Dataset carries 1-D ``x`` / ``y`` cell-centre coords (with CF
+        ``axis`` / ``bounds`` attrs), the corresponding ``x_bnds`` /
+        ``y_bnds`` cell-edge arrays, and a 0-D ``mapping`` grid-mapping
+        variable that holds :attr:`mapping_attributes` plus the CRS WKT
+        written by :meth:`rioxarray.rioxarray.XRasterBase.write_crs`.
+        Useful as a target grid for ``.rio.reproject_match`` or any
+        ``xarray_regrid`` routine.
+
+        Returns
+        -------
+        xarray.Dataset
+            Empty grid with CRS attached and spatial dims registered.
+        """
+        dx = self.dx()
+        dy = self.dy()
+        x_bounds = np.stack([self.x - 0.5 * dx, self.x + 0.5 * dx], axis=-1)
+        y_bounds = np.stack([self.y - 0.5 * dy, self.y + 0.5 * dy], axis=-1)
+
+        coords = {
+            "x": (
+                "x",
+                self.x,
+                {
+                    "axis": "X",
+                    "long_name": "x-coordinate in Cartesian system",
+                    "standard_name": "projection_x_coordinate",
+                    "units": "m",
+                    "bounds": "x_bnds",
+                },
+            ),
+            "y": (
+                "y",
+                self.y,
+                {
+                    "axis": "Y",
+                    "long_name": "y-coordinate in Cartesian system",
+                    "standard_name": "projection_y_coordinate",
+                    "units": "m",
+                    "bounds": "y_bnds",
+                },
+            ),
+            # Bounds belong with the coords (not data_vars): keeping them as
+            # data variables makes ``Dataset.rio.clip`` iterate them and trip
+            # on MissingSpatialDimensionError because x_bnds/y_bnds only
+            # carry one of the spatial dims each.
+            "x_bnds": (("x", "nv2"), x_bounds),
+            "y_bnds": (("y", "nv2"), y_bounds),
+        }
+        ds = xr.Dataset(
+            coords=coords,
+            data_vars={
+                "domain": xr.DataArray(
+                    data=1.0,
+                    dims=["y", "x"],
+                    coords={"x": coords["x"], "y": coords["y"]},
+                    attrs={"dimensions": "x y"},
+                ),
+            },
+        )
+
+        # Register the spatial dims and stamp the CRS via rioxarray, using
+        # ``"mapping"`` as the grid-mapping variable so the user-supplied
+        # attributes live alongside the CRS WKT rioxarray writes.
+        ds = ds.rio.set_spatial_dims(x_dim="x", y_dim="y").rio.write_crs(self.proj_string, grid_mapping_name="mapping")
+
+        return ds
+
+    """Grid defined in 'Appendix 1 – Output grid definition and interpolation' of 'ISMIP6
+    Projections Greenland'
+
+    See https://theghub.org/groups/ismip6/wiki/ISMIP6-Projections-Greenland
+
+    """
+
+    def __init__(self, resolution=1000):
+        self.proj_string = "EPSG:3413"
+        x_min = -720e3
+        x_max = 960e3
+        y_min = -3450e3
+        y_max = -570e3
+
+        width_x = x_max - x_min
+        Nx = int(width_x / resolution) + 1
+
+        width_y = y_max - y_min
+        Ny = int(width_y / resolution) + 1
+
+        self.x = np.linspace(x_min, x_max, Nx)
+        self.y = np.linspace(y_min, y_max, Ny)
+
+        self.mapping_attributes = {
+            "false_easting": 0.0,
+            "false_northing": 0.0,
+            "grid_mapping_name": "polar_stereographic",
+            "latitude_of_projection_origin": 90.0,
+            "proj_params": self.proj_string,
+            "scale_factor_at_projection_origin": 1.0,
+            "standard_parallel": 70.0,
+            "straight_vertical_longitude_from_pole": -45.0,
+        }
+
+
+class ISMIP7GreenlandGrid(OutputGrid):
+    """Grid defined in 'Appendix 1 – Output grid definition and interpolation' of 'ISMIP6
+    Projections Greenland'
+
+    See https://theghub.org/groups/ismip6/wiki/ISMIP6-Projections-Greenland
+
+    """
+
+    def __init__(self, resolution=1000):
+        self.proj_string = "EPSG:3413"
+        x_min = -720e3
+        x_max = 960e3
+        y_min = -3450e3
+        y_max = -570e3
+
+        width_x = x_max - x_min
+        Nx = int(width_x / resolution) + 1
+
+        width_y = y_max - y_min
+        Ny = int(width_y / resolution) + 1
+
+        self.x = np.linspace(x_min, x_max, Nx)
+        self.y = np.linspace(y_min, y_max, Ny)
+
+        self.mapping_attributes = {
+            "false_easting": 0.0,
+            "false_northing": 0.0,
+            "grid_mapping_name": "polar_stereographic",
+            "latitude_of_projection_origin": 90.0,
+            "proj_params": self.proj_string,
+            "scale_factor_at_projection_origin": 1.0,
+            "standard_parallel": 70.0,
+            "straight_vertical_longitude_from_pole": -45.0,
+        }
+
+
+class StdGreenlandGrid(OutputGrid):
+    """Grid used in Bamber et al., 2001 and by PISM's "std-greenland" example"""
+
+    def __init__(self, resolution=1000):
+        self.proj_string = (
+            "+proj=stere +lat_0=90 +lat_ts=71 +lon_0=-39 +k=1 +x_0=0 +y_0=0 "
+            + "+ellps=WGS84 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"
+        )
+        x_min = -800e3
+        x_max = 700e3
+
+        y_min = -3400e3
+        y_max = -600e3
+
+        width_x = x_max - x_min
+        Nx = int(width_x / resolution) + 1
+
+        width_y = y_max - y_min
+        Ny = int(width_y / resolution) + 1
+
+        self.x = np.linspace(x_min, x_max, Nx)
+        self.y = np.linspace(y_min, y_max, Ny)
+
+        self.mapping_attributes = {
+            "false_easting": 0.0,
+            "false_northing": 0.0,
+            "grid_mapping_name": "polar_stereographic",
+            "latitude_of_projection_origin": 90.0,
+            "proj_params": self.proj_string,
+            "scale_factor_at_projection_origin": 1.0,
+            "standard_parallel": 71.0,
+            "straight_vertical_longitude_from_pole": -39.0,
+        }
+
+
+class ServerActions(Enum):
+    """Actions that the server can handle.
+
+    These have to match the actions which are defined on the client
+    """
+
+    OPEN_FILE = 1
+    CLOSE_FILE = 2
+    DEFINE_DIMENSION = 3
+    SET_FILE_ATTRIBUTES = 4
+    APPEND_HISTORY = 5
+    DEFINE_YAC_GRID = 6
+    DEFINE_YAC_FIELD = 7
+    FINISH_YAC_INITIALIZATION = 8
+    DEFINE_VARIABLE = 9
+    SEND_VARIABLE = 10
+    SEND_GRIDDED_VARIABLE = 11
+    APPEND_TIME = 12
+    FINISH = 13
+    SYNC = 14
+
+
+class YacWrapper:
+    """Class holding all YAC variables and definitions."""
+
+    # YAC general component, grid and configuration variables
+    source_comp_name = "pism"
+    target_comp_name = "pism_output"
+
+    # In the constructor the YAC initialization happens, followed
+    # by the creation of the intercommunicator, which is necessary for
+    # direct communication with the client and receiving its information
+    def __init__(self):
+        # interpolation stacks for all grids
+        self.interpolation_stack = {}
+
+        # YAC grids, references by name
+        self.grids = {}
+
+        # vertex indexes for each grid (referenced by the name of the grid)
+        #
+        # These indexes are used to re-order data received from PISM
+        self.vertex_indexes = {}
+
+        # number of grid points (an array [x_size, y_size]) for a given grid (refenced by name)
+        self.output_grid_size = {}
+
+        # YAC fields (by name)
+        self.fields = {}
+
+        self.yac = yac.YAC()
+
+        self.component = self.yac.def_comp(self.target_comp_name)
+
+        # Get the local server communicator and group
+        local_comm = self.component.comp_comm
+        local_group = local_comm.Get_group()
+
+        if local_comm.Get_size() != 1:
+            raise RuntimeError("pism_async_writer should be executed on 1 MPI process (mpiexec -n 1 pism_async_writer)")
+
+        # Get the global communicator and group (contatining all processes from client and server)
+        global_comm = self.yac.get_comps_comm([self.source_comp_name, self.target_comp_name])
+        global_group = global_comm.Get_group()
+
+        # Get the rank of the local leader in the global communicator
+        local_leader_global_rank = local_group.Translate_ranks([0], global_group)[0]
+
+        # Create buffers for exchanging global ranks for local component leaders
+        sendbuf = np.array([local_leader_global_rank], dtype="i")
+        recvbuf = np.empty(global_comm.Get_size(), dtype="i")
+
+        # Exchange global ranks of local leaders
+        global_comm.Allgather([sendbuf, MPI.INT], [recvbuf, MPI.INT])
+        self.remote_leader = recvbuf[0]
+        self.remote_size = global_comm.Get_size() - local_comm.Get_size()
+
+        # Create the intercommunicator with the received information
+        self.intercomm = local_comm.Create_intercomm(0, global_comm, self.remote_leader, tag=0)
+
+    def _output_grid_name(self, pism_grid_name):
+        """Return the name of the grid corresponding to PISM's 'pism_grid_name'."""
+        return pism_grid_name + "_output"
+
+    def receive_string(self, comm):
+        status = MPI.Status()
+        comm.Probe(source=self.remote_leader, tag=0, status=status)
+
+        length = status.Get_count(MPI.CHAR)
+
+        string = np.empty(length, dtype="S1")
+        comm.Recv([string, MPI.CHAR], source=self.remote_leader, tag=0)
+
+        string = string.tobytes()
+
+        try:
+            # Decode the byte string
+            return string.decode("ascii")
+        except Exception:
+            result = string.decode("ascii", errors="replace")
+            logger.critical(f"failed to decode '{result}'")
+            raise
+
+    def receive_array(self, comm):
+        status = MPI.Status()
+        comm.Probe(source=self.remote_leader, tag=0, status=status)
+
+        length = status.Get_count(MPI.DOUBLE)
+
+        array = np.empty(length, dtype="d")
+        comm.Recv([array, MPI.DOUBLE], source=self.remote_leader, tag=0)
+
+        return array
+
+    def fake_lon_lat(self, x, y):
+        x_min = x[0]
+        y_min = y[0]
+
+        x_span = x[-1] - x_min
+        y_span = y[-1] - y_min
+
+        Mx = x.size
+        My = y.size
+
+        lon = np.zeros((My, Mx))
+        lat = np.zeros_like(lon)
+
+        for r in range(My):
+            for c in range(Mx):
+                lon[r, c] = (x[c] - x_min) / x_span
+                lat[r, c] = (y[r] - y_min) / y_span
+
+        return lon, lat
+
+    def receive_grid_info(self):
+        proj_string = self.receive_string(self.intercomm)
+        x = self.receive_array(self.intercomm)
+        y = self.receive_array(self.intercomm)
+
+        return proj_string, x, y
+
+    def define_matching_grid(self, grid_name, proj_string, x, y):
+
+        if proj_string == "":
+            logger.debug(f"grid {grid_name} projection: none")
+            lon, lat = self.fake_lon_lat(x, y)
+        else:
+            xx, yy = np.meshgrid(x, y)
+            lon, lat = Proj(proj_string)(xx, yy, inverse=True, radians=True)
+
+        # ``yac.CloudGrid`` is the unstructured-point-cloud path — it expects
+        # 1-D arrays of point coordinates, not the 2-D ``(My, Mx)`` arrays
+        # ``fake_lon_lat`` / ``Proj(meshgrid)`` hand back. Flatten so YAC sees
+        # ``Mx * My`` points.
+        lon = np.asarray(lon).reshape(-1)
+        lat = np.asarray(lat).reshape(-1)
+
+        # Create grid and define point locations cell centers.
+        # ``CloudGrid.def_points`` takes only ``(lon, lat)`` — clouds have no
+        # CORNER/CELL distinction, unlike the structured ``Curve2dGrid`` path.
+        grid = yac.CloudGrid(self._output_grid_name(grid_name), lon, lat)
+        grid.points = grid.def_points(lon, lat)
+
+        interpolation_stack = yac.InterpolationStack()
+        interpolation_stack.add_nnn(yac.NNNReductionType.AVG, 1, 1.0, 0.0)
+
+        return grid, interpolation_stack
+
+    def define_yac_grid(self, metadata, output_grid=None):
+        """Define the YAC grid for a given variable."""
+        # Sets self.grids[grid_name], self.output_grid_size[grid_name],
+        # self.vertex_indexes[grid_name], self.interpolation_stack.
+        #
+        # Also sets grid.points for self.grids[grid_name]
+        # the grid name in pism_output has to be different
+        grid_name = metadata["grid_name"]
+
+        proj_string, x, y = self.receive_grid_info()
+
+        if output_grid is None:
+            logger.debug(f"grid size: {(len(x), len(y))}")
+            x_size = len(x)
+            y_size = len(y)
+            assert x_size > 0 and y_size > 0, (x_size, y_size)
+
+            # Total number of grid points
+
+            grid, interpolation_stack = self.define_matching_grid(grid_name, proj_string, x, y)
+
+            self.grids[grid_name] = grid
+            self.output_grid_size[grid_name] = (x_size, y_size)
+            self.interpolation_stack[grid_name] = interpolation_stack
+            self.vertex_indexes[grid_name] = np.arange(x_size * y_size)
+            return
+
+        if proj_string == "":
+            raise RuntimeError(
+                "unknown projection in PISM: " + f"cannot write to projected grid '{output_grid.proj_string}'"
+            )
+
+        # define the grid using coordinates of cell corners:
+        lon_corner, lat_corner = output_grid.lonlat_corner()
+        grid = yac.Curve2dGrid(self._output_grid_name(grid_name), lon_corner, lat_corner)
+        # and points using cell centers:
+        lon, lat = output_grid.lonlat_center()
+        grid.points = grid.def_points(yac.Location.CELL, lon, lat)
+
+        interpolation_stack = yac.InterpolationStack()
+        # Use conservative interpolation from PISM's grid plus nearest neighbor as backup:
+        interpolation_stack.add_conservative(
+            order=1, enforced_conserv=True, partial_coverage=False, normalisation=yac.ConservNormalizationType.DESTAREA
+        )
+        interpolation_stack.add_nnn(reduction_type=yac.NNNReductionType.AVG, n=1)
+
+        Mx, My = output_grid.size()
+        self.grids[grid_name] = grid
+        self.output_grid_size[grid_name] = (Mx, My)
+        self.vertex_indexes[grid_name] = np.arange(Mx * My)
+        self.interpolation_stack[grid_name] = interpolation_stack
+
+    def finish_initialization(self):
+        """Finalize the YAC definitions phase."""
+        self.yac.enddef()
+
+    # In the future, when multiple files share gridded variables, either a
+    # single field definition could be reused for multiple files or
+    # individual dedicated fields could be created for each variable/file combination
+    def define_field(self, metadata):
+        """Define a YAC field for a spatial variable."""
+        field_name = metadata["variable_name"]
+        timestep = metadata["timestep"]
+        collection_size = metadata["collection_size"]
+
+        grid_name = metadata["grid_name"]
+
+        time_unit = yac.TimeUnit.ISO_FORMAT
+        time_reduction = yac.Reduction.TIME_NONE
+
+        points = self.grids[grid_name].points
+        self.fields[field_name] = yac.Field.create(
+            field_name, self.component, points, collection_size, timestep, yac.TimeUnit.ISO_FORMAT
+        )
+
+        self.yac.def_couple(
+            self.source_comp_name,
+            grid_name,
+            field_name,
+            self.target_comp_name,
+            self._output_grid_name(grid_name),
+            field_name,
+            timestep,
+            time_unit,
+            time_reduction,
+            self.interpolation_stack[grid_name],
+        )
+
+    def receive_action(self):
+        """Receive the JSON string encoding an action and its metadata."""
+        string = self.receive_string(self.intercomm)
+
+        # Construct a dictionary from the JSON string:
+        try:
+            return json.loads(string)
+        except BaseException:  # pragma: no cover
+            logger.critical(f"failed to parse action string '{string}'")
+            raise
+
+    def receive_variable(self, metadata):
+        """Receive and write non-gridded variable data."""
+        count = metadata["count"]
+        tag = int(metadata["tag"])
+
+        dtype = "f8"
+        mpi_dtype = MPI.DOUBLE
+        if "text" in metadata:
+            dtype = "S1"
+            mpi_dtype = MPI.CHAR
+
+        data_size = 1
+        for c in count:
+            data_size *= c
+
+        result = np.empty(data_size, dtype=dtype)
+        self.intercomm.Recv([result, mpi_dtype], source=self.remote_leader, tag=tag)
+
+        return result
+
+    def receive_gridded_variable(self, metadata):
+        """Receive a spatial field and write to the corresponding NetCDF variable."""
+        name = metadata["variable_name"]
+
+        # Number of vertical levels for that field in YAC
+        collection_size = self.fields[name].collection_size
+
+        # Grid size
+        grid_name = metadata["grid_name"]
+        x_size, y_size = self.output_grid_size[grid_name]
+
+        # Variable for holding the raw data provided by the YAC get, which is directly issued here
+        data = self.fields[name].get()[0]
+
+        # For each vertical level, reorders the received data according to the horizontal
+        # global vertex indices
+        for level in range(collection_size):
+            data[level] = data[level, np.argsort(self.vertex_indexes[grid_name])]
+
+        # Creates a 3D array for reshaping the raw data received from YAC
+        result = np.ndarray(shape=(collection_size, y_size, x_size), buffer=data, dtype="f8")
+
+        return result
+
+
+class OutputFile:
+    """Class wrapping NetCDF functionalities for writing files."""
+
+    # The constructor does empty initialization of most members and
+    # creates the dataset for the NetCDF file
+    def __init__(self, file_name, mode="w", compression_level=1):
+        self.compression_level = compression_level
+        self.nc_dataset = netCDF4.Dataset(file_name, mode)
+
+        if "time" in self.nc_dataset.dimensions:
+            time_length = len(self.nc_dataset.dimensions["time"])
+        else:
+            time_length = 0
+
+        self.time_index = time_length - 1 if time_length > 0 else 0
+
+    def set_attributes(self, file_attributes):
+        """Set attributes in the NetCDF dataset."""
+        for attr, value in file_attributes.items():
+            self.nc_dataset.setncattr(attr, value)
+
+    def append_time(self, time_seconds):
+        """Create one more time record by adding a value to the time dimension."""
+        self.time_index = len(self.nc_dataset.dimensions["time"])
+        self.nc_dataset.variables["time"][self.time_index] = time_seconds
+
+    def append_history(self, string):
+        """Append a `string` to the global attribute 'history'."""
+        try:
+            old_history = self.nc_dataset["history"]
+        except IndexError:
+            old_history = ""
+
+        self.nc_dataset.setncattr("history", old_history + string)
+
+    def define_dimension(self, metadata):
+        """Create a dimension in the NetCDF dataset."""
+        name = metadata["name"]
+        length = metadata["length"]
+        if name not in self.nc_dataset.dimensions:
+            logger.debug(f"defining dim {self.nc_dataset.filepath()}:{name}")
+            self.nc_dataset.createDimension(name, length if length > 0 else None)
+
+    def define_variable(self, metadata):
+        """Define a new variable in the NetCDF dataset."""
+        name = metadata["variable_name"]
+        attributes = metadata["attributes"]
+        dimensions = metadata["dimensions"]
+
+        if name in self.nc_dataset.variables:
+            return
+
+        logger.debug(f"defining var {self.nc_dataset.filepath()}:{name}")
+
+        if len(dimensions) > 1 and self.compression_level > 0:
+            compression = "zlib"
+        else:
+            compression = None
+
+        fill_value = attributes["_FillValue"] if "_FillValue" in attributes else None
+        nc_variable = self.nc_dataset.createVariable(
+            name,
+            metadata["dtype"],
+            dimensions,
+            compression=compression,
+            complevel=self.compression_level,
+            fill_value=fill_value,
+        )
+
+        ignored_attributes = ["_FillValue"]
+        for attr, value in attributes.items():
+            if attr not in ignored_attributes and value != "":
+                nc_variable.setncattr(attr, value)
+
+    def write_gridded_variable(self, array, metadata):
+        """Write a gridded variable to a NetCDF variable."""
+        ndims = metadata["ndims"]  # ndims is either 2 or 3
+        time_dependent = metadata["time_dependent"]
+        name = metadata["variable_name"]
+
+        hyperslab = ndims * [slice(None)]
+
+        if time_dependent:
+            hyperslab.insert(0, self.time_index)
+
+        if ndims == 2:
+            tmp = array[0]
+        elif ndims == 3:
+            collection_size, y_size, x_size = array.shape
+            # Reorder data for the NetCDF variable:
+            tmp = np.ndarray(shape=(y_size, x_size, collection_size), dtype=array.dtype)
+
+            for c in range(collection_size):
+                tmp[:, :, c] = array[c]
+
+        self.nc_dataset.variables[name][hyperslab] = tmp
+
+    def write_variable(self, array, metadata):
+        """Write an array to a NetCDF variable."""
+        name = metadata["variable_name"]
+        start = metadata["start"]
+        count = metadata["count"]
+
+        # Convert start and count arrays into a list of slices (one per dimension).
+        ndim = len(count)
+        hyperslab = [slice(start[i], start[i] + count[i]) for i in range(ndim)]
+
+        self.nc_dataset.variables[name][hyperslab] = array
+
+    def close(self):
+        """Close the underlying NetCDF dataset."""
+        self.nc_dataset.close()
+
+
+def one_var_per_file(file_name):
+    "Return True if `file_name` corresponds to 'one variable per file'."
+    return file_name.count("{var}") == 1
+
+
+def new_file_name(file_name, variable_name):
+    "Create a new file name to use when writing `variable_name` to `file_name`."
+    return file_name.format(var=variable_name)
+
+
+def define_variable(File, variable, dims):
+    "Define a variable and all its dimensions (provided in `dims`)."
+    for dim in variable["dimensions"]:
+        File.define_dimension(dims[dim])
+    File.define_variable(variable)
+
+
+def main(compression_level, output_grid=None, geometry_file=None, geometry_column=None):
+    """Receive and process "action" messages from PISM."""
+    yac_wrapper = YacWrapper()
+
+    # set of all open files
+    files = {}
+
+    # global attributes for all files
+    global_attrs = {}
+    # history for all files
+    history = {}
+    # dimensions for all files
+    dimensions = {}
+    # variables for all files
+    variables = {}
+
+    # total set of "fields" (2D and 3D variables)
+    fields = set()
+
+    # these variables are not written to "one variable per file" outputs
+    ignored_variables = set(["wall_clock_time", "model_years_per_processor_hour", "step_counter", "pism_config"])
+
+    def get_geometries(file_name):
+
+        gdf = gpd.read_file(file_name)
+        logger.debug(f"found {len(gdf)} geometries")
+        return gdf
+
+    def get_file(file_name, variable_name):
+        if one_var_per_file(file_name):
+            fname = new_file_name(file_name, variable_name)
+            ignored = ignored_variables
+        else:
+            fname = file_name
+            ignored = set()
+
+        if fname not in files:
+            F = OutputFile(fname, mode="w", compression_level=compression_level)
+            files[fname] = F
+
+            logger.debug(f"preparing '{fname}'...")
+
+            F.set_attributes(global_attrs[file_name])
+            F.append_history(history[file_name])
+
+            # override lengths of x and y dimensions if using a custom output grid
+            dims = dimensions[file_name]
+            file_vars = variables[file_name]
+
+            if output_grid is not None:
+                Mx, My = output_grid.size()
+                dims["x"]["length"] = Mx
+                dims["y"]["length"] = My
+
+                file_vars["x"]["attributes"]["spacing_meters"] = output_grid.dx()
+                file_vars["y"]["attributes"]["spacing_meters"] = output_grid.dy()
+
+                file_vars["mapping"]["attributes"] = output_grid.mapping()
+
+            # Register the "basin" dimension that per-basin variables will use,
+            # plus a string-valued coord variable carrying the geometry labels.
+            if basin_dim_meta is not None:
+                dims.setdefault("basin", basin_dim_meta)
+                F.define_dimension(dims["basin"])
+                if "basin" not in F.nc_dataset.variables:
+                    basin_coord = F.nc_dataset.createVariable("basin", str, ("basin",))
+                    for i, name in enumerate(basin_names):
+                        basin_coord[i] = name
+
+            # define variables that are not "fields" and are not ignored:
+            for var_name, info in file_vars.items():
+                if var_name not in fields.union(ignored):
+                    define_variable(F, info, dims)
+
+            if one_var_per_file(file_name):
+                # define the requested 2D or 3D variable
+                info = file_vars[variable_name]
+                define_variable(F, info, dims)
+            else:
+                # define all 2D or 3D variables
+                for var_name, info in file_vars.items():
+                    if var_name in fields:
+                        define_variable(F, info, dims)
+
+        return files[fname]
+
+    # Load the geometry feature set up-front so the "basin" dimension's
+    # length and label list are available before any DEFINE_VARIABLE /
+    # get_file call, regardless of whether ``output_grid`` is provided.
+    geometries_df = None
+    basin_names: list[str] = []
+    if geometry_file is not None:
+        geometries_df = get_geometries(geometry_file)
+        basin_names = [str(n) for n in geometries_df[geometry_column].tolist()]
+    basin_dim_meta: dict | None = {"name": "basin", "length": len(basin_names)} if basin_names else None
+
+    masks: dict = {}
+    if geometries_df is not None and output_grid is not None:
+        # Eager build: we already have a grid object, so masks are derivable now.
+        da = output_grid.to_dataset()["domain"]
+        gdf = geometries_df.to_crs(output_grid.proj_string)
+        for _, feat in gdf.iterrows():
+            # ``rio.clip(drop=False)`` returns ``da``'s values inside the
+            # geometry and NaN outside. Force a clean 1-inside / NaN-outside
+            # multiplicative mask regardless of what ``domain`` is filled with.
+            clipped = da.rio.clip([feat.geometry], drop=False)
+            mask = xr.where(clipped.notnull(), 1.0, np.nan)
+            name = feat[geometry_column]
+            masks[name] = mask
+            logger.debug(f"Creating mask from geometry {name}")
+
+    # State captured from PISM when ``output_grid is None`` so masks can be
+    # built lazily once x, y, and the mapping CRS arrive over YAC.
+    pism_x: np.ndarray | None = None
+    pism_y: np.ndarray | None = None
+    pism_mapping_attrs: dict | None = None
+
+    def _build_masks_from_pism_grid() -> None:
+        """
+        Build basin masks from PISM-supplied x, y, and mapping attrs.
+
+        Called whenever any of those three become available; only does
+        real work once all three are present and masks haven't been built.
+        """
+        nonlocal masks
+        if masks or geometries_df is None:
+            return
+        if pism_x is None or pism_y is None or pism_mapping_attrs is None:
+            return
+        try:
+            from pyproj import CRS  # pylint: disable=import-outside-toplevel
+
+            crs = CRS.from_cf(pism_mapping_attrs)
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            logger.warning(f"Could not derive CRS from PISM mapping attrs: {exc}")
+            return
+        da = xr.DataArray(
+            np.ones((len(pism_y), len(pism_x)), dtype=np.float32),
+            dims=("y", "x"),
+            coords={"x": pism_x, "y": pism_y},
+        ).rio.write_crs(crs)
+        gdf = geometries_df.to_crs(crs)
+        for _, feat in gdf.iterrows():
+            clipped = da.rio.clip([feat.geometry], drop=False)
+            mask = xr.where(clipped.notnull(), 1.0, np.nan)
+            name = feat[geometry_column]
+            masks[name] = mask
+            logger.debug(f"Lazy mask from {name} (from PISM-supplied grid)")
+
+    while True:
+        # Wait for an action
+        message = yac_wrapper.receive_action()
+
+        action_id = message["action"]
+        metadata = message["info"]
+
+        try:
+            file_name = metadata["file_name"]
+        except BaseException:
+            file_name = None
+
+        # Handle each action based on the action id
+        match action_id:
+            case ServerActions.FINISH.value:
+                logger.debug("DONE")
+                break
+
+            case ServerActions.OPEN_FILE.value:
+                # This can be the used as the stub of the "append" action.
+                logger.debug(f"OPEN_FILE {file_name}")
+
+                time_length = np.zeros(1, dtype="i")
+                last_time = np.zeros(1, dtype="f8")
+
+                if one_var_per_file(file_name):
+                    logger.debug(f"OPEN_FILE {file_name}: cannot append to a file split across variables")
+                else:
+                    F = OutputFile(file_name, mode="a")
+                    ds = F.nc_dataset
+                    files[file_name] = F
+
+                    if "time" in ds.dimensions:
+                        time_length[0] = len(ds.dimensions["time"])
+                    else:
+                        time_length[0] = 0
+
+                    last_time[0] = ds.variables["time"][F.time_index]
+
+                # Send time length and last time to PISM:
+                yac_wrapper.intercomm.Send([time_length, 1, MPI.INT], dest=0, tag=0)
+                yac_wrapper.intercomm.Send([last_time, 1, MPI.DOUBLE], dest=0, tag=0)
+
+            case ServerActions.CLOSE_FILE.value:
+                logger.debug(f"CLOSE_FILE {file_name}")
+                if one_var_per_file(file_name):
+                    # close all files associated with this "file_name":
+                    for field in fields:
+                        fname = new_file_name(file_name, field)
+                        if fname in files:
+                            files[fname].close()
+                            del files[fname]
+                else:
+                    files[file_name].close()
+                    del files[file_name]
+
+            case ServerActions.SET_FILE_ATTRIBUTES.value:
+                logger.debug(f"SET_FILE_ATTRIBUTES {file_name}")
+                global_attrs[file_name] = metadata["attributes"]
+
+            case ServerActions.APPEND_HISTORY.value:
+                logger.debug(f"APPEND_HISTORY {file_name}")
+                history[file_name] = metadata["history"]
+
+            case ServerActions.DEFINE_DIMENSION.value:
+                name = metadata["name"]
+                logger.debug(f"DEFINE_DIMENSION {name} in {file_name}")
+
+                if file_name not in dimensions:
+                    dimensions[file_name] = {}
+
+                dimensions[file_name][name] = metadata
+
+            case ServerActions.DEFINE_YAC_GRID.value:
+                logger.debug(f"DEFINE_YAC_GRID {metadata['grid_name']}")
+                yac_wrapper.define_yac_grid(metadata, output_grid)
+
+            case ServerActions.DEFINE_YAC_FIELD.value:
+                variable_name = metadata["variable_name"]
+                logger.debug(f"DEFINE_YAC_FIELD {variable_name}")
+
+                fields.add(variable_name)
+
+                if variable_name not in yac_wrapper.fields:
+                    yac_wrapper.define_field(metadata)
+
+            case ServerActions.FINISH_YAC_INITIALIZATION.value:
+                logger.debug("FINISH_YAC_INITIALIZATION")
+                yac_wrapper.finish_initialization()
+
+            case ServerActions.DEFINE_VARIABLE.value:
+                variable_name = metadata["variable_name"]
+                logger.debug(f"DEFINE_VARIABLE {variable_name} in {file_name}")
+
+                # For any gridded variable ending in (..., y, x), insert a
+                # leading "basin" axis so the data lands as (..., basin, y, x).
+                # At write-time we'll broadcast field * mask along that axis.
+                if basin_names and tuple(metadata["dimensions"][-2:]) == ("y", "x"):
+                    metadata = dict(metadata)
+                    metadata["dimensions"] = list(metadata["dimensions"])
+                    metadata["dimensions"].insert(-2, "basin")
+                    metadata["per_basin"] = True
+
+                # Capture PISM's mapping attrs the first time we see them,
+                # so lazy mask construction (when ``output_grid is None``)
+                # can derive a CRS without an OutputGrid instance.
+                if variable_name == "mapping" and output_grid is None and pism_mapping_attrs is None:
+                    pism_mapping_attrs = dict(metadata.get("attributes", {}))
+                    _build_masks_from_pism_grid()
+
+                if file_name not in variables:
+                    variables[file_name] = {}
+
+                variables[file_name][variable_name] = metadata
+
+            case ServerActions.SEND_GRIDDED_VARIABLE.value:
+                variable_name = metadata["variable_name"]
+                logger.debug(f"SEND_GRIDDED_VARIABLE {variable_name} in {file_name}")
+                array = yac_wrapper.receive_gridded_variable(metadata)
+
+                F = get_file(file_name, variable_name)
+                saved_meta = variables.get(file_name, {}).get(variable_name, {})
+                if saved_meta.get("per_basin") and metadata["ndims"] == 2:
+                    # When ``output_grid`` is None, masks may not be built yet.
+                    # Try one more time now that we should have everything.
+                    if not masks:
+                        _build_masks_from_pism_grid()
+                    if not masks:
+                        logger.error(
+                            f"per_basin write requested for {variable_name} but "
+                            "no masks are available — falling back to plain "
+                            "write_gridded_variable. Check that PISM is sending "
+                            "x, y, and mapping before any gridded variable."
+                        )
+                        F.write_gridded_variable(array, metadata)
+                        continue
+                    # field shape (1, y, x) -> base 2D (y, x); broadcast across
+                    # every basin mask and write each (y, x) slice into the
+                    # per-basin index of the netCDF variable.
+                    base = array[0]
+                    nc_var = F.nc_dataset.variables[variable_name]
+                    logger.debug(
+                        f"per_basin write {variable_name}: base shape={base.shape}, "
+                        f"finite min/max={np.nanmin(base):.4g}/{np.nanmax(base):.4g}"
+                    )
+                    for i, (basin_name, mask) in enumerate(masks.items()):
+                        masked = base * mask.values
+                        logger.debug(
+                            f"  basin[{i}]={basin_name}: masked finite min/max="
+                            f"{np.nanmin(masked):.4g}/{np.nanmax(masked):.4g}"
+                        )
+                        if metadata["time_dependent"]:
+                            nc_var[F.time_index, i, :, :] = masked
+                        else:
+                            nc_var[i, :, :] = masked
+                else:
+                    F.write_gridded_variable(array, metadata)
+
+            case ServerActions.SEND_VARIABLE.value:
+                variable_name = metadata["variable_name"]
+                logger.debug(f"SEND_VARIABLE {variable_name} in {file_name}")
+                array = yac_wrapper.receive_variable(metadata)
+
+                # replace "x" and "y" variables with ones from the output grid
+                if output_grid is not None:
+                    Mx, My = output_grid.size()
+                    if variable_name == "x":
+                        array = output_grid.x
+                        metadata["start"] = [0]
+                        metadata["count"] = [Mx]
+                    if variable_name == "y":
+                        array = output_grid.y
+                        metadata["start"] = [0]
+                        metadata["count"] = [My]
+                else:
+                    # No OutputGrid: capture x/y from PISM so masks can be
+                    # built lazily once the mapping attrs are also known.
+                    if variable_name == "x":
+                        pism_x = np.asarray(array).reshape(-1)
+                        _build_masks_from_pism_grid()
+                    elif variable_name == "y":
+                        pism_y = np.asarray(array).reshape(-1)
+                        _build_masks_from_pism_grid()
+
+                if one_var_per_file(file_name):
+                    if variable_name in ignored_variables:
+                        continue
+
+                    # write to all the files `file_name` got split into:
+                    fields_in_file = fields.intersection(variables[file_name].keys())
+
+                    for field in fields_in_file:
+                        F = get_file(file_name, field)
+                        logger.debug(f"writing {F.nc_dataset.filepath()}:{variable_name}")
+                        F.write_variable(array, metadata)
+
+                    continue
+
+                get_file(file_name, variable_name).write_variable(array, metadata)
+
+            case ServerActions.APPEND_TIME.value:
+                logger.debug(f"APPEND_TIME in {file_name}")
+
+                if one_var_per_file(file_name):
+                    # write to all the files `file_name` got split into:
+                    fields_in_file = fields.intersection(variables[file_name].keys())
+
+                    for field in fields_in_file:
+                        F = get_file(file_name, field)
+                        logger.debug(f"writing {F.nc_dataset.filepath()}:time")
+                        F.append_time(metadata["time"])
+
+                    continue
+
+                get_file(file_name, "time").append_time(metadata["time"])
+
+            case ServerActions.SYNC.value:
+                logger.debug("SYNC")
+
+    # Close all the files
+    for F in files.values():
+        F.close()
+
+
+if __name__ == "__main__":
+
+    parser = ArgumentParser(description="Asynchronous output writer for PISM")
+    parser.add_argument(
+        "-d",
+        "--debug",
+        dest="debug",
+        action="store_true",
+        help="set logging level to 'DEBUG'",
+    )
+    parser.add_argument(
+        "-c",
+        "--compression",
+        dest="compression",
+        type=int,
+        default=1,
+        help="set compression level for 2D and 3D variables",
+    )
+    parser.add_argument(
+        "-g",
+        "--geometry-file",
+        dest="geometry_file",
+        type=str,
+        default=None,
+        help="Geopandas readable file containing geometries.",
+    )
+    parser.add_argument(
+        "--geometry-column",
+        dest="geometry_column",
+        type=str,
+        default="SUBREGION1",
+        help="Column to be used to name basin.",
+    )
+    parser.add_argument(
+        "-r",
+        "--resolution",
+        dest="resolution",
+        type=int,
+        default=5,
+        help="output grid resolution, km (for ISMIP7, choose one of 20, 10, 5, 2 or 1)",
+    )
+    parser.add_argument(
+        "--grid",
+        dest="grid",
+        choices=("ismip7", "stdgreenland", "none"),
+        default="none",
+        help=(
+            "select the output grid: 'ismip7' / 'stdgreenland' reproject onto the "
+            "named grid at --resolution km; 'none' writes PISM's native grid."
+        ),
+    )
+
+    options = parser.parse_args()
+
+    if options.debug:
+        logging.basicConfig(level=logging.DEBUG)
+
+    if options.grid == "ismip7":
+        output_grid = ISMIP7GreenlandGrid(resolution=options.resolution * 1000.0)
+    elif options.grid == "stdgreenland":
+        output_grid = StdGreenlandGrid(resolution=options.resolution * 1000.0)
+    else:
+        output_grid = None
+
+    try:
+        main(
+            options.compression,
+            output_grid=output_grid,
+            geometry_file=options.geometry_file,
+            geometry_column=options.geometry_column,
+        )
+    except Exception as e:  # pylint: disable=broad-exception-caught
+        logger.critical(f"ERROR: {e}")
+        traceback.print_exc()
+
+

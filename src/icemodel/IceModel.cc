@@ -98,6 +98,10 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
   m_output_global_attributes["source"] = pism::version();
   m_output_global_attributes["title"] = m_config->get_string("run_info.title");
   m_output_global_attributes["institution"] = m_config->get_string("run_info.institution");
+  m_output_global_attributes["group"] = m_config->get_string("run_info.group");
+  m_output_global_attributes["model"] = m_config->get_string("run_info.model");
+  m_output_global_attributes["contact_name"] = m_config->get_string("run_info.contact_name");
+  m_output_global_attributes["contact_email"] = m_config->get_string("run_info.contact_email");
   m_output_global_attributes["command"] = args_string();
 
   m_fracture = nullptr;
@@ -135,15 +139,18 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
   m_snapshot_writer = m_output_writer;
   m_spatial_writer  = m_output_writer;
 
+  if (m_config->get_flag("output.asynchronous")) {
 #if (Pism_USE_YAC == 1)
-  if (pism::yac_component_defined("pism_output")) {
     auto yac_writer = std::make_shared<YacOutputWriter>(m_grid->com, *m_config,
                                                         m_grid->get_mapping_info()["proj_params"]);
 
     m_snapshot_writer = yac_writer;
     m_spatial_writer  = yac_writer;
-  }
+#else
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION, "Please build PISM with YAC to write output files asynchronously");
 #endif
+  }
 }
 
 double IceModel::dt() const {

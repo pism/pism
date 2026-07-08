@@ -6,12 +6,6 @@ import MISMIP
 #
 # Run run.py > my_new_mismip.sh and use that.
 
-try:
-    from netCDF4 import Dataset as NC
-except:
-    print("netCDF4 is not installed!")
-    sys.exit(1)
-
 import sys
 
 # The "standard" preamble used in many PISM scripts:

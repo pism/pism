@@ -17,11 +17,10 @@ import sys
 import time
 import numpy as np
 
-# try different netCDF modules
 try:
-    from netCDF4 import Dataset as CDF
-except:
-    print("netCDF4 is not installed!")
+    import xarray as xr
+except ImportError:
+    print("xarray is not installed!")
     sys.exit(1)
 
 # set up the grid:
@@ -34,8 +33,8 @@ y = np.linspace(-Ly, Ly, My)
 
 # create dummy fields
 [xx, yy] = np.meshgrid(x, y)  # if there were "ndgrid" in numpy we would use it
-acab = np.zeros((Mx, My))
-artm = np.zeros((Mx, My)) + 273.15 + 10.0  # 10 degrees Celsius
+acab = np.zeros((My, Mx))
+artm = np.zeros((My, Mx)) + 273.15 + 10.0  # 10 degrees Celsius
 topg = 1000.0 + 200.0 * (xx + yy) / max(Lx, Ly)  # change "1000.0" to "0.0" to test
 # flotation criterion, etc.
 thk = 3000.0 * (1.0 - 3.0 * (xx ** 2 + yy ** 2) / Lx ** 2)
@@ -44,57 +43,40 @@ thk[thk < 0.0] = 0.0
 # Output filename
 ncfile = 'foo.nc'
 
-# Write the data:
-nc = CDF(ncfile, "w", format='NETCDF3_CLASSIC')  # for netCDF4 module
+# Build the dataset (dimension transpose is standard: "float thk(y, x)").
+ds = xr.Dataset(
+    coords={
+        "x": ("x", x.astype("f4"), {
+            "units": "m", "long_name": "easting",
+            "standard_name": "projection_x_coordinate",
+        }),
+        "y": ("y", y.astype("f4"), {
+            "units": "m", "long_name": "northing",
+            "standard_name": "projection_y_coordinate",
+        }),
+    },
+    data_vars={
+        "topg": (("y", "x"), topg.astype("f4"),
+                 {"units": "m", "standard_name": "bedrock_altitude"}),
+        "thk": (("y", "x"), thk.astype("f4"),
+                {"units": "m", "standard_name": "land_ice_thickness"}),
+        "climatic_mass_balance": (("y", "x"), acab.astype("f4"),
+                                  {"units": "m year-1",
+                                   "standard_name": "land_ice_surface_specific_mass_balance"}),
+        "ice_surface_temp": (("y", "x"), artm.astype("f4"),
+                             {"units": "kelvin"}),
+    },
+    attrs={
+        "Conventions": "CF-1.4",
+        "history": time.asctime() + ': ' + ' '.join(sys.argv) + '\n',
+    },
+)
 
-# Create dimensions x and y
-nc.createDimension("x", size=Mx)
-nc.createDimension("y", size=My)
+encoding = {name: {"_FillValue": np.float32(np.nan)}
+            for name in ("topg", "thk", "climatic_mass_balance",
+                         "ice_surface_temp")}
+ds.to_netcdf(ncfile, format="NETCDF3_CLASSIC", encoding=encoding)
 
-x_var = nc.createVariable("x", 'f4', dimensions=("x",))
-x_var.units = "m"
-x_var.long_name = "easting"
-x_var.standard_name = "projection_x_coordinate"
-x_var[:] = x
-
-y_var = nc.createVariable("y", 'f4', dimensions=("y",))
-y_var.units = "m"
-y_var.long_name = "northing"
-y_var.standard_name = "projection_y_coordinate"
-y_var[:] = y
-
-fill_value = np.nan
-
-
-def def_var(nc, name, units, fillvalue):
-    # dimension transpose is standard: "float thk(y, x)" in NetCDF file
-    var = nc.createVariable(name, 'f', dimensions=("y", "x"), fill_value=fillvalue)
-    var.units = units
-    return var
-
-
-bed_var = def_var(nc, "topg", "m", fill_value)
-bed_var.standard_name = "bedrock_altitude"
-bed_var[:] = topg
-
-thk_var = def_var(nc, "thk", "m", fill_value)
-thk_var.standard_name = "land_ice_thickness"
-thk_var[:] = thk
-
-acab_var = def_var(nc, "climatic_mass_balance", "m year-1", fill_value)
-acab_var.standard_name = "land_ice_surface_specific_mass_balance"
-acab_var[:] = acab
-
-artm_var = def_var(nc, "ice_surface_temp", "kelvin", fill_value)
-artm_var[:] = artm
-
-# set global attributes
-nc.Conventions = "CF-1.4"
-historysep = ' '
-historystr = time.asctime() + ': ' + historysep.join(sys.argv) + '\n'
-setattr(nc, 'history', historystr)
-
-nc.close()
 print('  PISM-bootable NetCDF file %s written' % ncfile)
 print('  for example, run:')
 print('    $ pism -i foo.nc -bootstrap -Mx 41 -My 41 -Mz 21 -Lz 4000 -Mbz 5 -Lbz 500 -y 1')

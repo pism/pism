@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef __tempSystem_hh
-#define __tempSystem_hh
+#ifndef PISM_tempSystem_hh
+#define PISM_tempSystem_hh
 
 #include "pism/util/ColumnSystem.hh"
 #include "pism/util/Mask.hh"
@@ -98,5 +98,5 @@ private:
 } // end of namespace energy
 } // end of namespace pism
 
-#endif  /* __tempSystem_hh */
+#endif  /* PISM_tempSystem_hh */
 

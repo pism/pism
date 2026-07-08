@@ -84,7 +84,7 @@ def s_eval_x_s(x,x_s,x_m,n,A,mdot_0,rho,g,b_0):
 
 def create_pism_input(filename):
     "Create a NetCDF file that can be used with PISM"
-    import netCDF4 as NC
+    import xarray as xr
 
     def tile(x):
         return np.tile(x, [3, 1])
@@ -92,7 +92,7 @@ def create_pism_input(filename):
     dx = 200.0
     x = np.arange(-2 * x_m, 2 * x_m + dx, dx)
 
-    with NC.Dataset(filename, "w") as f:
+    with xr.open_dataset(filename, "w", decode_times=False, decode_cf=False) as f:
         f.createDimension("x", len(x))
         f.createDimension("y", 3)
 

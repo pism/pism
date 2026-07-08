@@ -5,10 +5,10 @@ from matplotlib.pyplot import *
 from sys import exit
 
 try:
-    from netCDF4 import Dataset as NC
-except:
-    print("netCDF4 is not installed!")
-    sys.exit(1)
+    import xarray as xr
+except ImportError:
+    print("xarray is not installed!")
+    exit(1)
 
 nameroot = "routing"
 
@@ -17,28 +17,21 @@ for dx in ("100", "50", "25", "15", "10", "5"):
     filename = basename + ".nc"
     print("%s: looking for file ..." % filename)
     try:
-        nc = NC(filename, 'r')
-    except:
+        nc = xr.open_dataset(filename, decode_times=False, decode_cf=False)
+    except Exception:
         print("  can't read from file ...")
         continue
 
-    xvar = nc.variables["x"]
-    yvar = nc.variables["y"]
-    x = asarray(squeeze(xvar[:]))
-    y = asarray(squeeze(yvar[:]))
+    x = asarray(squeeze(nc["x"].values))
+    y = asarray(squeeze(nc["y"].values))
 
     for varname in ("bwat", "bwp", "psi"):   # psi must go after bwat, bwp
         print("  %s:  generating pcolor() image ..." % varname)
-        try:
-            if varname == "psi":
-                var = nc.variables["topg"]
-            else:
-                var = nc.variables[varname]
-        except:
+        lookup = "topg" if varname == "psi" else varname
+        if lookup not in nc.variables:
             print("variable '%s' not found ... continuing ..." % varname)
             continue
-
-        data = asarray(squeeze(var[:])).transpose()
+        data = asarray(squeeze(nc[lookup].values)).transpose()
 
         if varname == "bwat":
             bwatdata = data.copy()

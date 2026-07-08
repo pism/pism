@@ -3,7 +3,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import cm
-import netCDF4 as nc
+import xarray as xr
 
 # ICE FRONT 
 
@@ -14,9 +14,9 @@ labels = ['old', 'new']
 
 # FIXME resolution dependent!!
 
-with nc.Dataset(experiments[0]+'default.nc', 'r') as ncr:
-    mask = np.ma.array(ncr.variables["mask"][0,1,:])
-    x = np.ma.array(ncr.variables["x"][:]) / 1000.0 # convert to km
+with xr.open_dataset(experiments[0]+'default.nc', decode_times=False, decode_cf=False) as ncr:
+    mask = np.ma.array(ncr["mask"].values[0,1,:])
+    x = np.ma.array(ncr["x"].values[:]) / 1000.0 # convert to km
 
 # find the index of the last grounded cell gl_idx:
 MASK_FLOATING = 3
@@ -39,8 +39,8 @@ def plot_thk(axis, case, i):
     label=case.split('_')[-1].rstrip('.nc')
 
     def plot(filename, label):
-        with nc.Dataset(filename, 'r') as ncr:
-            thk = np.ma.array(ncr.variables[varname][0,1,:])
+        with xr.open_dataset(filename, decode_times=False, decode_cf=False) as ncr:
+            thk = np.ma.array(ncr[varname].values[0,1,:])
             thk.mask = mask > MASK_FLOATING
 
         axis.plot(x, thk,
@@ -69,12 +69,12 @@ def plot_taud(axis, case, i):
     axis.axhline(y=0, color='grey', linestyle='--', label=None)
     for run in experiments:
 
-        with nc.Dataset(run+"default.nc", 'r') as ncr:
-            refvariable = np.ma.array(ncr.variables[varname][0,1,:])
+        with xr.open_dataset(run+"default.nc", decode_times=False, decode_cf=False) as ncr:
+            refvariable = np.ma.array(ncr[varname].values[0,1,:])
             refvariable.mask = mask > MASK_FLOATING
 
-        with nc.Dataset(run+case, 'r') as ncr:
-            variable = np.ma.array(ncr.variables[varname][0,1,:])
+        with xr.open_dataset(run+case, decode_times=False, decode_cf=False) as ncr:
+            variable = np.ma.array(ncr[varname].values[0,1,:])
             variable.mask = mask > MASK_FLOATING
 
         axis.plot(x, variable-refvariable, linewidth=2)
@@ -94,11 +94,11 @@ def plot_velocity(axis, case, i):
     axis.axvline(x=x[gl_idx], color='grey', linestyle='--', label=None)
     axis.axhline(y=0, color='grey', linestyle='--', label=None)
     for run in experiments:
-        with nc.Dataset(run+"default.nc", 'r') as ncr:
-            refvariable=np.ma.array(ncr.variables[varname][0,1,:])
+        with xr.open_dataset(run+"default.nc", decode_times=False, decode_cf=False) as ncr:
+            refvariable=np.ma.array(ncr[varname].values[0,1,:])
 
-        with nc.Dataset(run+case, 'r') as ncr:
-            variable = np.ma.array(ncr.variables[varname][0,1,:])
+        with xr.open_dataset(run+case, decode_times=False, decode_cf=False) as ncr:
+            variable = np.ma.array(ncr[varname].values[0,1,:])
             variable.mask = mask > MASK_FLOATING
 
         axis.plot(x, (variable - refvariable)*secpera, linewidth=2)

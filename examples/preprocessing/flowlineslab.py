@@ -9,7 +9,7 @@
 # Here we generate the bare minimum to work with pism_flowline and PISM.
 
 from numpy import linspace, minimum, maximum, abs
-import netCDF4
+import xarray as xr
 
 Lx = 1000e3                     # 1000 km
 Mx = 501
@@ -18,26 +18,21 @@ thk_0 = 1e3                        # meters
 climatic_mass_balance_0 = 0             # kg m-2 s-1
 ice_surface_temp_0 = -10           # Celsius
 
-nc = netCDF4.Dataset("slab.nc", 'w')
-nc.createDimension('x', Mx)
+x = linspace(-Lx, Lx, Mx)
+topg = topg_slope * (x - Lx)
+thk = maximum(minimum(5e3 - abs(x) * 0.01, thk_0), 0)
 
-x = nc.createVariable('x',    'f4', ('x',))
-topg = nc.createVariable('topg', 'f4', ('x',))
-thk = nc.createVariable('thk',  'f4', ('x',))
-climatic_mass_balance = nc.createVariable('climatic_mass_balance', 'f4', ('x',))
-ice_surface_temp = nc.createVariable('ice_surface_temp', 'f4', ('x',))
-
-x[:] = linspace(-Lx, Lx, Mx)
-x.units = "m"
-topg[:] = topg_slope * (x[:] - Lx)
-topg.units = "m"
-
-thk[:] = maximum(minimum(5e3 - abs(x[:]) * 0.01, thk_0), 0)
-thk.units = "m"
-
-climatic_mass_balance[:] = climatic_mass_balance_0
-climatic_mass_balance.units = "kg m^-2 s^-1"
-ice_surface_temp[:] = ice_surface_temp_0
-ice_surface_temp.units = "degree_Celsius"
-
-nc.close()
+ds = xr.Dataset(
+    coords={"x": ("x", x.astype("f4"), {"units": "m"})},
+    data_vars={
+        "topg": (("x",), topg.astype("f4"), {"units": "m"}),
+        "thk":  (("x",), thk.astype("f4"),  {"units": "m"}),
+        "climatic_mass_balance": (("x",),
+                                  (climatic_mass_balance_0 * abs(x) * 0).astype("f4"),
+                                  {"units": "kg m^-2 s^-1"}),
+        "ice_surface_temp": (("x",),
+                             (ice_surface_temp_0 + abs(x) * 0).astype("f4"),
+                             {"units": "degree_Celsius"}),
+    },
+)
+ds.to_netcdf("slab.nc", mode="w")

@@ -71,12 +71,12 @@ public:
         .long_name(
             "pressure of transportable water in subglacial layer as fraction of the overburden pressure")
         .units("1");
-    m_vars[0]["_FillValue"] = {m_fill_value};
+    m_vars[0]["_FillValue"] = { fill_value() };
   }
 
 protected:
   virtual std::shared_ptr<array::Array> compute_impl() const {
-    double fill_value = m_fill_value;
+    double fill = fill_value();
 
     auto result = allocate<array::Scalar>("bwprel");
 
@@ -91,7 +91,7 @@ protected:
       if (Po(i,j) > 0.0) {
         (*result)(i,j) = P(i, j) / Po(i,j);
       } else {
-        (*result)(i,j) = fill_value;
+        (*result)(i,j) = fill;
       }
     }
 

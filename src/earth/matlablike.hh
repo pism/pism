@@ -1,4 +1,4 @@
-/* Copyright (C) 2004-2009, 2015, 2017, 2018 Ed Bueler
+/* Copyright (C) 2004-2009, 2015, 2017, 2018, 2026 Ed Bueler
 
  This file is part of PISM.
 
@@ -17,8 +17,8 @@
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef __matlablike_hh
-#define __matlablike_hh
+#ifndef PISM_matlablike_hh
+#define PISM_matlablike_hh
 
 #include "pism/external/cubature/cubature.h"  /* for 'integrand' type */
 
@@ -32,5 +32,4 @@ double dblquad_cubature(integrand f, double ax, double bx, double ay, double by,
                         double reqRelError, void *fdata);
 
 
-#endif // ifndef __matlablike_hh
-
+#endif // PISM_matlablike_hh

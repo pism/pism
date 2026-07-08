@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _ISOTHERMALGLEN_H_
-#define _ISOTHERMALGLEN_H_
+#ifndef PISM_ISOTHERMALGLEN_HH
+#define PISM_ISOTHERMALGLEN_HH
 
 #include "pism/rheology/PatersonBudd.hh"
 
@@ -42,4 +42,4 @@ protected:
 } // end of namespace pism
 
 
-#endif /* _ISOTHERMALGLEN_H_ */
+#endif /* PISM_ISOTHERMALGLEN_HH */

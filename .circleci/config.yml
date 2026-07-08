@@ -90,6 +90,14 @@ jobs:
     steps:
       - checkout
       - run:
+          # doc/sphinx/pism_config.py reads pism_config.nc via xarray.
+          # The apt-installed /usr/bin/sphinx-build uses /usr/bin/python3,
+          # so install xarray into the system user-site (not just the venv).
+          # Drop once the ckhrulev/pism-ubuntu image is rebuilt to include it.
+          name: Install xarray
+          command: |
+            /usr/bin/python3 -m pip install --user --break-system-packages --quiet xarray
+      - run:
           name: Build the HTML version of the manual
           command: |
             mkdir -p build
@@ -137,6 +145,14 @@ jobs:
 
     steps:
       - checkout
+      - run:
+          # doc/sphinx/pism_config.py reads pism_config.nc via xarray.
+          # The apt-installed /usr/bin/sphinx-build uses /usr/bin/python3,
+          # so install xarray into the system user-site (not just the venv).
+          # Drop once the ckhrulev/pism-ubuntu image is rebuilt to include it.
+          name: Install xarray
+          command: |
+            /usr/bin/python3 -m pip install --user --break-system-packages --quiet xarray
       - run:
           name: Build the PDF version of the manual
           command: |
@@ -245,6 +261,14 @@ jobs:
     steps:
       - checkout
       - run:
+          # Install xarray (required by PISM regression tests + the Sphinx
+          # extension after the netCDF4 -> xarray migration). The
+          # deb-package image has no pip on PATH, so use apt directly.
+          # Drop once ckhrulev/pism-ubuntu-deb-package is rebuilt to
+          # include python3-xarray.
+          name: Install xarray
+          command: apt-get update && apt-get install -y --no-install-recommends python3-xarray
+      - run:
           name: Configure PISM
           command: >-
             cmake -S . -B build
@@ -263,6 +287,13 @@ jobs:
 
     steps:
       - checkout
+      - run:
+          # build-package.sh sets Pism_BUILD_DOCS=YES, which triggers the
+          # Sphinx extension at doc/sphinx/pism_config.py (imports xarray).
+          # Drop once ckhrulev/pism-ubuntu-deb-package is rebuilt to
+          # include python3-xarray.
+          name: Install xarray
+          command: apt-get update && apt-get install -y --no-install-recommends python3-xarray
       - run:
           name: Build the PISM package
           command: bash -x ./docker/ubuntu-deb-package/build-package.sh

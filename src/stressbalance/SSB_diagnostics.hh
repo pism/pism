@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef _SSB_DIAGNOSTICS_H_
-#define _SSB_DIAGNOSTICS_H_
+#ifndef PISM_SSB_DIAGNOSTICS_HH
+#define PISM_SSB_DIAGNOSTICS_HH
 
 #include "pism/util/Diagnostic.hh"
 
@@ -77,4 +77,4 @@ protected:
 } // end of namespace stressbalance
 } // end of namespace pism
 
-#endif /* _SSB_DIAGNOSTICS_H_ */
+#endif /* PISM_SSB_DIAGNOSTICS_HH */

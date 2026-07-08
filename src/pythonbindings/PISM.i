@@ -406,7 +406,7 @@ pism_class(pism::FractureDensity, "pism/fracturedensity/FractureDensity.hh")
 pism_class(pism::IceModel, "pism/icemodel/IceModel.hh")
 
 %{
-#include "util/petscwrappers/PetscInitializer.hh"       \
+#include "util/petscwrappers/PetscInitializer.hh"
 %}
 %rename(PetscInitializer) pism::petsc::Initializer;
 %include "util/petscwrappers/PetscInitializer.hh"
