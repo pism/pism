@@ -26,7 +26,6 @@
 #include "pism/stressbalance/blatter/util/DataAccess.hh"
 #include "pism/stressbalance/blatter/util/grid_hierarchy.hh"
 #include "pism/util/petscwrappers/DM.hh"
-#include "pism/util/pism_utilities.hh"  // GlobalSum (TEMPORARY diagnostic)
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/fem/Quadrature.hh"
@@ -485,8 +484,6 @@ void IP_BlatterTaucForwardProblem::apply_jacobian_design_transpose_3d(
   array::AccessScope list{&dzeta, m_zeta, &m_parameters};
   auto *P = m_parameters.array();
 
-  int n_grounded = 0, n_dbeta = 0;  // [diag]
-
   for (int j = info.gys; j < info.gys + info.gym - 1; j++) {
     for (int i = info.gxs; i < info.gxs + info.gxm - 1; i++) {
 
@@ -550,12 +547,10 @@ void IP_BlatterTaucForwardProblem::apply_jacobian_design_transpose_3d(
         auto W = face->weight(q) / m_scaling;
 
         bool grounded = float_qp[q] <= 0.0;
-        if (grounded) n_grounded++;  // [diag]
         double dbeta_dtauc = 0.0;
         if (grounded && tauc_qp[q] > 0.0) {
           // d(beta)/d(tauc) = drag(1, u, v)
           dbeta_dtauc = m_basal_sliding_law->drag(1.0, u_q[q].u, u_q[q].v);
-          if (dbeta_dtauc != 0.0) n_dbeta++;  // [diag]
         }
 
         double dot = lam_q[q].u * u_q[q].u + lam_q[q].v * u_q[q].v;
@@ -595,10 +590,6 @@ void IP_BlatterTaucForwardProblem::apply_jacobian_design_transpose_3d(
   ierr = DMRestoreLocalVector(m_da, &lambda_local);
   PISM_CHK(ierr, "DMRestoreLocalVector");
 
-  m_log->message(2, "  [diag] grounded QPs=%d, dbeta!=0 QPs=%d, ||dzeta|| before g'/mask=%g\n",
-                 GlobalSum(m_grid->com, n_grounded), GlobalSum(m_grid->com, n_dbeta),
-                 dzeta.norm(NORM_2)[0]);
-
   // Multiply by g'(zeta) at each node
   {
     array::AccessScope list2{&dzeta, m_zeta};
@@ -610,8 +601,6 @@ void IP_BlatterTaucForwardProblem::apply_jacobian_design_transpose_3d(
     }
   }
 
-  m_log->message(2, "  [diag] ||dzeta|| after g' (before fixed-mask)=%g\n", dzeta.norm(NORM_2)[0]);
-
   // Zero out fixed locations
   if (m_fixed_tauc_locations != nullptr) {
     array::AccessScope list2{&dzeta, m_fixed_tauc_locations};
@@ -622,8 +611,6 @@ void IP_BlatterTaucForwardProblem::apply_jacobian_design_transpose_3d(
       }
     }
   }
-
-  m_log->message(2, "  [diag] ||dzeta|| after fixed-mask=%g\n", dzeta.norm(NORM_2)[0]);
 }
 
 // ============================================================================
@@ -753,16 +740,6 @@ void IP_BlatterTaucForwardProblem::apply_linearization_transpose(
     PISM_CHK(ierr, "DMDAVecRestoreArray");
   }
 
-  // TEMPORARY diagnostic: is the 2D misfit forcing nonzero, and does it survive the
-  // injection into the 3D adjoint RHS?
-  {
-    auto du_n = du.norm(NORM_2);
-    PetscReal rhs_n = 0.0;
-    ierr = VecNorm(rhs_3d, NORM_2, &rhs_n); PISM_CHK(ierr, "VecNorm");
-    m_log->message(2, "  [diag] ||du(2D)|| = (%g, %g)   ||rhs_3d(after inject)|| = %g\n",
-                   du_n[0], du_n.size() > 1 ? du_n[1] : 0.0, (double)rhs_n);
-  }
-
   // Standalone adjoint KSP (not the SNES's MG KSP).
   // Configure via -inv_adj_ksp_type, -inv_adj_pc_type, etc.
   if (m_ksp.get() == nullptr) {
@@ -866,20 +843,9 @@ void IP_BlatterTaucForwardProblem::apply_linearization_transpose(
                                   KSPConvergedReasons[reason]);
   }
 
-  // TEMPORARY diagnostic: did the adjoint solve produce a nonzero lambda?
-  {
-    PetscReal lam_n = 0.0;
-    ierr = VecNorm(lambda_3d, NORM_2, &lam_n); PISM_CHK(ierr, "VecNorm");
-    m_log->message(2, "  [diag] ||lambda_3d(after adjoint)|| = %g\n", (double)lam_n);
-  }
-
   // Step 3: Compute dzeta = -J_design^T * lambda
   this->apply_jacobian_design_transpose_3d(lambda_3d, dzeta);
   dzeta.scale(-1.0);
-
-  // TEMPORARY diagnostic: nonzero design gradient after the design-transpose?
-  m_log->message(2, "  [diag] ||dzeta(after design-transpose)|| = %g\n",
-                 dzeta.norm(NORM_2)[0]);
 
   m_log->message(2, "Blatter inverse: adjoint solve done.\n");
 
