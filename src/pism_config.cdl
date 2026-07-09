@@ -1869,7 +1869,7 @@ netcdf pism_config {
     pism_config:output.ISMIP6_scalar_variables_doc = "Comma-separated list of scalar variables (time series) reported by models participating in ISMIP6 simulations.";
     pism_config:output.ISMIP6_scalar_variables_type = "string";
 
-    pism_config:output.ISMIP6_spatial_variables = "acabf,base,deltag,dlithkdt,hfgeoubed,libmassbffl,libmassbfgr,licalvf,lifmassbf,ligroundf,litempavg,litempbotfl,litempbotgr,litemptop,lithk,orog,sftflf,sftgif,sftgrf,strbasemag,tfbase,topg,xvelbase,xvelmean,xvelsurf,yvelbase,yvelmean,yvelsurf,zvelbase,zvelsurf";
+    pism_config:output.ISMIP6_spatial_variables = "acabf,base,dlithkdt,hfgeoubed,libmassbffl,libmassbfgr,licalvf,lifmassbf,ligroundf,litempbotfl,litempbotgr,litemptop,lithk,orog,sftflf,sftgif,sftgrf,strbasemag,topg,velbase,velmean,velsurf,zvelbase,zvelsurf";
     pism_config:output.ISMIP6_spatial_variables_doc = "Comma-separated list of fields reported by models participating in ISMIP6 simulations.";
     pism_config:output.ISMIP6_spatial_variables_type = "string";
 
