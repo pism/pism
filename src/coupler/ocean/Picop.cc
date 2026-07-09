@@ -39,11 +39,15 @@
 
 #include <cmath>
 #include <stdexcept>
+#include <vector>
+#include <algorithm>
+#include <mpi.h>
 
 #include "pism/coupler/util/options.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/Grid.hh"
+#include "pism/util/pism_utilities.hh"  // GlobalSum
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/hydrology/Hydrology.hh"
 
@@ -65,6 +69,7 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
     m_shelf_base_elevation(grid, "picop_shelf_base_elevation"),
     m_local_slope(grid, "picop_local_slope"),
     m_fresh_water_melt_rate(grid, "picop_fresh_water_melt_rate"),
+    m_discharge_flux(grid, "picop_discharge_flux"),
     m_theta_ocean(m_pico->get_temperature()),
     m_salinity_ocean(m_pico->get_salinity()),
     m_flow_direction(grid, "ice_flow_direction"),
@@ -98,6 +103,12 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
       .output_units("m year^-1");
   m_fresh_water_melt_rate.metadata()["_FillValue"] = {0.0};
   m_fresh_water_melt_rate.set(0.0);
+
+  m_discharge_flux.metadata(0)
+      .long_name("PICOP subglacial discharge flux on floating ice")
+      .units("m^2 s^-1");
+  m_discharge_flux.metadata()["_FillValue"] = {0.0};
+  m_discharge_flux.set(0.0);
 
   m_shelf_base_temperature->metadata()["_FillValue"] = {0.0};
 }
@@ -248,29 +259,203 @@ MaxTimestep Picop::max_timestep_impl(double t) const {
   return MaxTimestep("ocean picop");
 }
 
+namespace {
+//! A grounding-line subglacial-discharge outflow.
+struct Outflow {
+  double x, y;      // location (m)
+  double q_sg0;     // discharge flux at the outflow (m^2 s^-1)
+  double radius;    // governing length scale 5L' (m)
+};
+
+//! Gather every rank's outflow list onto all ranks (MPI_Allgatherv).
+/*! The number of outflows is O(grounding-line length / dx) -- a few hundred -- so this
+    is cheap and lets the q_sg painting below avoid wide-stencil communication. */
+std::vector<Outflow> gather_outflows(MPI_Comm com, const std::vector<Outflow> &local) {
+  int size = 1;
+  MPI_Comm_size(com, &size);
+
+  const int n_local = static_cast<int>(local.size());
+  std::vector<int> counts(size);
+  MPI_Allgather(&n_local, 1, MPI_INT, counts.data(), 1, MPI_INT, com);
+
+  // 4 doubles per outflow
+  std::vector<int> dcounts(size), ddispls(size);
+  int total = 0;
+  for (int r = 0; r < size; ++r) {
+    dcounts[r] = counts[r] * 4;
+    ddispls[r] = total;
+    total += dcounts[r];
+  }
+
+  std::vector<double> sendbuf(static_cast<size_t>(n_local) * 4);
+  for (int k = 0; k < n_local; ++k) {
+    sendbuf[4 * k + 0] = local[k].x;
+    sendbuf[4 * k + 1] = local[k].y;
+    sendbuf[4 * k + 2] = local[k].q_sg0;
+    sendbuf[4 * k + 3] = local[k].radius;
+  }
+
+  std::vector<double> recvbuf(static_cast<size_t>(total));
+  MPI_Allgatherv(sendbuf.data(), n_local * 4, MPI_DOUBLE,
+                 recvbuf.data(), dcounts.data(), ddispls.data(), MPI_DOUBLE, com);
+
+  std::vector<Outflow> all(recvbuf.size() / 4);
+  for (size_t k = 0; k < all.size(); ++k) {
+    all[k] = { recvbuf[4 * k + 0], recvbuf[4 * k + 1],
+               recvbuf[4 * k + 2], recvbuf[4 * k + 3] };
+  }
+  return all;
+}
+} // end of anonymous namespace
+
+//! Build the discharge flux field q_sg(x,y) on floating cells.
+/*!
+ * PISM routes subglacial water under grounded ice only, so the discharge enters the
+ * ocean cavity at the grounding line. We (1) find grounding-line outflows and their flux
+ * q_sg0 (PISM's hydrology flux() is already m^2 s^-1, so no channel-width conversion is
+ * needed), (2) compute each outflow's governing length scale 5L' = 5 q_sg0 / m_fw, and
+ * (3) paint q_sg onto floating cells within 5L' with quadratic decay to zero at 5L',
+ * taking the max where outflows overlap (Pelle et al. 2023, Defining q_sg(x,y)).
+ */
+void Picop::build_discharge_field(const Inputs &inputs,
+                                  const PicopPhysics &physics,
+                                  const array::Scalar &T_a,
+                                  const array::Scalar &S_a) {
+
+  // Averaging radius for outflow fields: Pelle et al. (2023) average alpha, z_gl, T_a,
+  // S_a within 5 km of the discharge outflow before computing the length scale 5L'.
+  const double avg_radius = 5000.0;  // m
+
+  const auto &cell_type = inputs.geometry->cell_type;
+  const auto &surf      = inputs.geometry->ice_surface_elevation;
+  const auto &thk       = inputs.geometry->ice_thickness;
+
+  array::Scalar &water_flux = m_work;
+  compute_magnitude(inputs.hydrology->flux(), water_flux);
+
+  // Pass 1: grounding-line discharge outflows (location + flux). The length scale
+  // (radius) is filled in below from 5-km-averaged fields.
+  std::vector<Outflow> local;
+  {
+    array::AccessScope scope{&cell_type, &water_flux};
+    for (auto p : m_grid->points()) {
+      const int i = p.i(), j = p.j();
+
+      // Outflow = grounded-ice cell at the grounding line with nonzero flux.
+      if (not (cell_type.grounded_ice(i, j) and cell_type.next_to_floating_ice(i, j))) {
+        continue;
+      }
+      const double q0 = water_flux(i, j);  // already m^2 s^-1
+      if (q0 <= 0.0) {
+        continue;
+      }
+      local.push_back({ m_grid->x(i), m_grid->y(j), q0, 0.0 });
+    }
+  }
+
+  std::vector<Outflow> all = gather_outflows(m_grid->com, local);
+  const int N = static_cast<int>(all.size());
+
+  if (N == 0) {
+    m_discharge_flux.set(0.0);
+    return;
+  }
+
+  // Pass 1.5: accumulate floating-cell fields within avg_radius of each outflow, summed
+  // across ranks so the average spans rank boundaries. Buffer layout, per outflow k:
+  // [0*N+k] alpha, [1*N+k] z_gl, [2*N+k] t_a, [3*N+k] s_a, [4*N+k] count.
+  std::vector<double> local_acc(5 * N, 0.0), acc(5 * N, 0.0);
+  {
+    array::AccessScope scope{&cell_type, &surf, &thk,
+                             &m_grounding_line_elevation, &m_local_slope, &T_a, &S_a};
+    for (auto p : m_grid->points()) {
+      const int i = p.i(), j = p.j();
+      if (not cell_type.floating_ice(i, j)) {
+        continue;
+      }
+      const double x = m_grid->x(i), y = m_grid->y(j);
+      const double z_b   = surf(i, j) - thk(i, j);
+      const double z_gl  = std::min(m_grounding_line_elevation(i, j), z_b);
+      const double alpha = m_local_slope(i, j);
+      const double s_a   = S_a(i, j);
+      double t_a = T_a(i, j);
+      const double t_min = physics.characteristic_freezing_point(s_a, 0);
+      if (t_a < t_min) {
+        t_a = t_min;
+      }
+      for (int k = 0; k < N; ++k) {
+        if (std::hypot(x - all[k].x, y - all[k].y) < avg_radius) {
+          local_acc[0 * N + k] += alpha;
+          local_acc[1 * N + k] += z_gl;
+          local_acc[2 * N + k] += t_a;
+          local_acc[3 * N + k] += s_a;
+          local_acc[4 * N + k] += 1.0;
+        }
+      }
+    }
+  }
+  GlobalSum(m_grid->com, local_acc.data(), acc.data(), 5 * N);
+
+  // Compute each outflow's governing length scale 5L' from the averaged fields.
+  for (int k = 0; k < N; ++k) {
+    const double n = acc[4 * N + k];
+    if (n <= 0.0) {
+      all[k].radius = 0.0;  // no floating cell within 5 km (shouldn't happen at the GL)
+      continue;
+    }
+    const double alpha = acc[0 * N + k] / n;
+    const double z_gl  = acc[1 * N + k] / n;
+    const double t_a   = acc[2 * N + k] / n;
+    const double s_a   = acc[3 * N + k] / n;
+
+    const double t_f_gl   = physics.characteristic_freezing_point(s_a, z_gl);
+    const double Gamma_TS = physics.effective_heat_exchange_coefficient(t_a, t_f_gl, alpha);
+    const double m_fw0    = physics.fresh_water_melt_rate(all[k].q_sg0, s_a, t_a,
+                                                          Gamma_TS, t_f_gl, alpha);
+    all[k].radius = physics.governing_length_scale(all[k].q_sg0, m_fw0);  // 5L'
+  }
+
+  // Pass 2: paint q_sg on floating cells (quadratic decay to 0 at 5L', max over overlaps).
+  m_discharge_flux.set(0.0);
+  {
+    array::AccessScope scope{&cell_type, &m_discharge_flux};
+    for (auto p : m_grid->points()) {
+      const int i = p.i(), j = p.j();
+      if (not cell_type.floating_ice(i, j)) {
+        continue;
+      }
+      const double x = m_grid->x(i), y = m_grid->y(j);
+      double q = 0.0;
+      for (const auto &o : all) {
+        const double d = std::hypot(x - o.x, y - o.y);
+        if (d < o.radius) {
+          const double w = 1.0 - d / o.radius;  // 1 at the outflow, 0 at 5L'
+          q = std::max(q, o.q_sg0 * w * w);      // quadratic decay x max flux
+        }
+      }
+      m_discharge_flux(i, j) = q;
+    }
+  }
+}
+
 void Picop::compute_melt_rate(const Inputs &inputs,
                               const PicopPhysics &physics,
                               const array::Scalar &T_a,
                               const array::Scalar &S_a,
                               array::Scalar1 &result)  {
 
-  m_log->message(2, "flux");
   const auto &ice_surface_elevation = inputs.geometry->ice_surface_elevation;
   const auto &ice_thickness = inputs.geometry->ice_thickness;
   const auto &cell_type = inputs.geometry->cell_type;
 
-  array::Scalar &water_flux = m_work;
+  // Build q_sg(x,y) from grounding-line discharge outflows (fills m_discharge_flux).
+  build_discharge_field(inputs, physics, T_a, S_a);
 
-  m_log->message(2, "flux");
-  compute_magnitude(inputs.hydrology->flux(), water_flux);
-      
-  m_log->message(2, "flux 2");
-  array::AccessScope scope{&T_a, &S_a, &cell_type, &water_flux,
+  array::AccessScope scope{&T_a, &S_a, &cell_type, &m_discharge_flux,
                            &ice_surface_elevation, &ice_thickness,
                            &m_local_slope, &m_grounding_line_elevation,
-                           &result};
+                           &m_fresh_water_melt_rate, &result};
 
-  m_log->message(2, "flux 3");
   for (auto p : m_grid->points()) {
     int i = p.i(), j = p.j();
 
@@ -280,7 +465,7 @@ void Picop::compute_melt_rate(const Inputs &inputs,
       // (same as ISSM: if(zgl > z_base) zgl = z_base)
       const double z_gl = std::min(m_grounding_line_elevation(i, j), z_b);
       const double alpha = m_local_slope(i, j);
-            
+
       const double s_a = S_a(i, j);
       double t_a = T_a(i, j);
       const double t_min = physics.characteristic_freezing_point(s_a, 0);
@@ -295,11 +480,12 @@ void Picop::compute_melt_rate(const Inputs &inputs,
       const double X_hat = std::min(std::max(physics.dimensionless_coordinate(z_b, z_gl, l), 0.0), 1.0);
       const double M_X = physics.dimensionless_melt_curve(X_hat);
       const double M = physics.melt_function(t_a, t_f_gl, g_alpha);
-      const double q_sg = water_flux(i, j);
+      const double q_sg = m_discharge_flux(i, j);
       const double m_fw = physics.fresh_water_melt_rate(q_sg, s_a, t_a, Gamma_TS, t_f_gl, alpha);
+      m_fresh_water_melt_rate(i, j) = m_fw;
       // Equation 16 in Pelle et al (2023)
       result(i, j)  = (M_X * M * M) / (M + m_fw) + m_fw ;
-    }    
+    }
   }
 }
 
@@ -670,6 +856,7 @@ DiagnosticList Picop::spatial_diagnostics_impl() const {
   DiagnosticList result = {
     { "picop_basal_melt_rate", Diagnostic::wrap(m_basal_melt_rate) },
     { "picop_fresh_water_melt_rate", Diagnostic::wrap(m_fresh_water_melt_rate) },
+    { "picop_discharge_flux", Diagnostic::wrap(m_discharge_flux) },
     { "picop_grounding_line_elevation", Diagnostic::wrap(m_grounding_line_elevation) },
     { "picop_local_slope", Diagnostic::wrap(m_local_slope) },
     { "picop_temperature", Diagnostic::wrap(m_theta_ocean) },

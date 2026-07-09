@@ -58,7 +58,9 @@ private:
   array::Scalar1 m_shelf_base_elevation;
   array::Scalar1 m_local_slope;
   array::Scalar1 m_fresh_water_melt_rate;
-  
+  //! subglacial discharge flux q_sg(x,y) on floating cells (m^2 s^-1)
+  array::Scalar m_discharge_flux;
+
   const array::Scalar &m_theta_ocean;
   const array::Scalar &m_salinity_ocean;
   
@@ -82,6 +84,12 @@ private:
   
   void compute_local_slope(const Inputs &inputs,
                                         array::Scalar1 &result);
+
+  //! Build q_sg(x,y) on floating cells from grounding-line discharge outflows.
+  void build_discharge_field(const Inputs &inputs,
+                             const PicopPhysics &physics,
+                             const array::Scalar &T_a,
+                             const array::Scalar &S_a);
 
 };
 } // end of namespace ocean

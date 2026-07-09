@@ -46,6 +46,8 @@ public:
   double melt_rate(const double M, const double X_hat) const;
   
   double fresh_water_melt_rate(const double q_sg, const double s_a, const double t_a, const double Gamma_TS, const double t_f_gl, const double alpha) const;
+
+  double governing_length_scale(const double q_sg, const double m_fw) const;
   
 private:
 

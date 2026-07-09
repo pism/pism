@@ -139,10 +139,34 @@ double PicopPhysics::fresh_water_melt_rate(const double q_sg,
   const double E0_sin_alpha = E0 * sin(alpha);
   const double G1 = sqrt(sin(alpha) / (Cd + E0_sin_alpha));
   const double G2 = sqrt(CdTS / (CdTS + E0_sin_alpha));
-  const double delta_rho_i = beta_S * s_a - beta_T * t_a;
-  
-  return 1 / (L_fw * c_p) * CdTS0 * G1 * pow(G2, 1./3.) * pow(g * q_sg * delta_rho_i, 1./3.) * t_f_gl;
-  
+
+  // thermal forcing lambda3 * dTf_gl (K) -- same convention as melt_function()
+  const double thermal_forcing = t_a - t_f_gl;
+
+  // delta_rho_i = beta_S * S_a - beta_T * (lambda3 * dTf_gl), with S = 0 (fresh discharge)
+  const double delta_rho_i = beta_S * s_a - beta_T * thermal_forcing;
+
+  // Pelle et al. (2023), Eq. 13 (in m s^-1; the paper's 31536000 m/s->m/yr factor is
+  // omitted since PISM works in SI). The prefactor is c_p / L_fw = 1 / (L / c_p).
+  return (c_p / L_fw) * CdTS0 * G1 * pow(G2, 1./3.)
+         * pow(g * q_sg * delta_rho_i, 1./3.) * thermal_forcing;
+}
+
+//! Governing length scale 5L' (m), Pelle et al. (2023), Eq. 15.
+/*!
+ * Eqs. 13 and 15 share the same geometric/thermal block and are reciprocal in it, so
+ * they collapse to  5L' = 5 * q_sg / m_fw  (the paper's leading 500 = 5 * L_fw/c_p is
+ * carried by 1/m_fw, whose prefactor is c_p/L_fw). Reusing m_fw guarantees consistency
+ * with Eq. 13 and keeps the full slope dependence (no "sin(alpha) ~ 0.01" assumption).
+ *
+ * @param[in] q_sg subglacial discharge flux at the outflow (m^2 s^-1)
+ * @param[in] m_fw discharge melt rate from fresh_water_melt_rate() (m s^-1)
+ */
+double PicopPhysics::governing_length_scale(const double q_sg, const double m_fw) const {
+  if (m_fw <= 0.0) {
+    return 0.0;
+  }
+  return 5.0 * q_sg / m_fw;
 }
 
 } // end of namespace ocean
