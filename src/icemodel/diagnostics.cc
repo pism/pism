@@ -2314,6 +2314,10 @@ public:
   IceMassFluxBasalGrounded(const IceModel *m)
       : TSDiag<TSFluxDiagnostic, IceModel>(m, "basal_mass_flux_grounded") {
 
+    if (m_config->get_flag("output.ISMIP6")) {
+      m_variable.set_name("tendlibmassbfgr");
+    }
+
     set_units("kg s^-1", "Gt year^-1");
     m_variable["long_name"]     = "total over grounded ice domain of basal mass flux";
     m_variable["standard_name"] = "tendency_of_land_ice_mass_due_to_basal_mass_balance";
@@ -3513,6 +3517,7 @@ std::map<std::string, TSDiagnostic::Ptr> IceModel::allocate_scalar_diagnostics()
     result["tendacabf"]       = result["tendency_of_ice_mass_due_to_surface_mass_flux"];
     result["tendlibmassbf"]   = result["tendency_of_ice_mass_due_to_basal_mass_flux"];
     result["tendlibmassbffl"] = result["basal_mass_flux_floating"];
+    result["tendlibmassbfgr"] = result["basal_mass_flux_grounded"];
     result["tendlicalvf"]     = result["tendency_of_ice_mass_due_to_calving"];
     result["tendlifmassbf"]   = result["tendency_of_ice_mass_due_to_discharge"];
     result["tendligroundf"]   = result["grounding_line_flux"];
