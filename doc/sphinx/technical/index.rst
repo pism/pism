@@ -23,6 +23,8 @@ Technical notes
 
    ocean-th.rst
 
+   picop.rst
+
    blatter-pattyn.rst
 
    inverse-ssa.rst
