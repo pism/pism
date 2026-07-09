@@ -2,7 +2,7 @@
 
 .. math::
 
-.. _sec-picop:
+.. _sec-technical-picop:
 
 PICOP with subglacial discharge: technical details
 ==================================================
