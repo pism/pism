@@ -1865,11 +1865,11 @@ netcdf pism_config {
     pism_config:output.ISMIP6_doc = "Follow ISMIP6 conventions (units, variable names, \"standard names\") when writing output variables.";
     pism_config:output.ISMIP6_type = "flag";
 
-    pism_config:output.ISMIP6_scalar_variables = "lim,limnsw,iareagr,iareafl,tendacabf,tendlibmassbf,tendlibmassbffl,tendlicalvf,tendlifmassbf";
+    pism_config:output.ISMIP6_scalar_variables = "iareafl,iareagr,lim,limnsw,tendacabf,tendlibmassbffl,tendlibmassbfgr,tendlicalvf,tendlifmassbf,tendligroundf";
     pism_config:output.ISMIP6_scalar_variables_doc = "Comma-separated list of scalar variables (time series) reported by models participating in ISMIP6 simulations.";
     pism_config:output.ISMIP6_scalar_variables_type = "string";
 
-    pism_config:output.ISMIP6_spatial_variables = "lithk,orog,topg,hfgeoubed,acabf,libmassbfgr,libmassbffl,dlithkdt,velsurf,zvelsurf,velbase,zvelbase,velmean,litemptop,litempbotgr,litempbotfl,strbasemag,licalvf,lifmassbf,sftgif,sftgrf,sftflf";
+    pism_config:output.ISMIP6_spatial_variables = "acabf,base,deltag,dlithkdt,hfgeoubed,libmassbffl,libmassbfgr,licalvf,lifmassbf,ligroundf,litempavg,litempbotfl,litempbotgr,litemptop,lithk,orog,sftflf,sftgif,sftgrf,strbasemag,tfbase,topg,xvelbase,xvelmean,xvelsurf,yvelbase,yvelmean,yvelsurf,zvelbase,zvelsurf";
     pism_config:output.ISMIP6_spatial_variables_doc = "Comma-separated list of fields reported by models participating in ISMIP6 simulations.";
     pism_config:output.ISMIP6_spatial_variables_type = "string";
 
