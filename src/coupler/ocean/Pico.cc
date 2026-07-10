@@ -526,6 +526,14 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics,
 
   // now set potential temperature and salinity box 0:
 
+  // If theta_ocean holds thermal forcing (T - T_freeze, in deg_C) rather than
+  // potential temperature, convert it to potential temperature below. T0 is the
+  // deg_C -> kelvin offset that the unit system applies to the (difference-valued)
+  // input and that we have to undo.
+  const bool thermal_forcing =
+    m_config->get_flag("ocean.pico.temperature_as_thermal_forcing");
+  const double T0 = m_config->get_number("constants.fresh_water.melting_point_temperature");
+
   int low_temperature_counter = 0;
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
@@ -550,6 +558,14 @@ void Pico::set_ocean_input_fields(const PicoPhysics &physics,
       }
 
       double theta_pm = physics.theta_pm(Soc_box0(i, j), physics.pressure(ice_thickness(i, j)));
+
+      if (thermal_forcing) {
+        // theta_ocean is thermal forcing (T - T_freeze in deg_C). It is read as an
+        // absolute temperature (units "kelvin"), so a deg_C input picks up the T0
+        // offset; subtract it to recover the forcing, then add the freezing point
+        // theta_pm to obtain the potential temperature.
+        Toc_box0(i, j) = Toc_box0(i, j) - T0 + theta_pm;
+      }
 
       // temperature input for grounding line box should not be below pressure melting point
       if (Toc_box0(i, j) < theta_pm) {

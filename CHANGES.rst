@@ -3,6 +3,10 @@
 Changes since v2.3.0
 ====================
 
+- Add `ocean.pico.temperature_as_thermal_forcing` (default `no`). When set to `yes`, PICO
+  interprets the input `theta_ocean` field as ocean thermal forcing (temperature above the
+  in-situ freezing point) and converts it to potential temperature, so ISMIP-style
+  thermal-forcing datasets can be used with PICO/PICOP directly.
 - Added PICOP (PICO + Plume) from Pelle et al (2019). Use `-ocean.models picop`.
 - Fix a segfault when using the PICOP ocean model (`-ocean.models picop`): subglacial
   hydrology was not passed to the ocean model, so PICOP dereferenced an uninitialized
