@@ -80,10 +80,12 @@ double BlatterTestHalfar::u_exact(double x, double z) const {
 void BlatterTestHalfar::residual_source_term(const fem::Q1Element3 &element,
                                              const double *surface,
                                              const double *bed,
+                                             const double *floatation,
                                              Vector2d *residual) {
 
   (void) surface;
   (void) bed;
+  (void) floatation;
 
   // compute x and z coordinates of quadrature points
   double

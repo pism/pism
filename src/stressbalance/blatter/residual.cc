@@ -95,6 +95,7 @@ void Blatter::residual_f(const fem::Q1Element3 &element,
 void Blatter::residual_source_term(const fem::Q1Element3 &element,
                                    const double *surface,
                                    const double *bed,
+                                   const double *floatation,
                                    Vector2d *residual) {
 
   // compute s_x and s_y
@@ -115,7 +116,6 @@ void Blatter::residual_source_term(const fem::Q1Element3 &element,
       *b_x = m_work[6],
       *b_y = m_work[7],
       *b_z = m_work[8];
-
     double
       n = m_glen_exponent,
       p = (2.0 * n + 2.0) / n;
@@ -130,8 +130,10 @@ void Blatter::residual_source_term(const fem::Q1Element3 &element,
     for (unsigned int q = 0; q < element.n_pts(); ++q) {
       double C = pow(eta[q], 1.0 / p - 1.0) / p;
 
-      s_x[q] = C * eta_x[q] + b_x[q];
-      s_y[q] = C * eta_y[q] + b_y[q];
+      bool grounded = floatation[q] <= 0.0;
+
+      s_x[q] = grounded ? C * eta_x[q] + b_x[q] : m_alpha * C * eta_x[q];
+      s_y[q] = grounded ? C * eta_y[q] + b_y[q] : m_alpha * C * eta_y[q];
     }
   } else {
     // these arrays are needed by the call below (but results are discarded)
@@ -411,7 +413,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
         residual_f(element, velocity, B, R_nodal);
 
         // the "source term" (driving stress)
-        residual_source_term(element, surface_elevation, bottom_elevation, R_nodal);
+        residual_source_term(element, surface_elevation, bottom_elevation, floatation, R_nodal);
 
         // basal boundary
         if (k == 0) {

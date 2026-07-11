@@ -58,9 +58,11 @@ Vector2d BlatterTestCFBC::u_bc(double x, double y, double z) const {
 void BlatterTestCFBC::residual_source_term(const fem::Q1Element3 &element,
                                            const double *surface,
                                            const double *bed,
+                                           const double *floatation,
                                            Vector2d *residual) {
   (void) surface;
   (void) bed;
+  (void) floatation;
 
   // compute x and z coordinates of quadrature points
   double
@@ -174,9 +176,6 @@ void BlatterTestCFBC::jacobian_basal(const fem::Q1Element3Face &face,
   // empty: residual contribution from the basal boundary does not depend on ice velocity
 }
 
-/*!
- * Do not use the floatation criterion, i.e. assume that the ice is always grounded.
- */
 void BlatterTestCFBC::init_2d_parameters(const Inputs &inputs) {
 
   Blatter::init_2d_parameters(inputs);
@@ -190,7 +189,11 @@ void BlatterTestCFBC::init_2d_parameters(const Inputs &inputs) {
       const int i = p.i(), j = p.j();
 
       m_parameters(i, j).bed        = b(i, j);
-      m_parameters(i, j).floatation = 0.0;
+      if (i == 0) {
+        m_parameters(i, j).floatation = 1.0;
+      } else {
+        m_parameters(i, j).floatation = 0.0;
+      }
      }
   }
 

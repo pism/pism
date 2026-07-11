@@ -67,9 +67,11 @@ Vector2d BlatterTestXY::u_bc(double x, double y, double z) const {
 void BlatterTestXY::residual_source_term(const fem::Q1Element3 &element,
                                          const double *surface,
                                          const double *bed,
+                                         const double *floatation,
                                          Vector2d *residual) {
   (void) surface;
   (void) bed;
+  (void) floatation;
 
   // compute x and y coordinates of quadrature points
   double
