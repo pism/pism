@@ -12,6 +12,13 @@ Changes since v2.3.0
   petsc4py at interpreter shutdown. Previously a failure such as a missing `input.file`
   could deadlock the run under some MPI implementations, so a batch job kept its nodes
   until the wall-clock limit. The traceback is now printed once, by rank 0.
+- Speed up the `routing` subglacial hydrology model. The parts of the conductivity and
+  water velocity that depend only on the hydraulic potential `R = P + rho_w g b` (which is
+  constant during the internal sub-stepping loop, since the pressure equals the overburden
+  pressure) are now computed once per step instead of every sub-step. This roughly halves
+  the time spent computing conductivity and removes two ghost communications per sub-step,
+  with no change in results. (The `distributed` model, where the pressure evolves, is
+  unaffected.)
 - Add a ISMP7 surface model that uses the gradients but not the anomalies, and adds runoff.
 - Allow the Blatter stress balance to restart from SSA velocities: if `uvel_sigma` and
   `vvel_sigma` are not present in the input file but `u_ssa` and `v_ssa` are, use the
