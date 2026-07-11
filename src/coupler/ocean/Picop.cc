@@ -483,8 +483,11 @@ void Picop::compute_melt_rate(const Inputs &inputs,
       const double q_sg = m_discharge_flux(i, j);
       const double m_fw = physics.fresh_water_melt_rate(q_sg, s_a, t_a, Gamma_TS, t_f_gl, alpha);
       m_fresh_water_melt_rate(i, j) = m_fw;
-      // Equation 16 in Pelle et al (2023)
-      result(i, j)  = (M_X * M * M) / (M + m_fw) + m_fw ;
+      // Equation 16 in Pelle et al (2023). Guard the 0/0 that occurs when both the
+      // ambient melt M and the discharge melt m_fw vanish (e.g. a flat shelf base with
+      // no subglacial discharge); the limit of the ratio in that case is 0.
+      const double denom = M + m_fw;
+      result(i, j) = denom > 0.0 ? (M_X * M * M) / denom + m_fw : m_fw;
     }
   }
 }

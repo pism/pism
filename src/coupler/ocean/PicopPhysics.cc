@@ -135,21 +135,32 @@ double PicopPhysics::fresh_water_melt_rate(const double q_sg,
                                            const double Gamma_TS,
                                            const double t_f_gl,
                                            const double alpha) const {
+  // No subglacial discharge (or a non-finite discharge value) => no discharge-driven
+  // plume, hence no discharge melt. Written as "not (> 0)" so a NaN q_sg returns 0 too.
+  if (not (q_sg > 0.0)) {
+    return 0.0;
+  }
+
+  // thermal forcing lambda3 * dTf_gl (K) -- same convention as melt_function()
+  const double thermal_forcing = t_a - t_f_gl;
+
+  // delta_rho_i = beta_S * S_a - beta_T * (lambda3 * dTf_gl), with S = 0 (fresh discharge).
+  // The discharge plume only upwells (and melts) while it is buoyant, i.e. delta_rho_i > 0.
+  const double delta_rho_i = beta_S * s_a - beta_T * thermal_forcing;
+  if (not (delta_rho_i > 0.0)) {
+    return 0.0;
+  }
+
   const double CdTS = sqrt(Cd) * Gamma_TS;
   const double E0_sin_alpha = E0 * sin(alpha);
   const double G1 = sqrt(sin(alpha) / (Cd + E0_sin_alpha));
   const double G2 = sqrt(CdTS / (CdTS + E0_sin_alpha));
 
-  // thermal forcing lambda3 * dTf_gl (K) -- same convention as melt_function()
-  const double thermal_forcing = t_a - t_f_gl;
-
-  // delta_rho_i = beta_S * S_a - beta_T * (lambda3 * dTf_gl), with S = 0 (fresh discharge)
-  const double delta_rho_i = beta_S * s_a - beta_T * thermal_forcing;
-
   // Pelle et al. (2023), Eq. 13 (in m s^-1; the paper's 31536000 m/s->m/yr factor is
   // omitted since PISM works in SI). The prefactor is c_p / L_fw = 1 / (L / c_p).
-  return (c_p / L_fw) * CdTS0 * G1 * pow(G2, 1./3.)
-         * pow(g * q_sg * delta_rho_i, 1./3.) * thermal_forcing;
+  // Use cbrt() rather than pow(x, 1./3.): the latter returns NaN for a negative argument.
+  return (c_p / L_fw) * CdTS0 * G1 * cbrt(G2)
+         * cbrt(g * q_sg * delta_rho_i) * thermal_forcing;
 }
 
 //! Governing length scale 5L' (m), Pelle et al. (2023), Eq. 15.

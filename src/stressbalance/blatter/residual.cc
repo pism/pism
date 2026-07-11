@@ -129,7 +129,6 @@ void Blatter::residual_source_term(const fem::Q1Element3 &element,
 
     for (unsigned int q = 0; q < element.n_pts(); ++q) {
       double C = pow(eta[q], 1.0 / p - 1.0) / p;
-
       bool grounded = floatation[q] <= 0.0;
 
       s_x[q] = grounded ? C * eta_x[q] + b_x[q] : m_alpha * C * eta_x[q];
