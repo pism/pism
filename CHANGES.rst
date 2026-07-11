@@ -3,6 +3,11 @@
 Changes since v2.3.0
 ====================
 
+- Fix PICOP subglacial discharge at coarse resolution. When the discharge governing length
+  scale `5L'` (Pelle et al. 2023) is smaller than the grid spacing, the plume no longer
+  reached any floating cell center and `picop_discharge_flux`/`picop_fresh_water_melt_rate`
+  were zero everywhere. The full discharge flux is now deposited in the outflow's nearest
+  floating cell(s) in that (sub-grid) case; resolved plumes keep the quadratic decay.
 - Add `ocean.pico.temperature_as_thermal_forcing` (default `no`). When set to `yes`, PICO
   interprets the input `theta_ocean` field as ocean thermal forcing (temperature above the
   in-situ freezing point) and converts it to potential temperature, so ISMIP-style

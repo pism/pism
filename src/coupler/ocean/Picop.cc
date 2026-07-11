@@ -357,6 +357,9 @@ void Picop::build_discharge_field(const Inputs &inputs,
   const int N = static_cast<int>(all.size());
 
   if (N == 0) {
+    m_log->message(2,
+                   "PICOP discharge: no outflows found"
+                   " (no grounded cell next to floating ice with positive subglacial water flux)\n");
     m_discharge_flux.set(0.0);
     return;
   }
@@ -415,7 +418,29 @@ void Picop::build_discharge_field(const Inputs &inputs,
     all[k].radius = physics.governing_length_scale(all[k].q_sg0, m_fw0);  // 5L'
   }
 
-  // Pass 2: paint q_sg on floating cells (quadratic decay to 0 at 5L', max over overlaps).
+  {
+    double max_q0 = 0.0, max_radius = 0.0;
+    int n_active = 0;
+    for (const auto &o : all) {
+      max_q0     = std::max(max_q0, o.q_sg0);
+      max_radius = std::max(max_radius, o.radius);
+      if (o.radius > 0.0) {
+        n_active += 1;
+      }
+    }
+    m_log->message(3,
+                   "PICOP discharge: %d outflow(s), %d with 5L' > 0;"
+                   " max q_sg0 = %.3e m2/s, max 5L' = %.1f m\n",
+                   N, n_active, max_q0, max_radius);
+  }
+
+  // Pass 2: paint q_sg on floating cells, taking the max over overlapping outflows. A cell
+  // within 5L' of an outflow gets the discharge flux with quadratic decay (0 at 5L').
+  //
+  // When the plume is sub-grid (5L' < grid spacing) the decay reaches no floating cell
+  // center, so we additionally deposit the full q_sg0 into the outflow's immediate floating
+  // neighbor(s) (within r_nn): at this resolution the plume is confined to the first cell.
+  const double r_nn = 1.5 * std::max(m_grid->dx(), m_grid->dy());
   m_discharge_flux.set(0.0);
   {
     array::AccessScope scope{&cell_type, &m_discharge_flux};
@@ -427,10 +452,20 @@ void Picop::build_discharge_field(const Inputs &inputs,
       const double x = m_grid->x(i), y = m_grid->y(j);
       double q = 0.0;
       for (const auto &o : all) {
+        if (o.radius <= 0.0) {
+          continue;
+        }
         const double d = std::hypot(x - o.x, y - o.y);
+        double w2 = 0.0;
         if (d < o.radius) {
           const double w = 1.0 - d / o.radius;  // 1 at the outflow, 0 at 5L'
-          q = std::max(q, o.q_sg0 * w * w);      // quadratic decay x max flux
+          w2 = w * w;                            // quadratic decay
+        }
+        if (d < r_nn) {
+          w2 = 1.0;  // sub-grid floor: nearest floating cell(s) receive the full flux
+        }
+        if (w2 > 0.0) {
+          q = std::max(q, o.q_sg0 * w2);
         }
       }
       m_discharge_flux(i, j) = q;
