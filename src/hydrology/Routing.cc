@@ -254,6 +254,8 @@ Routing::Routing(std::shared_ptr<const Grid> grid)
     m_Vstag(grid, "water_velocity"),
     m_Wstag(grid, "W_staggered"),
     m_Kstag(grid, "K_staggered"),
+    m_conductivity_factor(grid, "hydrology_conductivity_factor"),
+    m_R_gradient(grid, "hydrology_R_gradient"),
     m_Wnew(grid, "W_new"),
     m_Wtillnew(grid, "Wtill_new"),
     m_R(grid, "potential_workspace"), /* box stencil used */
@@ -286,6 +288,12 @@ Routing::Routing(std::shared_ptr<const Grid> grid)
   m_Kstag.metadata(0)
       .long_name("cell face-centered (staggered) values of nonlinear conductivity");
   m_Kstag.metadata()["valid_min"] = { 0.0 };
+
+  m_conductivity_factor.metadata(0)
+      .long_name("potential-gradient factor |grad R|^(beta-2) of the subglacial water conductivity");
+
+  m_R_gradient.metadata(0)
+      .long_name("face-normal gradient of the simplified hydraulic potential R = P + rho_w g b");
 
   m_R.metadata(0)
       .long_name("work space for modeled subglacial water hydraulic potential")
@@ -436,75 +444,93 @@ void Routing::water_thickness_staggered(const array::Scalar &W,
 
   Also returns the maximum over all staggered points of \f$ K W \f$.
 */
+//! Compute the parts of the conductivity and velocity that depend only on the hydraulic
+//! potential R = P + rho_w g b.
+/*!
+  Fills two edge-centered (staggered) fields:
+
+  - `conductivity_factor` = \f$|\nabla R|^{\beta-2}\f$ (regularized), the potential-dependent
+    part of the nonlinear conductivity \f$K = k W^{\alpha-1} |\nabla R|^{\beta-2}\f$;
+  - `R_gradient` = the face-normal components of \f$\nabla R\f$, used in
+    \f$\mathbf{V} = -K \nabla R\f$.
+
+  \f$|\nabla R|^2\f$ is computed on the staggered grid using a Mahaffy-like scheme, which
+  requires `m_R` to be defined on a box stencil of width 1.
+
+  In hydrology::Routing the pressure P is the (fixed) overburden pressure, so R and both of
+  these fields are constant during the internal time-stepping loop and can be computed once
+  (before the loop). In hydrology::Distributed P evolves, so they are recomputed every step.
+*/
+void Routing::compute_R_gradient(const array::Scalar &pressure,
+                                 const array::Scalar &bed_elevation,
+                                 array::Staggered &conductivity_factor,
+                                 array::Staggered &R_gradient) const {
+  const double
+    beta    = m_config->get_number("hydrology.gradient_power_in_flux"),
+    betapow = (beta - 2.0) / 2.0;
+
+  // R  <-- P + rhow g b
+  pressure.add(m_rg, bed_elevation, m_R);  // yes, it updates ghosts
+
+  array::AccessScope list{ &m_R, &conductivity_factor, &R_gradient };
+
+  // We regularize the negative power |grad R|^{beta-2} by adding eps because a large head
+  // gradient might be 10^7 Pa per 10^4 m or 10^3 Pa/m.
+  const double eps = beta < 2.0 ? 1.0 : 0.0;
+
+  for (auto p : m_grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    // Face-normal components of grad R (used by compute_velocity()).
+    R_gradient(i, j, 0) = (m_R(i + 1, j) - m_R(i, j)) / m_dx;  // east
+    R_gradient(i, j, 1) = (m_R(i, j + 1) - m_R(i, j)) / m_dy;  // north
+
+    if (beta != 2.0) {
+      // |grad R|^2 (Mahaffy-like scheme), then raised to (beta - 2) / 2.
+      double dRdx, dRdy;
+
+      dRdx = (m_R(i + 1, j) - m_R(i, j)) / m_dx;
+      dRdy = (m_R(i + 1, j + 1) + m_R(i, j + 1) - m_R(i + 1, j - 1) - m_R(i, j - 1)) / (4.0 * m_dy);
+      conductivity_factor(i, j, 0) = pow(dRdx * dRdx + dRdy * dRdy + eps * eps, betapow);
+
+      dRdx = (m_R(i + 1, j + 1) + m_R(i + 1, j) - m_R(i - 1, j + 1) - m_R(i - 1, j)) / (4.0 * m_dx);
+      dRdy = (m_R(i, j + 1) - m_R(i, j)) / m_dy;
+      conductivity_factor(i, j, 1) = pow(dRdx * dRdx + dRdy * dRdy + eps * eps, betapow);
+    } else {
+      // beta == 2: |grad R|^{beta-2} = 1
+      conductivity_factor(i, j, 0) = 1.0;
+      conductivity_factor(i, j, 1) = 1.0;
+    }
+  }
+}
+
+//! Compute the nonlinear conductivity at the center of cell edges.
+/*!
+  Computes \f$K = k W^{\alpha-1} |\nabla R|^{\beta-2}\f$ on the staggered grid, where the
+  potential-dependent factor \f$|\nabla R|^{\beta-2}\f$ is precomputed by
+  compute_R_gradient() and passed in as `conductivity_factor`.
+
+  Also returns the maximum over all staggered points of \f$K W\f$.
+*/
 void Routing::compute_conductivity(const array::Staggered &W,
-                                   const array::Scalar &P,
-                                   const array::Scalar &bed_elevation,
+                                   const array::Staggered &conductivity_factor,
                                    array::Staggered &result,
                                    double &KW_max) const {
   const double
     k     = m_config->get_number("hydrology.hydraulic_conductivity"),
-    alpha = m_config->get_number("hydrology.thickness_power_in_flux"),
-    beta  = m_config->get_number("hydrology.gradient_power_in_flux"),
-    betapow = (beta - 2.0) / 2.0;
+    alpha = m_config->get_number("hydrology.thickness_power_in_flux");
 
-  array::AccessScope list({&result, &W});
+  array::AccessScope list({ &result, &W, &conductivity_factor });
 
   KW_max = 0.0;
 
-  if (beta != 2.0) {
-    // Put the squared norm of the gradient of the simplified hydrolic potential (Pi) in
-    // "result"
-    //
-    // FIXME: we don't need to re-compute this during every hydrology time step: the
-    // simplified hydrolic potential does not depend on the water amount and can be
-    // computed *once* in update_impl(), before entering the time-stepping loop
-    {
-      // R  <-- P + rhow g b
-      P.add(m_rg, bed_elevation, m_R);  // yes, it updates ghosts
+  for (auto p : m_grid->points()) {
+    const int i = p.i(), j = p.j();
 
-      list.add(m_R);
-      for (auto p : m_grid->points()) {
-        const int i = p.i(), j = p.j();
+    for (int o = 0; o < 2; ++o) {
+      result(i, j, o) = k * pow(W(i, j, o), alpha - 1.0) * conductivity_factor(i, j, o);
 
-        double dRdx, dRdy;
-        dRdx = (m_R(i + 1, j) - m_R(i, j)) / m_dx;
-        dRdy = (m_R(i + 1, j + 1) + m_R(i, j + 1) - m_R(i + 1, j - 1) - m_R(i, j - 1)) / (4.0 * m_dy);
-        result(i, j, 0) = dRdx * dRdx + dRdy * dRdy;
-
-        dRdx = (m_R(i + 1, j + 1) + m_R(i + 1, j) - m_R(i - 1, j + 1) - m_R(i - 1, j)) / (4.0 * m_dx);
-        dRdy = (m_R(i, j + 1) - m_R(i, j)) / m_dy;
-        result(i, j, 1) = dRdx * dRdx + dRdy * dRdy;
-      }
-    }
-
-    // We regularize negative power |\grad psi|^{beta-2} by adding eps because large
-    // head gradient might be 10^7 Pa per 10^4 m or 10^3 Pa/m.
-    const double eps = beta < 2.0 ? 1.0 : 0.0;
-
-    for (auto p : m_grid->points()) {
-      const int i = p.i(), j = p.j();
-
-      for (int o = 0; o < 2; ++o) {
-        const double Pi = result(i, j, o);
-
-        // FIXME: same as Pi above: we don't need to re-compute this each time we make a
-        // short hydrology time step
-        double B = pow(Pi + eps * eps, betapow);
-
-        result(i, j, o) = k * pow(W(i, j, o), alpha - 1.0) * B;
-
-        KW_max = std::max(KW_max, result(i, j, o) * W(i, j, o));
-      }
-    }
-  } else {
-    for (auto p : m_grid->points()) {
-      const int i = p.i(), j = p.j();
-
-      for (int o = 0; o < 2; ++o) {
-        result(i, j, o) = k * pow(W(i, j, o), alpha - 1.0);
-
-        KW_max = std::max(KW_max, result(i, j, o) * W(i, j, o));
-      }
+      KW_max = std::max(KW_max, result(i, j, o) * W(i, j, o));
     }
   }
 
@@ -612,36 +638,20 @@ void wall_melt(const Routing &model,
   bed has valid ghosts.
 */
 void Routing::compute_velocity(const array::Staggered &W,
-                               const array::Scalar &pressure,
-                               const array::Scalar &bed,
+                               const array::Staggered &R_gradient,
                                const array::Staggered &K,
                                const array::Scalar1 *no_model_mask,
                                array::Staggered &result) const {
-  array::Scalar &P = m_R;
-  P.copy_from(pressure);  // yes, it updates ghosts
-
-  array::AccessScope list{&P, &W, &K, &bed, &result};
+  // V = -K grad R, where grad R = grad(P + rho_w g b) is precomputed (compute_R_gradient()).
+  array::AccessScope list{&R_gradient, &W, &K, &result};
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
-    if (W(i, j, 0) > 0.0) {
-      double
-        P_x = (P(i + 1, j) - P(i, j)) / m_dx,
-        b_x = (bed(i + 1, j) - bed(i, j)) / m_dx;
-      result(i, j, 0) = - K(i, j, 0) * (P_x + m_rg * b_x);
-    } else {
-      result(i, j, 0) = 0.0;
-    }
-
-    if (W(i, j, 1) > 0.0) {
-      double
-        P_y = (P(i, j + 1) - P(i, j)) / m_dy,
-        b_y = (bed(i, j + 1) - bed(i, j)) / m_dy;
-      result(i, j, 1) = - K(i, j, 1) * (P_y + m_rg * b_y);
-    } else {
-      result(i, j, 1) = 0.0;
-    }
+    // If the staggered water thickness is zero we set that component of V to zero. This
+    // does not change the (zero) flux but gives the correct max velocity for the CFL limit.
+    result(i, j, 0) = (W(i, j, 0) > 0.0) ? -K(i, j, 0) * R_gradient(i, j, 0) : 0.0;
+    result(i, j, 1) = (W(i, j, 1) > 0.0) ? -K(i, j, 1) * R_gradient(i, j, 1) : 0.0;
   }
 
   if (no_model_mask) {
@@ -856,6 +866,12 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
   // make sure W has valid ghosts before starting hydrology steps
   m_W.update_ghosts();
 
+  // The hydraulic potential R = P + rho_w g b does not change during the sub-stepping loop
+  // (P is the overburden pressure and the bed is fixed), so the potential-dependent parts
+  // of the conductivity and velocity can be computed once, here.
+  compute_R_gradient(subglacial_water_pressure(), m_bottom_surface,
+                     m_conductivity_factor, m_R_gradient);
+
   unsigned int step_counter = 0;
   for (; ht < t_final; ht += hdt) {
     step_counter++;
@@ -875,16 +891,14 @@ void Routing::update_impl(double t, double dt, const Inputs& inputs) {
     // updates ghosts of m_Kstag
     profiling().begin("routing_conductivity");
     compute_conductivity(m_Wstag,
-                         subglacial_water_pressure(),
-                         m_bottom_surface,
+                         m_conductivity_factor,
                          m_Kstag, maxKW);
     profiling().end("routing_conductivity");
 
     // ghosts of m_Vstag are not updated
     profiling().begin("routing_velocity");
     compute_velocity(m_Wstag,
-                     subglacial_water_pressure(),
-                     m_bottom_surface,
+                     m_R_gradient,
                      m_Kstag,
                      inputs.no_model_mask,
                      m_Vstag);

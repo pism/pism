@@ -340,14 +340,19 @@ void Distributed::update_impl(double t, double dt, const Inputs& inputs) {
                               m_Wstag);
 
     double maxKW = 0.0;
+    // In hydrology::Distributed the water pressure P is a state variable that changes every
+    // step, so the potential-dependent parts of the conductivity and velocity must be
+    // recomputed here (unlike in hydrology::Routing, where they are hoisted out of the loop).
+    compute_R_gradient(subglacial_water_pressure(),
+                       m_bottom_surface,
+                       m_conductivity_factor, m_R_gradient);
+
     compute_conductivity(m_Wstag,
-                         subglacial_water_pressure(),
-                         m_bottom_surface,
+                         m_conductivity_factor,
                          m_Kstag, maxKW);
 
     compute_velocity(m_Wstag,
-                     subglacial_water_pressure(),
-                     m_bottom_surface,
+                     m_R_gradient,
                      m_Kstag,
                      inputs.no_model_mask,
                      m_Vstag);

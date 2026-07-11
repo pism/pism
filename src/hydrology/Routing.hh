@@ -123,6 +123,16 @@ protected:
   // edge-centered (staggered) values of nonlinear conductivity
   array::Staggered1 m_Kstag;
 
+  // Potential-dependent parts of the conductivity and velocity, computed by
+  // compute_R_gradient(). Both depend only on R = P + rho_w g b, so in hydrology::Routing
+  // (where P is the fixed overburden pressure) they are constant during the internal
+  // time-stepping loop and are computed once per update.
+  //
+  // m_conductivity_factor: |grad R|^{beta-2} (edge-centered)
+  // m_R_gradient:          face-normal components of grad R (edge-centered)
+  array::Staggered m_conductivity_factor;
+  array::Staggered m_R_gradient;
+
   // work space
   array::Scalar m_Wnew, m_Wtillnew;
 
@@ -138,15 +148,21 @@ protected:
                                  const array::CellType1 &mask,
                                  array::Staggered &result);
 
+  // Compute the potential-dependent parts of the conductivity and velocity from
+  // R = P + rho_w g b. Constant during sub-stepping in Routing (P = overburden), recomputed
+  // each step in Distributed (P evolves).
+  void compute_R_gradient(const array::Scalar &pressure,
+                          const array::Scalar &bed,
+                          array::Staggered &conductivity_factor,
+                          array::Staggered &R_gradient) const;
+
   void compute_conductivity(const array::Staggered &W,
-                            const array::Scalar &P,
-                            const array::Scalar &bed,
+                            const array::Staggered &conductivity_factor,
                             array::Staggered &result,
                             double &maxKW) const;
 
   void compute_velocity(const array::Staggered &W,
-                        const array::Scalar &P,
-                        const array::Scalar &bed,
+                        const array::Staggered &R_gradient,
                         const array::Staggered &K,
                         const array::Scalar1 *no_model_mask,
                         array::Staggered &result) const;

@@ -3,6 +3,13 @@
 Changes since v2.3.0
 ====================
 
+- Speed up the `routing` subglacial hydrology model. The parts of the conductivity and
+  water velocity that depend only on the hydraulic potential `R = P + rho_w g b` (which is
+  constant during the internal sub-stepping loop, since the pressure equals the overburden
+  pressure) are now computed once per step instead of every sub-step. This roughly halves
+  the time spent computing conductivity and removes two ghost communications per sub-step,
+  with no change in results. (The `distributed` model, where the pressure evolves, is
+  unaffected.)
 - Fix PICOP subglacial discharge at coarse resolution. When the discharge governing length
   scale `5L'` (Pelle et al. 2023) is smaller than the grid spacing, the plume no longer
   reached any floating cell center and `picop_discharge_flux`/`picop_fresh_water_melt_rate`
