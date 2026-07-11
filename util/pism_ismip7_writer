@@ -822,10 +822,13 @@ def main(compression_level, output_grid=None):
                 if one_var_per_file(file_name):
                     metadata["dtype"] = "f4"
 
-                # ISMIP7 requirement: time should have units of "days since 1850-01-01"
+                units = metadata["attributes"]["units"]
                 if variable_name in ["time", "time_bounds"]:
-                    units = metadata["attributes"]["units"]
+                    # ISMIP7 requirement: time should have units of "days since 1850-01-01"
                     metadata["attributes"]["units"] = units.replace("seconds", "days")
+                else:
+                    # ISMIP7 requirement: "m-2" instead of "m^-2" and "s-1" instead of "s^-1"
+                    metadata["attributes"]["units"] = units.replace("m^-2", "m-2").replace("s^-1", "s-1").replace("second^-1", "s-1")
 
                 variables[file_name][variable_name] = metadata
 
