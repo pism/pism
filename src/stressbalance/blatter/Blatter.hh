@@ -82,8 +82,9 @@ protected:
   // Scaling of quadrature weights (note: this does not seem to matter).
   double m_scaling;
 
+  // 1 - rho_i / rho_sw
   double m_alpha;
-
+  
   // Ice density times g
   double m_rho_ice_g;
 
