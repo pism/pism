@@ -12,6 +12,15 @@ Changes since v2.3.0
   petsc4py at interpreter shutdown. Previously a failure such as a missing `input.file`
   could deadlock the run under some MPI implementations, so a batch job kept its nodes
   until the wall-clock limit. The traceback is now printed once, by rank 0.
+- The `steady` subglacial hydrology model now works with `hydrology.surface_input_from_runoff`
+  (previously it required `hydrology.surface_input.file`). When the water input comes from the
+  surface model (runoff), the steady-state flux is re-solved every
+  `hydrology.steady.flux_update_interval` using the input rate time-averaged over that
+  interval (runoff is strongly seasonal, so a snapshot would misrepresent the period).
+  File-driven behavior is unchanged.
+- Change the default `hydrology.steady.flux_update_interval` from one year to one month, so
+  seasonal (runoff-driven) input is resolved by default. Runs relying on the old yearly
+  cadence should set it explicitly.
 - Speed up the `routing` subglacial hydrology model. The parts of the conductivity and
   water velocity that depend only on the hydraulic potential `R = P + rho_w g b` (which is
   constant during the internal sub-stepping loop, since the pressure equals the overburden
