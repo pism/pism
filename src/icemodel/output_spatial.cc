@@ -281,10 +281,7 @@ void IceModel::write_spatial_diagnostics() {
     // called).
     m_last_spatial_time = current_time;
 
-    // ISMIP6 runs need to save diagnostics at the beginning of the run
-    if (not m_config->get_flag("output.ISMIP6")) {
-      return;
-    }
+    return;
   }
 
   if (saving_after < m_time->start()) {
