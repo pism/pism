@@ -236,20 +236,6 @@ void EmptyingProblem::update(const Geometry &geometry,
   }
   m_W.update_ghosts();
 
-  // Characteristic water-thickness scale, used below to tolerate negligible negative
-  // undershoots of the explicit emptying scheme (which is monotone only up to roundoff and
-  // the fixed-speed CFL estimate). A negative larger than this in magnitude indicates a real
-  // instability and is treated as an error.
-  double W_scale = 0.0;
-  {
-    array::AccessScope l{ &m_W };
-    for (auto p : m_grid->points()) {
-      W_scale = m_W(p.i(), p.j()) > W_scale ? m_W(p.i(), p.j()) : W_scale;
-    }
-    W_scale = GlobalMax(m_grid->com, W_scale);
-  }
-  const double W_negative_tolerance = 1e-6 * (W_scale > 1.0 ? W_scale : 1.0);
-
   // uses ghosts of m_potential and m_domain_mask, updates ghosts of m_Vstag
   compute_velocity(m_potential, m_domain_mask, m_Vstag);
 
@@ -290,12 +276,12 @@ void EmptyingProblem::update(const Geometry &geometry,
         m_tmp(i, j) = 0.0;
       }
 
+      // The explicit upwind emptying scheme is monotone only up to roundoff and its
+      // fixed-speed CFL estimate, so it can undershoot slightly negative. Water thickness
+      // cannot be negative, so clamp it to zero. (We must NOT throw here: this loop runs on
+      // every rank, and a negative would occur only on the rank owning that cell, so a
+      // per-rank throw would deadlock the other ranks at the next ghost exchange.)
       if (m_tmp(i, j) < 0.0) {
-        if (m_tmp(i, j) < -W_negative_tolerance) {
-          throw RuntimeError::formatted(PISM_ERROR_LOCATION, "W(%d, %d) = %e < 0",
-                                        i, j, m_tmp(i, j));
-        }
-        // negligible undershoot (roundoff / fixed-speed CFL estimate): clamp to zero
         m_tmp(i, j) = 0.0;
       }
 

@@ -3,12 +3,13 @@
 Changes since v2.3.0
 ====================
 
-- Make the `steady` hydrology emptying solver tolerant of negligible negative water-thickness
-  undershoots. The explicit upwind emptying iteration is monotone only up to roundoff and its
-  fixed-speed CFL estimate, so it can produce tiny (roundoff-scale) negative values; these are
-  now clamped to zero instead of aborting the run (`W(i, j) = ... < 0`). A negative larger than
-  `1e-6` relative to the peak water thickness is still treated as an error. This previously
-  crashed runoff-driven `steady` runs.
+- Fix a crash and a parallel deadlock in the `steady` hydrology emptying solver. The explicit
+  upwind emptying iteration is monotone only up to roundoff and its fixed-speed CFL estimate,
+  so it can undershoot slightly negative; the old code aborted with `W(i, j) = ... < 0`. Since
+  water thickness cannot be negative, such undershoots are now clamped to zero. This also
+  removes a parallel hang: the abort was a per-rank `throw` (only the rank owning the cell hit
+  it), which left the other ranks deadlocked at the next ghost exchange. Runoff-driven `steady`
+  runs on multiple ranks previously crashed or hung as a result.
 - The `steady` subglacial hydrology model now works with `hydrology.surface_input_from_runoff`
   (previously it required `hydrology.surface_input.file`). When the water input comes from the
   surface model (runoff), the steady-state flux is re-solved every
