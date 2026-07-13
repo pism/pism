@@ -511,11 +511,12 @@ class OutputFile:
         self.nc_dataset = netCDF4.Dataset(file_name, mode)
 
         if "time" in self.nc_dataset.dimensions:
-            time_length = len(self.nc_dataset.dimensions["time"])
+            self.time_length = len(self.nc_dataset.dimensions["time"])
         else:
-            time_length = 0
+            self.time_length = 0
 
-        self.time_index = time_length - 1 if time_length > 0 else 0
+    def time_index(self):
+        return self.time_length - 1 if self.time_length > 0 else 0
 
     def set_attributes(self, file_attributes):
         """Set attributes in the NetCDF dataset."""
@@ -524,8 +525,8 @@ class OutputFile:
 
     def append_time(self, time_seconds):
         """Create one more time record by adding a value to the time dimension."""
-        self.time_index = len(self.nc_dataset.dimensions["time"])
-        self.nc_dataset.variables["time"][self.time_index] = time_seconds
+        self.nc_dataset.variables["time"][self.time_length] = time_seconds
+        self.time_length += 1
 
     def append_history(self, string):
         """Append a `string` to the global attribute 'history'."""
@@ -582,7 +583,7 @@ class OutputFile:
         hyperslab = ndims * [slice(None)]
 
         if time_dependent:
-            hyperslab.insert(0, self.time_index)
+            hyperslab.insert(0, self.time_index())
 
         if ndims == 2:
             tmp = array[0]
@@ -610,7 +611,7 @@ class OutputFile:
         if name not in self.nc_dataset.variables:
             return
 
-        logger.debug(f"writing {self.nc_dataset.filepath()}:{name}")
+        logger.debug(f"writing {self.nc_dataset.filepath()}:{name}:{start}:{count}")
 
         self.nc_dataset.variables[name][hyperslab] = array
 
@@ -837,7 +838,17 @@ def main(compression_level, output_grid=None):
                 logger.debug(f"SEND_GRIDDED_VARIABLE {variable_name} in {file_name}")
                 array = yac_wrapper.receive_gridded_variable(metadata)
 
-                get_file(file_name, variable_name).write_gridded_variable(array, metadata)
+                fill_value = 9.969209968386869e+36
+
+                F = get_file(file_name, variable_name)
+                if variable_name in FL and np.ravel(array)[0] == fill_value:
+                    logger.debug(f"skipping an empty record in {F.nc_dataset.filepath()}:{variable_name}")
+                    # skip this record and rewind the time length counter so that the next
+                    # append_time() call will over-write the last value instead of
+                    # increasing the length of the time dimension
+                    F.time_length -= 1
+                else:
+                    F.write_gridded_variable(array, metadata)
 
             case ServerActions.SEND_VARIABLE.value:
                 variable_name = metadata['variable_name']
@@ -869,6 +880,12 @@ def main(compression_level, output_grid=None):
 
                     for field in fields_in_file:
                         F = get_file(file_name, field)
+
+                        # override time index of time bounds to support skipping "empty"
+                        # (first) records of "flux" variables
+                        if variable_name == "time_bounds":
+                            metadata["start"][0] = F.time_index()
+
                         F.write_variable(array, metadata)
 
                         # write the end point of time bounds to "time":
