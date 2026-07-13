@@ -3,6 +3,15 @@
 Changes since v2.3.0
 ====================
 
+- The `steady` subglacial hydrology model now works with `hydrology.surface_input_from_runoff`
+  (previously it required `hydrology.surface_input.file`). When the water input comes from the
+  surface model (runoff), the steady-state flux is re-solved every
+  `hydrology.steady.flux_update_interval` using the input rate time-averaged over that
+  interval (runoff is strongly seasonal, so a snapshot would misrepresent the period).
+  File-driven behavior is unchanged.
+- Change the default `hydrology.steady.flux_update_interval` from one year to one month, so
+  seasonal (runoff-driven) input is resolved by default. Runs relying on the old yearly
+  cadence should set it explicitly.
 - Clamp the ISMIP7 surface elevation lapse-rate correction. The elevation change
   `h - h_ref` used in `SMB = SMB_ref + dSMBdz (h - h_ref)` (and the analogous temperature
   and runoff corrections) is now limited to +/- `surface.ismip7.elevation_change_max`

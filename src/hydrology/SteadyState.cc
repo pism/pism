@@ -61,12 +61,20 @@ void SteadyState::initialization_message() const {
 
 SteadyState::SteadyState(std::shared_ptr<const Grid> grid)
     : NullTransport(grid),
+      m_input_accumulator(grid, "steady_input_accumulator"),
       m_time_name(m_config->get_string("time.dimension_name") + "_hydrology_steady") {
+
+  m_input_accumulator.metadata(0)
+      .long_name("time-integrated surface water input rate since the last steady-state flux update")
+      .units("m");
+  m_input_accumulator.set(0.0);
 
   m_t_last = time().current();
   m_update_interval = m_config->get_number("hydrology.steady.flux_update_interval", "seconds");
   m_t_eps = 1.0;
   m_bootstrap = false;
+
+  m_from_runoff = m_config->get_flag("hydrology.surface_input_from_runoff");
 
   m_emptying_problem.reset(new EmptyingProblem(grid));
 
@@ -75,14 +83,26 @@ SteadyState::SteadyState(std::shared_ptr<const Grid> grid)
                        "'steady' hydrology requires hydrology.add_water_input_to_till_storage == false");
   }
 
-  if (m_config->get_string("hydrology.surface_input.file").empty()) {
+  // The steady-state flux is driven by the surface water input, which comes either from a
+  // forcing file or (with hydrology.surface_input_from_runoff) from the surface model.
+  if (m_config->get_string("hydrology.surface_input.file").empty() and not m_from_runoff) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "'steady' hydrology requires hydrology.surface_input.file");
+                                  "'steady' hydrology requires hydrology.surface_input.file"
+                                  " or hydrology.surface_input_from_runoff");
   }
 }
 
 void SteadyState::update_impl(double t, double dt, const Inputs& inputs) {
   NullTransport::update_impl(t, dt, inputs);
+
+  // Accumulate time-integrated surface input so the next flux update can be driven by the
+  // time-averaged input rate. This matters for model-derived (runoff) input, which is
+  // strongly seasonal; the flux is only re-solved every flux_update_interval, so a snapshot
+  // taken at the update instant would misrepresent the interval. (For file-based forcing the
+  // instantaneous rate is used directly, preserving the original behavior.)
+  if (m_from_runoff) {
+    m_input_accumulator.add(dt, m_surface_input_rate);
+  }
 
   double t_next = m_t_last + max_timestep(m_t_last).value();
 
@@ -91,15 +111,31 @@ void SteadyState::update_impl(double t, double dt, const Inputs& inputs) {
 
     m_log->message(3, " Updating the steady-state subglacial water flux...\n");
 
+    // Input rate handed to the emptying problem: the instantaneous rate for file-based
+    // forcing, or the time-average since the last update for runoff-derived input.
+    const array::Scalar *input_rate = &m_surface_input_rate;
+
+    if (m_from_runoff) {
+      double interval = t - m_t_last;
+      if (interval > 0.0) {
+        m_input_accumulator.scale(1.0 / interval);  // integral -> time-averaged rate
+        input_rate = &m_input_accumulator;
+      }
+      // else: bootstrap / zero-length interval; fall back to the instantaneous rate
+    }
+
     profiling().begin("steady_emptying");
 
     m_emptying_problem->update(*inputs.geometry,
                                inputs.no_model_mask,
-                               m_surface_input_rate);
+                               *input_rate);
 
     profiling().end("steady_emptying");
     m_Q.copy_from(m_emptying_problem->flux());
 
+    if (m_from_runoff) {
+      m_input_accumulator.set(0.0);
+    }
     m_t_last = t;
     m_bootstrap = false;
   }
@@ -298,6 +334,13 @@ void SteadyState::init_impl(const array::Scalar &W_till,
  * capturing temporal variability of the forcing.
  */
 void SteadyState::init_time(const std::string &input_file) {
+
+  if (input_file.empty()) {
+    // The surface water input comes from the model (runoff), not a forcing file, so there
+    // are no forcing time bounds to read. m_time and m_time_bounds are left empty and the
+    // flux is re-solved every hydrology.steady.flux_update_interval.
+    return;
+  }
 
   std::string variable_name = "water_input_rate";
 
