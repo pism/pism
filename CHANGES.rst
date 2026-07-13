@@ -12,6 +12,13 @@ Changes since v2.3.0
   petsc4py at interpreter shutdown. Previously a failure such as a missing `input.file`
   could deadlock the run under some MPI implementations, so a batch job kept its nodes
   until the wall-clock limit. The traceback is now printed once, by rank 0.
+- Add `stress_balance.blatter.grounding_line_quadrature_order` (default 10). It sets the order
+  N of the N-by-N quadrature used on Blatter basal faces at grounding lines and on
+  partially-submerged marine faces (where the basal drag / lateral stress is discontinuous
+  within a cell). Lowering it (e.g. to 6) reduces the cost of the Blatter Jacobian and residual
+  assembly at the ice-sheet margin, at the price of a coarser sub-grid grounding-line integral;
+  the maximum is 10. Also hoist a loop-invariant term out of the Blatter Jacobian assembly
+  inner loop (no change in results).
 - Add a ISMP7 surface model that uses the gradients but not the anomalies, and adds runoff.
 - Allow the Blatter stress balance to restart from SSA velocities: if `uvel_sigma` and
   `vvel_sigma` are not present in the input file but `u_ssa` and `v_ssa` are, use the
