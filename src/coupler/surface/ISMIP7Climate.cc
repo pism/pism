@@ -24,6 +24,7 @@
 #include "pism/util/array/Forcing.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/pism_utilities.hh" // pism::clip()
 
 namespace pism {
 namespace surface {
@@ -215,15 +216,24 @@ void ISMIP7::update_impl(const Geometry &geometry, double t, double dt) {
 
   // From http://www.climate-cryosphere.org/wiki/index.php?title=ISMIP7-Projections-Greenland:
   // SMB(x,y,t) = SMB_ref(x,y,t) + dSMBdz(x,y,t) * [h(x,y,t) - h_ref(x,y)]
+  //
+  // The elevation change (h - h_ref) is clamped to +/- dz_max: the linear lapse-rate
+  // correction is only valid for modest surface changes, and leaving it unbounded lets an
+  // elevation-SMB feedback run away on spurious isolated ice columns (e.g. a part_grid
+  // spike on a coastal bedrock high), where extrapolating km up the accumulation gradient
+  // produces enough spurious accumulation to grow the column until it exceeds Lz.
+  const double dz_max = m_config->get_number("surface.ismip7.elevation_change_max", "meters");
 
   array::AccessScope list{ &h, &h_ref, &SMB, &SMB_ref, &dSMBdz, &T, &T_ref, &dTdz, &R, &R_ref, &dRdz };
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
-    SMB(i, j) = SMB_ref(i, j) + dSMBdz(i, j) * (h(i, j) - h_ref(i, j));
-    T(i, j)   = T_ref(i, j) + dTdz(i, j) * (h(i, j) - h_ref(i, j));
-    R(i, j)   = R_ref(i, j) + dRdz(i, j) * (h(i, j) - h_ref(i, j));
+    const double dz = pism::clip(h(i, j) - h_ref(i, j), -dz_max, dz_max);
+
+    SMB(i, j) = SMB_ref(i, j) + dSMBdz(i, j) * dz;
+    T(i, j)   = T_ref(i, j) + dTdz(i, j) * dz;
+    R(i, j)   = R_ref(i, j) + dRdz(i, j) * dz;
   }
 
   dummy_accumulation(SMB, *m_accumulation);

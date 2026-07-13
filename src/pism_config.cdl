@@ -2826,6 +2826,12 @@ netcdf pism_config {
     pism_config:surface.ismip6.reference_file_option = "surface_ismip6_reference_file";
     pism_config:surface.ismip6.reference_file_type = "string";
 
+    pism_config:surface.ismip7.elevation_change_max = 400.0;
+    pism_config:surface.ismip7.elevation_change_max_doc = "Maximum magnitude of the surface elevation change (modeled surface minus reference surface) used in the ISMIP7 elevation lapse-rate correction of surface mass balance, temperature, and runoff. Clamping this difference prevents an elevation-SMB feedback runaway on spurious isolated ice columns (e.g. from part_grid redistribution), where the linear lapse-rate extrapolation would otherwise diverge. The default is well above realistic dynamic surface changes.";
+    pism_config:surface.ismip7.elevation_change_max_option = "surface_ismip7_elevation_change_max";
+    pism_config:surface.ismip7.elevation_change_max_type = "number";
+    pism_config:surface.ismip7.elevation_change_max_units = "meters";
+
     pism_config:surface.ismip7.file = "";
     pism_config:surface.ismip7.file_doc = "Name of the file containing climate forcing fields.";
     pism_config:surface.ismip7.file_option = "surface_ismip7_file";

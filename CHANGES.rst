@@ -3,6 +3,12 @@
 Changes since v2.3.0
 ====================
 
+- Clamp the ISMIP7 surface elevation lapse-rate correction. The elevation change
+  `h - h_ref` used in `SMB = SMB_ref + dSMBdz (h - h_ref)` (and the analogous temperature
+  and runoff corrections) is now limited to +/- `surface.ismip7.elevation_change_max`
+  (default 400 m). This prevents an elevation-SMB feedback runaway on spurious isolated ice
+  columns (e.g. a `part_grid` spike on a coastal bedrock high), where the unbounded linear
+  extrapolation up the accumulation gradient grew a single cell until it exceeded `Lz`.
 - Speed up the `routing` subglacial hydrology model. The parts of the conductivity and
   water velocity that depend only on the hydraulic potential `R = P + rho_w g b` (which is
   constant during the internal sub-stepping loop, since the pressure equals the overburden
