@@ -12,6 +12,12 @@ Changes since v2.3.0
   petsc4py at interpreter shutdown. Previously a failure such as a missing `input.file`
   could deadlock the run under some MPI implementations, so a batch job kept its nodes
   until the wall-clock limit. The traceback is now printed once, by rank 0.
+- Clamp the ISMIP7 surface elevation lapse-rate correction. The elevation change
+  `h - h_ref` used in `SMB = SMB_ref + dSMBdz (h - h_ref)` (and the analogous temperature
+  and runoff corrections) is now limited to +/- `surface.ismip7.elevation_change_max`
+  (default 400 m). This prevents an elevation-SMB feedback runaway on spurious isolated ice
+  columns (e.g. a `part_grid` spike on a coastal bedrock high), where the unbounded linear
+  extrapolation up the accumulation gradient grew a single cell until it exceeded `Lz`.
 - Add a ISMP7 surface model that uses the gradients but not the anomalies, and adds runoff.
 - Allow the Blatter stress balance to restart from SSA velocities: if `uvel_sigma` and
   `vvel_sigma` are not present in the input file but `u_ssa` and `v_ssa` are, use the
