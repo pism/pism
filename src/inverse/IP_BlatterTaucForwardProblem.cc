@@ -348,7 +348,7 @@ void IP_BlatterTaucForwardProblem::apply_jacobian_design_3d(
       }
 
       // Compute the design Jacobian contribution on the basal face
-      fem::Q1Element3Face *face = grounding_line(floatation) ? &m_face100 : &m_face4;
+      fem::Q1Element3Face *face = grounding_line(floatation) ? &m_face_high_order : &m_face4;
       face->reset(fem::q13d::FACE_BOTTOM, z);
 
       // Evaluate fields at face quadrature points
@@ -523,7 +523,7 @@ void IP_BlatterTaucForwardProblem::apply_jacobian_design_transpose_3d(
         floatation[n] = P[I.j][I.i].floatation;
       }
 
-      fem::Q1Element3Face *face = grounding_line(floatation) ? &m_face100 : &m_face4;
+      fem::Q1Element3Face *face = grounding_line(floatation) ? &m_face_high_order : &m_face4;
       face->reset(fem::q13d::FACE_BOTTOM, z);
 
       Vector2d *u_q = m_work2[0];

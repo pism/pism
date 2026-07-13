@@ -424,7 +424,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
           }
 
           // use an N*N-point equally-spaced quadrature at grounding lines
-          fem::Q1Element3Face *face = grounding_line(floatation) ? &m_face100 : &m_face4;
+          fem::Q1Element3Face *face = grounding_line(floatation) ? &m_face_high_order : &m_face4;
           face->reset(fem::q13d::FACE_BOTTOM, z);
 
           residual_basal(element, *face, basal_yield_stress, floatation, velocity, R_nodal);
@@ -436,7 +436,7 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
           if (marine_boundary(f, node_type, bottom_elevation, sea_level)) {
             // use an N*N-point equally-spaced quadrature for partially-submerged faces
             fem::Q1Element3Face *face = (partially_submerged_face(f, z, sea_level) ?
-                                         &m_face100 : &m_face4);
+                                         &m_face_high_order : &m_face4);
             face->reset(f, z);
 
             residual_lateral(element, *face, surface_elevation, z, sea_level, R_nodal);

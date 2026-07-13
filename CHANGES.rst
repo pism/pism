@@ -3,6 +3,13 @@
 Changes since v2.3.0
 ====================
 
+- Add `stress_balance.blatter.grounding_line_quadrature_order` (default 10). It sets the order
+  N of the N-by-N quadrature used on Blatter basal faces at grounding lines and on
+  partially-submerged marine faces (where the basal drag / lateral stress is discontinuous
+  within a cell). Lowering it (e.g. to 6) reduces the cost of the Blatter Jacobian and residual
+  assembly at the ice-sheet margin, at the price of a coarser sub-grid grounding-line integral;
+  the maximum is 10. Also hoist a loop-invariant term out of the Blatter Jacobian assembly
+  inner loop (no change in results).
 - Fix a crash and a parallel deadlock in the `steady` hydrology emptying solver. The explicit
   upwind emptying iteration is monotone only up to roundoff and its fixed-speed CFL estimate,
   so it can undershoot slightly negative; the old code aborted with `W(i, j) = ... < 0`. Since

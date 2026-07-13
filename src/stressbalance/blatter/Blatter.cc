@@ -252,6 +252,24 @@ bool Blatter::marine_boundary(int face,
   return false;
 }
 
+namespace {
+//! Read and validate stress_balance.blatter.grounding_line_quadrature_order.
+/*! The N-by-N quadrature has to fit the pre-allocated workspace (Blatter::m_Nq = 100
+ *  points), so N must not exceed 10.
+ */
+int gl_quadrature_order(const Config &config) {
+  int N = static_cast<int>(
+      config.get_number("stress_balance.blatter.grounding_line_quadrature_order"));
+  if (N < 1 or N > 10) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "stress_balance.blatter.grounding_line_quadrature_order = %d"
+                                  " is out of range; it has to be between 1 and 10.",
+                                  N);
+  }
+  return N;
+}
+} // end of anonymous namespace
+
 /*!
  * Allocate the Blatter-Pattyn stress balance solver
  *
@@ -263,11 +281,13 @@ Blatter::Blatter(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor
   : ShallowStressBalance(grid),
     m_parameters(grid, "bp_input_parameters", array::WITH_GHOSTS),
     m_face4(grid->dx(), grid->dy(), fem::Q1Quadrature4()),    // 4-point Gaussian quadrature
-    m_face100(grid->dx(), grid->dy(), fem::Q1QuadratureN(10)) // 100-point quadrature for grounding lines
+    // higher-order (N-by-N) quadrature for grounding lines and marine faces
+    m_face_high_order(grid->dx(), grid->dy(),
+                      fem::Q1QuadratureN(gl_quadrature_order(*m_config)))
 {
 
   assert(m_face4.n_pts() <= m_Nq);
-  assert(m_face100.n_pts() <= m_Nq);
+  assert(m_face_high_order.n_pts() <= m_Nq);
 
   m_alpha = 1 - m_config->get_number("constants.ice.density") / m_config->get_number("constants.sea_water.density");
   

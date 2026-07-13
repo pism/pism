@@ -114,7 +114,9 @@ protected:
   Vector2d m_work2[m_n_work][m_Nq];
 
   fem::Q1Element3Face m_face4;
-  fem::Q1Element3Face m_face100;
+  // Higher-order face quadrature used at grounding lines and partially-submerged marine
+  // faces; its order is set by stress_balance.blatter.grounding_line_quadrature_order.
+  fem::Q1Element3Face m_face_high_order;
 
   void init_impl();
 

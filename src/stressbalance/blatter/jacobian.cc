@@ -76,6 +76,16 @@ void Blatter::jacobian_f(const fem::Q1Element3 &element,
     // the element Jacobian
     for (int t = 0; t < Nk; ++t) {
       auto psi = element.chi(q, t);
+
+      // F_u = grad(psi) . (4ux + 2vy, uy + vx, uz) and
+      // F_v = grad(psi) . (uy + vx, 4vy + 2ux, vz).
+      // These depend only on the test function psi and the (per-quadrature-point) velocity
+      // gradients, not on the trial function phi, so they are hoisted out of the s loop.
+      // (They are used in the Newton branch only.)
+      double
+        F_u = (psi.dx * (4.0 * ux + 2.0 * vy) + psi.dy * (uy + vx) + psi.dz * uz),
+        F_v = (psi.dx * (uy + vx) + psi.dy * (4.0 * vy + 2.0 * ux) + psi.dz * vz);
+
       for (int s = t; s < Nk; ++s) {
         auto phi = element.chi(q, s);
 
@@ -88,12 +98,6 @@ void Blatter::jacobian_f(const fem::Q1Element3 &element,
         double
           eta_u = deta * gamma_u,
           eta_v = deta * gamma_v;
-
-        // F_u = grad(psi) . (4ux + 2vy, uy + vx, uz) and
-        // F_v = grad(psi) . (uy + vx, 4vy + 2ux, vz)
-        double
-          F_u = (psi.dx * (4.0 * ux + 2.0 * vy) + psi.dy * (uy + vx) + psi.dz * uz),
-          F_v = (psi.dx * (uy + vx) + psi.dy * (4.0 * vy + 2.0 * ux) + psi.dz * vz);
 
         // partial derivatives of F_u with respect to u_i and v_i
         double
@@ -328,7 +332,7 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
             floatation[n]         = P[I.j][I.i].floatation;
           }
 
-          fem::Q1Element3Face *face = grounding_line(floatation) ? &m_face100 : &m_face4;
+          fem::Q1Element3Face *face = grounding_line(floatation) ? &m_face_high_order : &m_face4;
 
           face->reset(fem::q13d::FACE_BOTTOM, z);
 
