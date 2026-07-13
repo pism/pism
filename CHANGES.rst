@@ -12,6 +12,12 @@ Changes since v2.3.0
   petsc4py at interpreter shutdown. Previously a failure such as a missing `input.file`
   could deadlock the run under some MPI implementations, so a batch job kept its nodes
   until the wall-clock limit. The traceback is now printed once, by rank 0.
+- Make the `steady` hydrology emptying solver tolerant of negligible negative water-thickness
+  undershoots. The explicit upwind emptying iteration is monotone only up to roundoff and its
+  fixed-speed CFL estimate, so it can produce tiny (roundoff-scale) negative values; these are
+  now clamped to zero instead of aborting the run (`W(i, j) = ... < 0`). A negative larger than
+  `1e-6` relative to the peak water thickness is still treated as an error. This previously
+  crashed runoff-driven `steady` runs.
 - The `steady` subglacial hydrology model now works with `hydrology.surface_input_from_runoff`
   (previously it required `hydrology.surface_input.file`). When the water input comes from the
   surface model (runoff), the steady-state flux is re-solved every
