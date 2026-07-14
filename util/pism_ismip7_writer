@@ -52,6 +52,7 @@ ST = {"lithk", "orog", "topg", "base",
 FL = {"hfgeoubed", "acabf", "libmassbfgr", "libmassbffl",
       "dlithkdt", "licalvf", "libgroundf", "lifmassbf"}
 
+fill_value = netCDF4.default_fillvals["f4"]
 
 class OutputGrid(object):
     x = None
@@ -511,11 +512,12 @@ class OutputFile:
         self.nc_dataset = netCDF4.Dataset(file_name, mode)
 
         if "time" in self.nc_dataset.dimensions:
-            time_length = len(self.nc_dataset.dimensions["time"])
+            self.time_length = len(self.nc_dataset.dimensions["time"])
         else:
-            time_length = 0
+            self.time_length = 0
 
-        self.time_index = time_length - 1 if time_length > 0 else 0
+    def time_index(self):
+        return self.time_length - 1 if self.time_length > 0 else 0
 
     def set_attributes(self, file_attributes):
         """Set attributes in the NetCDF dataset."""
@@ -524,8 +526,8 @@ class OutputFile:
 
     def append_time(self, time_seconds):
         """Create one more time record by adding a value to the time dimension."""
-        self.time_index = len(self.nc_dataset.dimensions["time"])
-        self.nc_dataset.variables["time"][self.time_index] = time_seconds
+        self.nc_dataset.variables["time"][self.time_length] = time_seconds
+        self.time_length += 1
 
     def append_history(self, string):
         """Append a `string` to the global attribute 'history'."""
@@ -582,7 +584,7 @@ class OutputFile:
         hyperslab = ndims * [slice(None)]
 
         if time_dependent:
-            hyperslab.insert(0, self.time_index)
+            hyperslab.insert(0, self.time_index())
 
         if ndims == 2:
             tmp = array[0]
@@ -610,7 +612,7 @@ class OutputFile:
         if name not in self.nc_dataset.variables:
             return
 
-        logger.debug(f"writing {self.nc_dataset.filepath()}:{name}")
+        logger.debug(f"writing {self.nc_dataset.filepath()}:{name}:{start}:{count}")
 
         self.nc_dataset.variables[name][hyperslab] = array
 
@@ -822,13 +824,25 @@ def main(compression_level, output_grid=None):
                 if one_var_per_file(file_name):
                     metadata["dtype"] = "f4"
 
-                units = metadata["attributes"]["units"]
+                attributes = metadata["attributes"]
+
+                # ISMIP7 requirement: all fields must have the _FillValue attribute
+                if variable_name in FL.union(ST) and "_FillValue" not in attributes:
+                    attributes["_FillValue"] = fill_value
+
+                units = attributes["units"]
                 if variable_name in ["time", "time_bounds"]:
                     # ISMIP7 requirement: time should have units of "days since 1850-01-01"
-                    metadata["attributes"]["units"] = units.replace("seconds", "days")
+                    attributes["units"] = units.replace("seconds", "days")
                 else:
-                    # ISMIP7 requirement: "m-2" instead of "m^-2" and "s-1" instead of "s^-1"
-                    metadata["attributes"]["units"] = units.replace("m^-2", "m-2").replace("s^-1", "s-1").replace("second^-1", "s-1")
+                    # ISMIP7 requirement: unit strings
+                    replacements = [["m^-2", "m-2"],
+                                    ["s^-1", "s-1"],
+                                    ["second^-1", "s-1"],
+                                    ["kelvin", "K"]]
+                    for a, b in replacements:
+                        units = units.replace(a, b)
+                    attributes["units"] = units
 
                 variables[file_name][variable_name] = metadata
 
@@ -869,6 +883,7 @@ def main(compression_level, output_grid=None):
 
                     for field in fields_in_file:
                         F = get_file(file_name, field)
+
                         F.write_variable(array, metadata)
 
                         # write the end point of time bounds to "time":
