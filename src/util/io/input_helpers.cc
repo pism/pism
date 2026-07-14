@@ -439,7 +439,8 @@ void regrid_spatial_variable(const VariableMetadata &variable,
 
     input_units = check_units(variable, input_units, log);
 
-    const size_t data_size = target_grid.xm() * target_grid.ym() * interp_context.z->n_output();
+    size_t data_size =
+      static_cast<long>(target_grid.xm() * target_grid.ym()) * interp_context.z->n_output();
 
     // Convert data:
     units::Converter(variable.unit_system(), input_units, internal_units)
@@ -723,7 +724,7 @@ void read_spatial_variable(const VariableMetadata &variable, const Grid &grid,
   input_units = check_units(variable, input_units, log);
 
   // Convert data:
-  size_t size = grid.xm() * grid.ym() * nlevels;
+  size_t size = static_cast<long>(grid.xm()) * grid.ym() * nlevels;
 
   units::Converter(variable.unit_system(), input_units, internal_units)
       .convert_doubles(output, size);

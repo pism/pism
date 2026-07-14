@@ -56,9 +56,10 @@ add_library (boundary OBJECT
   ./surface/SurfaceModel.cc
   ./surface/Cache.cc
   ./surface/ConstantPIK.cc
-  ./surface/Elevation.cc
+  ./surface/ElevationDependent.cc
   ./surface/GivenClimate.cc
   ./surface/ISMIP6Climate.cc
+  ./surface/ISMIP7Climate.cc
   ./surface/ElevationChange.cc
   ./surface/Delta_T.cc
   ./surface/Simple.cc

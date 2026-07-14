@@ -24,11 +24,12 @@
 #include "pism/coupler/surface/Cache.hh"
 #include "pism/coupler/surface/ConstantPIK.hh"
 #include "pism/coupler/surface/Delta_T.hh"
-#include "pism/coupler/surface/Elevation.hh"
+#include "pism/coupler/surface/ElevationDependent.hh"
 #include "pism/coupler/surface/ElevationChange.hh"
 #include "pism/coupler/surface/ForceThickness.hh"
 #include "pism/coupler/surface/GivenClimate.hh"
 #include "pism/coupler/surface/ISMIP6Climate.hh"
+#include "pism/coupler/surface/ISMIP7Climate.hh"
 #include "pism/coupler/surface/NoGLRetreat.hh"
 #include "pism/coupler/surface/DEBMSimple.hh"
 #include "pism/coupler/surface/DEBMEnhanced.hh"
@@ -42,9 +43,10 @@ Factory::Factory(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere::Atmo
   : PCFactory<SurfaceModel>(g, "surface.models"),
     m_input(input) {
 
-  add_surface_model<Elevation>("elevation");
+  add_surface_model<ElevationDependent>("elevation_dependent");
   add_surface_model<Given>("given");
   add_surface_model<ISMIP6>("ismip6");
+  add_surface_model<ISMIP7>("ismip7");
   add_surface_model<TemperatureIndex>("pdd");
   add_surface_model<PIK>("pik");
   add_surface_model<Simple>("simple");

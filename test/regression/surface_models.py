@@ -291,7 +291,7 @@ class ElevationChange(TestCase):
         os.remove(self.filename)
         os.remove(self.output_filename)
 
-class Elevation(TestCase):
+class ElevationDependent(TestCase):
     def setUp(self):
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
@@ -313,8 +313,8 @@ class Elevation(TestCase):
         ctx.config.import_from(self.config)
 
     def test_elevation_1(self):
-        "Model 'elevation', test 1"
-        model = PISM.SurfaceElevation(self.grid, PISM.AtmosphereUniform(self.grid))
+        "Model 'elevation_dependent', test 1"
+        model = PISM.SurfaceElevationDependent(self.grid, PISM.AtmosphereUniform(self.grid))
 
         model.init(self.geometry)
 
@@ -333,7 +333,7 @@ class Elevation(TestCase):
         probe_interface(model)
 
     def test_elevation_2(self):
-        "Model 'elevation', test 2"
+        "Model 'elevation_dependent', test 2"
         T_min = -5.0
         T_max = 0.0
         z_min = 1000.0
@@ -355,7 +355,7 @@ class Elevation(TestCase):
         T = PISM.util.convert(0.5 * (T_min + T_max), "degree_Celsius", "kelvin")
         SMB = PISM.util.convert(1.87504, "m/year", "m/s") * config.get_number("constants.ice.density")
 
-        model = PISM.SurfaceElevation(self.grid, PISM.AtmosphereUniform(self.grid))
+        model = PISM.SurfaceElevationDependent(self.grid, PISM.AtmosphereUniform(self.grid))
 
         model.init(self.geometry)
 

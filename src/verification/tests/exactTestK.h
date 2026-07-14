@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2007-2011, 2016 Ed Bueler and Constantine Khroulev
+   Copyright (C) 2007-2011, 2016, 2026 Ed Bueler and Constantine Khroulev
   
    This file is part of PISM.
   
@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef __exactTestK_h
-#define __exactTestK_h 1
+#ifndef PISM_exact_TestK_h
+#define PISM_exact_TestK_h 1
 
 #ifdef __cplusplus
 extern "C"
@@ -52,12 +52,11 @@ struct TestKParameters exactK(double t, double z, int bedrock_is_ice);
 /* find the alpha_k values for the eigenfunction expansion in the exact
    solution; these values are found by rigorous (bracketed) numerical 
    solution of a one-variable root-finding problem */
-int print_alpha_k(const int N);
+int print_alpha_k(int N);
 
 #ifdef __cplusplus
 }
 #endif
 
 
-#endif  /* __exactTestK_h */
-
+#endif  /* PISM_exact_TestK_h */

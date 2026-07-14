@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 2004-2006, 2015 Jed Brown, Ed Bueler, and Constantine Khroulev
+   Copyright (C) 2004-2006, 2015, 2026 Jed Brown, Ed Bueler, and Constantine Khroulev
   
    This file is part of PISM.
   
@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef __exactTestIJ_h
-#define __exactTestIJ_h 1
+#ifndef PISM_exact_TestIJ_h
+#define PISM_exact_TestIJ_h 1
 
 #ifdef __cplusplus
 extern "C"
@@ -44,17 +44,17 @@ struct TestIParameters {
   double bed, tauc, u, v;
 };
 
-struct TestIParameters exactI(const double m, const double x, const double y);
+struct TestIParameters exactI(double m, double x, double y);
 
 struct TestJParameters {
   double H, nu, u, v;
 };
 
-struct TestJParameters exactJ(const double x, const double y);
+struct TestJParameters exactJ(double x, double y);
 
 #ifdef __cplusplus
 }
 #endif
 
 
-#endif  /* __exactTestIJ_h */
+#endif  /* PISM_exact_TestIJ_h */

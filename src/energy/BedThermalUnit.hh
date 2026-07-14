@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2025 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2025, 2026 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -146,13 +146,6 @@ protected:
 
   //! upward heat flux through the top surface of the bed thermal layer
   array::Scalar m_top_surface_flux;
-};
-
-class BTU_geothermal_flux_at_ground_level : public Diag<BedThermalUnit> {
-public:
-  BTU_geothermal_flux_at_ground_level(const BedThermalUnit *m);
-protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
 };
 
 } // end of namespace energy

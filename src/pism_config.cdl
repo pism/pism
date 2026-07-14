@@ -1865,13 +1865,17 @@ netcdf pism_config {
     pism_config:output.ISMIP6_doc = "Follow ISMIP6 conventions (units, variable names, \"standard names\") when writing output variables.";
     pism_config:output.ISMIP6_type = "flag";
 
-    pism_config:output.ISMIP6_scalar_variables = "lim,limnsw,iareagr,iareafl,tendacabf,tendlibmassbf,tendlibmassbffl,tendlicalvf,tendlifmassbf";
+    pism_config:output.ISMIP6_scalar_variables = "iareafl,iareagr,lim,limnsw,tendacabf,tendlibmassbffl,tendlibmassbfgr,tendlicalvf,tendlifmassbf,tendligroundf";
     pism_config:output.ISMIP6_scalar_variables_doc = "Comma-separated list of scalar variables (time series) reported by models participating in ISMIP6 simulations.";
     pism_config:output.ISMIP6_scalar_variables_type = "string";
 
-    pism_config:output.ISMIP6_spatial_variables = "lithk,orog,topg,hfgeoubed,acabf,libmassbfgr,libmassbffl,dlithkdt,velsurf,zvelsurf,velbase,zvelbase,velmean,litemptop,litempbotgr,litempbotfl,strbasemag,licalvf,lifmassbf,sftgif,sftgrf,sftflf";
+    pism_config:output.ISMIP6_spatial_variables = "acabf,base,dlithkdt,hfgeoubed,libmassbffl,libmassbfgr,licalvf,lifmassbf,ligroundf,litempbotfl,litempbotgr,litemptop,lithk,orog,sftflf,sftgif,sftgrf,strbasemag,topg,velbase,velmean,velsurf,zvelbase,zvelsurf";
     pism_config:output.ISMIP6_spatial_variables_doc = "Comma-separated list of fields reported by models participating in ISMIP6 simulations.";
     pism_config:output.ISMIP6_spatial_variables_type = "string";
+
+    pism_config:output.asynchronous = "false";
+    pism_config:output.asynchronous_doc = "If ``true`` PISM will use YAC-based asynchronous output code";
+    pism_config:output.asynchronous_type = "flag";
 
     pism_config:output.checkpoint.exit = "no";
     pism_config:output.checkpoint.exit_doc = "If ``true`` PISM will exit with after checkpointing.";
@@ -2079,6 +2083,10 @@ netcdf pism_config {
     pism_config:output.use_MKS_doc = "Use MKS units in output files.";
     pism_config:output.use_MKS_type = "flag";
 
+    pism_config:petsc_options = "";
+    pism_config:petsc_options_doc = "Additional command-line options for PETSc";
+    pism_config:petsc_options_type = "string";
+
     pism_config:regional.no_model_strip = 5.0;
     pism_config:regional.no_model_strip_doc = "Default width of the \"no model strip\" in regional setups.";
     pism_config:regional.no_model_strip_option = "no_model_strip";
@@ -2095,11 +2103,31 @@ netcdf pism_config {
     pism_config:regional.zero_gradient_option = "zero_grad_where_no_model";
     pism_config:regional.zero_gradient_type = "flag";
 
+    pism_config:run_info.contact_email = "";
+    pism_config:run_info.contact_email_doc = "Contact e-mail address. This string is written to output files as the ``contact_email`` global attribute.";
+    pism_config:run_info.contact_email_option = "contact_email";
+    pism_config:run_info.contact_email_type = "string";
+
+    pism_config:run_info.contact_name = "";
+    pism_config:run_info.contact_name_doc = "Contact person's name. This string is written to output files as the ``contact_name`` global attribute.";
+    pism_config:run_info.contact_name_option = "contact_name";
+    pism_config:run_info.contact_name_type = "string";
+
+    pism_config:run_info.group = "";
+    pism_config:run_info.group_doc = "Group or project name. This string is written to output files as the ``group`` global attribute.";
+    pism_config:run_info.group_option = "group";
+    pism_config:run_info.group_type = "string";
+
     pism_config:run_info.institution = "";
     pism_config:run_info.institution_doc = "Institution name. This string is written to output files as the ``institution`` global attribute.";
     pism_config:run_info.institution_option = "institution";
     pism_config:run_info.institution_type = "string";
 
+    pism_config:run_info.model = "PISM";
+    pism_config:run_info.model_doc = "Model name. This string is written to output files as the ``model`` global attribute.";
+    pism_config:run_info.model_option = "model";
+    pism_config:run_info.model_type = "string";
+    
     pism_config:run_info.title = "";
     pism_config:run_info.title_doc = "Free-form string containing a concise description of the current run. This string is written to output files as the ``title`` global attribute.";
     pism_config:run_info.title_option = "title";
@@ -2742,6 +2770,29 @@ netcdf pism_config {
     pism_config:surface.ismip6.reference_file_doc = "Name of the file containing reference climate forcing fields.";
     pism_config:surface.ismip6.reference_file_option = "surface_ismip6_reference_file";
     pism_config:surface.ismip6.reference_file_type = "string";
+
+    pism_config:surface.ismip7.file = "";
+    pism_config:surface.ismip7.file_doc = "Name of the file containing climate forcing fields.";
+    pism_config:surface.ismip7.file_option = "surface_ismip7_file";
+    pism_config:surface.ismip7.file_type = "string";
+
+    pism_config:surface.ismip7.gradient.file = "";
+    pism_config:surface.ismip7.gradient.file_doc = "Name of the file containing gradient climate forcing fields.";
+    pism_config:surface.ismip7.gradient.file_option = "surface_ismip7_gradient_file";
+    pism_config:surface.ismip7.gradient.file_type = "string";
+
+    pism_config:surface.ismip7.gradient.periodic = "no";
+    pism_config:surface.ismip7.gradient.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:surface.ismip7.gradient.periodic_type = "flag";
+    
+    pism_config:surface.ismip7.periodic = "no";
+    pism_config:surface.ismip7.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:surface.ismip7.periodic_type = "flag";
+
+    pism_config:surface.ismip7.reference.file = "";
+    pism_config:surface.ismip7.reference.file_doc = "Name of the file containing reference elevation.";
+    pism_config:surface.ismip7.reference.file_option = "surface_ismip7_reference_file";
+    pism_config:surface.ismip7.reference.file_type = "string";
 
     pism_config:surface.mass_balance_year_start_day = 274;
     pism_config:surface.mass_balance_year_start_day_doc = "day of year for October 1st, beginning of the balance year in northern latitudes.";

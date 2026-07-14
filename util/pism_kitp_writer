@@ -29,8 +29,16 @@ import numpy as np
 import rioxarray  # noqa: F401
 import xarray as xr
 import yac
-from mpi4py import MPI
 from pyproj import Proj
+
+import mpi4py
+# Disable thread support: this way "from mpi4py import MPI" will call MPI_Init() instead
+# of MPI_Init_thread(). It turns out that initializing MPI using MPI_Init_thread() here
+# and using MPI_Init() in PISM may lead to hanging when using IntelMPI (Intel(R) MPI
+# Library for Linux* OS, Version 2021.17 Build 20251215 (id: 2ac2f63)) and more than 35
+# MPI processes for PISM. :-/
+mpi4py.rc.threads = False
+from mpi4py import MPI
 
 logger = logging.getLogger("pism_output")
 
