@@ -32,6 +32,7 @@ def generate_config():
     pism_overrides = nc.createVariable("pism_overrides", 'b')
 
     attrs = {
+        "time.reference_date": "1-1-1", # to match inputforP_regression.nc
         "constants.standard_gravity": 9.81,
         "constants.standard_gravity_doc": "m s-2; = g; acceleration due to gravity on Earth geoid",
 
