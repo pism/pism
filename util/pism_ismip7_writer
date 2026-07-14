@@ -851,15 +851,7 @@ def main(compression_level, output_grid=None):
                 logger.debug(f"SEND_GRIDDED_VARIABLE {variable_name} in {file_name}")
                 array = yac_wrapper.receive_gridded_variable(metadata)
 
-                F = get_file(file_name, variable_name)
-                if variable_name in FL and np.ravel(array)[0] == fill_value:
-                    logger.debug(f"skipping an empty record in {F.nc_dataset.filepath()}:{variable_name}")
-                    # skip this record and rewind the time length counter so that the next
-                    # append_time() call will over-write the last value instead of
-                    # increasing the length of the time dimension
-                    F.time_length -= 1
-                else:
-                    F.write_gridded_variable(array, metadata)
+                get_file(file_name, variable_name).write_gridded_variable(array, metadata)
 
             case ServerActions.SEND_VARIABLE.value:
                 variable_name = metadata['variable_name']
@@ -891,11 +883,6 @@ def main(compression_level, output_grid=None):
 
                     for field in fields_in_file:
                         F = get_file(file_name, field)
-
-                        # override time index of time bounds to support skipping "empty"
-                        # (first) records of "flux" variables
-                        if variable_name == "time_bounds":
-                            metadata["start"][0] = F.time_index()
 
                         F.write_variable(array, metadata)
 
