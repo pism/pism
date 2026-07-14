@@ -754,7 +754,7 @@ void set_config_from_options(Config &config) {
     config.set_flag("output.use_MKS", true);
   }
 
-  // Special command-line options for "-surface elevation,...":
+  // Special command-line options for "-surface elevation_dependent,...":
   {
     options::String T("-ice_surface_temp", "ice surface temperature parameterization");
 

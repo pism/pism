@@ -98,9 +98,9 @@ Prefix: ``surface.given.``
 Elevation-dependent temperature and mass balance
 ++++++++++++++++++++++++++++++++++++++++++++++++
 
-:|options|: ``-surface elevation``
+:|options|: ``-surface elevation_dependent``
 :|variables|: none
-:|implementation|: ``pism::surface::Elevation``
+:|implementation|: ``pism::surface::ElevationDependent``
 
 This surface model component parameterizes the ice surface temperature `T_{h}` =
 :var:`ice_surface_temp` and the mass balance `m` = :var:`climatic_mass_balance` as
