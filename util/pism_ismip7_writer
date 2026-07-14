@@ -52,7 +52,7 @@ ST = {"lithk", "orog", "topg", "base",
 FL = {"hfgeoubed", "acabf", "libmassbfgr", "libmassbffl",
       "dlithkdt", "licalvf", "libgroundf", "lifmassbf"}
 
-fill_value = 9.969209968386869e+36
+fill_value = netCDF4.default_fillvals["f4"]
 
 class OutputGrid(object):
     x = None
