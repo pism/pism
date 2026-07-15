@@ -56,6 +56,7 @@ RUN <<EOF
     libproj25 \
     libpython3.12 \
     libudunits2-0 \
+    proj-data \
     python3 \
     python3-netcdf4 \
     python3-numpy \
