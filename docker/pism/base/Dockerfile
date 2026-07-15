@@ -188,8 +188,8 @@ RUN python3 -m venv --system-site-packages /opt/pism
 
 # Install a more recent mpi4py version
 RUN <<EOF
-    echo "Install mpi4py"
+    echo "Install additional Python packages"
     set -eux
     . /opt/pism/bin/activate
-    python3 -m pip install "mpi4py>=4.0.0"
+    python3 -m pip install "mpi4py>=4.0.0" geopandas rioxarray
 EOF
