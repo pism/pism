@@ -48,6 +48,9 @@ ENV PYTHONPATH=/opt/petsc/lib/:$PYTHONPATH
 # Add PISM to PYTHONPATH
 ENV PYTHONPATH=/opt/pism/lib/python3.12/site-packages/:$PYTHONPATH
 
+# PROJ data location
+ENV PROJ_DATA=/usr/share/proj
+
 RUN ln -s /opt/intel/oneapi/setvars.sh /etc/profile.d/02-intel-oneapi-setvars.sh
 
 # Add a non-privileged user
