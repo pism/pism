@@ -62,7 +62,7 @@ DiagnosticList StressBalance::spatial_diagnostics_impl() const {
     {"tauyz",               Diagnostic::Ptr(new PSB_tauyz(this))}
   };
 
-  if (m_config->get_flag("output.ISMIP6")) {
+  if (m_config->get_flag("output.ISMIP")) {
     result["velmean"] = Diagnostic::Ptr(new PSB_velbar(this));
     result["zvelbase"] = Diagnostic::Ptr(new PSB_wvelbase(this));
     result["zvelsurf"] = Diagnostic::Ptr(new PSB_wvelsurf(this));
@@ -83,11 +83,11 @@ TSDiagnosticList StressBalance::scalar_diagnostics_impl() const {
 PSB_velbar::PSB_velbar(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
-  auto ismip6 = m_config->get_flag("output.ISMIP6");
+  auto ismip = m_config->get_flag("output.ISMIP");
 
   // set metadata:
-  m_vars = {{m_sys, ismip6 ? "xvelmean" : "ubar", *m_grid },
-            {m_sys, ismip6 ? "yvelmean" : "vbar", *m_grid }};
+  m_vars = {{m_sys, ismip ? "xvelmean" : "ubar", *m_grid },
+            {m_sys, ismip ? "yvelmean" : "vbar", *m_grid }};
 
   m_vars[0]
       .long_name("vertical mean of horizontal ice velocity in the X direction")
@@ -350,9 +350,9 @@ std::shared_ptr<array::Array> PSB_velsurf_mag::compute_impl() const {
 PSB_velsurf::PSB_velsurf(const StressBalance *m)
   : Diag<StressBalance>(m) {
 
-  auto ismip6 = m_config->get_flag("output.ISMIP6");
-  m_vars = { { m_sys, ismip6 ? "xvelsurf" : "uvelsurf", *m_grid },
-             { m_sys, ismip6 ? "yvelsurf" : "vvelsurf", *m_grid } };
+  auto ismip = m_config->get_flag("output.ISMIP");
+  m_vars = { { m_sys, ismip ? "xvelsurf" : "uvelsurf", *m_grid },
+             { m_sys, ismip ? "yvelsurf" : "vvelsurf", *m_grid } };
   m_vars[0]
       .long_name("x-component of the horizontal velocity of ice at ice surface")
       .standard_name("land_ice_surface_x_velocity"); // InitMIP "standard" name
@@ -482,10 +482,10 @@ std::shared_ptr<array::Array> PSB_wvel::compute_impl() const {
 
 PSB_wvelsurf::PSB_wvelsurf(const StressBalance *m) : Diag<StressBalance>(m) {
 
-  auto ismip6 = m_config->get_flag("output.ISMIP6");
+  auto ismip = m_config->get_flag("output.ISMIP");
 
   // set metadata:
-  m_vars = { { m_sys, ismip6 ? "zvelsurf" : "wvelsurf", *m_grid } };
+  m_vars = { { m_sys, ismip ? "zvelsurf" : "wvelsurf", *m_grid } };
 
   m_vars[0]
       .long_name("vertical velocity of ice at ice surface, relative to the geoid")
@@ -525,9 +525,9 @@ std::shared_ptr<array::Array> PSB_wvelsurf::compute_impl() const {
 
 PSB_wvelbase::PSB_wvelbase(const StressBalance *m) : Diag<StressBalance>(m) {
 
-  auto ismip6 = m_config->get_flag("output.ISMIP6");
+  auto ismip = m_config->get_flag("output.ISMIP");
 
-  m_vars = { { m_sys, ismip6 ? "zvelbase" : "wvelbase", *m_grid } };
+  m_vars = { { m_sys, ismip ? "zvelbase" : "wvelbase", *m_grid } };
   m_vars[0]
       .long_name("vertical velocity of ice at the base of ice, relative to the geoid")
       .standard_name("land_ice_basal_upward_velocity") // InitMIP "standard" name
@@ -564,11 +564,11 @@ std::shared_ptr<array::Array> PSB_wvelbase::compute_impl() const {
 
 PSB_velbase::PSB_velbase(const StressBalance *m) : Diag<StressBalance>(m) {
 
-  auto ismip6 = m_config->get_flag("output.ISMIP6");
+  auto ismip = m_config->get_flag("output.ISMIP");
 
   // set metadata:
-  m_vars = { { m_sys, ismip6 ? "xvelbase" : "uvelbase", *m_grid },
-             { m_sys, ismip6 ? "yvelbase" : "vvelbase", *m_grid } };
+  m_vars = { { m_sys, ismip ? "xvelbase" : "uvelbase", *m_grid },
+             { m_sys, ismip ? "yvelbase" : "vvelbase", *m_grid } };
   m_vars[0]
       .long_name("x-component of the horizontal velocity of ice at the base of ice")
       .standard_name("land_ice_basal_x_velocity"); // InitMIP "standard" name

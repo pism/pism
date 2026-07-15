@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2023, 2025 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010--2023, 2025, 2026 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -114,7 +114,7 @@ DiagnosticList ShallowStressBalance::spatial_diagnostics_impl() const {
     {"taud_mag", Diagnostic::Ptr(new SSB_taud_mag(this))}
   };
 
-  if(m_config->get_flag("output.ISMIP6")) {
+  if(m_config->get_flag("output.ISMIP")) {
     result["strbasemag"] = Diagnostic::Ptr(new SSB_taub_mag(this));
   }
 
@@ -277,12 +277,12 @@ std::shared_ptr<array::Array> SSB_taub::compute_impl() const {
 
 SSB_taub_mag::SSB_taub_mag(const ShallowStressBalance *m) : Diag<ShallowStressBalance>(m) {
 
-  auto ismip6 = m_config->get_flag("output.ISMIP6");
+  auto ismip = m_config->get_flag("output.ISMIP");
 
-  m_vars = { { m_sys, ismip6 ? "strbasemag" : "taub_mag", *m_grid } };
+  m_vars = { { m_sys, ismip ? "strbasemag" : "taub_mag", *m_grid } };
   m_vars[0]
       .long_name("magnitude of the basal shear stress at the base of ice")
-      .standard_name("land_ice_basal_drag") // ISMIP6 "standard" name
+      .standard_name("land_ice_basal_drag") // ISMIP "standard" name
       .units("Pa");
   m_vars[0]["comment"] = "this field is purely diagnostic (not used by the model)";
 }

@@ -1953,17 +1953,17 @@ netcdf pism_config {
     pism_config:ocean.th.periodic_doc = "If true, interpret forcing data as periodic in time";
     pism_config:ocean.th.periodic_type = "flag";
 
-    pism_config:output.ISMIP6 = "false";
-    pism_config:output.ISMIP6_doc = "Follow ISMIP6 conventions (units, variable names, \"standard names\") when writing output variables.";
-    pism_config:output.ISMIP6_type = "flag";
+    pism_config:output.ISMIP = "false";
+    pism_config:output.ISMIP_doc = "Follow ISMIP conventions (units, variable names, \"standard names\") when writing output variables.";
+    pism_config:output.ISMIP_type = "flag";
 
-    pism_config:output.ISMIP6_scalar_variables = "iareafl,iareagr,lim,limnsw,tendacabf,tendlibmassbffl,tendlibmassbfgr,tendlicalvf,tendlifmassbf,tendligroundf";
-    pism_config:output.ISMIP6_scalar_variables_doc = "Comma-separated list of scalar variables (time series) reported by models participating in ISMIP6 simulations.";
-    pism_config:output.ISMIP6_scalar_variables_type = "string";
+    pism_config:output.ISMIP_scalar_variables = "iareafl,iareagr,lim,limnsw,tendacabf,tendlibmassbffl,tendlibmassbfgr,tendlicalvf,tendlifmassbf,tendligroundf";
+    pism_config:output.ISMIP_scalar_variables_doc = "Comma-separated list of scalar variables (time series) reported by models participating in ISMIP simulations.";
+    pism_config:output.ISMIP_scalar_variables_type = "string";
 
-    pism_config:output.ISMIP6_spatial_variables = "acabf,base,dlithkdt,hfgeoubed,libmassbffl,libmassbfgr,licalvf,lifmassbf,ligroundf,litempbotfl,litempbotgr,litemptop,lithk,orog,sftflf,sftgif,sftgrf,strbasemag,topg,velbase,velmean,velsurf,zvelbase,zvelsurf";
-    pism_config:output.ISMIP6_spatial_variables_doc = "Comma-separated list of fields reported by models participating in ISMIP6 simulations.";
-    pism_config:output.ISMIP6_spatial_variables_type = "string";
+    pism_config:output.ISMIP_spatial_variables = "acabf,base,dlithkdt,hfgeoubed,libmassbffl,libmassbfgr,licalvf,lifmassbf,ligroundf,litempbotfl,litempbotgr,litemptop,lithk,orog,sftflf,sftgif,sftgrf,strbasemag,topg,velbase,velmean,velsurf,zvelbase,zvelsurf";
+    pism_config:output.ISMIP_spatial_variables_doc = "Comma-separated list of fields reported by models participating in ISMIP simulations.";
+    pism_config:output.ISMIP_spatial_variables_type = "string";
 
     pism_config:output.asynchronous = "false";
     pism_config:output.asynchronous_doc = "If ``true`` PISM will use YAC-based asynchronous output code";

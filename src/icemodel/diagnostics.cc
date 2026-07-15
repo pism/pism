@@ -210,9 +210,9 @@ public:
         m_kind(kind) {
     m_factor = m_config->get_number("constants.ice.density");
 
-    auto ismip6 = m_config->get_flag("output.ISMIP6");
+    auto ismip = m_config->get_flag("output.ISMIP");
 
-    std::string name = ismip6 ? "acabf" : "tendency_of_ice_amount_due_to_surface_mass_flux",
+    std::string name = ismip ? "acabf" : "tendency_of_ice_amount_due_to_surface_mass_flux",
                 accumulator_units = "kg m^-2",
                 long_name         = "average surface mass flux over reporting interval",
                 standard_name     = "land_ice_surface_specific_mass_balance_flux",
@@ -421,9 +421,9 @@ public:
 
     m_factor = m_config->get_number("constants.ice.density");
 
-    auto ismip6 = m_config->get_flag("output.ISMIP6");
+    auto ismip = m_config->get_flag("output.ISMIP");
 
-    std::string name      = ismip6 ? "lifmassbf" : "tendency_of_ice_amount_due_to_discharge",
+    std::string name      = ismip ? "lifmassbf" : "tendency_of_ice_amount_due_to_discharge",
                 long_name = "discharge flux (calving, frontal melt, forced retreat)",
                 accumulator_units = "kg m^-2",
                 standard_name  = "land_ice_specific_mass_flux_due_to_calving_and_ice_front_melting",
@@ -476,10 +476,10 @@ public:
 
     m_factor = m_config->get_number("constants.ice.density");
 
-    auto ismip6 = m_config->get_flag("output.ISMIP6");
+    auto ismip = m_config->get_flag("output.ISMIP");
 
     std::string
-      name              = ismip6 ? "licalvf" : "tendency_of_ice_amount_due_to_calving",
+      name              = ismip ? "licalvf" : "tendency_of_ice_amount_due_to_calving",
       long_name         = "calving flux",
       accumulator_units = "kg m^-2",
       standard_name     = "land_ice_specific_mass_flux_due_to_calving",
@@ -732,7 +732,7 @@ static double base_area(const array::Scalar &ice_thickness,
 
 } // end of namespace details
 
-// Horrendous names used by InitMIP (and ISMIP6, and CMIP5). Ugh.
+// Horrendous names used by InitMIP (and ISMIP, and CMIP5). Ugh.
 static const char* land_ice_area_fraction_name           = "sftgif";
 static const char* grounded_ice_sheet_area_fraction_name = "sftgrf";
 static const char* floating_ice_sheet_area_fraction_name = "sftflf";
@@ -829,17 +829,17 @@ public:
         m_kind(flag) {
     assert(flag != BOTH);
 
-    auto ismip6 = m_config->get_flag("output.ISMIP6");
+    auto ismip = m_config->get_flag("output.ISMIP");
 
     std::string name, description, standard_name;
     if (m_kind == GROUNDED) {
-      name          = ismip6 ? "libmassbfgr" : "basal_mass_flux_grounded";
+      name          = ismip ? "libmassbfgr" : "basal_mass_flux_grounded";
       description   = "average basal mass flux over the reporting interval (grounded areas)";
-      standard_name = ismip6 ? "land_ice_basal_specific_mass_balance_flux" : "";
+      standard_name = ismip ? "land_ice_basal_specific_mass_balance_flux" : "";
     } else {
-      name          = ismip6 ? "libmassbffl" : "basal_mass_flux_floating";
+      name          = ismip ? "libmassbffl" : "basal_mass_flux_floating";
       description   = "average basal mass flux over the reporting interval (floating areas)";
-      standard_name = ismip6 ? "land_ice_basal_specific_mass_balance_flux" : "";
+      standard_name = ismip ? "land_ice_basal_specific_mass_balance_flux" : "";
     }
 
     m_accumulator.metadata()["units"] = "kg m^-2";
@@ -1746,7 +1746,7 @@ class IceMass : public TSDiag<TSSnapshotDiagnostic, IceModel> {
 public:
   IceMass(IceModel *m) : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_mass") {
 
-    if (m_config->get_flag("output.ISMIP6")) {
+    if (m_config->get_flag("output.ISMIP")) {
       m_variable.set_name("lim");
     }
 
@@ -1983,7 +1983,7 @@ public:
   IceAreaGlacierizedGrounded(IceModel *m)
       : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_area_glacierized_grounded") {
 
-    if (m_config->get_flag("output.ISMIP6")) {
+    if (m_config->get_flag("output.ISMIP")) {
       m_variable.set_name("iareagr");
     }
 
@@ -2005,7 +2005,7 @@ public:
   IceAreaGlacierizedShelf(IceModel *m)
       : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "ice_area_glacierized_floating") {
 
-    if (m_config->get_flag("output.ISMIP6")) {
+    if (m_config->get_flag("output.ISMIP")) {
       m_variable.set_name("iareafl");
     }
 
@@ -2272,7 +2272,7 @@ public:
   IceMassFluxBasal(const IceModel *m)
       : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_basal_mass_flux") {
 
-    if (m_config->get_flag("output.ISMIP6")) {
+    if (m_config->get_flag("output.ISMIP")) {
       m_variable.set_name("tendlibmassbf");
     }
 
@@ -2293,7 +2293,7 @@ public:
   IceMassFluxSurface(const IceModel *m)
       : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_surface_mass_flux") {
 
-    if (m_config->get_flag("output.ISMIP6")) {
+    if (m_config->get_flag("output.ISMIP")) {
       m_variable.set_name("tendacabf");
     }
 
@@ -2314,7 +2314,7 @@ public:
   IceMassFluxBasalGrounded(const IceModel *m)
       : TSDiag<TSFluxDiagnostic, IceModel>(m, "basal_mass_flux_grounded") {
 
-    if (m_config->get_flag("output.ISMIP6")) {
+    if (m_config->get_flag("output.ISMIP")) {
       m_variable.set_name("tendlibmassbfgr");
     }
 
@@ -2335,7 +2335,7 @@ public:
   IceMassFluxBasalFloating(const IceModel *m)
       : TSDiag<TSFluxDiagnostic, IceModel>(m, "basal_mass_flux_floating") {
 
-    if (m_config->get_flag("output.ISMIP6")) {
+    if (m_config->get_flag("output.ISMIP")) {
       m_variable.set_name("tendlibmassbffl");
     }
 
@@ -2374,7 +2374,7 @@ public:
   IceMassFluxDischarge(const IceModel *m)
       : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_discharge") {
 
-    if (m_config->get_flag("output.ISMIP6")) {
+    if (m_config->get_flag("output.ISMIP")) {
       m_variable.set_name("tendlifmassbf");
     }
 
@@ -2414,7 +2414,7 @@ public:
   IceMassFluxCalving(const IceModel *m)
       : TSDiag<TSFluxDiagnostic, IceModel>(m, "tendency_of_ice_mass_due_to_calving") {
 
-    if (m_config->get_flag("output.ISMIP6")) {
+    if (m_config->get_flag("output.ISMIP")) {
       m_variable.set_name("tendlicalvf");
     }
 
@@ -2452,7 +2452,7 @@ public:
   IceMassFluxAtGroundingLine(const IceModel *m)
       : TSDiag<TSFluxDiagnostic, IceModel>(m, "grounding_line_flux") {
 
-    if (m_config->get_flag("output.ISMIP6")) {
+    if (m_config->get_flag("output.ISMIP")) {
       m_variable.set_name("tendligroundf");
       m_variable["standard_name"] = "tendency_of_grounded_ice_mass";
     }
@@ -2477,10 +2477,10 @@ public:
   ThicknessRateOfChange(const IceModel *m)
       : Diag<IceModel>(m), m_last_thickness(m_grid, "last_ice_thickness"), m_interval_length(0.0) {
 
-    auto ismip6 = m_config->get_flag("output.ISMIP6");
+    auto ismip = m_config->get_flag("output.ISMIP");
 
     // set metadata:
-    m_vars = { { m_sys, ismip6 ? "dlithkdt" : "dHdt", *m_grid } };
+    m_vars = { { m_sys, ismip ? "dlithkdt" : "dHdt", *m_grid } };
     m_vars[0]
         .long_name("ice thickness rate of change")
         .standard_name("tendency_of_land_ice_thickness")
@@ -3124,9 +3124,9 @@ class IceThickness : public Diag<IceModel> {
 public:
   IceThickness(const IceModel *m) : Diag<IceModel>(m) {
 
-    auto ismip6 = m_config->get_flag("output.ISMIP6");
+    auto ismip = m_config->get_flag("output.ISMIP");
 
-    m_vars = { { m_sys, ismip6 ? "lithk" : "thk", *m_grid } };
+    m_vars = { { m_sys, ismip ? "lithk" : "thk", *m_grid } };
 
     m_vars[0].long_name("land ice thickness").standard_name("land_ice_thickness").units("m");
     m_vars[0]["valid_min"] = { 0.0 };
@@ -3148,9 +3148,9 @@ class IceBottomSurfaceElevation : public Diag<IceModel> {
 public:
   IceBottomSurfaceElevation(const IceModel *m) : Diag<IceModel>(m) {
 
-    auto ismip6 = m_config->get_flag("output.ISMIP6");
+    auto ismip = m_config->get_flag("output.ISMIP");
 
-    m_vars = { { m_sys, ismip6 ? "base" : "ice_base_elevation", *m_grid } };
+    m_vars = { { m_sys, ismip ? "base" : "ice_base_elevation", *m_grid } };
     m_vars[0].long_name("ice bottom surface elevation").units("m");
   }
 
@@ -3170,9 +3170,9 @@ class IceSurfaceElevation : public Diag<IceModel> {
 public:
   IceSurfaceElevation(const IceModel *m) : Diag<IceModel>(m) {
 
-    auto ismip6 = m_config->get_flag("output.ISMIP6");
+    auto ismip = m_config->get_flag("output.ISMIP");
 
-    m_vars = { { m_sys, ismip6 ? "orog" : "usurf", *m_grid } };
+    m_vars = { { m_sys, ismip ? "orog" : "usurf", *m_grid } };
     m_vars[0].long_name("ice top surface elevation").standard_name("surface_altitude").units("m");
   }
 
@@ -3193,9 +3193,9 @@ public:
 
     m_accumulator.metadata()["units"] = "kg m^-2";
 
-    auto ismip6 = m_config->get_flag("output.ISMIP6");
+    auto ismip = m_config->get_flag("output.ISMIP");
 
-    m_vars = { { m_sys, ismip6 ? "ligroundf" : "grounding_line_flux", *m_grid } };
+    m_vars = { { m_sys, ismip ? "ligroundf" : "grounding_line_flux", *m_grid } };
 
     m_vars[0]
         .long_name("grounding line flux")
@@ -3432,8 +3432,8 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
   }
 #endif
 
-  // add ISMIP6 variable names
-  if (m_config->get_flag("output.ISMIP6")) {
+  // add ISMIP variable names
+  if (m_config->get_flag("output.ISMIP")) {
     result["base"]        = result["ice_base_elevation"];
     result["lithk"]       = result["thk"];
     result["dlithkdt"]    = result["dHdt"];
@@ -3509,8 +3509,8 @@ std::map<std::string, TSDiagnostic::Ptr> IceModel::allocate_scalar_diagnostics()
     {"grounding_line_flux",      s(new scalar::IceMassFluxAtGroundingLine(this))},
   };
 
-  // add ISMIP6 variable names
-  if (m_config->get_flag("output.ISMIP6")) {
+  // add ISMIP variable names
+  if (m_config->get_flag("output.ISMIP")) {
     result["iareafl"]         = result["ice_area_glacierized_floating"];
     result["iareagr"]         = result["ice_area_glacierized_grounded"];
     result["lim"]             = result["ice_mass"];
