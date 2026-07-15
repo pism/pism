@@ -475,9 +475,9 @@ std::shared_ptr<array::Array> PS_climatic_mass_balance::compute_impl() const {
 
 PS_ice_surface_temp::PS_ice_surface_temp(const SurfaceModel *m) : Diag<SurfaceModel>(m) {
 
-  auto ismip6 = m_config->get_flag("output.ISMIP6");
+  auto ismip = m_config->get_flag("output.ISMIP");
 
-  m_vars = { { m_sys, ismip6 ? "litemptop" : "ice_surface_temp", *m_grid } };
+  m_vars = { { m_sys, ismip ? "litemptop" : "ice_surface_temp", *m_grid } };
   m_vars[0]
       .long_name("ice temperature at the top ice surface")
       .standard_name("temperature_at_top_of_ice_sheet_model")
@@ -817,7 +817,7 @@ DiagnosticList SurfaceModel::spatial_diagnostics_impl() const {
     {"surface_layer_thickness",           Diagnostic::Ptr(new PS_layer_thickness(this))}
   };
 
-  if (m_config->get_flag("output.ISMIP6")) {
+  if (m_config->get_flag("output.ISMIP")) {
     result["litemptop"] = Diagnostic::Ptr(new PS_ice_surface_temp(this));
   }
 

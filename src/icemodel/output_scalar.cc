@@ -32,9 +32,9 @@ static std::set<std::string> process_ts_shortcuts(const Config &config,
                                                   const std::set<std::string> &input) {
   std::set<std::string> result = input;
 
-  if (result.find("ismip6") != result.end()) {
-    result.erase("ismip6");
-    for (auto v : set_split(config.get_string("output.ISMIP6_scalar_variables"), ',')) {
+  if (result.find("ismip") != result.end()) {
+    result.erase("ismip");
+    for (auto v : set_split(config.get_string("output.ISMIP_scalar_variables"), ',')) {
       result.insert(v);
     }
   }
