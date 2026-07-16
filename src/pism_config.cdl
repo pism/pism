@@ -2613,13 +2613,13 @@ netcdf pism_config {
     pism_config:surface.elevation_change.temperature_lapse_rate_units = "K / km";
 
     pism_config:surface.elevation_dependent.M_limit_max = 0.0;
-    pism_config:surface.elevation_dependent.M_limit_max_doc = "climatic mass balance at elevations below `h_{\\text{min}}` (inactive if equal to :config:`surface.elevation_dependent.M_limit_min`)";
+    pism_config:surface.elevation_dependent.M_limit_max_doc = "climatic mass balance at elevations above `h_{\\text{max}}` (inactive if equal to :config:`surface.elevation_dependent.M_limit_max`)";
     pism_config:surface.elevation_dependent.M_limit_max_option = "M_limit_max";
     pism_config:surface.elevation_dependent.M_limit_max_type = "number";
     pism_config:surface.elevation_dependent.M_limit_max_units = "m year^-1";
 
     pism_config:surface.elevation_dependent.M_limit_min = 0.0;
-    pism_config:surface.elevation_dependent.M_limit_min_doc = "climatic mass balance at elevations above `h_{\\text{max}}` (inactive if equal to :config:`surface.elevation_dependent.M_limit_max`)";
+    pism_config:surface.elevation_dependent.M_limit_min_doc = "climatic mass balance at elevations below `h_{\\text{min}}` (inactive if equal to :config:`surface.elevation_dependent.M_limit_min`)";
     pism_config:surface.elevation_dependent.M_limit_min_option = "M_limit_min";
     pism_config:surface.elevation_dependent.M_limit_min_type = "number";
     pism_config:surface.elevation_dependent.M_limit_min_units = "m year^-1";
