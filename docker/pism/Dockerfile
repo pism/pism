@@ -33,13 +33,6 @@ COPY --from=pism-base /opt/yaxt /opt/yaxt/
 # Add HDF5, NetCDF, PETSc to PATH:
 ENV PATH="/opt/hdf5/bin:/opt/netcdf/bin:/opt/petsc/bin:$PATH"
 
-# "Activate" the virtual environment in /opt/pism.
-#
-# See https://docs.python.org/3/library/venv.html#how-venvs-work for details.
-ENV VIRTUAL_ENV=/opt/pism
-# Note that this puts the "pism" executable in the path as well
-ENV PATH=/opt/pism/bin:$PATH
-
 ENV PYTHONPATH=""
 # Add YAC to PYTHONPATH
 ENV PYTHONPATH=/opt/yac/local/lib/python3.12/dist-packages/:$PYTHONPATH
