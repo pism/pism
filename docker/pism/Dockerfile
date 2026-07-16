@@ -35,7 +35,7 @@ ENV PATH="/opt/hdf5/bin:/opt/netcdf/bin:/opt/petsc/bin:$PATH"
 
 ENV PYTHONPATH=""
 # Add YAC to PYTHONPATH
-ENV PYTHONPATH=/opt/yac/local/lib/python3.12/dist-packages/:$PYTHONPATH
+ENV PYTHONPATH=/opt/yac/lib/python3.12/site-packages/:$PYTHONPATH
 # Add PETSc to PYTHONPATH
 ENV PYTHONPATH=/opt/petsc/lib/:$PYTHONPATH
 # Add PISM to PYTHONPATH
