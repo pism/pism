@@ -80,6 +80,7 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
   ForcingOptions opt(*m_grid->ctx(), "ocean.picop");
 
   m_add_fresh_water_melt = m_config->get_flag("ocean.picop.add_fresh_water_melt");
+  m_discharge_downstream_only = m_config->get_flag("ocean.picop.discharge_downstream_only");
 
   m_basal_melt_rate.metadata(0)
       .long_name("PICOP sub-shelf melt rate")
@@ -264,9 +265,10 @@ MaxTimestep Picop::max_timestep_impl(double t) const {
 namespace {
 //! A grounding-line subglacial-discharge outflow.
 struct Outflow {
-  double x, y;      // location (m)
-  double q_sg0;     // discharge flux at the outflow (m^2 s^-1)
-  double radius;    // governing length scale 5L' (m)
+  double x, y;         // location (m)
+  double q_sg0;        // discharge flux at the outflow (m^2 s^-1)
+  double radius;       // governing length scale 5L' (m)
+  double dir_x, dir_y; // normalized ice-flow direction at the outflow (downstream)
 };
 
 //! Gather every rank's outflow list onto all ranks (MPI_Allgatherv).
@@ -280,31 +282,34 @@ std::vector<Outflow> gather_outflows(MPI_Comm com, const std::vector<Outflow> &l
   std::vector<int> counts(size);
   MPI_Allgather(&n_local, 1, MPI_INT, counts.data(), 1, MPI_INT, com);
 
-  // 4 doubles per outflow
+  // 6 doubles per outflow
   std::vector<int> dcounts(size), ddispls(size);
   int total = 0;
   for (int r = 0; r < size; ++r) {
-    dcounts[r] = counts[r] * 4;
+    dcounts[r] = counts[r] * 6;
     ddispls[r] = total;
     total += dcounts[r];
   }
 
-  std::vector<double> sendbuf(static_cast<size_t>(n_local) * 4);
+  std::vector<double> sendbuf(static_cast<size_t>(n_local) * 6);
   for (int k = 0; k < n_local; ++k) {
-    sendbuf[4 * k + 0] = local[k].x;
-    sendbuf[4 * k + 1] = local[k].y;
-    sendbuf[4 * k + 2] = local[k].q_sg0;
-    sendbuf[4 * k + 3] = local[k].radius;
+    sendbuf[6 * k + 0] = local[k].x;
+    sendbuf[6 * k + 1] = local[k].y;
+    sendbuf[6 * k + 2] = local[k].q_sg0;
+    sendbuf[6 * k + 3] = local[k].radius;
+    sendbuf[6 * k + 4] = local[k].dir_x;
+    sendbuf[6 * k + 5] = local[k].dir_y;
   }
 
   std::vector<double> recvbuf(static_cast<size_t>(total));
-  MPI_Allgatherv(sendbuf.data(), n_local * 4, MPI_DOUBLE,
+  MPI_Allgatherv(sendbuf.data(), n_local * 6, MPI_DOUBLE,
                  recvbuf.data(), dcounts.data(), ddispls.data(), MPI_DOUBLE, com);
 
-  std::vector<Outflow> all(recvbuf.size() / 4);
+  std::vector<Outflow> all(recvbuf.size() / 6);
   for (size_t k = 0; k < all.size(); ++k) {
-    all[k] = { recvbuf[4 * k + 0], recvbuf[4 * k + 1],
-               recvbuf[4 * k + 2], recvbuf[4 * k + 3] };
+    all[k] = { recvbuf[6 * k + 0], recvbuf[6 * k + 1],
+               recvbuf[6 * k + 2], recvbuf[6 * k + 3],
+               recvbuf[6 * k + 4], recvbuf[6 * k + 5] };
   }
   return all;
 }
@@ -339,7 +344,7 @@ void Picop::build_discharge_field(const Inputs &inputs,
   // (radius) is filled in below from 5-km-averaged fields.
   std::vector<Outflow> local;
   {
-    array::AccessScope scope{&cell_type, &water_flux};
+    array::AccessScope scope{&cell_type, &water_flux, &m_flow_direction};
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
@@ -351,7 +356,10 @@ void Picop::build_discharge_field(const Inputs &inputs,
       if (q0 <= 0.0) {
         continue;
       }
-      local.push_back({ m_grid->x(i), m_grid->y(j), q0, 0.0 });
+      // Ice-flow direction at the outflow (downstream, into the cavity). Populated by
+      // compute_grounding_line_elevation(), which runs before compute_melt_rate().
+      const auto D = m_flow_direction(i, j);
+      local.push_back({ m_grid->x(i), m_grid->y(j), q0, 0.0, D.u, D.v });
     }
   }
 
@@ -456,6 +464,19 @@ void Picop::build_discharge_field(const Inputs &inputs,
       for (const auto &o : all) {
         if (o.radius <= 0.0) {
           continue;
+        }
+        // Directional gate: paint only floating cells downstream of the outflow, i.e. where
+        // (cell - outflow) . flow_direction > 0. This confines the plume influence to the
+        // along-flow direction instead of an isotropic disk (which lit up the shelf sides).
+        // If the outflow has no flow direction, fall back to the isotropic behavior.
+        if (m_discharge_downstream_only) {
+          const double dir_mag2 = o.dir_x * o.dir_x + o.dir_y * o.dir_y;
+          if (dir_mag2 > 0.0) {
+            const double dot = (x - o.x) * o.dir_x + (y - o.y) * o.dir_y;
+            if (dot <= 0.0) {
+              continue;
+            }
+          }
         }
         const double d = std::hypot(x - o.x, y - o.y);
         double w2 = 0.0;

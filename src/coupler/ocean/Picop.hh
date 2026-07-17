@@ -64,6 +64,9 @@ private:
   //! whether to add the fresh-water (subglacial discharge) melt contribution
   bool m_add_fresh_water_melt;
 
+  //! whether to restrict the discharge plume to floating cells downstream of the outflow
+  bool m_discharge_downstream_only;
+
   const array::Scalar &m_theta_ocean;
   const array::Scalar &m_salinity_ocean;
   
