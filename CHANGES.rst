@@ -3,6 +3,10 @@
 Changes since v2.3.0
 ====================
 
+- Add `ocean.picop.add_fresh_water_melt` (default `no`). When `yes`, the PICOP sub-shelf melt
+  rate includes the subglacial-discharge (fresh water plume) melt contribution; when `no`, it
+  uses the ambient (PICO-style) contribution only. This lets the fresh-water plume melt be
+  toggled on and off without editing the code.
 - Add `stress_balance.blatter.grounding_line_quadrature_order` (default 10). It sets the order
   N of the N-by-N quadrature used on Blatter basal faces at grounding lines and on
   partially-submerged marine faces (where the basal drag / lateral stress is discontinuous

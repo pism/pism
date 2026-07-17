@@ -1809,6 +1809,11 @@ netcdf pism_config {
     pism_config:ocean.pico.temperature_as_thermal_forcing_option = "pico_temperature_as_thermal_forcing";
     pism_config:ocean.pico.temperature_as_thermal_forcing_type = "flag";
 
+    pism_config:ocean.picop.add_fresh_water_melt = "no";
+    pism_config:ocean.picop.add_fresh_water_melt_doc = "If set to \"yes\", include the subglacial-discharge (fresh water plume) melt contribution in the PICOP sub-shelf melt rate. If \"no\", the melt rate uses the ambient (PICO-style) contribution only.";
+    pism_config:ocean.picop.add_fresh_water_melt_option = "picop_add_fresh_water_melt";
+    pism_config:ocean.picop.add_fresh_water_melt_type = "flag";
+
     pism_config:ocean.picop.dimensionless_scaling_factor = 0.56;
     pism_config:ocean.picop.dimensionless_scaling_factor_doc = "Sets the dimensionless scaling factor.";
     pism_config:ocean.picop.dimensionless_scaling_factor_option = "dimensionless_scaling_factor";

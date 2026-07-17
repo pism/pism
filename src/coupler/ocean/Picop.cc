@@ -79,6 +79,8 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.picop");
 
+  m_add_fresh_water_melt = m_config->get_flag("ocean.picop.add_fresh_water_melt");
+
   m_basal_melt_rate.metadata(0)
       .long_name("PICOP sub-shelf melt rate")
       .units("m s^-1")
@@ -516,7 +518,13 @@ void Picop::compute_melt_rate(const Inputs &inputs,
       const double M_X = physics.dimensionless_melt_curve(X_hat);
       const double M = physics.melt_function(t_a, t_f_gl, g_alpha);
       const double q_sg = m_discharge_flux(i, j);
-      const double m_fw = physics.fresh_water_melt_rate(q_sg, s_a, t_a, Gamma_TS, t_f_gl, alpha);
+      // Fresh-water (subglacial discharge plume) melt contribution, optionally disabled
+      // via ocean.picop.add_fresh_water_melt. When disabled, the melt rate reduces to the
+      // ambient (PICO-style) contribution M_X * M.
+      const double m_fw =
+          m_add_fresh_water_melt
+              ? physics.fresh_water_melt_rate(q_sg, s_a, t_a, Gamma_TS, t_f_gl, alpha)
+              : 0.0;
       m_fresh_water_melt_rate(i, j) = m_fw;
       // Equation 16 in Pelle et al (2023). Guard the 0/0 that occurs when both the
       // ambient melt M and the discharge melt m_fw vanish (e.g. a flat shelf base with

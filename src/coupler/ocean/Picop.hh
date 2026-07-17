@@ -61,6 +61,9 @@ private:
   //! subglacial discharge flux q_sg(x,y) on floating cells (m^2 s^-1)
   array::Scalar m_discharge_flux;
 
+  //! whether to add the fresh-water (subglacial discharge) melt contribution
+  bool m_add_fresh_water_melt;
+
   const array::Scalar &m_theta_ocean;
   const array::Scalar &m_salinity_ocean;
   
