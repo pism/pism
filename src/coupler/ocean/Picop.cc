@@ -70,6 +70,9 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
     m_local_slope(grid, "picop_local_slope"),
     m_fresh_water_melt_rate(grid, "picop_fresh_water_melt_rate"),
     m_discharge_flux(grid, "picop_discharge_flux"),
+    m_disch_q0(grid, "picop_disch_q0"),
+    m_disch_L5(grid, "picop_disch_L5"),
+    m_disch_s(grid, "picop_disch_s"),
     m_theta_ocean(m_pico->get_temperature()),
     m_salinity_ocean(m_pico->get_salinity()),
     m_flow_direction(grid, "ice_flow_direction"),
@@ -80,7 +83,16 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
   ForcingOptions opt(*m_grid->ctx(), "ocean.picop");
 
   m_add_fresh_water_melt = m_config->get_flag("ocean.picop.add_fresh_water_melt");
-  m_discharge_downstream_only = m_config->get_flag("ocean.picop.discharge_downstream_only");
+  {
+    const auto method = m_config->get_string("ocean.picop.discharge_method");
+    if (method == "along_flow") {
+      m_discharge_method = DISCHARGE_ALONG_FLOW;
+    } else if (method == "downstream_gate") {
+      m_discharge_method = DISCHARGE_DOWNSTREAM_GATE;
+    } else {
+      m_discharge_method = DISCHARGE_ISOTROPIC;
+    }
+  }
 
   m_basal_melt_rate.metadata(0)
       .long_name("PICOP sub-shelf melt rate")
@@ -315,6 +327,12 @@ std::vector<Outflow> gather_outflows(MPI_Comm com, const std::vector<Outflow> &l
 }
 } // end of anonymous namespace
 
+// Semi-Lagrangian transport helpers (defined below, used by build_discharge_field).
+void transport_step(const array::Scalar1 &U_old, const array::CellType &cell_type,
+                    const array::Vector &flow_direction, array::Scalar &U_new);
+void transport_step_distance(const array::Scalar1 &U_old, const array::CellType &cell_type,
+                             const array::Vector &flow_direction, array::Scalar &U_new);
+
 //! Build the discharge flux field q_sg(x,y) on floating cells.
 /*!
  * PISM routes subglacial water under grounded ice only, so the discharge enters the
@@ -444,14 +462,110 @@ void Picop::build_discharge_field(const Inputs &inputs,
                    N, n_active, max_q0, max_radius);
   }
 
-  // Pass 2: paint q_sg on floating cells, taking the max over overlapping outflows. A cell
-  // within 5L' of an outflow gets the discharge flux with quadratic decay (0 at 5L').
-  //
-  // When the plume is sub-grid (5L' < grid spacing) the decay reaches no floating cell
-  // center, so we additionally deposit the full q_sg0 into the outflow's immediate floating
-  // neighbor(s) (within r_nn): at this resolution the plume is confined to the first cell.
-  const double r_nn = 1.5 * std::max(m_grid->dx(), m_grid->dy());
+  // Pass 2: distribute q_sg onto floating cells (method selected by ocean.picop.discharge_method).
   m_discharge_flux.set(0.0);
+
+  // Along-flow method: transport the discharge downstream along ice flow instead of painting
+  // an isotropic disk. Three tracers are relaxed over the floating region from the outflows:
+  //   q0 = source discharge q_sg0, L5 = source 5L', s = along-flow path distance from source.
+  // Then q_sg = q0 * (1 - s/L5)^2 (clamped), i.e. the same quadratic decay as the isotropic
+  // paint but with distance measured along the flowline. Each floating cell is fed by its
+  // single upstream outflow (the semi-Lagrangian characteristic), not a max over all disks.
+  if (m_discharge_method == DISCHARGE_ALONG_FLOW) {
+    // Dirichlet BCs: zero everywhere except the outflow cells (held constant by transport_step
+    // since they are grounded). Locate each outflow's owned cell by inverting its coordinates.
+    m_disch_q0.set(0.0);
+    m_disch_L5.set(0.0);
+    m_disch_s.set(0.0);
+
+    const double x0 = m_grid->x(0), y0 = m_grid->y(0);
+    const double dx = m_grid->dx(), dy = m_grid->dy();
+    const int xs = m_grid->xs(), xm = m_grid->xm();
+    const int ys = m_grid->ys(), ym = m_grid->ym();
+    {
+      array::AccessScope scope{&m_disch_q0, &m_disch_L5, &m_disch_s};
+      for (const auto &o : all) {
+        if (o.radius <= 0.0) {
+          continue;
+        }
+        const int i = static_cast<int>(std::lround((o.x - x0) / dx));
+        const int j = static_cast<int>(std::lround((o.y - y0) / dy));
+        if (i >= xs and i < xs + xm and j >= ys and j < ys + ym) {
+          m_disch_q0(i, j) = o.q_sg0;
+          m_disch_L5(i, j) = o.radius;
+          m_disch_s(i, j)  = 0.0;
+        }
+      }
+    }
+    m_disch_q0.update_ghosts();
+    m_disch_L5.update_ghosts();
+    m_disch_s.update_ghosts();
+
+    // Relaxation (same structure as compute_grounding_line_elevation): converge on q0, the
+    // bounded tracer; L5 and s propagate along the same characteristics.
+    const int max_iter = 500;
+    const double rtol  = 1e-3;
+    array::Scalar &scratch = m_work;
+    double residual = 0.0;
+    for (int iter = 0; iter < max_iter; ++iter) {
+      transport_step(m_disch_q0, cell_type, m_flow_direction, scratch);
+
+      residual = 0.0;
+      {
+        array::AccessScope scope{&m_disch_q0, &scratch};
+        for (auto p : m_grid->points()) {
+          const int i = p.i(), j = p.j();
+          const double denom = std::max(std::abs(m_disch_q0(i, j)), 1e-12);
+          residual = std::max(residual, std::abs(scratch(i, j) - m_disch_q0(i, j)) / denom);
+        }
+      }
+      residual = GlobalMax(m_grid->com, residual);
+      m_disch_q0.copy_from(scratch);
+
+      transport_step(m_disch_L5, cell_type, m_flow_direction, scratch);
+      m_disch_L5.copy_from(scratch);
+
+      transport_step_distance(m_disch_s, cell_type, m_flow_direction, scratch);
+      m_disch_s.copy_from(scratch);
+
+      if (residual < rtol) {
+        m_log->message(3,
+                       "PICOP discharge along-flow transport converged at iteration %03d"
+                       " (max rel. change %f)\n", iter, residual);
+        break;
+      }
+    }
+    if (residual >= rtol) {
+      m_log->message(2,
+                     "PICOP discharge along-flow transport reached max iterations %03d"
+                     " (max rel. change %f)\n", max_iter, residual);
+    }
+
+    // Assemble q_sg from the transported tracers, with quadratic decay in along-flow distance.
+    array::AccessScope scope{&cell_type, &m_disch_q0, &m_disch_L5, &m_disch_s, &m_discharge_flux};
+    for (auto p : m_grid->points()) {
+      const int i = p.i(), j = p.j();
+      if (not cell_type.floating_ice(i, j)) {
+        continue;
+      }
+      const double L5 = m_disch_L5(i, j);
+      if (L5 > 0.0) {
+        const double w = std::max(0.0, std::min(1.0, 1.0 - m_disch_s(i, j) / L5));
+        m_discharge_flux(i, j) = m_disch_q0(i, j) * w * w;
+      }
+    }
+    return;
+  }
+
+  // Isotropic method (optionally restricted to downstream cells): paint q_sg on floating cells,
+  // taking the max over overlapping outflows. A cell within 5L' of an outflow gets the
+  // discharge flux with quadratic decay (0 at 5L').
+  //
+  // When the plume is sub-grid (5L' < grid spacing) the decay reaches no floating cell center,
+  // so we additionally deposit the full q_sg0 into the outflow's immediate floating neighbor(s)
+  // (within r_nn): at this resolution the plume is confined to the first cell.
+  const bool gate = (m_discharge_method == DISCHARGE_DOWNSTREAM_GATE);
+  const double r_nn = 1.5 * std::max(m_grid->dx(), m_grid->dy());
   {
     array::AccessScope scope{&cell_type, &m_discharge_flux};
     for (auto p : m_grid->points()) {
@@ -469,7 +583,7 @@ void Picop::build_discharge_field(const Inputs &inputs,
         // (cell - outflow) . flow_direction > 0. This confines the plume influence to the
         // along-flow direction instead of an isotropic disk (which lit up the shelf sides).
         // If the outflow has no flow direction, fall back to the isotropic behavior.
-        if (m_discharge_downstream_only) {
+        if (gate) {
           const double dir_mag2 = o.dir_x * o.dir_x + o.dir_y * o.dir_y;
           if (dir_mag2 > 0.0) {
             const double dot = (x - o.x) * o.dir_x + (y - o.y) * o.dir_y;
@@ -717,6 +831,38 @@ void transport_step(const array::Scalar1 &U_old, const array::CellType &cell_typ
       auto D = flow_direction(i, j);
 
       U_new(i, j) = interpolate(U, -D.u, -D.v);
+    } else {
+      U_new(i, j) = U_old(i, j);
+    }
+  }
+}
+
+/*!
+ * Like transport_step(), but accumulates along-flow path distance: on floating ice the
+ * transported value is incremented by the physical length of one semi-Lagrangian step
+ * (the departure point is one flow-vector away from the cell center). Used to advect the
+ * along-flow distance `s` from each discharge outflow. Non-floating cells are held constant.
+ */
+void transport_step_distance(const array::Scalar1 &U_old, const array::CellType &cell_type,
+                             const array::Vector &flow_direction, array::Scalar &U_new) {
+
+  auto grid = U_new.grid();
+  const double dx = grid->dx(), dy = grid->dy();
+
+  array::AccessScope scope{ &U_old, &cell_type, &U_new, &flow_direction };
+
+  for (auto p : grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    if (cell_type.floating_ice(i, j)) {
+      auto U = U_old.box(i, j);
+      auto D = flow_direction(i, j);
+
+      // |D| == 1 (normalized), so the step covers one flow-vector; its physical length is
+      // hypot(D.u*dx, D.v*dy) (== dx for square cells).
+      const double ds = std::hypot(D.u * dx, D.v * dy);
+
+      U_new(i, j) = interpolate(U, -D.u, -D.v) + ds;
     } else {
       U_new(i, j) = U_old(i, j);
     }

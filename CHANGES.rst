@@ -3,11 +3,15 @@
 Changes since v2.3.0
 ====================
 
-- Add `ocean.picop.discharge_downstream_only` (default `no`). When `yes`, the PICOP
-  subglacial-discharge plume `q_sg(x,y)` is painted only onto floating cells downstream of
-  each grounding-line outflow (positive dot product of the outflow-to-cell vector with the
-  local ice-flow direction), instead of onto an isotropic disk. This removes spurious
-  fresh-water melt along the lateral margins of ice shelves.
+- Add `ocean.picop.discharge_method` (keyword, default `along_flow`) controlling how the PICOP
+  subglacial-discharge plume `q_sg(x,y)` is distributed onto floating cells. `along_flow` (the
+  new default) transports the discharge downstream along the ice flow (semi-Lagrangian), with
+  quadratic decay over 5L' measured in along-flow path distance. `isotropic` restores the
+  previous behavior: a disk of radius 5L' around each grounding-line outflow. `downstream_gate`
+  paints that disk only onto cells downstream of the outflow (positive dot product of the
+  outflow-to-cell vector with the local ice-flow direction). The default change (`isotropic`
+  to `along_flow`) removes spurious fresh-water melt along the lateral margins of ice shelves;
+  pass `-ocean.picop.discharge_method isotropic` to reproduce earlier PICOP results.
 - Add `ocean.picop.add_fresh_water_melt` (default `no`). When `yes`, the PICOP sub-shelf melt
   rate includes the subglacial-discharge (fresh water plume) melt contribution; when `no`, it
   uses the ambient (PICO-style) contribution only. This lets the fresh-water plume melt be

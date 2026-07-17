@@ -1820,10 +1820,11 @@ netcdf pism_config {
     pism_config:ocean.picop.dimensionless_scaling_factor_type = "number";
     pism_config:ocean.picop.dimensionless_scaling_factor_units = "1";
 
-    pism_config:ocean.picop.discharge_downstream_only = "no";
-    pism_config:ocean.picop.discharge_downstream_only_doc = "If set to \"yes\", the subglacial discharge plume q_sg(x,y) is painted only onto floating cells downstream of each grounding-line outflow (where the vector from the outflow has a positive dot product with the local ice-flow direction), instead of onto an isotropic disk of radius 5L'. This confines the fresh-water melt to the along-flow direction.";
-    pism_config:ocean.picop.discharge_downstream_only_option = "picop_discharge_downstream_only";
-    pism_config:ocean.picop.discharge_downstream_only_type = "flag";
+    pism_config:ocean.picop.discharge_method = "along_flow";
+    pism_config:ocean.picop.discharge_method_choices = "isotropic,downstream_gate,along_flow";
+    pism_config:ocean.picop.discharge_method_doc = "How the subglacial-discharge plume q_sg(x,y) is distributed onto floating cells. \"isotropic\": paint an isotropic disk of radius 5L' around each grounding-line outflow with quadratic decay (original behavior). \"downstream_gate\": as isotropic, but paint only cells downstream of the outflow (positive dot product of the outflow-to-cell vector with the local ice-flow direction). \"along_flow\": transport the discharge downstream along the ice flow (semi-Lagrangian), with quadratic decay over 5L' measured in along-flow path distance.";
+    pism_config:ocean.picop.discharge_method_option = "picop_discharge_method";
+    pism_config:ocean.picop.discharge_method_type = "keyword";
 
     pism_config:ocean.picop.drag_coefficient = 2.5e-3;
     pism_config:ocean.picop.drag_coefficient_doc = "Sets the drag coefficient.";

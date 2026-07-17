@@ -61,11 +61,16 @@ private:
   //! subglacial discharge flux q_sg(x,y) on floating cells (m^2 s^-1)
   array::Scalar m_discharge_flux;
 
+  //! transported tracers for along-flow discharge distribution: source discharge q_sg0,
+  //! source governing length scale 5L', and along-flow path distance from the source
+  array::Scalar1 m_disch_q0, m_disch_L5, m_disch_s;
+
   //! whether to add the fresh-water (subglacial discharge) melt contribution
   bool m_add_fresh_water_melt;
 
-  //! whether to restrict the discharge plume to floating cells downstream of the outflow
-  bool m_discharge_downstream_only;
+  //! how the subglacial discharge plume q_sg(x,y) is distributed onto floating cells
+  enum DischargeMethod { DISCHARGE_ISOTROPIC, DISCHARGE_DOWNSTREAM_GATE, DISCHARGE_ALONG_FLOW };
+  DischargeMethod m_discharge_method;
 
   const array::Scalar &m_theta_ocean;
   const array::Scalar &m_salinity_ocean;
