@@ -125,6 +125,14 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
   m_discharge_flux.metadata()["_FillValue"] = {0.0};
   m_discharge_flux.set(0.0);
 
+  // Internal along-flow transport tracers, exposed as diagnostics for debugging.
+  m_disch_q0.metadata(0).long_name("PICOP transported source discharge q_sg0").units("m^2 s^-1");
+  m_disch_L5.metadata(0).long_name("PICOP transported governing length scale 5L'").units("m");
+  m_disch_s.metadata(0).long_name("PICOP along-flow distance from discharge outflow").units("m");
+  m_disch_q0.set(0.0);
+  m_disch_L5.set(0.0);
+  m_disch_s.set(0.0);
+
   m_shelf_base_temperature->metadata()["_FillValue"] = {0.0};
 }
 
@@ -1070,6 +1078,9 @@ DiagnosticList Picop::spatial_diagnostics_impl() const {
     { "picop_basal_melt_rate", Diagnostic::wrap(m_basal_melt_rate) },
     { "picop_fresh_water_melt_rate", Diagnostic::wrap(m_fresh_water_melt_rate) },
     { "picop_discharge_flux", Diagnostic::wrap(m_discharge_flux) },
+    { "picop_disch_q0", Diagnostic::wrap(m_disch_q0) },
+    { "picop_disch_L5", Diagnostic::wrap(m_disch_L5) },
+    { "picop_disch_s", Diagnostic::wrap(m_disch_s) },
     { "picop_grounding_line_elevation", Diagnostic::wrap(m_grounding_line_elevation) },
     { "picop_local_slope", Diagnostic::wrap(m_local_slope) },
     { "picop_temperature", Diagnostic::wrap(m_theta_ocean) },
