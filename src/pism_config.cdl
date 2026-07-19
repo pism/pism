@@ -1901,6 +1901,12 @@ netcdf pism_config {
     pism_config:ocean.picop.power_alpha_type = "number";
     pism_config:ocean.picop.power_alpha_units = "1";
 
+    pism_config:ocean.picop.power_beta = 2.0;
+    pism_config:ocean.picop.power_beta_doc = "Exponent on the thermal forcing `(T_a - T_f)` in the PICOP ambient melt function (:cite:`Pelle2019`, eqn. 10). The default 2 is the Antarctic plume value; :cite:`Cai2017` find approximately 1.2 for Petermann. Changing this from 2 alters the effective units of `ocean.picop.melt_rate_parameter`, which may then need re-tuning to match observed melt magnitudes.";
+    pism_config:ocean.picop.power_beta_option = "picop_power_beta";
+    pism_config:ocean.picop.power_beta_type = "number";
+    pism_config:ocean.picop.power_beta_units = "1";
+
     pism_config:ocean.picop.thermal_expansion_coefficient = 3.87e-5;
     pism_config:ocean.picop.thermal_expansion_coefficient_doc = "Haline concentration coefficient (Jenkins, 20100)";
     pism_config:ocean.picop.thermal_expansion_coefficient_option = "";

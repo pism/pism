@@ -47,6 +47,7 @@ PicopPhysics::PicopPhysics(const Config &config) {
     M0             = config.get_number("ocean.picop.melt_rate_parameter", "m s^-1 kelvin^-2");
     x0             = config.get_number("ocean.picop.dimensionless_scaling_factor");
     power_alpha    = config.get_number("ocean.picop.power_alpha");
+    power_beta     = config.get_number("ocean.picop.power_beta");
     YT = CdT / sqrt(Cd);
 }
 
@@ -125,8 +126,11 @@ double PicopPhysics::melt_rate(const double M, const double X_hat) const {
 
 //! equation 10 in the PICOP paper.
 double PicopPhysics::melt_function(const double t_a, const double t_f_gl, const double g_alpha) const {
-  // m s^-1  delta_kelvin^-2 * 1 * (delta_kelvin)^2
-  return M0 * g_alpha * pow(t_a - t_f_gl, 2);
+  // M = M0 * g(alpha) * (T_a - T_f)^beta. The thermal-forcing exponent beta (Eq. 10 uses 2,
+  // the Antarctic plume value) is configurable via ocean.picop.power_beta; Cai et al. (2017)
+  // find beta ~ 1.2 for Petermann. Clamp the base at 0 so a non-integer exponent is safe (and
+  // gives no melt when the ambient water is at/below the local freezing point).
+  return M0 * g_alpha * pow(std::max(0.0, t_a - t_f_gl), power_beta);
 }
 
 //! Equation 13 in Pelle et al (2023)

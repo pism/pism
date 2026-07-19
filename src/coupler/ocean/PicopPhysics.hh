@@ -72,6 +72,9 @@ private:
 
   //! exponent on the buoyancy flux (g q_sg delta_rho) in the discharge melt rate (Eq. 13)
   double power_alpha;
+
+  //! exponent on the thermal forcing (T_a - T_f) in the ambient melt function (Eq. 10)
+  double power_beta;
   // latent heat of fusion
   double L_fw;
 

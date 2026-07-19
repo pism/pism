@@ -3,6 +3,11 @@
 Changes since v2.3.0
 ====================
 
+- Add `ocean.picop.power_beta` (default 2). It sets the exponent on the thermal forcing
+  `(T_a - T_f)` in the PICOP ambient melt function (`Pelle2019`, eqn. 10). The default 2 is the
+  Antarctic plume value; `Cai2017` find approximately 1.2 for Petermann. Lowering it weakens the
+  melt sensitivity to ocean warming (changing it from 2 alters the effective units of
+  `ocean.picop.melt_rate_parameter`, which may then need re-tuning).
 - Add `ocean.picop.power_alpha` (default 1/3). It sets the plume-velocity exponent applied to
   the buoyancy-and-geometry group `G2 (g q_sg delta_rho)` in the PICOP subglacial-discharge
   melt rate (`Pelle2023`, eqns. 13-14). The default reproduces the published parameterization.
