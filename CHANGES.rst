@@ -3,6 +3,9 @@
 Changes since v2.3.0
 ====================
 
+- Add `ocean.picop.power_alpha` (default 1/3). It sets the plume-velocity exponent applied to
+  the buoyancy-and-geometry group `G2 (g q_sg delta_rho)` in the PICOP subglacial-discharge
+  melt rate (`Pelle2023`, eqns. 13-14). The default reproduces the published parameterization.
 - Fix `hydrology.surface_input_from_runoff` with the `ismip7` surface model. `ISMIP7` stored
   `runoff()` as a rate (`kg m-2 s-1`) instead of an amount (`kg m-2`, the `SurfaceModel`
   convention). `IceModel` divides `runoff()` by the time step to recover a rate for the

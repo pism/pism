@@ -1895,6 +1895,12 @@ netcdf pism_config {
     pism_config:ocean.picop.periodic_doc = "If true, interpret forcing data as periodic in time";
     pism_config:ocean.picop.periodic_type = "flag";
 
+    pism_config:ocean.picop.power_alpha = 0.33333333;
+    pism_config:ocean.picop.power_alpha_doc = "Plume-velocity exponent applied to the buoyancy-and-geometry group `G2 (g q_sg delta_rho)` in the PICOP subglacial-discharge melt rate (:cite:`Pelle2023`, eqns. 13-14). The default 1/3 reproduces the published parameterization.";
+    pism_config:ocean.picop.power_alpha_option = "picop_power_alpha";
+    pism_config:ocean.picop.power_alpha_type = "number";
+    pism_config:ocean.picop.power_alpha_units = "1";
+
     pism_config:ocean.picop.thermal_expansion_coefficient = 3.87e-5;
     pism_config:ocean.picop.thermal_expansion_coefficient_doc = "Haline concentration coefficient (Jenkins, 20100)";
     pism_config:ocean.picop.thermal_expansion_coefficient_option = "";

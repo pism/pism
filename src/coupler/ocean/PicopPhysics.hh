@@ -69,6 +69,9 @@ private:
   double E0, M0;
   // scaling coefficients
   double  x0;
+
+  //! exponent on the buoyancy flux (g q_sg delta_rho) in the discharge melt rate (Eq. 13)
+  double power_alpha;
   // latent heat of fusion
   double L_fw;
 

@@ -46,6 +46,7 @@ PicopPhysics::PicopPhysics(const Config &config) {
     L_fw           = config.get_number("constants.fresh_water.latent_heat_of_fusion");
     M0             = config.get_number("ocean.picop.melt_rate_parameter", "m s^-1 kelvin^-2");
     x0             = config.get_number("ocean.picop.dimensionless_scaling_factor");
+    power_alpha    = config.get_number("ocean.picop.power_alpha");
     YT = CdT / sqrt(Cd);
 }
 
@@ -158,9 +159,16 @@ double PicopPhysics::fresh_water_melt_rate(const double q_sg,
 
   // Pelle et al. (2023), Eq. 13 (in m s^-1; the paper's 31536000 m/s->m/yr factor is
   // omitted since PISM works in SI). The prefactor is c_p / L_fw = 1 / (L / c_p).
-  // Use cbrt() rather than pow(x, 1./3.): the latter returns NaN for a negative argument.
-  return (c_p / L_fw) * CdTS0 * G1 * cbrt(G2)
-         * cbrt(g * q_sg * delta_rho_i) * thermal_forcing;
+  //
+  // The 1/3 power in Eqs. 13-14 is the plume-velocity exponent; it applies to the whole
+  // buoyancy-and-geometry group G2 * (g q_sg delta_rho), which the paper (and Eq. 14) keeps
+  // under a single cube root. It is configurable via ocean.picop.power_alpha (default 1/3, at
+  // which pow(G2 * g q_sg delta_rho, 1/3) == cbrt(G2) * cbrt(g q_sg delta_rho), the original).
+  //
+  // pow() is safe: G2 = sqrt(...) >= 0, g > 0, and q_sg > 0 and delta_rho_i > 0 are guaranteed
+  // above, so the base is non-negative (no NaN as pow() would give for a negative base).
+  return (c_p / L_fw) * CdTS0 * G1
+         * pow(G2 * g * q_sg * delta_rho_i, power_alpha) * thermal_forcing;
 }
 
 //! Governing length scale 5L' (m), Pelle et al. (2023), Eq. 15.
