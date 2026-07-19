@@ -12,6 +12,12 @@ Changes since v2.3.0
   petsc4py at interpreter shutdown. Previously a failure such as a missing `input.file`
   could deadlock the run under some MPI implementations, so a batch job kept its nodes
   until the wall-clock limit. The traceback is now printed once, by rank 0.
+- Fix `hydrology.surface_input_from_runoff` with the `ismip7` surface model. `ISMIP7` stored
+  `runoff()` as a rate (`kg m-2 s-1`) instead of an amount (`kg m-2`, the `SurfaceModel`
+  convention). `IceModel` divides `runoff()` by the time step to recover a rate for the
+  hydrology input, so the surface runoff reaching the subglacial hydrology was too small by a
+  factor of the time step (and the `surface_runoff_flux`/`_rate` diagnostics were wrong). The
+  subglacial water flux (and hence PICOP discharge) now responds to seasonal runoff as expected.
 - Clamp the ISMIP7 surface elevation lapse-rate correction. The elevation change
   `h - h_ref` used in `SMB = SMB_ref + dSMBdz (h - h_ref)` (and the analogous temperature
   and runoff corrections) is now limited to +/- `surface.ismip7.elevation_change_max`
