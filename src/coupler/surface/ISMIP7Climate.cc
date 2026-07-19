@@ -233,7 +233,12 @@ void ISMIP7::update_impl(const Geometry &geometry, double t, double dt) {
 
     SMB(i, j) = SMB_ref(i, j) + dSMBdz(i, j) * dz;
     T(i, j)   = T_ref(i, j) + dTdz(i, j) * dz;
-    R(i, j)   = R_ref(i, j) + dRdz(i, j) * dz;
+    // runoff() must return an amount (kg m^-2 over the step), not a rate: the reference
+    // field runoff_rate is kg m^-2 s^-1, so multiply the lapse-corrected rate by dt.
+    // (SurfaceModel convention: accumulation/melt/runoff are amounts; only mass_flux is a
+    // rate. IceModel divides runoff() by dt again when hydrology.surface_input_from_runoff
+    // is set, so storing a rate here shrinks the hydrology input by a factor of ~dt.)
+    R(i, j)   = (R_ref(i, j) + dRdz(i, j) * dz) * dt;
   }
 
   dummy_accumulation(SMB, *m_accumulation);

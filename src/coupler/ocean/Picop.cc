@@ -550,6 +550,10 @@ void Picop::build_discharge_field(const Inputs &inputs,
     }
 
     // Assemble q_sg from the transported tracers, with quadratic decay in along-flow distance.
+    // Sub-grid floor (mirrors the isotropic method's r_nn floor): when 5L' is smaller than the
+    // grid spacing the decay would zero the plume at the very first cell, so floating cells
+    // within r_nn along-flow distance of an outflow receive the full discharge instead.
+    const double r_nn = 1.5 * std::max(dx, dy);
     array::AccessScope scope{&cell_type, &m_disch_q0, &m_disch_L5, &m_disch_s, &m_discharge_flux};
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
@@ -558,7 +562,12 @@ void Picop::build_discharge_field(const Inputs &inputs,
       }
       const double L5 = m_disch_L5(i, j);
       if (L5 > 0.0) {
-        const double w = std::max(0.0, std::min(1.0, 1.0 - m_disch_s(i, j) / L5));
+        double w;
+        if (m_disch_s(i, j) < r_nn) {
+          w = 1.0;  // sub-grid floor: first cell(s) along flow get the full discharge
+        } else {
+          w = std::max(0.0, std::min(1.0, 1.0 - m_disch_s(i, j) / L5));
+        }
         m_discharge_flux(i, j) = m_disch_q0(i, j) * w * w;
       }
     }

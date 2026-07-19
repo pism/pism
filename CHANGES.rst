@@ -3,6 +3,12 @@
 Changes since v2.3.0
 ====================
 
+- Fix `hydrology.surface_input_from_runoff` with the `ismip7` surface model. `ISMIP7` stored
+  `runoff()` as a rate (`kg m-2 s-1`) instead of an amount (`kg m-2`, the `SurfaceModel`
+  convention). `IceModel` divides `runoff()` by the time step to recover a rate for the
+  hydrology input, so the surface runoff reaching the subglacial hydrology was too small by a
+  factor of the time step (and the `surface_runoff_flux`/`_rate` diagnostics were wrong). The
+  subglacial water flux (and hence PICOP discharge) now responds to seasonal runoff as expected.
 - Add `ocean.picop.discharge_method` (keyword, default `along_flow`) controlling how the PICOP
   subglacial-discharge plume `q_sg(x,y)` is distributed onto floating cells. `along_flow` (the
   new default) transports the discharge downstream along the ice flow (semi-Lagrangian), with
