@@ -3266,6 +3266,58 @@ protected:
   }
 };
 
+//! \brief Reports the pressure within the ice (3D).
+class PressureInIce : public Diag<IceModel>
+{
+public:
+  PressureInIce(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const;
+};
+
+
+PressureInIce::PressureInIce(const IceModel *m) : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "pressure", *m_grid, m_grid->z() } };
+  m_vars[0].long_name("pressure in ice (hydrostatic)").units("Pa");
+}
+
+std::shared_ptr<array::Array> PressureInIce::compute_impl() const {
+
+  std::shared_ptr<array::Array3D> result(
+      new array::Array3D(m_grid, "pressure", array::WITHOUT_GHOSTS, m_grid->z()));
+  result->metadata(0) = m_vars[0];
+
+  const array::Scalar &thickness = model->geometry().ice_thickness;
+
+  array::AccessScope list{ &thickness, result.get() };
+
+  const double rg = m_config->get_number("constants.ice.density") *
+                    m_config->get_number("constants.standard_gravity");
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (auto p : m_grid->points()) {
+      const int i = p.i(), j = p.j();
+
+      unsigned int ks  = m_grid->kBelowHeight(thickness(i, j));
+      double *P_out_ij = result->get_column(i, j);
+      const double H   = thickness(i, j);
+      // within the ice:
+      for (unsigned int k = 0; k <= ks; ++k) {
+        P_out_ij[k] = rg * (H - m_grid->z(k)); // FIXME: add atmospheric pressure?
+      }
+      // above the ice:
+      for (unsigned int k = ks + 1; k < m_grid->Mz(); ++k) {
+        P_out_ij[k] = 0.0; // FIXME: use atmospheric pressure?
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  return result;
+}
 
 } // end of namespace diagnostics
 
@@ -3336,6 +3388,7 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
     { "lat", d::wrap(m_geometry.latitude) },
     { "lon", d::wrap(m_geometry.longitude) },
     { "mask", d::wrap(m_geometry.cell_type) },
+    { "pressure", f(new PressureInIce(this))},
     { "thk", f(new IceThickness(this)) },
     { "topg_sl_adjusted", f(new BedTopographySeaLevelAdjusted(this)) },
     { "usurf", f(new IceSurfaceElevation(this)) },

@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2023 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2023, 2026 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -201,15 +201,6 @@ class PSB_deviatoric_stresses : public Diag<StressBalance>
 {
 public:
   PSB_deviatoric_stresses(const StressBalance *m);
-protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
-};
-
-//! \brief Reports the pressure within the ice (3D).
-class PSB_pressure : public Diag<StressBalance>
-{
-public:
-  PSB_pressure(const StressBalance *m);
 protected:
   virtual std::shared_ptr<array::Array> compute_impl() const;
 };
