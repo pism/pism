@@ -36,6 +36,8 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/projection.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/basalstrength/YieldStress.hh"
+#include "pism/basalstrength/basal_resistance.hh"
 
 #if (Pism_USE_PROJ == 1)
 #include "pism/util/Proj.hh"
@@ -3319,6 +3321,177 @@ std::shared_ptr<array::Array> PressureInIce::compute_impl() const {
   return result;
 }
 
+//! \brief Computes the gravitational driving stress (diagnostically).
+class DrivingShearStress : public Diag<IceModel>
+{
+public:
+  DrivingShearStress(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const;
+};
+
+DrivingShearStress::DrivingShearStress(const IceModel *m)
+  : Diag<IceModel>(m) {
+
+  // set metadata:
+  m_vars = { { m_sys, "taud_x", *m_grid }, { m_sys, "taud_y", *m_grid } };
+  m_vars[0].long_name("X-component of the driving shear stress at the base of ice");
+  m_vars[1].long_name("Y-component of the driving shear stress at the base of ice");
+
+  for (auto &v : m_vars) {
+    v.units("Pa");
+    v["comment"] = "this field is purely diagnostic (not used by the model)";
+  }
+}
+
+/*!
+ * The driving stress computed here is not used by the model, so this
+ * implementation intentionally does not use the eta-transformation or special
+ * cases at ice margins.
+ */
+std::shared_ptr<array::Array> DrivingShearStress::compute_impl() const {
+
+  auto result = allocate<array::Vector>("taud");
+
+  const array::Scalar &thickness = model->geometry().ice_thickness;
+  const array::Scalar &surface   = model->geometry().ice_surface_elevation;
+
+  double standard_gravity = m_config->get_number("constants.standard_gravity"),
+         ice_density      = m_config->get_number("constants.ice.density");
+
+  array::AccessScope list{ &surface, &thickness, result.get() };
+
+  for (auto p : m_grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    double pressure = ice_density * standard_gravity * thickness(i, j);
+    if (pressure <= 0.0) {
+      (*result)(i, j).u = 0.0;
+      (*result)(i, j).v = 0.0;
+    } else {
+      (*result)(i, j).u = -pressure * diff_x_p(surface, i, j);
+      (*result)(i, j).v = -pressure * diff_y_p(surface, i, j);
+    }
+  }
+
+  return result;
+}
+
+//! @brief Computes the basal shear stress @f$ \tau_b @f$.
+class BasalShearStress : public Diag<IceModel>
+{
+public:
+  BasalShearStress(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const;
+};
+
+
+BasalShearStress::BasalShearStress(const IceModel *m) : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "taub_x", *m_grid }, { m_sys, "taub_y", *m_grid } };
+
+  m_vars[0].long_name("X-component of the shear stress at the base of ice");
+  m_vars[1].long_name("Y-component of the shear stress at the base of ice");
+
+  for (auto &v : m_vars) {
+    v.units("Pa");
+    v["comment"] = "this field is purely diagnostic (not used by the model)";
+  }
+}
+
+
+std::shared_ptr<array::Array> BasalShearStress::compute_impl() const {
+
+  auto result = allocate<array::Vector>("taub");
+
+  const auto *yield_stress_model = model->basal_yield_stress_model();
+
+  if (yield_stress_model == nullptr) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "cannot compute 'taub': no yield stress model available");
+  }
+
+  const auto &velocity = model->stress_balance()->shallow()->velocity();
+  const auto &tauc     = yield_stress_model->basal_material_yield_stress();
+  const auto &mask     = model->geometry().cell_type;
+
+  const auto *basal_sliding_law = model->stress_balance()->shallow()->sliding_law();
+
+  array::AccessScope list{ &tauc, &velocity, &mask, result.get() };
+  for (auto p : m_grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.grounded_ice(i, j)) {
+      double beta     = basal_sliding_law->drag(tauc(i, j), velocity(i, j).u, velocity(i, j).v);
+      (*result)(i, j) = -beta * velocity(i, j);
+    } else {
+      (*result)(i, j) = 0.0;
+    }
+  }
+
+  return result;
+}
+
+//! \brief Computes the magnitude of the gravitational driving stress
+//! (diagnostically).
+class DrivingShearStressmagnitude : public Diag<IceModel>
+{
+public:
+  DrivingShearStressmagnitude(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const;
+};
+
+DrivingShearStressmagnitude::DrivingShearStressmagnitude(const IceModel *m) : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "taud_mag", *m_grid } };
+  m_vars[0]
+      .long_name("magnitude of the gravitational driving stress at the base of ice")
+      .units("Pa");
+  m_vars[0]["comment"] = "this field is purely diagnostic (not used by the model)";
+}
+
+std::shared_ptr<array::Array> DrivingShearStressmagnitude::compute_impl() const {
+  auto result = allocate<array::Scalar>("taud_mag");
+  auto taud = array::cast<array::Vector>(DrivingShearStress(model).compute());
+
+  compute_magnitude(*taud, *result);
+
+  return result;
+}
+
+//! \brief Computes the magnitude of the basal shear stress
+//! (diagnostically).
+class BasalShearStressMagnitude : public Diag<IceModel>
+{
+public:
+  BasalShearStressMagnitude(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const;
+};
+
+BasalShearStressMagnitude::BasalShearStressMagnitude(const IceModel *m) : Diag<IceModel>(m) {
+
+  auto ismip = m_config->get_flag("output.ISMIP");
+
+  m_vars = { { m_sys, ismip ? "strbasemag" : "taub_mag", *m_grid } };
+  m_vars[0]
+      .long_name("magnitude of the basal shear stress at the base of ice")
+      .standard_name("land_ice_basal_drag") // ISMIP "standard" name
+      .units("Pa");
+  m_vars[0]["comment"] = "this field is purely diagnostic (not used by the model)";
+}
+
+std::shared_ptr<array::Array> BasalShearStressMagnitude::compute_impl() const {
+  auto result = allocate<array::Scalar>("taub_mag");
+
+  std::shared_ptr<array::Vector> taub = array::cast<array::Vector>(BasalShearStress(model).compute());
+
+  compute_magnitude(*taub, *result);
+
+  return result;
+}
+
+
 } // end of namespace diagnostics
 
 void IceModel::init_outputs(InputOptions options, DiagnosticReport report_type) {
@@ -3379,8 +3552,8 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
 
   using d       = Diagnostic;
   using f       = Diagnostic::Ptr; // "f" for "field"
-  result = {
-    // geometry
+  result        = {
+           // geometry
     { "cell_grounded_fraction", d::wrap(m_geometry.cell_grounded_fraction) },
     { "height_above_flotation", f(new HeightAboveFloatation(this)) },
     { "ice_area_specific_volume", d::wrap(m_geometry.ice_area_specific_volume) },
@@ -3388,7 +3561,7 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
     { "lat", d::wrap(m_geometry.latitude) },
     { "lon", d::wrap(m_geometry.longitude) },
     { "mask", d::wrap(m_geometry.cell_type) },
-    { "pressure", f(new PressureInIce(this))},
+    { "pressure", f(new PressureInIce(this)) },
     { "thk", f(new IceThickness(this)) },
     { "topg_sl_adjusted", f(new BedTopographySeaLevelAdjusted(this)) },
     { "usurf", f(new IceSurfaceElevation(this)) },
@@ -3436,7 +3609,7 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
     { "tendency_of_ice_amount", f(new TendencyOfIceAmount(this, AMOUNT)) },
     { "tendency_of_ice_amount_due_to_flow", f(new TendencyOfIceAmountDueToFlow(this, AMOUNT)) },
     { "tendency_of_ice_amount_due_to_conservation_error",
-      f(new ConservationErrorFlux(this, AMOUNT)) },
+             f(new ConservationErrorFlux(this, AMOUNT)) },
     { "tendency_of_ice_amount_due_to_surface_mass_flux", f(new SurfaceFlux(this, AMOUNT)) },
     { "tendency_of_ice_amount_due_to_basal_mass_flux", f(new BasalFlux(this, AMOUNT)) },
     { "tendency_of_ice_amount_due_to_discharge", f(new DischargeFlux(this, AMOUNT)) },
@@ -3472,10 +3645,17 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
     { "bmelt", d::wrap(m_basal_melt_rate) },
     { "grounding_line_flux", f(new GroundingLineFlux(this)) },
     { "ice_mass_transport_across_grounding_line", f(new MassTransportAcrossGroundingLine(this)) },
+    { "taud", f(new DrivingShearStress(this)) },
+    { "taud_mag", f(new DrivingShearStressmagnitude(this)) },
 
     // misc
     { "rank", f(new Rank(this)) },
   };
+
+  if (basal_yield_stress_model() != nullptr) {
+    result["taub"]     = f(new BasalShearStress(this));
+    result["taub_mag"] = f(new BasalShearStressMagnitude(this));
+  }
 
 #if (Pism_USE_PROJ == 1)
   std::string proj = m_grid->get_mapping_info()["proj_params"];
@@ -3499,9 +3679,10 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
     result["litempbotgr"] = f(new TemperatureBasal(this, GROUNDED));
     result["litempbotfl"] = f(new TemperatureBasal(this, SHELF));
     result["ligroundf"]   = result["grounding_line_flux"];
+    result["strbasemag"]  = result["taub_mag"];
   }
 
-  // get diagnostics from submodels
+  // get diagnostics from submodels (may override some diagnostics allocated above)
   for (const auto& m : m_submodels) {
     result = pism::combine(result, m.second->spatial_diagnostics());
   }
