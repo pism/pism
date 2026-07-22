@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2023, 2025 PISM Authors
+/* Copyright (C) 2016, 2017, 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -32,7 +32,8 @@ public:
                 std::shared_ptr<const stressbalance::StressBalance> stress_balance);
 
 protected:
-  virtual void restart_impl(const File &input_file, int record);
+  virtual void restart_impl(const File &input_file, int record,
+                            const array::Scalar &ice_thickness);
 
   virtual void bootstrap_impl(const File &input_file,
                               const array::Scalar &ice_thickness,
@@ -62,7 +63,8 @@ public:
 protected:
   MaxTimestep max_timestep_impl(double t) const;
 
-  void restart_impl(const File &input_file, int record);
+  void restart_impl(const File &input_file, int record,
+                    const array::Scalar &ice_thickness);
 
   void bootstrap_impl(const File &input_file,
                       const array::Scalar &ice_thickness,

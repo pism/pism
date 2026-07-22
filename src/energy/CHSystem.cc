@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2023, 2025 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -26,6 +26,7 @@
 #include "pism/util/array/CellType.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/Vars.hh"
 
 namespace pism {
 namespace energy {
@@ -64,14 +65,15 @@ CHSystem::CHSystem(std::shared_ptr<const Grid> grid,
   m_ice_enthalpy.metadata()["long_name"] = "enthalpy of the cryo-hydrologic system";
 }
 
-void CHSystem::restart_impl(const File &input_file, int record) {
+void CHSystem::restart_impl(const File &input_file, int record,
+                            const array::Scalar &ice_thickness) {
 
   m_log->message(2, "* Restarting the cryo-hydrologic system from %s...\n",
                  input_file.name().c_str());
 
-  init_enthalpy(input_file, false, record);
+  init_enthalpy(input_file, false, record, ice_thickness);
 
-  regrid_enthalpy();
+  regrid_enthalpy(ice_thickness);
 }
 
 void CHSystem::bootstrap_impl(const File &input_file,
@@ -84,7 +86,7 @@ void CHSystem::bootstrap_impl(const File &input_file,
                  input_file.name().c_str());
 
   int enthalpy_revision = m_ice_enthalpy.state_counter();
-  regrid_enthalpy();
+  regrid_enthalpy(ice_thickness);
 
   if (enthalpy_revision == m_ice_enthalpy.state_counter()) {
     bootstrap_ice_enthalpy(ice_thickness, surface_temperature, climatic_mass_balance,
@@ -102,7 +104,7 @@ void CHSystem::initialize_impl(const array::Scalar &basal_melt_rate,
   m_log->message(2, "* Bootstrapping the cryo-hydrologic warming model...\n");
 
   int enthalpy_revision = m_ice_enthalpy.state_counter();
-  regrid_enthalpy();
+  regrid_enthalpy(ice_thickness);
 
   if (enthalpy_revision == m_ice_enthalpy.state_counter()) {
     bootstrap_ice_enthalpy(ice_thickness, surface_temperature, climatic_mass_balance,

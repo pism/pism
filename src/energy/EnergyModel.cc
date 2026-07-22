@@ -134,7 +134,8 @@ EnergyModel::EnergyModel(std::shared_ptr<const Grid> grid,
   m_work.metadata(0).long_name("usually new values of temperature or enthalpy during time step");
 }
 
-void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int record) {
+void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int record,
+                                const array::Scalar &ice_thickness) {
 
   if (input_file.variable_exists("enthalpy")) {
     if (do_regrid) {
@@ -159,8 +160,6 @@ void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int reco
         temp.read(input_file, record);
       }
     }
-
-    const array::Scalar &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
 
     if (input_file.variable_exists("liqfrac")) {
       auto enthalpy_metadata = m_ice_enthalpy.metadata();
@@ -199,7 +198,7 @@ void EnergyModel::init_enthalpy(const File &input_file, bool do_regrid, int reco
  * The `-regrid_file` may contain enthalpy, temperature, or *both* temperature and liquid water
  * fraction.
  */
-void EnergyModel::regrid_enthalpy() {
+void EnergyModel::regrid_enthalpy(const array::Scalar &ice_thickness) {
 
   auto regrid_filename = m_config->get_string("input.regrid.file");
   auto regrid_vars     = set_split(m_config->get_string("input.regrid.vars"), ',');
@@ -213,13 +212,13 @@ void EnergyModel::regrid_enthalpy() {
 
   if (regrid_vars.empty() or set_member(enthalpy_name, regrid_vars)) {
     File regrid_file(m_grid->com, regrid_filename, io::PISM_GUESS, io::PISM_READONLY);
-    init_enthalpy(regrid_file, true, 0);
+    init_enthalpy(regrid_file, true, 0, ice_thickness);
   }
 }
 
 
-void EnergyModel::restart(const File &input_file, int record) {
-  this->restart_impl(input_file, record);
+void EnergyModel::restart(const File &input_file, int record, const array::Scalar &ice_thickness) {
+  this->restart_impl(input_file, record, ice_thickness);
 }
 
 void EnergyModel::bootstrap(const File &input_file,

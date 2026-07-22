@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2019, 2020, 2022, 2023, 2025 PISM Authors
+/* Copyright (C) 2016, 2017, 2019, 2020, 2022, 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -33,8 +33,9 @@ EnthalpyModel_Regional::EnthalpyModel_Regional(
       .units("m s^-1");
 }
 
-void EnthalpyModel_Regional::restart_impl(const File &input_file, int record) {
-  EnthalpyModel::restart_impl(input_file, record);
+void EnthalpyModel_Regional::restart_impl(const File &input_file, int record,
+                                          const array::Scalar &ice_thickness) {
+  EnthalpyModel::restart_impl(input_file, record, ice_thickness);
 
   m_basal_melt_rate_stored.copy_from(m_basal_melt_rate);
 }

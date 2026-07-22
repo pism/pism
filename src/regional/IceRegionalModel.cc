@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -110,7 +110,7 @@ void IceRegionalModel::model_state_setup(InputOptions input_options) {
 
     switch (input_options.type) {
     case INIT_RESTART: {
-      m_ch_system->restart(*input_file, input_options.record);
+      m_ch_system->restart(*input_file, (int)input_options.record, m_geometry.ice_thickness);
       break;
     }
     case INIT_BOOTSTRAP: {

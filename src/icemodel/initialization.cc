@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2025 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2026 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -37,7 +37,6 @@
 #include "pism/hydrology/Distributed.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/Config.hh"
-#include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
 #include "pism/coupler/OceanModel.hh"
@@ -238,7 +237,7 @@ void IceModel::model_state_setup(InputOptions input_options) {
   {
     switch (input_options.type) {
     case INIT_RESTART: {
-      m_energy_model->restart(*input_file, input_options.record);
+      m_energy_model->restart(*input_file, (int)input_options.record, m_geometry.ice_thickness);
       break;
     }
     case INIT_BOOTSTRAP: {

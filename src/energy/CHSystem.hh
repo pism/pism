@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2021, 2023, 2025 PISM Authors
+/* Copyright (C) 2018, 2021, 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -32,7 +32,8 @@ public:
   virtual ~CHSystem() = default;
 
 protected:
-  void restart_impl(const File &input_file, int record);
+  void restart_impl(const File &input_file, int record,
+                    const array::Scalar &ice_thickness);
 
   void bootstrap_impl(const File &input_file,
                       const array::Scalar &ice_thickness,

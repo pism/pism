@@ -31,8 +31,9 @@ DummyEnergyModel::DummyEnergyModel(
   // empty
 }
 
-void DummyEnergyModel::restart_impl(const File &input_file, int record) {
-  EnthalpyModel::restart_impl(input_file, record);
+void DummyEnergyModel::restart_impl(const File &input_file, int record,
+                                    const array::Scalar &ice_thickness) {
+  EnthalpyModel::restart_impl(input_file, record, ice_thickness);
 
   m_log->message(2,
                  "NOTE: this \"energy balance\" model holds enthalpy and basal melt rate constant in time.\n");

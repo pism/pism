@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -47,19 +47,18 @@ const array::Array3D & TemperatureModel::temperature() const {
   return m_ice_temperature;
 }
 
-void TemperatureModel::restart_impl(const File &input_file, int record) {
+void TemperatureModel::restart_impl(const File &input_file, int record,
+                                    const array::Scalar &ice_thickness) {
 
   m_log->message(2, "* Restarting the temperature-based energy balance model from %s...\n",
                  input_file.name().c_str());
 
   m_basal_melt_rate.read(input_file, record);
 
-  const array::Scalar &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
-
   if (input_file.variable_exists(m_ice_temperature.metadata().get_name())) {
     m_ice_temperature.read(input_file, record);
   } else {
-    init_enthalpy(input_file, false, record);
+    init_enthalpy(input_file, false, record, ice_thickness);
     compute_temperature(m_ice_enthalpy, ice_thickness, m_ice_temperature);
   }
 
