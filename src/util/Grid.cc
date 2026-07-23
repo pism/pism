@@ -31,6 +31,7 @@
 #include <vector>
 #include <utility>              // std::swap
 
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
@@ -88,6 +89,9 @@ struct Grid::Impl : public grid::DistributedGridInfo {
 
   //! z coordinates within the ice
   std::vector<double> z;
+
+  std::shared_ptr<const array::Scalar> longitude;
+  std::shared_ptr<const array::Scalar> latitude;
 };
 
 Grid::Impl::Impl(std::shared_ptr<const Context> context)
@@ -1599,6 +1603,28 @@ std::shared_ptr<InputInterpolation> Grid::get_interpolation(const std::vector<do
 void Grid::forget_interpolations() {
   m_impl->regridding_2d.clear();
 }
+
+
+void Grid::set_longitude_latitude(std::shared_ptr<const array::Scalar> lon,
+                                  std::shared_ptr<const array::Scalar> lat) {
+  m_impl->longitude = lon;
+  m_impl->latitude = lat;
+}
+
+const array::Scalar& Grid::longitude() const {
+  if (m_impl->longitude == nullptr) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "grid point longitudes are not available");
+  }
+  return *m_impl->longitude;
+}
+
+const array::Scalar& Grid::latitude() const {
+  if (m_impl->latitude == nullptr) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "grid point latitudes are not available");
+  }
+  return *m_impl->latitude;
+}
+
 
 GridPoints::GridPoints(const Grid &grid, unsigned int stencil_width)
     : GridPoints(grid.info(), stencil_width) {

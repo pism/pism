@@ -42,6 +42,10 @@ class Logger;
 class Vars;
 class VariableMetadata;
 
+namespace array {
+class Scalar;
+}
+
 namespace petsc {
 class DM;
 } // end of namespace petsc
@@ -358,6 +362,11 @@ public:
 
   const VariableMetadata& get_mapping_info() const;
   void set_mapping_info(const VariableMetadata &info);
+
+  void set_longitude_latitude(std::shared_ptr<const array::Scalar> lon,
+                              std::shared_ptr<const array::Scalar> lat);
+  const array::Scalar& longitude() const;
+  const array::Scalar& latitude() const;
 
   double dz_min() const;
   double dz_max() const;
