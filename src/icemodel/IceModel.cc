@@ -206,8 +206,6 @@ void IceModel::allocate_storage() {
   m_grid->variables().add(m_geometry.ice_thickness);
   m_grid->variables().add(m_geometry.cell_type);
   m_grid->variables().add(m_geometry.sea_level_elevation);
-  m_grid->variables().add(m_geometry.longitude);
-  m_grid->variables().add(m_geometry.latitude);
 
   if (m_config->get_flag("geometry.grounded_cell_fraction")) {
     m_grid->variables().add(m_geometry.cell_grounded_fraction);
@@ -285,8 +283,6 @@ void IceModel::allocate_storage() {
   m_model_state = { &m_velocity_bc_mask,
                     &m_velocity_bc_values,
                     &m_ice_thickness_bc_mask,
-                    &m_geometry.latitude,
-                    &m_geometry.longitude,
                     &m_geometry.ice_thickness,
                     &m_geometry.ice_area_specific_volume };
 }

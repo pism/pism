@@ -1428,6 +1428,34 @@ std::vector<double> subset(unsigned int xs, unsigned int xm, const std::vector<d
   return result;
 }
 
+std::shared_ptr<array::Scalar> allocate_longitude(std::shared_ptr<const Grid> grid) {
+
+  auto longitude = std::make_shared<array::Scalar>(grid, "lon");
+  longitude->metadata(0)
+      .long_name("longitude")
+      .units("degree_east")
+      .standard_name("longitude")
+      .set_time_dependent(false);
+  longitude->metadata()["grid_mapping"] = "";
+  longitude->metadata()["valid_range"]  = { -180.0, 180.0 };
+
+  return longitude;
+}
+
+std::shared_ptr<array::Scalar> allocate_latitude(std::shared_ptr<const Grid> grid) {
+
+  auto latitude = std::make_shared<array::Scalar>(grid, "lat");
+  latitude->metadata(0)
+      .long_name("latitude")
+      .units("degree_north")
+      .standard_name("latitude")
+      .set_time_dependent(false);
+  latitude->metadata()["grid_mapping"] = "";
+  latitude->metadata()["valid_range"]  = { -90.0, 90.0 };
+
+  return latitude;
+}
+
 } // namespace grid
 
 //! Create a grid using command-line options and (possibly) an input file.
@@ -1610,6 +1638,11 @@ void Grid::set_longitude_latitude(std::shared_ptr<const array::Scalar> lon,
   m_impl->longitude = lon;
   m_impl->latitude = lat;
 }
+
+bool Grid::has_longitude_latitude() const {
+  return (m_impl->longitude != nullptr and m_impl->latitude != nullptr);
+}
+
 
 const array::Scalar& Grid::longitude() const {
   if (m_impl->longitude == nullptr) {

@@ -269,6 +269,7 @@ pism_class(pism::EnthalpyConverter, "pism/util/EnthalpyConverter.hh");
 %shared_ptr(pism::Context);
 %include "util/Context.hh"
 
+%shared_ptr(pism::array::Scalar)
 %include pism_Grid.i
 
 /* array::Array uses Grid and VariableMetadata so they have to be wrapped first. */

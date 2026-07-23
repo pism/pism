@@ -81,15 +81,17 @@ void Inputs::dump(const char *filename) const {
   output.define_variable(time->metadata());
   output.append_time(time->current());
 
-  const array::Array *geom[] = { &geometry->latitude,
-                                 &geometry->longitude,
-                                 &geometry->bed_elevation,
-                                 &geometry->sea_level_elevation,
-                                 &geometry->ice_thickness,
-                                 &geometry->ice_area_specific_volume,
-                                 &geometry->cell_type,
-                                 &geometry->cell_grounded_fraction,
-                                 &geometry->ice_surface_elevation };
+  std::vector<const array::Array *> geom = { &geometry->bed_elevation,
+                                             &geometry->sea_level_elevation,
+                                             &geometry->ice_thickness,
+                                             &geometry->ice_area_specific_volume,
+                                             &geometry->cell_type,
+                                             &geometry->cell_grounded_fraction,
+                                             &geometry->ice_surface_elevation };
+  if (grid->has_longitude_latitude()) {
+    geom.push_back(&grid->longitude());
+    geom.push_back(&grid->latitude());
+  }
 
   // define
   for (const auto * vec : geom) {

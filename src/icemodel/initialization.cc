@@ -311,6 +311,19 @@ void IceModel::restart_2d(const File &input_file, unsigned int last_record) {
   for (auto *variable : m_model_state) {
     variable->read(input_file, last_record);
   }
+
+  // read longitude and latitude from the input file *if* they were not initialized yet
+  if (not m_grid->has_longitude_latitude()) {
+    if (input_file.variable_exists("lon") and input_file.variable_exists("lat")) {
+      auto longitude = grid::allocate_longitude(m_grid);
+      longitude->read(input_file, last_record);
+
+      auto latitude = grid::allocate_latitude(m_grid);
+      latitude->read(input_file, last_record);
+
+      m_grid->set_longitude_latitude(longitude, latitude);
+    }
+  }
 }
 
 void IceModel::bootstrap_2d(const File &input_file) {
@@ -334,18 +347,20 @@ void IceModel::bootstrap_2d(const File &input_file) {
 
   m_log->message(2, "  reading 2D model state variables by regridding ...\n");
 
-  // longitude
-  if (m_geometry.longitude.metadata().has_attribute("initialized")) {
-    m_geometry.longitude.metadata()["initialized"] = "";
-  } else {
-    m_geometry.longitude.regrid(input_file, io::Default(0.0));
-  }
+  // Try to initialize grid longitudes and latitudes from an input file *if* they were not
+  // computed using projection information yet.
+  if (not m_grid->has_longitude_latitude()) {
+    auto lon = input_file.find_variable("lon", "longitude");
+    auto lat = input_file.find_variable("lat", "latitude");
+    if (lon.exists and lat.exists) {
+      auto longitude = grid::allocate_longitude(m_grid);
+      longitude->regrid(input_file, io::Default::Nil());
 
-  // latitude
-  if (m_geometry.latitude.metadata().has_attribute("initialized")) {
-    m_geometry.latitude.metadata()["initialized"] = "";
-  } else {
-    m_geometry.latitude.regrid(input_file, io::Default(0.0));
+      auto latitude = grid::allocate_latitude(m_grid);
+      latitude->regrid(input_file, io::Default::Nil());
+
+      m_grid->set_longitude_latitude(longitude, latitude);
+    }
   }
 
   m_geometry.ice_thickness.regrid(
@@ -412,6 +427,16 @@ void IceModel::regrid() {
       if (regrid_vars.find(v->get_name()) != regrid_vars.end()) {
         v->regrid(regrid_file, io::Default::Nil());
       }
+    }
+
+    if (set_member("lat", regrid_vars) and set_member("lon", regrid_vars)) {
+      auto longitude = grid::allocate_longitude(m_grid);
+      longitude->regrid(regrid_file, io::Default::Nil());
+
+      auto latitude = grid::allocate_latitude(m_grid);
+      latitude->regrid(regrid_file, io::Default::Nil());
+
+      m_grid->set_longitude_latitude(longitude, latitude);
     }
 
     // Check the range of the ice thickness.
@@ -964,8 +989,12 @@ void IceModel::compute_lat_lon() {
     m_log->message(2, "* Computing longitude and latitude using projection parameters...\n");
 
 #if (Pism_USE_PROJ==1)
-    compute_longitude(projection, m_geometry.longitude);
-    compute_latitude(projection, m_geometry.latitude);
+    auto longitude = grid::allocate_longitude(m_grid);
+    compute_longitude(projection, *longitude);
+    auto latitude = grid::allocate_latitude(m_grid);
+    compute_latitude(projection, *latitude);
+
+    m_grid->set_longitude_latitude(longitude, latitude);
 #else
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "Cannot compute longitude and latitude.\n"
@@ -973,11 +1002,6 @@ void IceModel::compute_lat_lon() {
                                   "or set '%s' to 'false'.",
                                   compute_lon_lat);
 #endif
-
-    // IceModel::bootstrap_2d() uses these attributes to determine if it needs to regrid
-    // longitude and latitude.
-    m_geometry.longitude.metadata()["initialized"] = "true";
-    m_geometry.latitude.metadata()["initialized"] = "true";
   }
 }
 

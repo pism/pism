@@ -3558,8 +3558,6 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
     { "height_above_flotation", f(new HeightAboveFloatation(this)) },
     { "ice_area_specific_volume", d::wrap(m_geometry.ice_area_specific_volume) },
     { "ice_mass", f(new IceMass(this)) },
-    { "lat", d::wrap(m_geometry.latitude) },
-    { "lon", d::wrap(m_geometry.longitude) },
     { "mask", d::wrap(m_geometry.cell_type) },
     { "pressure", f(new PressureInIce(this)) },
     { "thk", f(new IceThickness(this)) },
@@ -3651,6 +3649,11 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
     // misc
     { "rank", f(new Rank(this)) },
   };
+
+  if (m_grid->has_longitude_latitude()) {
+    result["lon"] = d::wrap(m_grid->longitude());
+    result["lat"] = d::wrap(m_grid->latitude());
+  }
 
   if (basal_yield_stress_model() != nullptr) {
     result["taub"]     = f(new BasalShearStress(this));

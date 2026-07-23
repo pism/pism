@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,7 +28,6 @@
 #include "pism/util/Context.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/io/io_helpers.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/io/SynchronousOutputWriter.hh"
@@ -38,31 +37,13 @@ namespace pism {
 Geometry::Geometry(const std::shared_ptr<const Grid> &grid)
   // FIXME: ideally these fields should be "global", i.e. without ghosts.
   // (However this may increase communication costs...)
-  : latitude(grid, "lat"),
-    longitude(grid, "lon"),
-    bed_elevation(grid, "topg"),
+  : bed_elevation(grid, "topg"),
     sea_level_elevation(grid, "sea_level"),
     ice_thickness(grid, "thk"),
     ice_area_specific_volume(grid, "ice_area_specific_volume"),
     cell_type(grid, "mask"),
     cell_grounded_fraction(grid, "cell_grounded_fraction"),
     ice_surface_elevation(grid, "usurf") {
-
-  latitude.metadata(0)
-      .long_name("latitude")
-      .units("degree_north")
-      .standard_name("latitude")
-      .set_time_dependent(false);
-  latitude.metadata()["grid_mapping"] = "";
-  latitude.metadata()["valid_range"]  = { -90.0, 90.0 };
-
-  longitude.metadata(0)
-      .long_name("longitude")
-      .units("degree_east")
-      .standard_name("longitude")
-      .set_time_dependent(false);
-  longitude.metadata()["grid_mapping"] = "";
-  longitude.metadata()["valid_range"]  = { -180.0, 180.0 };
 
   bed_elevation.metadata(0)
       .long_name("bedrock surface elevation")
@@ -104,8 +85,6 @@ Geometry::Geometry(const std::shared_ptr<const Grid> &grid)
       .standard_name("surface_altitude");
 
   // make sure all the fields are initialized
-  latitude.set(0.0);
-  longitude.set(0.0);
   bed_elevation.set(0.0);
   sea_level_elevation.set(0.0);
   ice_thickness.set(0.0);
@@ -207,15 +186,15 @@ void Geometry::dump(const char *filename) const {
 
   auto time = grid->ctx()->time();
 
-  const array::Array *variables[] = { &latitude,
-                                      &longitude,
-                                      &bed_elevation,
-                                      &sea_level_elevation,
-                                      &ice_thickness,
-                                      &ice_area_specific_volume,
-                                      &cell_type,
-                                      &cell_grounded_fraction,
-                                      &ice_surface_elevation };
+  std::vector<const array::Array *> variables = {
+    &bed_elevation, &sea_level_elevation,    &ice_thickness,        &ice_area_specific_volume,
+    &cell_type,     &cell_grounded_fraction, &ice_surface_elevation
+  };
+
+  if (grid->has_longitude_latitude()) {
+    variables.push_back(&grid->longitude());
+    variables.push_back(&grid->latitude());
+  }
 
   {
     file.define_variable(time->metadata());

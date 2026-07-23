@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2019, 2023, 2025 PISM Authors
+// Copyright (C) 2008-2019, 2023, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -60,6 +60,12 @@ void PIK::init_impl(const Geometry &geometry) {
     m_mass_flux->read(opts.filename, opts.record); // fails if not found!
   }
 
+  if (not m_grid->has_longitude_latitude()) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "grid point longitudes and latitudes are not available;\n"
+                                  "the PIK surface model cannot be used");
+  }
+
   // parameterizing the ice surface temperature 'ice_surface_temp'
   m_log->message(2,
                  "    parameterizing the ice surface temperature 'ice_surface_temp' ... \n");
@@ -76,7 +82,7 @@ void PIK::update_impl(const Geometry &geometry, double t, double dt) {
 
   const array::Scalar
     &surface_elevation = geometry.ice_surface_elevation,
-    &latitude          = geometry.latitude;
+    &latitude          = m_grid->latitude();
 
   array::AccessScope list{ m_temperature.get(), &surface_elevation, &latitude };
 

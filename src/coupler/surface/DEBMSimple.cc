@@ -177,6 +177,12 @@ void DEBMSimple::init_impl(const Geometry &geometry) {
                    "  Outputs: SMB and ice upper surface temperature.\n");
   }
 
+  if (not m_grid->has_longitude_latitude()) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "grid point longitudes and latitudes are not available;\n"
+                                  "the dEBM-simple surface model cannot be used");
+  }
+
   // initializing the model state
   InputOptions input = process_input_options(m_grid->com, m_config);
 
@@ -298,6 +304,8 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
   const auto &H                = geometry.ice_thickness;
   const auto &surface_altitude = geometry.ice_surface_elevation;
 
+  const auto &latitude = m_grid->latitude();
+
   array::AccessScope list
     { &mask,
       &H,
@@ -312,7 +320,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
       &m_offset_melt,
       &m_surface_albedo,
       &m_transmissivity,
-      &geometry.latitude,
+      &latitude,
       &surface_altitude
     };
 
@@ -335,7 +343,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
-      double latitude = geometry.latitude(i, j);
+      double lat = latitude(i, j);
 
       // Get the temperature time series from an atmosphere model and its modifiers
       m_atmosphere->temp_time_series(i, j, T);
@@ -371,7 +379,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
         if (sigmalapserate != 0.0) {
           // apply standard deviation lapse rate on top of prescribed values
           for (int k = 0; k < N; ++k) {
-            S[k] += sigmalapserate * (latitude - sigmabaselat);
+            S[k] += sigmalapserate * (lat - sigmabaselat);
           }
           (*m_air_temp_sd)(i, j) = S[0]; // ensure correct SD reporting
         } else if (m_sd_use_param and mask.icy(i, j)) {
@@ -427,7 +435,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
                                      S[k],
                                      T[k],
                                      surfelev,
-                                     latitude,
+                                     lat,
                                      (bool)m_input_albedo ? Alb[k] : albedo);
           }
 
@@ -582,7 +590,9 @@ protected:
 
     auto result = allocate<array::Scalar>("insolation");
 
-    const auto *latitude = m_grid->variables().get_2d_scalar("latitude");
+    // note: DEBMSimple cannot be used if m_grid-latitude() is not available, so we don't
+    // need to call m_grid->has_longitude_latitude() here
+    const auto &latitude = m_grid->latitude();
     auto ctx = m_grid->ctx();
 
     {
@@ -590,14 +600,14 @@ protected:
 
       auto orbital = M.orbital_parameters(ctx->time()->current());
 
-      array::AccessScope list{latitude, result.get()};
+      array::AccessScope list{&latitude, result.get()};
 
       for (auto p : m_grid->points()) {
         const int i = p.i(), j = p.j();
 
         (*result)(i, j) = M.insolation_diagnostic(orbital.solar_declination,
                                                   orbital.distance_factor,
-                                                  (*latitude)(i, j));
+                                                  latitude(i, j));
       }
     }
 

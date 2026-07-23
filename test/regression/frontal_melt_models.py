@@ -30,9 +30,6 @@ seconds_per_day = 86400
 def create_geometry(grid):
     geometry = PISM.Geometry(grid)
 
-    geometry.latitude.set(0.0)
-    geometry.longitude.set(0.0)
-
     geometry.bed_elevation.set(0.0)
     geometry.sea_level_elevation.set(0.0)
 

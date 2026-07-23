@@ -452,7 +452,12 @@ class PIK(TestCase):
         self.M = 1001.0
         self.T = 233.13
 
-        self.geometry.latitude.set(-80.0)
+        latitude = PISM.allocate_latitude(self.grid)
+        longitude = PISM.allocate_longitude(self.grid)
+        self.grid.set_longitude_latitude(longitude, latitude)
+
+        latitude.set(-80.0)
+        longitude.set(0.0)
         self.geometry.ice_thickness.set(2000.0)
         self.geometry.ensure_consistency(0.0)
 

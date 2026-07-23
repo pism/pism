@@ -122,7 +122,12 @@ class PIK(TestCase):
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
 
-        self.geometry.latitude.set(-80.0)
+        latitude = PISM.allocate_latitude(self.grid)
+        longitude = PISM.allocate_longitude(self.grid)
+        self.grid.set_longitude_latitude(longitude, latitude)
+
+        latitude.set(-80.0)
+        longitude.set(0.0)
 
         self.P = 10.0           # this is very high, but that's fine
 
@@ -327,9 +332,16 @@ class SeaRISE(TestCase):
         self.filename = tmp_name("atmosphere_searise_input")
         self.grid = shallow_grid()
 
+        latitude = PISM.allocate_latitude(self.grid)
+        longitude = PISM.allocate_longitude(self.grid)
+        self.grid.set_longitude_latitude(longitude, latitude)
+
+        latitude.set(70.0)
+        longitude.set(-45.0)
+
+        self.grid.longitude().dump("lon.nc")
+
         self.geometry = PISM.Geometry(self.grid)
-        self.geometry.latitude.set(70.0)
-        self.geometry.longitude.set(-45.0)
         self.geometry.ice_thickness.set(2500.0)
         self.geometry.ensure_consistency(0.0)
 
