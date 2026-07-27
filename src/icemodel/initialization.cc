@@ -621,7 +621,7 @@ void IceModel::allocate_basal_yield_stress() {
 
   std::string model = m_config->get_string("stress_balance.model");
 
-  // only these two use the yield stress (so far):
+  // only these three use the yield stress (so far):
   if (set_member(model, { "ssa", "ssa+sia", "blatter" })) {
     std::string yield_stress_model = m_config->get_string("basal_yield_stress.model");
 

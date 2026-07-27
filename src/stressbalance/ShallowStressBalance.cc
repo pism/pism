@@ -19,9 +19,7 @@
 #include "pism/stressbalance/ShallowStressBalance.hh"
 #include "pism/basalstrength/basal_resistance.hh"
 #include "pism/rheology/FlowLawFactory.hh"
-#include "pism/stressbalance/SSB_diagnostics.hh"
 #include "pism/util/Context.hh"
-#include "pism/util/Vars.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/IO_Flags.hh"
@@ -107,10 +105,9 @@ const array::Scalar& ShallowStressBalance::basal_frictional_heating() {
 
 DiagnosticList ShallowStressBalance::spatial_diagnostics_impl() const {
   DiagnosticList result = {
-    {"beta",     Diagnostic::Ptr(new SSB_beta(this))},
   };
 
-  return result;
+  return {};
 }
 
 
@@ -192,30 +189,6 @@ void PrescribedSliding::init_impl() {
   }
 
   m_velocity.regrid(input_filename, io::Default::Nil());
-}
-
-SSB_beta::SSB_beta(const ShallowStressBalance *m) : Diag<ShallowStressBalance>(m) {
-  m_vars = { { m_sys, "beta", *m_grid } };
-  m_vars[0].long_name("basal drag coefficient").units("Pa s / m");
-}
-
-std::shared_ptr<array::Array> SSB_beta::compute_impl() const {
-  auto result = allocate<array::Scalar>("beta");
-
-  const array::Scalar *tauc = m_grid->variables().get_2d_scalar("tauc");
-
-  const IceBasalResistancePlasticLaw *basal_sliding_law = model->sliding_law();
-
-  const array::Vector &velocity = model->velocity();
-
-  array::AccessScope list{tauc, &velocity, result.get()};
-  for (auto p : m_grid->points()) {
-    const int i = p.i(), j = p.j();
-
-    (*result)(i,j) =  basal_sliding_law->drag((*tauc)(i,j), velocity(i,j).u, velocity(i,j).v);
-  }
-
-  return result;
 }
 
 } // end of namespace stressbalance

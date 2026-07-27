@@ -38,6 +38,8 @@
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/basalstrength/YieldStress.hh"
 #include "pism/basalstrength/basal_resistance.hh"
+#include "pism/rheology/FlowLawFactory.hh"
+#include "pism/earth/BedDef.hh"
 
 #if (Pism_USE_PROJ == 1)
 #include "pism/util/Proj.hh"
@@ -3491,6 +3493,1111 @@ std::shared_ptr<array::Array> BasalShearStressMagnitude::compute_impl() const {
   return result;
 }
 
+//! \brief Computes uflux and vflux, components of vertically-integrated horizontal
+//! flux of ice.
+class StressBalanceFlux : public Diag<IceModel>
+{
+public:
+  StressBalanceFlux(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const;
+};
+
+//! \brief Computes flux_mag, the magnitude of vertically-integrated horizontal
+//! flux of ice.
+class StressBalanceFluxMag : public Diag<IceModel>
+{
+public:
+  StressBalanceFluxMag(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const;
+};
+
+//! \brief Computes the vertically-averaged ice velocity.
+class StressBalanceVelbar : public Diag<IceModel>
+{
+public:
+  StressBalanceVelbar(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const;
+};
+
+//! \brief Computes velbar_mag, the magnitude of vertically-integrated horizontal
+//! velocity of ice and masks out ice-free areas.
+class StressBalanceVelbarMag : public Diag<IceModel>
+{
+public:
+  StressBalanceVelbarMag(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const;
+};
+
+//! \brief Reports the vertically-integrated (2D) principal strain rates.
+class StressBalanceStrainRates : public Diag<IceModel>
+{
+public:
+  StressBalanceStrainRates(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const;
+};
+
+//! \brief Reports the vertically-integrated (2D) deviatoric stresses.
+class StressBalanceDeviatoricStresses : public Diag<IceModel>
+{
+public:
+  StressBalanceDeviatoricStresses(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const;
+};
+
+/*! @brief tensile von Mises stress */
+class StressBalanceVonmisesStress : public Diag<IceModel>
+{
+public:
+  StressBalanceVonmisesStress(const IceModel *m);
+  std::shared_ptr<array::Array> compute_impl() const;
+};
+
+//! \brief Computes the x-component of the horizontal ice velocity.
+class StressBalanceUvel : public Diag<IceModel>
+{
+public:
+  StressBalanceUvel(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const;
+};
+
+//! \brief Computes the y-component of the horizontal ice velocity.
+class StressBalanceVvel : public Diag<IceModel>
+{
+public:
+  StressBalanceVvel(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const;
+};
+
+//! \brief Computes vertical velocity of ice, relative to the bed directly
+//! below.
+class StressBalanceWvelRel : public Diag<IceModel>
+{
+public:
+  StressBalanceWvelRel(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const;
+};
+
+//! \brief Reports the xz component of the shear stress within the ice (3D), according to the SIA formula.
+class StressBalanceTauxz : public Diag<IceModel>
+{
+public:
+  StressBalanceTauxz(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const;
+};
+
+//! \brief Reports the yz component of the shear stress within the ice (3D), according to the SIA formula.
+class StressBalanceTauyz : public Diag<IceModel>
+{
+public:
+  StressBalanceTauyz(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const;
+};
+
+//! \brief Computes velbase_mag, the magnitude of horizontal velocity of ice at base
+//! of ice and masks out ice-free areas.
+class StressBalanceVelbaseMag : public Diag<IceModel>
+{
+public:
+  StressBalanceVelbaseMag(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const;
+};
+
+//! \brief Computes velsurf_mag, the magnitude of horizontal ice velocity at the
+//! surface.
+class StressBalanceVelsurfMag : public Diag<IceModel>
+{
+public:
+  StressBalanceVelsurfMag(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const;
+};
+
+//! \brief Computes velsurf, the horizontal velocity of ice at ice surface.
+class StressBalanceVelsurf : public Diag<IceModel>
+{
+public:
+  StressBalanceVelsurf(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const;
+};
+
+//! Computes vertical ice velocity (relative to the geoid).
+/*!
+  \f[
+  w(s) = \tilde w(s) + \frac{\partial b}{\partial t} + U(s) \cdot \nabla b
+  \f]
+  in grounded areas. In floating shelves
+  \f[
+  w(s) = \tilde w(s) - \tilde  w(z_{\text{sea level}}).
+  \f]
+
+  This ensures that \f$\tilde w(z_{\text{sea level}}) = 0\f$.
+*/
+class StressBalanceWvel : public Diag<IceModel>
+{
+public:
+  StressBalanceWvel(const IceModel *m);
+  virtual std::shared_ptr<array::Array> compute(bool zero_above_ice) const;
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const;
+};
+
+//! Computes wvelsurf, the vertical velocity of ice at ice surface.
+class StressBalanceWvelsurf : public Diag<IceModel>
+{
+public:
+  StressBalanceWvelsurf(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const;
+};
+
+//! Computes wvelbase, the vertical velocity of ice at the base of ice.
+class StressBalanceWvelbase : public Diag<IceModel>
+{
+public:
+  StressBalanceWvelbase(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const;
+};
+
+//! \brief Computes horizontal ice velocity at the base of ice.
+class StressBalanceVelbase : public Diag<IceModel>
+{
+public:
+  StressBalanceVelbase(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const;
+};
+
+class ShallowStressBalanceBeta : public Diag<IceModel>
+{
+public:
+  ShallowStressBalanceBeta(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const;
+};
+
+StressBalanceUvel::StressBalanceUvel(const IceModel *m) : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "uvel", *m_grid } };
+  m_vars[0]
+      .long_name("horizontal velocity of ice in the X direction")
+      .standard_name("land_ice_x_velocity")
+      .units("m s^-1")
+      .output_units("m year^-1");
+}
+
+/*!
+ * Copy F to result and set it to zero above the surface of the ice.
+ */
+static void zero_above_ice(const array::Array3D &F, const array::Scalar &H,
+                           array::Array3D &result) {
+
+  array::AccessScope list{ &F, &H, &result };
+
+  auto grid = result.grid();
+
+  auto Mz = grid->Mz();
+
+  ParallelSection loop(grid->com);
+  try {
+    for (auto p : grid->points()) {
+      const int i = p.i(), j = p.j();
+
+      int ks = grid->kBelowHeight(H(i, j));
+
+      const double *F_ij = F.get_column(i, j);
+      double *F_out_ij   = result.get_column(i, j);
+
+      // in the ice:
+      for (int k = 0; k <= ks; k++) {
+        F_out_ij[k] = F_ij[k];
+      }
+      // above the ice:
+      for (unsigned int k = ks + 1; k < Mz; k++) {
+        F_out_ij[k] = 0.0;
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+}
+
+std::shared_ptr<array::Array> StressBalanceUvel::compute_impl() const {
+
+  std::shared_ptr<array::Array3D> result(
+      new array::Array3D(m_grid, "uvel", array::WITHOUT_GHOSTS, m_grid->z()));
+  result->metadata() = m_vars[0];
+
+  zero_above_ice(model->stress_balance()->velocity_u(), model->geometry().ice_thickness, *result);
+
+  return result;
+}
+
+StressBalanceVvel::StressBalanceVvel(const IceModel *m) : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "vvel", *m_grid } };
+  m_vars[0]
+      .long_name("horizontal velocity of ice in the Y direction")
+      .standard_name("land_ice_y_velocity")
+      .units("m s^-1")
+      .output_units("m year^-1");
+}
+
+std::shared_ptr<array::Array> StressBalanceVvel::compute_impl() const {
+
+  std::shared_ptr<array::Array3D> result(
+      new array::Array3D(m_grid, "vvel", array::WITHOUT_GHOSTS, m_grid->z()));
+  result->metadata() = m_vars[0];
+
+  zero_above_ice(model->stress_balance()->velocity_v(), model->geometry().ice_thickness, *result);
+
+  return result;
+}
+
+StressBalanceWvelRel::StressBalanceWvelRel(const IceModel *m) : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "wvel_rel", *m_grid } };
+  m_vars[0]
+      .long_name("vertical velocity of ice, relative to base of ice directly below")
+      .units("m s^-1")
+      .output_units("m year^-1");
+}
+
+std::shared_ptr<array::Array> StressBalanceWvelRel::compute_impl() const {
+
+  std::shared_ptr<array::Array3D> result(
+      new array::Array3D(m_grid, "wvel_rel", array::WITHOUT_GHOSTS, m_grid->z()));
+  result->metadata() = m_vars[0];
+
+  zero_above_ice(model->stress_balance()->velocity_w(), model->geometry().ice_thickness, *result);
+
+  return result;
+}
+
+StressBalanceStrainRates::StressBalanceStrainRates(const IceModel *m) : Diag<IceModel>(m) {
+
+  m_vars = { { m_sys, "eigen1", *m_grid }, { m_sys, "eigen2", *m_grid } };
+  m_vars[0]
+      .long_name("first eigenvalue of the horizontal, vertically-integrated strain rate tensor")
+      .units("s^-1");
+  m_vars[1]
+      .long_name("second eigenvalue of the horizontal, vertically-integrated strain rate tensor")
+      .units("s^-1");
+}
+
+std::shared_ptr<array::Array> StressBalanceStrainRates::compute_impl() const {
+
+  auto result = std::make_shared<array::Array2D<stressbalance::PrincipalStrainRates> >(
+      m_grid, "strain_rates", array::WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+  result->metadata(1) = m_vars[1];
+
+  array::Vector1 velbar_with_ghosts(m_grid, "velbar");
+  {
+    auto velbar = array::cast<array::Vector>(StressBalanceVelbar(model).compute());
+
+    // copy_from communicates ghosts
+    velbar_with_ghosts.copy_from(*velbar);
+  }
+
+  array::CellType1 cell_type(m_grid, "cell_type");
+  cell_type.copy_from(model->geometry().cell_type);
+
+  compute_2D_principal_strain_rates(velbar_with_ghosts, cell_type, *result);
+
+  return result;
+}
+
+StressBalanceDeviatoricStresses::StressBalanceDeviatoricStresses(const IceModel *m) : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "sigma_xx", *m_grid },
+             { m_sys, "sigma_yy", *m_grid },
+             { m_sys, "sigma_xy", *m_grid } };
+
+  m_vars[0].long_name("deviatoric stress in X direction").units("Pa");
+  m_vars[1].long_name("deviatoric stress in Y direction").units("Pa");
+  m_vars[2].long_name("deviatoric shear stress").units("Pa");
+}
+
+std::shared_ptr<array::Array> StressBalanceDeviatoricStresses::compute_impl() const {
+
+  auto result = std::make_shared<array::Array2D<stressbalance::DeviatoricStresses> >(
+      m_grid, "deviatoric_stresses", array::WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+  result->metadata(1) = m_vars[1];
+  result->metadata(2) = m_vars[2];
+
+  const array::Array3D &enthalpy = model->energy_balance_model()->enthalpy();
+  const array::Scalar &thickness = model->geometry().ice_thickness;
+
+  array::Scalar hardness(m_grid, "hardness");
+  array::Vector1 velocity(m_grid, "velocity");
+
+  averaged_hardness_vec(*model->stress_balance()->shallow()->flow_law(), thickness, enthalpy,
+                        hardness);
+
+  // copy_from updates ghosts
+  velocity.copy_from(*array::cast<array::Vector>(StressBalanceVelbar(model).compute()));
+
+  array::CellType1 cell_type(m_grid, "cell_type");
+  cell_type.copy_from(model->geometry().cell_type);
+
+  stressbalance::compute_2D_stresses(*model->stress_balance()->shallow()->flow_law(), velocity,
+                                     hardness, cell_type, *result);
+
+  return result;
+}
+
+StressBalanceFlux::StressBalanceFlux(const IceModel *m)
+  : Diag<IceModel>(m) {
+
+  // set metadata:
+  m_vars = { { m_sys, "uflux", *m_grid }, { m_sys, "vflux", *m_grid } };
+  m_vars[0]
+      .long_name("Vertically integrated horizontal flux of ice in the X direction")
+      .units("m^2 s^-1")
+      .output_units("m^2 year^-1");
+  m_vars[1]
+      .long_name("Vertically integrated horizontal flux of ice in the Y direction")
+      .units("m^2 s^-1")
+      .output_units("m^2 year^-1");
+}
+
+std::shared_ptr<array::Array> StressBalanceFlux::compute_impl() const {
+  double H_threshold = m_config->get_number("geometry.ice_free_thickness_standard");
+
+  auto result = allocate<array::Vector>("flux");
+
+  // get the thickness
+  const array::Scalar &thickness = model->geometry().ice_thickness;
+
+  const array::Array3D
+    &u3 = model->stress_balance()->velocity_u(),
+    &v3 = model->stress_balance()->velocity_v();
+
+  array::AccessScope list{&u3, &v3, &thickness, result.get()};
+
+  const auto &z = m_grid->z();
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (auto p : m_grid->points()) {
+      const int i = p.i(), j = p.j();
+
+      double H = thickness(i,j);
+
+      // an "ice-free" cell:
+      if (H < H_threshold) {
+        (*result)(i, j) = 0.0;
+        continue;
+      }
+
+      // an icy cell:
+      {
+        const auto *u = u3.get_column(i, j);
+        const auto *v = v3.get_column(i, j);
+
+        Vector2d Q(0.0, 0.0);
+
+        // ks is "k just below the surface"
+        auto ks = m_grid->kBelowHeight(H);
+
+        if (ks > 0) {
+          Vector2d v0(u[0], v[0]);
+
+          for (unsigned int k = 1; k <= ks; ++k) {
+            Vector2d v1(u[k], v[k]);
+
+            // trapezoid rule
+            Q += (z[k] - z[k - 1]) * 0.5 * (v0 + v1);
+
+            v0 = v1;
+          }
+        }
+
+        // rectangle method to integrate over the last level
+        Q += (H - z[ks]) * Vector2d(u[ks], v[ks]);
+
+        (*result)(i, j) = Q;
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  return result;
+}
+
+
+StressBalanceFluxMag::StressBalanceFluxMag(const IceModel *m)
+  : Diag<IceModel>(m) {
+
+  // set metadata:
+  m_vars = { { m_sys, "flux_mag", *m_grid } };
+  m_vars[0]
+      .long_name("magnitude of vertically-integrated horizontal flux of ice")
+      .units("m^2 s^-1")
+      .output_units("m^2 year^-1");
+  m_vars[0]["_FillValue"] = { fill_value() };
+  m_vars[0]["valid_min"]  = { 0.0 };
+}
+
+std::shared_ptr<array::Array> StressBalanceFluxMag::compute_impl() const {
+  const array::Scalar &thickness = model->geometry().ice_thickness;
+
+  // Compute the vertically-averaged horizontal ice velocity:
+  auto result = array::cast<array::Scalar>(StressBalanceVelbarMag(model).compute());
+
+  result->metadata() = m_vars[0];
+
+  array::AccessScope list{&thickness, result.get()};
+
+  for (auto p : m_grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    (*result)(i,j) *= thickness(i,j);
+  }
+
+  apply_mask(thickness, fill_value(), *result);
+
+  return result;
+}
+
+StressBalanceVelbar::StressBalanceVelbar(const IceModel *m)
+  : Diag<IceModel>(m) {
+
+  auto ismip = m_config->get_flag("output.ISMIP");
+
+  // set metadata:
+  m_vars = {{m_sys, ismip ? "xvelmean" : "ubar", *m_grid },
+            {m_sys, ismip ? "yvelmean" : "vbar", *m_grid }};
+
+  m_vars[0]
+      .long_name("vertical mean of horizontal ice velocity in the X direction")
+      .standard_name("land_ice_vertical_mean_x_velocity")
+      .units("m s^-1")
+      .output_units("m year^-1");
+  m_vars[1]
+      .long_name("vertical mean of horizontal ice velocity in the Y direction")
+      .standard_name("land_ice_vertical_mean_y_velocity")
+      .units("m s^-1")
+      .output_units("m year^-1");
+}
+
+std::shared_ptr<array::Array> StressBalanceVelbar::compute_impl() const {
+  // get the thickness
+  const array::Scalar& thickness = model->geometry().ice_thickness;
+
+  // Compute the vertically-integrated horizontal ice flux:
+  auto result = array::cast<array::Vector>(StressBalanceFlux(model).compute());
+
+  // Override metadata set by the flux computation
+  result->metadata(0) = m_vars[0];
+  result->metadata(1) = m_vars[1];
+
+  array::AccessScope list{&thickness, result.get()};
+
+  for (auto p : m_grid->points()) {
+    const int i = p.i(), j = p.j();
+    double thk = thickness(i,j);
+
+    // Ice flux is masked already, but we need to check for division
+    // by zero anyway.
+    if (thk > 0.0) {
+      (*result)(i,j) /= thk;
+    } else {
+      (*result)(i,j) = 0.0;
+    }
+  }
+
+  return result;
+}
+
+StressBalanceVelbarMag::StressBalanceVelbarMag(const IceModel *m)
+  : Diag<IceModel>(m) {
+
+  // set metadata:
+  m_vars = {{m_sys, "velbar_mag", *m_grid }};
+
+  m_vars[0]
+      .long_name("magnitude of vertically-integrated horizontal velocity of ice")
+      .units("m second^-1")
+      .output_units("m year^-1");
+
+  m_vars[0]["_FillValue"] = { fill_value() };
+  m_vars[0]["valid_min"]  = { 0.0 };
+}
+
+std::shared_ptr<array::Array> StressBalanceVelbarMag::compute_impl() const {
+  auto result = allocate<array::Scalar>("velbar_mag");
+
+  // compute vertically-averaged horizontal velocity:
+  auto velbar = array::cast<array::Vector>(StressBalanceVelbar(model).compute());
+
+  // compute its magnitude:
+  compute_magnitude(*velbar, *result);
+
+  // mask out ice-free areas:
+  apply_mask(model->geometry().ice_thickness, fill_value(), *result);
+
+  return result;
+}
+
+StressBalanceVonmisesStress::StressBalanceVonmisesStress(const IceModel *m)
+    : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "vonmises_stress", *m_grid } };
+  m_vars[0].long_name("tensile von Mises stress").units("Pascal");
+}
+
+std::shared_ptr<array::Array> StressBalanceVonmisesStress::compute_impl() const {
+
+  using std::max;
+  using std::sqrt;
+  using std::pow;
+
+  auto result = allocate<array::Scalar>("vonmises_stress");
+
+  array::Scalar &vonmises_stress = *result;
+
+  auto velbar = array::cast<array::Vector>(StressBalanceVelbar(model).compute());
+  array::Vector &velocity = *velbar;
+
+  using StrainRates = array::Array2D<stressbalance::PrincipalStrainRates>;
+  auto eigen12 = array::cast<StrainRates>(StressBalanceStrainRates(model).compute());
+  const auto &strain_rates = *eigen12;
+
+  const array::Scalar &ice_thickness = model->geometry().ice_thickness;
+  const array::Array3D &enthalpy = model->energy_balance_model()->enthalpy();
+  const auto &mask = model->geometry().cell_type;
+
+  std::shared_ptr<const rheology::FlowLaw> flow_law;
+
+  if (m_config->get_flag("calving.vonmises_calving.use_custom_flow_law")) {
+    rheology::FlowLawFactory factory(m_config, m_grid->ctx()->enthalpy_converter());
+    flow_law = factory.create(m_config->get_string("calving.vonmises_calving.flow_law"),
+                              m_config->get_number("calving.vonmises_calving.Glen_exponent"));
+  } else {
+    flow_law = model->stress_balance()->shallow()->flow_law();
+  }
+
+  double glen_exponent = flow_law->exponent();
+
+  array::AccessScope list{&vonmises_stress, &velocity, &strain_rates, &ice_thickness,
+      &enthalpy, &mask};
+
+  for (auto pt : m_grid->points()) {
+    const int i = pt.i(), j = pt.j();
+
+    if (mask.icy(i, j)) {
+
+      const double       H = ice_thickness(i, j);
+      const unsigned int k = m_grid->kBelowHeight(H);
+
+      const double
+        *enthalpy_column   = enthalpy.get_column(i, j),
+        hardness           = averaged_hardness(*flow_law, H, k, m_grid->z().data(), enthalpy_column),
+        eigen1             = strain_rates(i, j).eigen1,
+        eigen2             = strain_rates(i, j).eigen2;
+
+      // [\ref Morlighem2016] equation 6
+      const double effective_tensile_strain_rate = sqrt(0.5 * (pow(max(0.0, eigen1), 2) +
+                                                               pow(max(0.0, eigen2), 2)));
+      // [\ref Morlighem2016] equation 7
+      vonmises_stress(i, j) = sqrt(3.0) * hardness * pow(effective_tensile_strain_rate,
+                                                         1.0 / glen_exponent);
+
+    } else { // end of "if (mask.icy(i, j))"
+      vonmises_stress(i, j) = 0.0;
+    }
+  }   // end of loop over grid points
+
+  return result;
+}
+
+StressBalanceTauxz::StressBalanceTauxz(const IceModel *m) : Diag<IceModel>(m) {
+  m_vars = {{m_sys, "tauxz", *m_grid, m_grid->z()}};
+  m_vars[0].long_name("shear stress xz component (in shallow ice approximation SIA)").units("Pa");
+}
+
+
+/*!
+ * The SIA-applicable shear stress component tauxz computed here is not used
+ * by the model.  This implementation intentionally does not use the
+ * eta-transformation or special cases at ice margins.
+ * CODE DUPLICATION WITH StressBalanceTauyz
+ */
+std::shared_ptr<array::Array> StressBalanceTauxz::compute_impl() const {
+
+  std::shared_ptr<array::Array3D> result(
+      new array::Array3D(m_grid, "tauxz", array::WITHOUT_GHOSTS, m_grid->z()));
+  result->metadata() = m_vars[0];
+
+  const array::Scalar &thickness = model->geometry().ice_thickness,
+                      &surface   = model->geometry().ice_surface_elevation;
+
+  array::AccessScope list{ &surface, &thickness, result.get() };
+
+  const double rg = m_config->get_number("constants.ice.density") *
+                    m_config->get_number("constants.standard_gravity");
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (auto p : m_grid->points()) {
+      const int i = p.i(), j = p.j();
+
+      unsigned int ks      = m_grid->kBelowHeight(thickness(i, j));
+      double *tauxz_out_ij = result->get_column(i, j);
+      const double H = thickness(i, j), dhdx = diff_x_p(surface, i, j);
+
+      // within the ice:
+      for (unsigned int k = 0; k <= ks; ++k) {
+        tauxz_out_ij[k] = -rg * (H - m_grid->z(k)) * dhdx;
+      }
+      // above the ice:
+      for (unsigned int k = ks + 1; k < m_grid->Mz(); ++k) {
+        tauxz_out_ij[k] = 0.0;
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  return result;
+}
+
+
+StressBalanceTauyz::StressBalanceTauyz(const IceModel *m) : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "tauyz", *m_grid, m_grid->z() } };
+  m_vars[0].long_name("shear stress yz component (in shallow ice approximation SIA)").units("Pa");
+}
+
+
+/*!
+ * The SIA-applicable shear stress component tauyz computed here is not used
+ * by the model.  This implementation intentionally does not use the
+ * eta-transformation or special cases at ice margins.
+ * CODE DUPLICATION WITH StressBalanceTauxz
+ */
+std::shared_ptr<array::Array> StressBalanceTauyz::compute_impl() const {
+
+  std::shared_ptr<array::Array3D> result(
+      new array::Array3D(m_grid, "tauyz", array::WITHOUT_GHOSTS, m_grid->z()));
+  result->metadata(0) = m_vars[0];
+
+  const array::Scalar &thickness = model->geometry().ice_thickness,
+                      &surface   = model->geometry().ice_surface_elevation;
+
+  array::AccessScope list{ &surface, &thickness, result.get() };
+
+  const double rg = m_config->get_number("constants.ice.density") *
+                    m_config->get_number("constants.standard_gravity");
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (auto p : m_grid->points()) {
+      const int i = p.i(), j = p.j();
+
+      unsigned int ks      = m_grid->kBelowHeight(thickness(i, j));
+      double *tauyz_out_ij = result->get_column(i, j);
+      const double H = thickness(i, j), dhdy = diff_y_p(surface, i, j);
+
+      // within the ice:
+      for (unsigned int k = 0; k <= ks; ++k) {
+        tauyz_out_ij[k] = -rg * (H - m_grid->z(k)) * dhdy;
+      }
+      // above the ice:
+      for (unsigned int k = ks + 1; k < m_grid->Mz(); ++k) {
+        tauyz_out_ij[k] = 0.0;
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  return result;
+}
+
+StressBalanceVelbaseMag::StressBalanceVelbaseMag(const IceModel *m)
+  : Diag<IceModel>(m) {
+
+  m_vars = { { m_sys, "velbase_mag", *m_grid } };
+  m_vars[0]
+      .long_name("magnitude of horizontal velocity of ice at base of ice")
+      .units("m s^-1")
+      .output_units("m year^-1");
+  m_vars[0]["_FillValue"] = { fill_value() };
+  m_vars[0]["valid_min"]  = { 0.0 };
+}
+
+std::shared_ptr<array::Array> StressBalanceVelbaseMag::compute_impl() const {
+  auto result = allocate<array::Scalar>("velbase_mag");
+
+  compute_magnitude(*array::cast<array::Vector>(StressBalanceVelbase(model).compute()), *result);
+
+  double fill = fill_value();
+
+  const auto &mask = model->geometry().cell_type;
+
+  array::AccessScope list{&mask, result.get()};
+
+  for (auto p : m_grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.ice_free(i, j)) {
+      (*result)(i, j) = fill;
+    }
+  }
+
+  return result;
+}
+
+StressBalanceVelsurfMag::StressBalanceVelsurfMag(const IceModel *m)
+  : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "velsurf_mag", *m_grid } };
+  m_vars[0]
+      .long_name("magnitude of horizontal velocity of ice at ice surface")
+      .units("m s^-1")
+      .output_units("m year^-1");
+  m_vars[0]["_FillValue"] = { fill_value() };
+  m_vars[0]["valid_min"] = {0.0};
+}
+
+std::shared_ptr<array::Array> StressBalanceVelsurfMag::compute_impl() const {
+  double fill = fill_value();
+
+  auto result = allocate<array::Scalar>("velsurf_mag");
+
+  compute_magnitude(*array::cast<array::Vector>(StressBalanceVelsurf(model).compute()), *result);
+
+  const auto &mask = model->geometry().cell_type;
+
+  array::AccessScope list{&mask, result.get()};
+
+  for (auto p : m_grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.ice_free(i, j)) {
+      (*result)(i, j) = fill;
+    }
+  }
+
+  return result;
+}
+
+
+StressBalanceVelsurf::StressBalanceVelsurf(const IceModel *m)
+  : Diag<IceModel>(m) {
+
+  auto ismip = m_config->get_flag("output.ISMIP");
+  m_vars = { { m_sys, ismip ? "xvelsurf" : "uvelsurf", *m_grid },
+             { m_sys, ismip ? "yvelsurf" : "vvelsurf", *m_grid } };
+  m_vars[0]
+      .long_name("x-component of the horizontal velocity of ice at ice surface")
+      .standard_name("land_ice_surface_x_velocity"); // InitMIP "standard" name
+  m_vars[1]
+      .long_name("y-component of the horizontal velocity of ice at ice surface")
+      .standard_name("land_ice_surface_y_velocity"); // InitMIP "standard" name
+
+  for (auto &v : m_vars) {
+    v.units("m s^-1").output_units("m year^-1");
+    v["_FillValue"] = { fill_value() };
+  }
+}
+
+std::shared_ptr<array::Array> StressBalanceVelsurf::compute_impl() const {
+  double fill = fill_value();
+
+  auto result = allocate<array::Vector>("surf");
+
+  array::Scalar u_surf(m_grid, "u_surf");
+  array::Scalar v_surf(m_grid, "v_surf");
+
+  const array::Array3D
+    &u3 = model->stress_balance()->velocity_u(),
+    &v3 = model->stress_balance()->velocity_v();
+
+  const auto &thickness = model->geometry().ice_thickness;
+  const auto &cell_type = model->geometry().cell_type;
+
+  extract_surface(u3, thickness, u_surf);
+  extract_surface(v3, thickness, v_surf);
+
+  array::AccessScope list{ &cell_type, &u_surf, &v_surf, result.get() };
+
+  for (auto p : m_grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    if (cell_type.ice_free(i, j)) {
+      (*result)(i, j) = fill;
+    } else {
+      (*result)(i, j) = { u_surf(i, j), v_surf(i, j) };
+    }
+  }
+
+  return result;
+}
+
+StressBalanceWvel::StressBalanceWvel(const IceModel *m) : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "wvel", *m_grid } };
+  m_vars[0]
+      .long_name("vertical velocity of ice, relative to geoid")
+      .units("m s^-1")
+      .output_units("m year^-1");
+}
+
+std::shared_ptr<array::Array> StressBalanceWvel::compute(bool zero_above_ice) const {
+  std::shared_ptr<array::Array3D> result3(
+      new array::Array3D(m_grid, "wvel", array::WITHOUT_GHOSTS, m_grid->z()));
+  result3->metadata() = m_vars[0];
+
+  const auto &bed = model->geometry().bed_elevation;
+  const auto &uplift = model->bed_deformation_model()->uplift();
+
+  const auto &thickness = model->geometry().ice_thickness;
+  const auto &mask      = model->geometry().cell_type;
+
+  const array::Array3D &u3 = model->stress_balance()->velocity_u(),
+                       &v3 = model->stress_balance()->velocity_v(),
+                       &w3 = model->stress_balance()->velocity_w();
+
+  array::AccessScope list{ &thickness, &mask, &bed, &u3, &v3, &w3, &uplift, result3.get() };
+
+  const double ice_density       = m_config->get_number("constants.ice.density"),
+               sea_water_density = m_config->get_number("constants.sea_water.density"),
+               R                 = ice_density / sea_water_density;
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (auto p : m_grid->points()) {
+      const int i = p.i(), j = p.j();
+
+      const double *u = u3.get_column(i, j), *v = v3.get_column(i, j), *w = w3.get_column(i, j);
+      double *result = result3->get_column(i, j);
+
+      int ks = m_grid->kBelowHeight(thickness(i, j));
+
+      // in the ice:
+      if (mask.grounded(i, j)) {
+        const double bed_dx = diff_x_p(bed, i, j), bed_dy = diff_y_p(bed, i, j),
+                     uplift_ij = uplift(i, j);
+        for (int k = 0; k <= ks; k++) {
+          result[k] = w[k] + uplift_ij + u[k] * bed_dx + v[k] * bed_dy;
+        }
+
+      } else { // floating
+        const double z_sl = R * thickness(i, j), w_sl = w3.interpolate(i, j, z_sl);
+
+        for (int k = 0; k <= ks; k++) {
+          result[k] = w[k] - w_sl;
+        }
+      }
+
+      // above the ice:
+      if (zero_above_ice) {
+        // set to zeros
+        for (unsigned int k = ks + 1; k < m_grid->Mz(); k++) {
+          result[k] = 0.0;
+        }
+      } else {
+        // extrapolate using the topmost value
+        for (unsigned int k = ks + 1; k < m_grid->Mz(); k++) {
+          result[k] = result[ks];
+        }
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  return result3;
+}
+
+std::shared_ptr<array::Array> StressBalanceWvel::compute_impl() const {
+  return this->compute(true); // fill wvel above the ice with zeros
+}
+
+StressBalanceWvelsurf::StressBalanceWvelsurf(const IceModel *m) : Diag<IceModel>(m) {
+
+  auto ismip = m_config->get_flag("output.ISMIP");
+
+  // set metadata:
+  m_vars = { { m_sys, ismip ? "zvelsurf" : "wvelsurf", *m_grid } };
+
+  m_vars[0]
+      .long_name("vertical velocity of ice at ice surface, relative to the geoid")
+      .standard_name("land_ice_surface_upward_velocity") // InitMIP "standard" name
+      .units("m s^-1")
+      .output_units("m year^-1");
+
+  m_vars[0]["_FillValue"]  = { fill_value() };
+}
+
+std::shared_ptr<array::Array> StressBalanceWvelsurf::compute_impl() const {
+  double fill = fill_value();
+
+  auto result = allocate<array::Scalar>("wvelsurf");
+
+  // here "false" means "don't fill w3 above the ice surface with zeros"
+  auto w3 = array::cast<array::Array3D>(StressBalanceWvel(model).compute(false));
+
+  const auto &thickness = model->geometry().ice_thickness;
+
+  extract_surface(*w3, thickness, *result);
+
+  const auto &mask = model->geometry().cell_type;
+
+  array::AccessScope list{ &mask, result.get() };
+
+  for (auto p : m_grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.ice_free(i, j)) {
+      (*result)(i, j) = fill;
+    }
+  }
+
+  return result;
+}
+
+StressBalanceWvelbase::StressBalanceWvelbase(const IceModel *m) : Diag<IceModel>(m) {
+
+  auto ismip = m_config->get_flag("output.ISMIP");
+
+  m_vars = { { m_sys, ismip ? "zvelbase" : "wvelbase", *m_grid } };
+  m_vars[0]
+      .long_name("vertical velocity of ice at the base of ice, relative to the geoid")
+      .standard_name("land_ice_basal_upward_velocity") // InitMIP "standard" name
+      .units("m s^-1")
+      .output_units("m year^-1");
+
+  m_vars[0]["_FillValue"]  = { fill_value() };
+}
+
+std::shared_ptr<array::Array> StressBalanceWvelbase::compute_impl() const {
+  double fill = fill_value();
+
+  auto result = allocate<array::Scalar>("wvelbase");
+
+  // here "false" means "don't fill w3 above the ice surface with zeros"
+  auto w3 = array::cast<array::Array3D>(StressBalanceWvel(model).compute(false));
+
+  extract_surface(*w3, 0.0, *result);
+
+  const auto &mask = model->geometry().cell_type;
+
+  array::AccessScope list{ &mask, result.get() };
+
+  for (auto p : m_grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.ice_free(i, j)) {
+      (*result)(i, j) = fill;
+    }
+  }
+
+  return result;
+}
+
+StressBalanceVelbase::StressBalanceVelbase(const IceModel *m) : Diag<IceModel>(m) {
+
+  auto ismip = m_config->get_flag("output.ISMIP");
+
+  // set metadata:
+  m_vars = { { m_sys, ismip ? "xvelbase" : "uvelbase", *m_grid },
+             { m_sys, ismip ? "yvelbase" : "vvelbase", *m_grid } };
+  m_vars[0]
+      .long_name("x-component of the horizontal velocity of ice at the base of ice")
+      .standard_name("land_ice_basal_x_velocity"); // InitMIP "standard" name
+  m_vars[1]
+      .long_name("y-component of the horizontal velocity of ice at the base of ice")
+      .standard_name("land_ice_basal_y_velocity"); // InitMIP "standard" name
+
+  for (auto &v : m_vars) {
+    v.units("m s^-1").output_units("m year^-1");
+    v["_FillValue"]  = { fill_value() };
+  }
+}
+
+std::shared_ptr<array::Array> StressBalanceVelbase::compute_impl() const {
+  double fill = fill_value();
+
+  auto result = allocate<array::Vector>("base");
+
+  array::Scalar u_base(m_grid, "u_base");
+  array::Scalar v_base(m_grid, "v_base");
+
+  const array::Array3D &u3 = model->stress_balance()->velocity_u(),
+                       &v3 = model->stress_balance()->velocity_v();
+
+  extract_surface(u3, 0.0, u_base);
+  extract_surface(v3, 0.0, v_base);
+
+  const auto &mask = model->geometry().cell_type;
+
+  array::AccessScope list{ &mask, &u_base, &v_base, result.get() };
+
+  for (auto p : m_grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.ice_free(i, j)) {
+      (*result)(i, j) = fill;
+    } else {
+      (*result)(i, j) = { u_base(i, j), v_base(i, j) };
+    }
+  }
+
+  return result;
+}
+
+ShallowStressBalanceBeta::ShallowStressBalanceBeta(const IceModel *m) : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "beta", *m_grid } };
+  m_vars[0].long_name("basal drag coefficient").units("Pa s / m");
+}
+
+std::shared_ptr<array::Array> ShallowStressBalanceBeta::compute_impl() const {
+  auto result = allocate<array::Scalar>("beta");
+
+  const auto *yield_stress_model = model->basal_yield_stress_model();
+
+  if (yield_stress_model == nullptr) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "basal yield stress model is not available");
+  }
+
+  const auto &tauc = yield_stress_model->basal_material_yield_stress();
+
+  const auto *shallow_stress_balance = model->stress_balance()->shallow();
+
+  const auto *basal_sliding_law = shallow_stress_balance->sliding_law();
+
+  if (basal_sliding_law == nullptr) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "basal sliding law is not available");
+  }
+
+  const auto &velocity = shallow_stress_balance->velocity();
+
+  array::AccessScope list{&tauc, &velocity, result.get()};
+  for (auto p : m_grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    (*result)(i,j) =  basal_sliding_law->drag(tauc(i,j), velocity(i,j).u, velocity(i,j).v);
+  }
+
+  return result;
+}
 
 } // end of namespace diagnostics
 
@@ -3646,9 +4753,35 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
     { "taud", f(new DrivingShearStress(this)) },
     { "taud_mag", f(new DrivingShearStressmagnitude(this)) },
 
+    // velocities and fluxes that use ice geometry
+    {"velbar_mag",          Diagnostic::Ptr(new StressBalanceVelbarMag(this))},
+    {"flux",                Diagnostic::Ptr(new StressBalanceFlux(this))},
+    {"flux_mag",            Diagnostic::Ptr(new StressBalanceFluxMag(this))},
+    {"velbar",              Diagnostic::Ptr(new StressBalanceVelbar(this))},
+    {"strain_rates",        Diagnostic::Ptr(new StressBalanceStrainRates(this))},
+    {"deviatoric_stresses", Diagnostic::Ptr(new StressBalanceDeviatoricStresses(this))},
+    {"vonmises_stress",     Diagnostic::Ptr(new StressBalanceVonmisesStress(this))},
+    {"uvel",                Diagnostic::Ptr(new StressBalanceUvel(this))},
+    {"vvel",                Diagnostic::Ptr(new StressBalanceVvel(this))},
+    {"wvel_rel",            Diagnostic::Ptr(new StressBalanceWvelRel(this))},
+    {"tauxz",               Diagnostic::Ptr(new StressBalanceTauxz(this))},
+    {"tauyz",               Diagnostic::Ptr(new StressBalanceTauyz(this))},
+    {"velbase_mag",         Diagnostic::Ptr(new StressBalanceVelbaseMag(this))},
+    {"velsurf_mag",         Diagnostic::Ptr(new StressBalanceVelsurfMag(this))},
+    {"velbase",             Diagnostic::Ptr(new StressBalanceVelbase(this))},
+    {"velsurf",             Diagnostic::Ptr(new StressBalanceVelsurf(this))},
+    {"wvel",                Diagnostic::Ptr(new StressBalanceWvel(this))},
+    {"wvelbase",            Diagnostic::Ptr(new StressBalanceWvelbase(this))},
+    {"wvelsurf",            Diagnostic::Ptr(new StressBalanceWvelsurf(this))},
+
     // misc
     { "rank", f(new Rank(this)) },
   };
+
+  if (stress_balance()->shallow()->sliding_law() != nullptr and
+      basal_yield_stress_model() != nullptr) {
+    result["beta"] = f(new ShallowStressBalanceBeta(this));
+  }
 
   if (m_grid->has_longitude_latitude()) {
     result["lon"] = d::wrap(m_grid->longitude());
@@ -3668,6 +4801,11 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
   }
 #endif
 
+  // get diagnostics from submodels (may override some diagnostics allocated above)
+  for (const auto& m : m_submodels) {
+    result = pism::combine(result, m.second->spatial_diagnostics());
+  }
+
   // add ISMIP variable names
   if (m_config->get_flag("output.ISMIP")) {
     result["base"]        = result["ice_base_elevation"];
@@ -3683,11 +4821,9 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
     result["litempbotfl"] = f(new TemperatureBasal(this, SHELF));
     result["ligroundf"]   = result["grounding_line_flux"];
     result["strbasemag"]  = result["taub_mag"];
-  }
-
-  // get diagnostics from submodels (may override some diagnostics allocated above)
-  for (const auto& m : m_submodels) {
-    result = pism::combine(result, m.second->spatial_diagnostics());
+    result["velmean"]     = result["velbar"];
+    result["zvelbase"]    = result["wvelbase"];
+    result["zvelsurf"]    = result["wvelsurf"];
   }
 
   return result;
