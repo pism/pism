@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022, 2023, 2025 Constantine Khroulev
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022, 2023, 2025, 2026, 2026 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,8 +18,6 @@
 
 #include "pism/stressbalance/sia/SIAFD_diagnostics.hh"
 #include "pism/stressbalance/sia/BedSmoother.hh"
-#include "pism/util/Vars.hh"
-#include "pism/util/array/CellType.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -28,33 +26,12 @@ DiagnosticList SIAFD::spatial_diagnostics_impl() const {
   DiagnosticList result = {
     {"diffusivity",           Diagnostic::Ptr(new SIAFD_diffusivity(this))},
     {"diffusivity_staggered", Diagnostic::Ptr(new SIAFD_diffusivity_staggered(this))},
-    {"schoofs_theta",         Diagnostic::Ptr(new SIAFD_schoofs_theta(this))},
-    {"thksmooth",             Diagnostic::Ptr(new SIAFD_thksmooth(this))},
     {"topgsmooth",            Diagnostic::Ptr(new SIAFD_topgsmooth(this))},
     {"h_x",                   Diagnostic::Ptr(new SIAFD_h_x(this))},
     {"h_y",                   Diagnostic::Ptr(new SIAFD_h_y(this))}
   };
   return result;
 }
-
-SIAFD_schoofs_theta::SIAFD_schoofs_theta(const SIAFD *m) : Diag<SIAFD>(m) {
-  m_vars = { { m_sys, "schoofs_theta", *m_grid } };
-
-  m_vars[0]
-      .long_name("multiplier 'theta' in Schoof's (2003) theory of bed roughness in SIA")
-      .units("1");
-  m_vars[0]["valid_range"] = { 0.0, 1.0 };
-}
-
-std::shared_ptr<array::Array> SIAFD_schoofs_theta::compute_impl() const {
-  const array::Scalar *surface = m_grid->variables().get_2d_scalar("surface_altitude");
-  auto result                  = allocate<array::Scalar>("schoofs_theta");
-
-  model->bed_smoother().theta(*surface, *result);
-
-  return result;
-}
-
 
 SIAFD_topgsmooth::SIAFD_topgsmooth(const SIAFD *m) : Diag<SIAFD>(m) {
   m_vars = { { m_sys, "topgsmooth", *m_grid } };
@@ -70,35 +47,6 @@ std::shared_ptr<array::Array> SIAFD_topgsmooth::compute_impl() const {
 
   return result;
 }
-
-SIAFD_thksmooth::SIAFD_thksmooth(const SIAFD *m)
-  : Diag<SIAFD>(m) {
-
-  m_vars = { { m_sys, "thksmooth", *m_grid } };
-  m_vars[0]
-      .long_name(
-          "thickness relative to smoothed bed elevation in Schoof's (2003) theory of bed roughness in SIA")
-      .units("m");
-}
-
-std::shared_ptr<array::Array> SIAFD_thksmooth::compute_impl() const {
-
-  const auto &surface   = *m_grid->variables().get_2d_scalar("surface_altitude");
-  const auto &thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
-
-  array::CellType2 cell_type(m_grid, "cell_type");
-  {
-    const auto &mask = *m_grid->variables().get_2d_cell_type("mask");
-    cell_type.copy_from(mask);
-  }
-
-  auto result = allocate<array::Scalar>("thksmooth");
-
-  model->bed_smoother().smoothed_thk(surface, thickness, cell_type,
-                                     *result);
-  return result;
-}
-
 
 
 SIAFD_diffusivity::SIAFD_diffusivity(const SIAFD *m)

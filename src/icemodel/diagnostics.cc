@@ -42,6 +42,8 @@
 #include "pism/earth/BedDef.hh"
 #include "pism/hydrology/Routing.hh"
 #include "pism/energy/BedThermalUnit.hh"
+#include "pism/stressbalance/sia/SIAFD.hh"
+#include "pism/stressbalance/sia/BedSmoother.hh"
 
 #if (Pism_USE_PROJ == 1)
 #include "pism/util/Proj.hh"
@@ -4727,6 +4729,94 @@ protected:
   }
 };
 
+//! \brief Computes the multiplier \f$\theta\f$ in Schoof's (2003) theory of the
+//! effect of bed roughness on the diffusivity of the SIA.
+/*!
+  See page \ref bedrough and reference [\ref Schoofbasaltopg2003].
+*/
+class SIAFDSchoofs_Theta : public Diag<IceModel>
+{
+public:
+  SIAFDSchoofs_Theta(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const;
+};
+
+SIAFDSchoofs_Theta::SIAFDSchoofs_Theta(const IceModel *m) : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "schoofs_theta", *m_grid } };
+
+  m_vars[0]
+      .long_name("multiplier 'theta' in Schoof's (2003) theory of bed roughness in SIA")
+      .units("1");
+  m_vars[0]["valid_range"] = { 0.0, 1.0 };
+
+  const auto *siafd =
+    dynamic_cast<const stressbalance::SIAFD*>(model->stress_balance()->modifier());
+
+  if (siafd == nullptr) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "cannot compute 'schoofs_theta': SIAFD is not available");
+  }
+}
+
+std::shared_ptr<array::Array> SIAFDSchoofs_Theta::compute_impl() const {
+  auto result = allocate<array::Scalar>("schoofs_theta");
+
+  const auto *siafd =
+    dynamic_cast<const stressbalance::SIAFD*>(model->stress_balance()->modifier());
+
+  if (siafd == nullptr) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "cannot compute 'schoofs_theta': SIAFD is not available");
+  }
+
+  siafd->bed_smoother().theta(model->geometry().ice_surface_elevation, *result);
+
+  return result;
+}
+
+//! \brief Computes the thickness relative to the smoothed bed elevation in
+//! Schoof's (2003) theory of the effect of bed roughness on the SIA.
+/*!
+  See page \ref bedrough and reference [\ref Schoofbasaltopg2003].
+*/
+class SIAFDThksmooth : public Diag<IceModel>
+{
+public:
+  SIAFDThksmooth(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const;
+};
+
+SIAFDThksmooth::SIAFDThksmooth(const IceModel *m)
+  : Diag<IceModel>(m) {
+
+  m_vars = { { m_sys, "thksmooth", *m_grid } };
+  m_vars[0]
+      .long_name(
+          "thickness relative to smoothed bed elevation in Schoof's (2003) theory of bed roughness in SIA")
+      .units("m");
+}
+
+std::shared_ptr<array::Array> SIAFDThksmooth::compute_impl() const {
+
+  array::CellType2 cell_type(m_grid, "cell_type");
+  cell_type.copy_from(model->geometry().cell_type);
+
+  const auto *siafd =
+    dynamic_cast<const stressbalance::SIAFD*>(model->stress_balance()->modifier());
+
+  if (siafd == nullptr) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "cannot compute 'schoofs_theta': SIAFD is not available");
+  }
+
+  auto result = allocate<array::Scalar>("thksmooth");
+  siafd->bed_smoother().smoothed_thk(model->geometry().ice_surface_elevation,
+                                     model->geometry().ice_thickness, cell_type, *result);
+  return result;
+}
+
 } // end of namespace diagnostics
 
 void IceModel::init_outputs(InputOptions options, DiagnosticReport report_type) {
@@ -4906,6 +4996,11 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
     // misc
     { "rank", f(new Rank(this)) },
   };
+
+  if (dynamic_cast<const stressbalance::SIAFD *>(stress_balance()->modifier()) != nullptr) {
+    result["schoofs_theta"] = f(new SIAFDSchoofs_Theta(this));
+    result["thksmooth"] = f(new SIAFDThksmooth(this));
+  }
 
   if (stress_balance()->shallow()->sliding_law() != nullptr and
       basal_yield_stress_model() != nullptr) {
