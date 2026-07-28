@@ -41,6 +41,7 @@
 #include "pism/rheology/FlowLawFactory.hh"
 #include "pism/earth/BedDef.hh"
 #include "pism/hydrology/Routing.hh"
+#include "pism/energy/BedThermalUnit.hh"
 
 #if (Pism_USE_PROJ == 1)
 #include "pism/util/Proj.hh"
@@ -4686,6 +4687,46 @@ protected:
   }
 };
 
+class HeatFluxFromBedrock : public DiagAverageRate<IceModel>
+{
+public:
+  HeatFluxFromBedrock(const IceModel *m)
+      : DiagAverageRate<IceModel>(m, "heat_flux_from_bedrock", RATE) {
+
+    m_accumulator.metadata()["units"] = "joule m^-2";
+
+    auto ismip = m_config->get_flag("output.ISMIP");
+    m_vars      = { { m_sys, ismip ? "hfgeoubed" : "heat_flux_from_bedrock", *m_grid } };
+    m_vars[0]
+        .long_name("upward heat flux from bedrock into ice at the ice base")
+        .standard_name((ismip ? "upward_geothermal_heat_flux_in_land_ice" :
+                                "upward_geothermal_heat_flux_at_ground_level_in_land_ice"))
+        .units("W m^-2")
+        .output_units("mW m^-2");
+    m_vars[0]["cell_methods"] = "time: mean";
+    m_vars[0]["comment"]      = "positive values correspond to an upward flux";
+    m_vars[0]["_FillValue"]   = { fill_value() };
+  }
+
+protected:
+  virtual void update_impl(double dt) {
+    const auto &Q         = model->bedrock_thermal_model()->flux_through_top_surface();
+    const auto &cell_type = model->geometry().cell_type;
+
+    array::AccessScope list{&Q, &cell_type, &m_accumulator};
+
+    for (auto p : m_grid->points()) {
+      const int i = p.i(), j = p.j();
+
+      if (cell_type.grounded_ice(i, j)) {
+        m_accumulator(i, j) += dt * Q(i, j);
+      }
+    }
+
+    m_interval_length += dt;
+  }
+};
+
 } // end of namespace diagnostics
 
 void IceModel::init_outputs(InputOptions options, DiagnosticReport report_type) {
@@ -4773,6 +4814,7 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
     { "tempbase", f(new TemperatureBasal(this, BOTH)) },
     { "temppabase", f(new TemperaturePABasal(this)) },
     { "tempsurf", f(new TemperatureSurface(this)) },
+    { "heat_flux_from_bedrock", f(new HeatFluxFromBedrock(this)) },
 
     // rheology-related stuff
     { "tempicethk", f(new TemperateIceThickness(this)) },
@@ -4841,25 +4883,25 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
     { "taud_mag", f(new DrivingShearStressmagnitude(this)) },
 
     // velocities and fluxes that use ice geometry
-    {"velbar_mag",          Diagnostic::Ptr(new StressBalanceVelbarMag(this))},
-    {"flux",                Diagnostic::Ptr(new StressBalanceFlux(this))},
-    {"flux_mag",            Diagnostic::Ptr(new StressBalanceFluxMag(this))},
-    {"velbar",              Diagnostic::Ptr(new StressBalanceVelbar(this))},
-    {"strain_rates",        Diagnostic::Ptr(new StressBalanceStrainRates(this))},
-    {"deviatoric_stresses", Diagnostic::Ptr(new StressBalanceDeviatoricStresses(this))},
-    {"vonmises_stress",     Diagnostic::Ptr(new StressBalanceVonmisesStress(this))},
-    {"uvel",                Diagnostic::Ptr(new StressBalanceUvel(this))},
-    {"vvel",                Diagnostic::Ptr(new StressBalanceVvel(this))},
-    {"wvel_rel",            Diagnostic::Ptr(new StressBalanceWvelRel(this))},
-    {"tauxz",               Diagnostic::Ptr(new StressBalanceTauxz(this))},
-    {"tauyz",               Diagnostic::Ptr(new StressBalanceTauyz(this))},
-    {"velbase_mag",         Diagnostic::Ptr(new StressBalanceVelbaseMag(this))},
-    {"velsurf_mag",         Diagnostic::Ptr(new StressBalanceVelsurfMag(this))},
-    {"velbase",             Diagnostic::Ptr(new StressBalanceVelbase(this))},
-    {"velsurf",             Diagnostic::Ptr(new StressBalanceVelsurf(this))},
-    {"wvel",                Diagnostic::Ptr(new StressBalanceWvel(this))},
-    {"wvelbase",            Diagnostic::Ptr(new StressBalanceWvelbase(this))},
-    {"wvelsurf",            Diagnostic::Ptr(new StressBalanceWvelsurf(this))},
+    { "velbar_mag", Diagnostic::Ptr(new StressBalanceVelbarMag(this)) },
+    { "flux", Diagnostic::Ptr(new StressBalanceFlux(this)) },
+    { "flux_mag", Diagnostic::Ptr(new StressBalanceFluxMag(this)) },
+    { "velbar", Diagnostic::Ptr(new StressBalanceVelbar(this)) },
+    { "strain_rates", Diagnostic::Ptr(new StressBalanceStrainRates(this)) },
+    { "deviatoric_stresses", Diagnostic::Ptr(new StressBalanceDeviatoricStresses(this)) },
+    { "vonmises_stress", Diagnostic::Ptr(new StressBalanceVonmisesStress(this)) },
+    { "uvel", Diagnostic::Ptr(new StressBalanceUvel(this)) },
+    { "vvel", Diagnostic::Ptr(new StressBalanceVvel(this)) },
+    { "wvel_rel", Diagnostic::Ptr(new StressBalanceWvelRel(this)) },
+    { "tauxz", Diagnostic::Ptr(new StressBalanceTauxz(this)) },
+    { "tauyz", Diagnostic::Ptr(new StressBalanceTauyz(this)) },
+    { "velbase_mag", Diagnostic::Ptr(new StressBalanceVelbaseMag(this)) },
+    { "velsurf_mag", Diagnostic::Ptr(new StressBalanceVelsurfMag(this)) },
+    { "velbase", Diagnostic::Ptr(new StressBalanceVelbase(this)) },
+    { "velsurf", Diagnostic::Ptr(new StressBalanceVelsurf(this)) },
+    { "wvel", Diagnostic::Ptr(new StressBalanceWvel(this)) },
+    { "wvelbase", Diagnostic::Ptr(new StressBalanceWvelbase(this)) },
+    { "wvelsurf", Diagnostic::Ptr(new StressBalanceWvelsurf(this)) },
 
     // misc
     { "rank", f(new Rank(this)) },
@@ -4900,18 +4942,19 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
 
   // add ISMIP variable names
   if (m_config->get_flag("output.ISMIP")) {
-    result["base"]        = result["ice_base_elevation"];
-    result["lithk"]       = result["thk"];
-    result["dlithkdt"]    = result["dHdt"];
-    result["orog"]        = result["usurf"];
     result["acabf"]       = result["tendency_of_ice_amount_due_to_surface_mass_flux"];
-    result["libmassbfgr"] = result["basal_mass_flux_grounded"];
+    result["base"]        = result["ice_base_elevation"];
+    result["dlithkdt"]    = result["dHdt"];
+    result["hfgeoubed"]   = result["heat_flux_from_bedrock"];
     result["libmassbffl"] = result["basal_mass_flux_floating"];
-    result["lifmassbf"]   = result["tendency_of_ice_amount_due_to_discharge"];
+    result["libmassbfgr"] = result["basal_mass_flux_grounded"];
     result["licalvf"]     = result["tendency_of_ice_amount_due_to_calving"];
-    result["litempbotgr"] = f(new TemperatureBasal(this, GROUNDED));
-    result["litempbotfl"] = f(new TemperatureBasal(this, SHELF));
+    result["lifmassbf"]   = result["tendency_of_ice_amount_due_to_discharge"];
     result["ligroundf"]   = result["grounding_line_flux"];
+    result["litempbotfl"] = f(new TemperatureBasal(this, SHELF));
+    result["litempbotgr"] = f(new TemperatureBasal(this, GROUNDED));
+    result["lithk"]       = result["thk"];
+    result["orog"]        = result["usurf"];
     result["strbasemag"]  = result["taub_mag"];
     result["velmean"]     = result["velbar"];
     result["zvelbase"]    = result["wvelbase"];
