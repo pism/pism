@@ -4642,6 +4642,50 @@ protected:
   }
 };
 
+/*! @brief Report hydraulic potential in the subglacial hydrology system */
+class HydraulicPotential : public Diag<IceModel>
+{
+public:
+  HydraulicPotential(const IceModel *m) : Diag<IceModel>(m) {
+    m_vars = { { m_sys, "hydraulic_potential", *m_grid } };
+    m_vars[0].long_name("hydraulic potential in the subglacial hydrology system").units("Pa");
+
+    const auto *routing_hydrology =
+        dynamic_cast<const hydrology::Routing *>(model->subglacial_hydrology_model());
+
+    if (routing_hydrology == nullptr) {
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "cannot compute 'hydraulic_potential': routing hydrology is not available");
+    }
+  }
+
+protected:
+  std::shared_ptr<array::Array> compute_impl() const {
+
+    auto result = allocate<array::Scalar>("hydraulic_potential");
+
+    const auto &sea_level     = model->geometry().sea_level_elevation;
+    const auto &bed_elevation = model->geometry().bed_elevation;
+    const auto &ice_thickness = model->geometry().ice_thickness;
+
+    const auto *routing_hydrology =
+        dynamic_cast<const hydrology::Routing *>(model->subglacial_hydrology_model());
+
+    if (routing_hydrology == nullptr) {
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "cannot compute 'hydraulic_potential': routing hydrology is not available");
+    }
+
+    hydrology::hydraulic_potential(routing_hydrology->subglacial_water_thickness(),
+                                   routing_hydrology->subglacial_water_pressure(), sea_level,
+                                   bed_elevation, ice_thickness, *result);
+
+    return result;
+  }
+};
+
 } // end of namespace diagnostics
 
 void IceModel::init_outputs(InputOptions options, DiagnosticReport report_type) {
@@ -4828,6 +4872,7 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
 
   if (dynamic_cast<const hydrology::Routing *>(subglacial_hydrology_model()) != nullptr) {
     result["wallmelt"] = f(new HydrologyWallMelt(this));
+    result["hydraulic_potential"] = f(new HydraulicPotential(this));
   }
 
   if (m_grid->has_longitude_latitude()) {

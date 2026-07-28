@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2019, 2021, 2022, 2025 PISM Authors
+// Copyright (C) 2012-2019, 2021, 2022, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -181,6 +181,13 @@ protected:
 private:
   virtual void initialization_message() const;
 };
+
+void hydraulic_potential(const array::Scalar &W,
+                         const array::Scalar &P,
+                         const array::Scalar &sea_level,
+                         const array::Scalar &bed,
+                         const array::Scalar &ice_thickness,
+                         array::Scalar &result);
 
 void wall_melt(const Routing &model,
                const array::Scalar &bed_elevation,
