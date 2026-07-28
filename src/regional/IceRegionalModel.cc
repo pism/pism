@@ -319,12 +319,12 @@ public:
   }
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const {
 
     std::shared_ptr<array::Array3D> result(new array::Array3D(m_grid, "ch_temp", array::WITHOUT_GHOSTS, m_grid->z()));
 
     energy::compute_temperature(model->cryo_hydrologic_system()->enthalpy(),
-                                model->geometry().ice_thickness,
+                                geometry.ice_thickness,
                                 *result);
     result->metadata(0) = m_vars[0];
 
@@ -345,12 +345,12 @@ public:
   }
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const {
 
     std::shared_ptr<array::Array3D> result(new array::Array3D(m_grid, "ch_liqfrac", array::WITHOUT_GHOSTS, m_grid->z()));
 
     energy::compute_liquid_water_fraction(model->cryo_hydrologic_system()->enthalpy(),
-                                          model->geometry().ice_thickness,
+                                          geometry.ice_thickness,
                                           *result);
     result->metadata(0) = m_vars[0];
     return result;
@@ -370,14 +370,14 @@ public:
   }
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const {
 
     std::shared_ptr<array::Array3D> result(new array::Array3D(m_grid, "ch_heat_flux", array::WITHOUT_GHOSTS, m_grid->z()));
     result->metadata(0) = m_vars[0];
 
     energy::cryo_hydrologic_warming_flux(m_config->get_number("constants.ice.thermal_conductivity"),
                                          m_config->get_number("energy.ch_warming.average_channel_spacing"),
-                                         model->geometry().ice_thickness,
+                                         geometry.ice_thickness,
                                          model->energy_balance_model()->enthalpy(),
                                          model->cryo_hydrologic_system()->enthalpy(),
                                          *result);

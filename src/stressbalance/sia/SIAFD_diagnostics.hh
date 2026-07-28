@@ -36,7 +36,7 @@ class SIAFD_topgsmooth : public Diag<SIAFD>
 public:
   SIAFD_topgsmooth(const SIAFD *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 //! \brief Compute diffusivity of the SIA flow.
@@ -45,7 +45,7 @@ class SIAFD_diffusivity : public Diag<SIAFD>
 public:
   SIAFD_diffusivity(const SIAFD *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 //! \brief Compute diffusivity of the SIA flow (on the staggered grid).
@@ -54,7 +54,7 @@ class SIAFD_diffusivity_staggered : public Diag<SIAFD>
 public:
   SIAFD_diffusivity_staggered(const SIAFD *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 //! \brief Reports the x-component of the ice surface gradient on the staggered
@@ -64,7 +64,7 @@ class SIAFD_h_x : public Diag<SIAFD>
 public:
   SIAFD_h_x(const SIAFD *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 //! \brief Reports the y-component of the ice surface gradient on the staggered
@@ -74,7 +74,7 @@ class SIAFD_h_y : public Diag<SIAFD>
 public:
   SIAFD_h_y(const SIAFD *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 } // end of namespace stressbalance

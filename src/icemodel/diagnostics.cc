@@ -86,7 +86,7 @@ public:
   }
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
 
     auto result        = std::make_shared<array::Scalar>(m_grid, "");
     result->metadata() = m_vars[0];
@@ -758,12 +758,11 @@ public:
   IceMarginPressureDifference(IceModel *m);
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const;
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 IceMarginPressureDifference::IceMarginPressureDifference(IceModel *m) : Diag<IceModel>(m) {
 
-  /* set metadata: */
   m_vars = { { m_sys, "ice_margin_pressure_difference", *m_grid } };
   m_vars[0]
       .long_name(
@@ -772,15 +771,15 @@ IceMarginPressureDifference::IceMarginPressureDifference(IceModel *m) : Diag<Ice
   m_vars[0]["_FillValue"] = { fill_value() };
 }
 
-std::shared_ptr<array::Array> IceMarginPressureDifference::compute_impl() const {
+std::shared_ptr<array::Array> IceMarginPressureDifference::compute_impl(const Geometry &geometry) const {
 
   auto result = allocate<array::Scalar>("ice_margin_pressure_difference");
 
   array::CellType1 mask(m_grid, "mask");
 
-  const auto &H         = model->geometry().ice_thickness;
-  const auto &bed       = model->geometry().bed_elevation;
-  const auto &sea_level = model->geometry().sea_level_elevation;
+  const auto &H         = geometry.ice_thickness;
+  const auto &bed       = geometry.bed_elevation;
+  const auto &sea_level = geometry.sea_level_elevation;
 
   {
     const double H_threshold = m_config->get_number("stress_balance.ice_free_thickness_standard");
@@ -899,7 +898,7 @@ public:
   HardnessAverage(const IceModel *m);
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 HardnessAverage::HardnessAverage(const IceModel *m) : Diag<IceModel>(m) {
@@ -916,7 +915,7 @@ HardnessAverage::HardnessAverage(const IceModel *m) : Diag<IceModel>(m) {
 }
 
 //! \brief Computes vertically-averaged ice hardness.
-std::shared_ptr<array::Array> HardnessAverage::compute_impl() const {
+std::shared_ptr<array::Array> HardnessAverage::compute_impl(const Geometry &geometry) const {
 
   const rheology::FlowLaw *flow_law = model->stress_balance()->shallow()->flow_law().get();
   if (flow_law == NULL) {
@@ -930,10 +929,10 @@ std::shared_ptr<array::Array> HardnessAverage::compute_impl() const {
   auto result        = std::make_shared<array::Scalar>(m_grid, "hardav");
   result->metadata() = m_vars[0];
 
-  const auto &cell_type = model->geometry().cell_type;
+  const auto &cell_type = geometry.cell_type;
 
   const array::Array3D &ice_enthalpy = model->energy_balance_model()->enthalpy();
-  const array::Scalar &ice_thickness = model->geometry().ice_thickness;
+  const array::Scalar &ice_thickness = geometry.ice_thickness;
   double fill = fill_value();
 
   array::AccessScope list{ &cell_type, &ice_enthalpy, &ice_thickness, result.get() };
@@ -965,7 +964,7 @@ public:
   Rank(const IceModel *m);
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 Rank::Rank(const IceModel *m) : Diag<IceModel>(m) {
@@ -977,7 +976,7 @@ Rank::Rank(const IceModel *m) : Diag<IceModel>(m) {
       .set_output_type(io::PISM_INT);
 }
 
-std::shared_ptr<array::Array> Rank::compute_impl() const {
+std::shared_ptr<array::Array> Rank::compute_impl(const Geometry &/*geometry*/) const {
 
   auto result        = std::make_shared<array::Scalar>(m_grid, "rank");
   result->metadata() = m_vars[0];
@@ -997,7 +996,7 @@ public:
   CTS(const IceModel *m);
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 CTS::CTS(const IceModel *m) : Diag<IceModel>(m) {
@@ -1007,13 +1006,13 @@ CTS::CTS(const IceModel *m) : Diag<IceModel>(m) {
       .units("1");
 }
 
-std::shared_ptr<array::Array> CTS::compute_impl() const {
+std::shared_ptr<array::Array> CTS::compute_impl(const Geometry &geometry) const {
 
-  std::shared_ptr<array::Array3D> result(new array::Array3D(m_grid, "cts", array::WITHOUT_GHOSTS, m_grid->z()));
+  std::shared_ptr<array::Array3D> result(
+      new array::Array3D(m_grid, "cts", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
-  energy::compute_cts(model->energy_balance_model()->enthalpy(), model->geometry().ice_thickness,
-                      *result);
+  energy::compute_cts(model->energy_balance_model()->enthalpy(), geometry.ice_thickness, *result);
 
   return result;
 }
@@ -1024,7 +1023,7 @@ public:
   Temperature(const IceModel *m);
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 Temperature::Temperature(const IceModel *m) : Diag<IceModel>(m) {
@@ -1036,13 +1035,13 @@ Temperature::Temperature(const IceModel *m) : Diag<IceModel>(m) {
   m_vars[0]["valid_min"] = { 0.0 };
 }
 
-std::shared_ptr<array::Array> Temperature::compute_impl() const {
+std::shared_ptr<array::Array> Temperature::compute_impl(const Geometry &geometry) const {
 
   std::shared_ptr<array::Array3D> result(
       new array::Array3D(m_grid, "temp", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
-  const auto &thickness = model->geometry().ice_thickness;
+  const auto &thickness = geometry.ice_thickness;
   const auto &enthalpy  = model->energy_balance_model()->enthalpy();
 
   auto EC = model->ctx()->enthalpy_converter();
@@ -1079,7 +1078,7 @@ class TemperaturePA : public Diag<IceModel>
 public:
   TemperaturePA(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 
@@ -1092,14 +1091,14 @@ TemperaturePA::TemperaturePA(const IceModel *m)
   m_vars[0]["valid_max"] = {0};
 }
 
-std::shared_ptr<array::Array> TemperaturePA::compute_impl() const {
+std::shared_ptr<array::Array> TemperaturePA::compute_impl(const Geometry &geometry) const {
   bool cold_mode = set_member(m_config->get_string("energy.model"), {"cold", "none"});
   double melting_point_temp = m_config->get_number("constants.fresh_water.melting_point_temperature");
 
   auto result = std::make_shared<array::Array3D>(m_grid, "temp_pa", array::WITHOUT_GHOSTS, m_grid->z());
   result->metadata() = m_vars[0];
 
-  const auto &thickness = model->geometry().ice_thickness;
+  const auto &thickness = geometry.ice_thickness;
   const auto &enthalpy  = model->energy_balance_model()->enthalpy();
 
   auto EC = model->ctx()->enthalpy_converter();
@@ -1146,7 +1145,7 @@ class TemperaturePABasal : public Diag<IceModel>
 public:
   TemperaturePABasal(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 TemperaturePABasal::TemperaturePABasal(const IceModel *m)
@@ -1155,7 +1154,7 @@ TemperaturePABasal::TemperaturePABasal(const IceModel *m)
   m_vars[0].long_name("pressure-adjusted ice temperature at the base of ice").units("degree_Celsius");
 }
 
-std::shared_ptr<array::Array> TemperaturePABasal::compute_impl() const {
+std::shared_ptr<array::Array> TemperaturePABasal::compute_impl(const Geometry &geometry) const {
 
   bool cold_mode = set_member(m_config->get_string("energy.model"), {"cold", "none"});
   double melting_point_temp = m_config->get_number("constants.fresh_water.melting_point_temperature");
@@ -1163,7 +1162,7 @@ std::shared_ptr<array::Array> TemperaturePABasal::compute_impl() const {
   auto result = std::make_shared<array::Scalar>(m_grid, "temp_pa_base");
   result->metadata() = m_vars[0];
 
-  const auto &thickness = model->geometry().ice_thickness;
+  const auto &thickness = geometry.ice_thickness;
   const auto &enthalpy = model->energy_balance_model()->enthalpy();
 
   auto EC = model->ctx()->enthalpy_converter();
@@ -1204,7 +1203,7 @@ class IceEnthalpySurface : public Diag<IceModel>
 public:
   IceEnthalpySurface(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 IceEnthalpySurface::IceEnthalpySurface(const IceModel *m)
@@ -1214,7 +1213,7 @@ IceEnthalpySurface::IceEnthalpySurface(const IceModel *m)
   m_vars[0]["_FillValue"] = {fill_value()};
 }
 
-std::shared_ptr<array::Array> IceEnthalpySurface::compute_impl() const {
+std::shared_ptr<array::Array> IceEnthalpySurface::compute_impl(const Geometry &geometry) const {
 
   auto result = std::make_shared<array::Scalar>(m_grid, "enthalpysurf");
   result->metadata() = m_vars[0];
@@ -1222,7 +1221,7 @@ std::shared_ptr<array::Array> IceEnthalpySurface::compute_impl() const {
   // compute levels corresponding to 1 m below the ice surface:
 
   const array::Array3D& ice_enthalpy = model->energy_balance_model()->enthalpy();
-  const array::Scalar& ice_thickness = model->geometry().ice_thickness;
+  const array::Scalar& ice_thickness = geometry.ice_thickness;
 
   array::AccessScope list{&ice_thickness, result.get()};
 
@@ -1253,7 +1252,7 @@ class IceEnthalpyBasal : public Diag<IceModel>
 public:
   IceEnthalpyBasal(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 IceEnthalpyBasal::IceEnthalpyBasal(const IceModel *m)
@@ -1263,14 +1262,14 @@ IceEnthalpyBasal::IceEnthalpyBasal(const IceModel *m)
   m_vars[0]["_FillValue"] = {fill_value()};
 }
 
-std::shared_ptr<array::Array> IceEnthalpyBasal::compute_impl() const {
+std::shared_ptr<array::Array> IceEnthalpyBasal::compute_impl(const Geometry &geometry) const {
 
   auto result = std::make_shared<array::Scalar>(m_grid, "enthalpybase");
   result->metadata() = m_vars[0];
 
   extract_surface(model->energy_balance_model()->enthalpy(), 0.0, *result);  // z=0 slice
 
-  apply_mask(model->geometry().ice_thickness, fill_value(), *result);
+  apply_mask(geometry.ice_thickness, fill_value(), *result);
 
   return result;
 }
@@ -1281,7 +1280,7 @@ class TemperatureBasal : public Diag<IceModel>
 public:
   TemperatureBasal(const IceModel *m, AreaType area_type);
 private:
-  std::shared_ptr<array::Array> compute_impl() const;
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 
   AreaType m_area_type;
 };
@@ -1313,18 +1312,18 @@ TemperatureBasal::TemperatureBasal(const IceModel *m, AreaType area_type)
   m_vars[0]["_FillValue"] = { fill_value() };
 }
 
-std::shared_ptr<array::Array> TemperatureBasal::compute_impl() const {
+std::shared_ptr<array::Array> TemperatureBasal::compute_impl(const Geometry &geometry) const {
 
   auto result = allocate<array::Scalar>("basal_temperature");
 
-  const auto &thickness = model->geometry().ice_thickness;
+  const auto &thickness = geometry.ice_thickness;
 
   auto EC = model->ctx()->enthalpy_converter();
 
   extract_surface(model->energy_balance_model()->enthalpy(), 0.0, *result); // z=0 (basal) slice
   // Now result contains basal enthalpy.
 
-  const auto &cell_type = model->geometry().cell_type;
+  const auto &cell_type = geometry.cell_type;
   double fill = fill_value();
 
   array::AccessScope list{ &cell_type, result.get(), &thickness };
@@ -1359,7 +1358,7 @@ public:
   TemperatureSurface(const IceModel *m);
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 TemperatureSurface::TemperatureSurface(const IceModel *m) : Diag<IceModel>(m) {
@@ -1371,11 +1370,11 @@ TemperatureSurface::TemperatureSurface(const IceModel *m) : Diag<IceModel>(m) {
   m_vars[0]["_FillValue"] = { fill_value() };
 }
 
-std::shared_ptr<array::Array> TemperatureSurface::compute_impl() const {
+std::shared_ptr<array::Array> TemperatureSurface::compute_impl(const Geometry &geometry) const {
 
-  const array::Scalar &thickness = model->geometry().ice_thickness;
+  const array::Scalar &thickness = geometry.ice_thickness;
 
-  auto enth   = IceEnthalpySurface(model).compute();
+  auto enth   = IceEnthalpySurface(model).compute(geometry);
   auto result = array::cast<array::Scalar>(enth);
 
   auto EC = model->ctx()->enthalpy_converter();
@@ -1413,7 +1412,7 @@ public:
   LiquidFraction(const IceModel *m);
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 LiquidFraction::LiquidFraction(const IceModel *m) : Diag<IceModel>(m) {
@@ -1422,7 +1421,7 @@ LiquidFraction::LiquidFraction(const IceModel *m) : Diag<IceModel>(m) {
   m_vars[0]["valid_range"] = { 0.0, 1.0 };
 }
 
-std::shared_ptr<array::Array> LiquidFraction::compute_impl() const {
+std::shared_ptr<array::Array> LiquidFraction::compute_impl(const Geometry &geometry) const {
 
   std::shared_ptr<array::Array3D> result(
       new array::Array3D(m_grid, "liqfrac", array::WITHOUT_GHOSTS, m_grid->z()));
@@ -1434,7 +1433,7 @@ std::shared_ptr<array::Array> LiquidFraction::compute_impl() const {
     result->set(0.0);
   } else {
     energy::compute_liquid_water_fraction(model->energy_balance_model()->enthalpy(),
-                                          model->geometry().ice_thickness, *result);
+                                          geometry.ice_thickness, *result);
   }
 
   return result;
@@ -1446,7 +1445,7 @@ public:
   TemperateIceThickness(const IceModel *m);
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 TemperateIceThickness::TemperateIceThickness(const IceModel *m) : Diag<IceModel>(m) {
@@ -1455,13 +1454,13 @@ TemperateIceThickness::TemperateIceThickness(const IceModel *m) : Diag<IceModel>
   m_vars[0]["_FillValue"] = { fill_value() };
 }
 
-std::shared_ptr<array::Array> TemperateIceThickness::compute_impl() const {
+std::shared_ptr<array::Array> TemperateIceThickness::compute_impl(const Geometry &geometry) const {
 
   auto result = allocate<array::Scalar>("tempicethk");
 
-  const auto &cell_type     = model->geometry().cell_type;
+  const auto &cell_type     = geometry.cell_type;
   const auto &ice_enthalpy  = model->energy_balance_model()->enthalpy();
-  const auto &ice_thickness = model->geometry().ice_thickness;
+  const auto &ice_thickness = geometry.ice_thickness;
 
   array::AccessScope list{ &cell_type, result.get(), &ice_enthalpy, &ice_thickness };
 
@@ -1512,7 +1511,7 @@ public:
   TemperateIceThicknessBasal(const IceModel *m);
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 TemperateIceThicknessBasal::TemperateIceThicknessBasal(const IceModel *m) : Diag<IceModel>(m) {
@@ -1524,15 +1523,15 @@ TemperateIceThicknessBasal::TemperateIceThicknessBasal(const IceModel *m) : Diag
 /*!
  * Uses linear interpolation to go beyond vertical grid resolution.
  */
-std::shared_ptr<array::Array> TemperateIceThicknessBasal::compute_impl() const {
+std::shared_ptr<array::Array> TemperateIceThicknessBasal::compute_impl(const Geometry &geometry) const {
 
   auto result = allocate<array::Scalar>("tempicethk_basal");
 
   auto EC = model->ctx()->enthalpy_converter();
 
-  const auto &cell_type     = model->geometry().cell_type;
+  const auto &cell_type     = geometry.cell_type;
   const auto &ice_enthalpy  = model->energy_balance_model()->enthalpy();
-  const auto &ice_thickness = model->geometry().ice_thickness;
+  const auto &ice_thickness = geometry.ice_thickness;
   double fill = fill_value();
 
   array::AccessScope list{ &cell_type, result.get(), &ice_thickness, &ice_enthalpy };
@@ -2506,13 +2505,13 @@ public:
   }
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const {
 
     auto result        = std::make_shared<array::Scalar>(m_grid, "dHdt");
     result->metadata() = m_vars[0];
 
     if (m_interval_length > 0.0) {
-      model->geometry().ice_thickness.add(-1.0, m_last_thickness, *result);
+      geometry.ice_thickness.add(-1.0, m_last_thickness, *result);
       result->scale(1.0 / m_interval_length);
     } else {
       result->set(fill_value());
@@ -2540,7 +2539,7 @@ public:
   LatLonBounds(const IceModel *m, const std::string &var_name, const std::string &proj_string);
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 
   std::string m_var_name, m_proj_string;
 };
@@ -2575,7 +2574,7 @@ LatLonBounds::LatLonBounds(const IceModel *m, const std::string &var_name,
   // will not be available and so this code will not run.
 }
 
-std::shared_ptr<array::Array> LatLonBounds::compute_impl() const {
+std::shared_ptr<array::Array> LatLonBounds::compute_impl(const Geometry &/*geometry*/) const {
   std::shared_ptr<array::Array3D> result(new array::Array3D(
       m_grid, m_var_name + "_bnds", array::WITHOUT_GHOSTS, { 0.0, 1.0, 2.0, 3.0 }));
   result->metadata(0) = m_vars[0];
@@ -2594,7 +2593,7 @@ public:
   IceAreaFraction(const IceModel *m);
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 IceAreaFraction::IceAreaFraction(const IceModel *m) : Diag<IceModel>(m) {
@@ -2605,21 +2604,21 @@ IceAreaFraction::IceAreaFraction(const IceModel *m) : Diag<IceModel>(m) {
       .units("1");
 }
 
-std::shared_ptr<array::Array> IceAreaFraction::compute_impl() const {
+std::shared_ptr<array::Array> IceAreaFraction::compute_impl(const Geometry &geometry) const {
 
   auto result = allocate<array::Scalar>(land_ice_area_fraction_name);
 
-  const array::Scalar1 &thickness         = model->geometry().ice_thickness,
-                       &surface_elevation = model->geometry().ice_surface_elevation,
-                       &bed_topography    = model->geometry().bed_elevation;
+  const array::Scalar1 &thickness         = geometry.ice_thickness,
+                       &surface_elevation = geometry.ice_surface_elevation,
+                       &bed_topography    = geometry.bed_elevation;
 
-  const array::CellType1 &cell_type = model->geometry().cell_type;
+  const array::CellType1 &cell_type = geometry.cell_type;
 
   array::AccessScope list{ &thickness, &surface_elevation, &bed_topography, &cell_type,
                            result.get() };
 
   const bool do_part_grid   = m_config->get_flag("geometry.part_grid.enabled");
-  const array::Scalar &Href = model->geometry().ice_area_specific_volume;
+  const array::Scalar &Href = geometry.ice_area_specific_volume;
   ;
   if (do_part_grid) {
     list.add(Href);
@@ -2671,7 +2670,7 @@ public:
   IceAreaFractionGrounded(const IceModel *m);
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 IceAreaFractionGrounded::IceAreaFractionGrounded(const IceModel *m) : Diag<IceModel>(m) {
@@ -2682,18 +2681,18 @@ IceAreaFractionGrounded::IceAreaFractionGrounded(const IceModel *m) : Diag<IceMo
       .units("1");
 }
 
-std::shared_ptr<array::Array> IceAreaFractionGrounded::compute_impl() const {
+std::shared_ptr<array::Array> IceAreaFractionGrounded::compute_impl(const Geometry &geometry) const {
   auto result = std::make_shared<array::Scalar>(m_grid, grounded_ice_sheet_area_fraction_name);
   result->metadata() = m_vars[0];
 
   const double ice_density   = m_config->get_number("constants.ice.density"),
                ocean_density = m_config->get_number("constants.sea_water.density");
 
-  const auto &ice_thickness  = model->geometry().ice_thickness;
-  const auto &sea_level      = model->geometry().sea_level_elevation;
-  const auto &bed_topography = model->geometry().bed_elevation;
+  const auto &ice_thickness  = geometry.ice_thickness;
+  const auto &sea_level      = geometry.sea_level_elevation;
+  const auto &bed_topography = geometry.bed_elevation;
 
-  const auto &cell_type = model->geometry().cell_type;
+  const auto &cell_type = geometry.cell_type;
 
   compute_grounded_cell_fraction(ice_density, ocean_density, sea_level, ice_thickness,
                                  bed_topography, *result);
@@ -2724,7 +2723,7 @@ public:
   IceAreaFractionFloating(const IceModel *m);
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 IceAreaFractionFloating::IceAreaFractionFloating(const IceModel *m) : Diag<IceModel>(m) {
@@ -2735,10 +2734,10 @@ IceAreaFractionFloating::IceAreaFractionFloating(const IceModel *m) : Diag<IceMo
       .units("1");
 }
 
-std::shared_ptr<array::Array> IceAreaFractionFloating::compute_impl() const {
+std::shared_ptr<array::Array> IceAreaFractionFloating::compute_impl(const Geometry &geometry) const {
 
-  auto ice_area_fraction      = IceAreaFraction(model).compute();
-  auto grounded_area_fraction = IceAreaFractionGrounded(model).compute();
+  auto ice_area_fraction      = IceAreaFraction(model).compute(geometry);
+  auto grounded_area_fraction = IceAreaFractionGrounded(model).compute(geometry);
 
   auto result        = ice_area_fraction;
   result->metadata() = m_vars[0];
@@ -2755,7 +2754,7 @@ public:
   HeightAboveFloatation(const IceModel *m);
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 HeightAboveFloatation::HeightAboveFloatation(const IceModel *m) : Diag<IceModel>(m) {
@@ -2767,19 +2766,19 @@ HeightAboveFloatation::HeightAboveFloatation(const IceModel *m) : Diag<IceModel>
   m_vars[0]["comment"]    = "shows how close to floatation the ice is at a given location";
 }
 
-std::shared_ptr<array::Array> HeightAboveFloatation::compute_impl() const {
+std::shared_ptr<array::Array> HeightAboveFloatation::compute_impl(const Geometry &geometry) const {
 
   auto result = allocate<array::Scalar>("height_above_flotation");
 
-  const auto &cell_type = model->geometry().cell_type;
+  const auto &cell_type = geometry.cell_type;
 
   const double ice_density   = m_config->get_number("constants.ice.density"),
                ocean_density = m_config->get_number("constants.sea_water.density");
   double fill = fill_value();
 
-  const auto &sea_level      = model->geometry().sea_level_elevation;
-  const auto &ice_thickness  = model->geometry().ice_thickness;
-  const auto &bed_topography = model->geometry().bed_elevation;
+  const auto &sea_level      = geometry.sea_level_elevation;
+  const auto &ice_thickness  = geometry.ice_thickness;
+  const auto &bed_topography = geometry.bed_elevation;
 
   array::AccessScope list{ &cell_type, result.get(), &ice_thickness, &bed_topography, &sea_level };
 
@@ -2812,7 +2811,7 @@ public:
   IceMass(const IceModel *m);
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 IceMass::IceMass(const IceModel *m) : Diag<IceModel>(m) {
@@ -2821,15 +2820,15 @@ IceMass::IceMass(const IceModel *m) : Diag<IceModel>(m) {
   m_vars[0]["_FillValue"] = { fill_value() };
 }
 
-std::shared_ptr<array::Array> IceMass::compute_impl() const {
+std::shared_ptr<array::Array> IceMass::compute_impl(const Geometry &geometry) const {
 
   auto result = allocate<array::Scalar>("ice_mass");
 
-  const auto &cell_type = model->geometry().cell_type;
+  const auto &cell_type = geometry.cell_type;
 
   const double ice_density = m_config->get_number("constants.ice.density");
 
-  const array::Scalar &ice_thickness = model->geometry().ice_thickness;
+  const array::Scalar &ice_thickness = geometry.ice_thickness;
 
   auto cell_area = m_grid->cell_area();
 
@@ -2858,7 +2857,7 @@ std::shared_ptr<array::Array> IceMass::compute_impl() const {
 
   // Add the mass of ice in Href:
   if (m_config->get_flag("geometry.part_grid.enabled")) {
-    const array::Scalar &Href = model->geometry().ice_area_specific_volume;
+    const array::Scalar &Href = geometry.ice_area_specific_volume;
     list.add(Href);
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
@@ -2878,7 +2877,7 @@ public:
   BedTopographySeaLevelAdjusted(const IceModel *m);
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const;
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 BedTopographySeaLevelAdjusted::BedTopographySeaLevelAdjusted(const IceModel *m)
@@ -2887,12 +2886,12 @@ BedTopographySeaLevelAdjusted::BedTopographySeaLevelAdjusted(const IceModel *m)
   m_vars[0].long_name("sea-level adjusted bed topography (zero is at sea level)").units("meters");
 }
 
-std::shared_ptr<array::Array> BedTopographySeaLevelAdjusted::compute_impl() const {
+std::shared_ptr<array::Array> BedTopographySeaLevelAdjusted::compute_impl(const Geometry &geometry) const {
 
   auto result = allocate<array::Scalar>("topg_sl_adjusted");
 
-  const auto &bed       = model->geometry().bed_elevation;
-  const auto &sea_level = model->geometry().sea_level_elevation;
+  const auto &bed       = geometry.bed_elevation;
+  const auto &sea_level = geometry.sea_level_elevation;
 
   array::AccessScope list{ &bed, &sea_level, result.get() };
 
@@ -2911,7 +2910,7 @@ public:
   IceHardness(const IceModel *m);
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const;
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 IceHardness::IceHardness(const IceModel *m) : Diag<IceModel>(m) {
@@ -2923,7 +2922,7 @@ IceHardness::IceHardness(const IceModel *m) : Diag<IceModel>(m) {
   m_vars[0]["comment"] = "units depend on the Glen exponent used by the flow law";
 }
 
-std::shared_ptr<array::Array> IceHardness::compute_impl() const {
+std::shared_ptr<array::Array> IceHardness::compute_impl(const Geometry &geometry) const {
 
   std::shared_ptr<array::Array3D> result(
       new array::Array3D(m_grid, "hardness", array::WITHOUT_GHOSTS, m_grid->z()));
@@ -2932,7 +2931,7 @@ std::shared_ptr<array::Array> IceHardness::compute_impl() const {
   auto EC = m_grid->ctx()->enthalpy_converter();
 
   const array::Array3D &ice_enthalpy = model->energy_balance_model()->enthalpy();
-  const array::Scalar &ice_thickness = model->geometry().ice_thickness;
+  const array::Scalar &ice_thickness = geometry.ice_thickness;
 
   const rheology::FlowLaw &flow_law = *model->stress_balance()->modifier()->flow_law();
 
@@ -2972,7 +2971,7 @@ public:
   IceViscosity(IceModel *m);
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const;
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 IceViscosity::IceViscosity(IceModel *m) : Diag<IceModel>(m) {
@@ -2989,7 +2988,7 @@ static inline double square(double x) {
   return x * x;
 }
 
-std::shared_ptr<array::Array> IceViscosity::compute_impl() const {
+std::shared_ptr<array::Array> IceViscosity::compute_impl(const Geometry &geometry) const {
 
   std::shared_ptr<array::Array3D> result(
       new array::Array3D(m_grid, "effective_viscosity", array::WITHOUT_GHOSTS, m_grid->z()));
@@ -3003,7 +3002,7 @@ std::shared_ptr<array::Array> IceViscosity::compute_impl() const {
 
   const rheology::FlowLaw &flow_law = *model->stress_balance()->modifier()->flow_law();
 
-  const array::Scalar &ice_thickness = model->geometry().ice_thickness;
+  const array::Scalar &ice_thickness = geometry.ice_thickness;
 
   const array::Array3D &ice_enthalpy     = model->energy_balance_model()->enthalpy(),
                        &U                = model->stress_balance()->velocity_u(),
@@ -3018,7 +3017,7 @@ std::shared_ptr<array::Array> IceViscosity::compute_impl() const {
 
   double fill = fill_value();
 
-  const array::CellType1 &mask = model->geometry().cell_type;
+  const array::CellType1 &mask = geometry.cell_type;
 
   array::AccessScope list{ &U, &V, &W, &ice_enthalpy, &ice_thickness, &mask, result.get() };
 
@@ -3141,11 +3140,11 @@ public:
   }
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const {
 
     auto result = allocate<array::Scalar>("thk");
 
-    result->copy_from(model->geometry().ice_thickness);
+    result->copy_from(geometry.ice_thickness);
 
     return result;
   }
@@ -3163,11 +3162,11 @@ public:
   }
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const {
 
     auto result = allocate<array::Scalar>("ice_base_elevation");
 
-    ice_bottom_surface(model->geometry(), *result);
+    ice_bottom_surface(geometry, *result);
 
     return result;
   }
@@ -3185,10 +3184,10 @@ public:
   }
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const {
     auto result = allocate<array::Scalar>("usurf");
 
-    result->copy_from(model->geometry().ice_surface_elevation);
+    result->copy_from(geometry.ice_surface_elevation);
 
     return result;
   }
@@ -3280,7 +3279,7 @@ class PressureInIce : public Diag<IceModel>
 public:
   PressureInIce(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 
@@ -3289,13 +3288,13 @@ PressureInIce::PressureInIce(const IceModel *m) : Diag<IceModel>(m) {
   m_vars[0].long_name("pressure in ice (hydrostatic)").units("Pa");
 }
 
-std::shared_ptr<array::Array> PressureInIce::compute_impl() const {
+std::shared_ptr<array::Array> PressureInIce::compute_impl(const Geometry &geometry) const {
 
   std::shared_ptr<array::Array3D> result(
       new array::Array3D(m_grid, "pressure", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata(0) = m_vars[0];
 
-  const array::Scalar &thickness = model->geometry().ice_thickness;
+  const array::Scalar &thickness = geometry.ice_thickness;
 
   array::AccessScope list{ &thickness, result.get() };
 
@@ -3333,7 +3332,7 @@ class DrivingShearStress : public Diag<IceModel>
 public:
   DrivingShearStress(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 DrivingShearStress::DrivingShearStress(const IceModel *m)
@@ -3355,12 +3354,12 @@ DrivingShearStress::DrivingShearStress(const IceModel *m)
  * implementation intentionally does not use the eta-transformation or special
  * cases at ice margins.
  */
-std::shared_ptr<array::Array> DrivingShearStress::compute_impl() const {
+std::shared_ptr<array::Array> DrivingShearStress::compute_impl(const Geometry &geometry) const {
 
   auto result = allocate<array::Vector>("taud");
 
-  const array::Scalar &thickness = model->geometry().ice_thickness;
-  const array::Scalar &surface   = model->geometry().ice_surface_elevation;
+  const array::Scalar &thickness = geometry.ice_thickness;
+  const array::Scalar &surface   = geometry.ice_surface_elevation;
 
   double standard_gravity = m_config->get_number("constants.standard_gravity"),
          ice_density      = m_config->get_number("constants.ice.density");
@@ -3389,7 +3388,7 @@ class BasalShearStress : public Diag<IceModel>
 public:
   BasalShearStress(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 
@@ -3406,7 +3405,7 @@ BasalShearStress::BasalShearStress(const IceModel *m) : Diag<IceModel>(m) {
 }
 
 
-std::shared_ptr<array::Array> BasalShearStress::compute_impl() const {
+std::shared_ptr<array::Array> BasalShearStress::compute_impl(const Geometry &geometry) const {
 
   auto result = allocate<array::Vector>("taub");
 
@@ -3419,7 +3418,7 @@ std::shared_ptr<array::Array> BasalShearStress::compute_impl() const {
 
   const auto &velocity = model->stress_balance()->shallow()->velocity();
   const auto &tauc     = yield_stress_model->basal_material_yield_stress();
-  const auto &mask     = model->geometry().cell_type;
+  const auto &mask     = geometry.cell_type;
 
   const auto *basal_sliding_law = model->stress_balance()->shallow()->sliding_law();
 
@@ -3445,7 +3444,7 @@ class DrivingShearStressmagnitude : public Diag<IceModel>
 public:
   DrivingShearStressmagnitude(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 DrivingShearStressmagnitude::DrivingShearStressmagnitude(const IceModel *m) : Diag<IceModel>(m) {
@@ -3456,9 +3455,9 @@ DrivingShearStressmagnitude::DrivingShearStressmagnitude(const IceModel *m) : Di
   m_vars[0]["comment"] = "this field is purely diagnostic (not used by the model)";
 }
 
-std::shared_ptr<array::Array> DrivingShearStressmagnitude::compute_impl() const {
+std::shared_ptr<array::Array> DrivingShearStressmagnitude::compute_impl(const Geometry &geometry) const {
   auto result = allocate<array::Scalar>("taud_mag");
-  auto taud = array::cast<array::Vector>(DrivingShearStress(model).compute());
+  auto taud = array::cast<array::Vector>(DrivingShearStress(model).compute(geometry));
 
   compute_magnitude(*taud, *result);
 
@@ -3472,7 +3471,7 @@ class BasalShearStressMagnitude : public Diag<IceModel>
 public:
   BasalShearStressMagnitude(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 BasalShearStressMagnitude::BasalShearStressMagnitude(const IceModel *m) : Diag<IceModel>(m) {
@@ -3487,10 +3486,10 @@ BasalShearStressMagnitude::BasalShearStressMagnitude(const IceModel *m) : Diag<I
   m_vars[0]["comment"] = "this field is purely diagnostic (not used by the model)";
 }
 
-std::shared_ptr<array::Array> BasalShearStressMagnitude::compute_impl() const {
+std::shared_ptr<array::Array> BasalShearStressMagnitude::compute_impl(const Geometry &geometry) const {
   auto result = allocate<array::Scalar>("taub_mag");
 
-  std::shared_ptr<array::Vector> taub = array::cast<array::Vector>(BasalShearStress(model).compute());
+  auto taub = array::cast<array::Vector>(BasalShearStress(model).compute(geometry));
 
   compute_magnitude(*taub, *result);
 
@@ -3504,7 +3503,7 @@ class StressBalanceFlux : public Diag<IceModel>
 public:
   StressBalanceFlux(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 //! \brief Computes flux_mag, the magnitude of vertically-integrated horizontal
@@ -3514,7 +3513,7 @@ class StressBalanceFluxMag : public Diag<IceModel>
 public:
   StressBalanceFluxMag(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 //! \brief Computes the vertically-averaged ice velocity.
@@ -3523,7 +3522,7 @@ class StressBalanceVelbar : public Diag<IceModel>
 public:
   StressBalanceVelbar(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 //! \brief Computes velbar_mag, the magnitude of vertically-integrated horizontal
@@ -3533,7 +3532,7 @@ class StressBalanceVelbarMag : public Diag<IceModel>
 public:
   StressBalanceVelbarMag(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 //! \brief Reports the vertically-integrated (2D) principal strain rates.
@@ -3542,7 +3541,7 @@ class StressBalanceStrainRates : public Diag<IceModel>
 public:
   StressBalanceStrainRates(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 //! \brief Reports the vertically-integrated (2D) deviatoric stresses.
@@ -3551,7 +3550,7 @@ class StressBalanceDeviatoricStresses : public Diag<IceModel>
 public:
   StressBalanceDeviatoricStresses(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 /*! @brief tensile von Mises stress */
@@ -3559,7 +3558,7 @@ class StressBalanceVonmisesStress : public Diag<IceModel>
 {
 public:
   StressBalanceVonmisesStress(const IceModel *m);
-  std::shared_ptr<array::Array> compute_impl() const;
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 //! \brief Computes the x-component of the horizontal ice velocity.
@@ -3568,7 +3567,7 @@ class StressBalanceUvel : public Diag<IceModel>
 public:
   StressBalanceUvel(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 //! \brief Computes the y-component of the horizontal ice velocity.
@@ -3577,7 +3576,7 @@ class StressBalanceVvel : public Diag<IceModel>
 public:
   StressBalanceVvel(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 //! \brief Computes vertical velocity of ice, relative to the bed directly
@@ -3587,7 +3586,7 @@ class StressBalanceWvelRel : public Diag<IceModel>
 public:
   StressBalanceWvelRel(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 //! \brief Reports the xz component of the shear stress within the ice (3D), according to the SIA formula.
@@ -3596,7 +3595,7 @@ class StressBalanceTauxz : public Diag<IceModel>
 public:
   StressBalanceTauxz(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 //! \brief Reports the yz component of the shear stress within the ice (3D), according to the SIA formula.
@@ -3605,7 +3604,7 @@ class StressBalanceTauyz : public Diag<IceModel>
 public:
   StressBalanceTauyz(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 //! \brief Computes velbase_mag, the magnitude of horizontal velocity of ice at base
@@ -3615,7 +3614,7 @@ class StressBalanceVelbaseMag : public Diag<IceModel>
 public:
   StressBalanceVelbaseMag(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 //! \brief Computes velsurf_mag, the magnitude of horizontal ice velocity at the
@@ -3625,7 +3624,7 @@ class StressBalanceVelsurfMag : public Diag<IceModel>
 public:
   StressBalanceVelsurfMag(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 //! \brief Computes velsurf, the horizontal velocity of ice at ice surface.
@@ -3634,7 +3633,7 @@ class StressBalanceVelsurf : public Diag<IceModel>
 public:
   StressBalanceVelsurf(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 //! Computes vertical ice velocity (relative to the geoid).
@@ -3653,9 +3652,9 @@ class StressBalanceWvel : public Diag<IceModel>
 {
 public:
   StressBalanceWvel(const IceModel *m);
-  virtual std::shared_ptr<array::Array> compute(bool zero_above_ice) const;
+  virtual std::shared_ptr<array::Array> compute(const Geometry &geometry, bool zero_above_ice) const;
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 //! Computes wvelsurf, the vertical velocity of ice at ice surface.
@@ -3664,7 +3663,7 @@ class StressBalanceWvelsurf : public Diag<IceModel>
 public:
   StressBalanceWvelsurf(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 //! Computes wvelbase, the vertical velocity of ice at the base of ice.
@@ -3673,7 +3672,7 @@ class StressBalanceWvelbase : public Diag<IceModel>
 public:
   StressBalanceWvelbase(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 //! \brief Computes horizontal ice velocity at the base of ice.
@@ -3682,7 +3681,7 @@ class StressBalanceVelbase : public Diag<IceModel>
 public:
   StressBalanceVelbase(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 class ShallowStressBalanceBeta : public Diag<IceModel>
@@ -3690,7 +3689,7 @@ class ShallowStressBalanceBeta : public Diag<IceModel>
 public:
   ShallowStressBalanceBeta(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 StressBalanceUvel::StressBalanceUvel(const IceModel *m) : Diag<IceModel>(m) {
@@ -3739,13 +3738,13 @@ static void zero_above_ice(const array::Array3D &F, const array::Scalar &H,
   loop.check();
 }
 
-std::shared_ptr<array::Array> StressBalanceUvel::compute_impl() const {
+std::shared_ptr<array::Array> StressBalanceUvel::compute_impl(const Geometry &geometry) const {
 
   std::shared_ptr<array::Array3D> result(
       new array::Array3D(m_grid, "uvel", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
-  zero_above_ice(model->stress_balance()->velocity_u(), model->geometry().ice_thickness, *result);
+  zero_above_ice(model->stress_balance()->velocity_u(), geometry.ice_thickness, *result);
 
   return result;
 }
@@ -3759,13 +3758,13 @@ StressBalanceVvel::StressBalanceVvel(const IceModel *m) : Diag<IceModel>(m) {
       .output_units("m year^-1");
 }
 
-std::shared_ptr<array::Array> StressBalanceVvel::compute_impl() const {
+std::shared_ptr<array::Array> StressBalanceVvel::compute_impl(const Geometry &geometry) const {
 
   std::shared_ptr<array::Array3D> result(
       new array::Array3D(m_grid, "vvel", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
-  zero_above_ice(model->stress_balance()->velocity_v(), model->geometry().ice_thickness, *result);
+  zero_above_ice(model->stress_balance()->velocity_v(), geometry.ice_thickness, *result);
 
   return result;
 }
@@ -3778,13 +3777,13 @@ StressBalanceWvelRel::StressBalanceWvelRel(const IceModel *m) : Diag<IceModel>(m
       .output_units("m year^-1");
 }
 
-std::shared_ptr<array::Array> StressBalanceWvelRel::compute_impl() const {
+std::shared_ptr<array::Array> StressBalanceWvelRel::compute_impl(const Geometry &geometry) const {
 
   std::shared_ptr<array::Array3D> result(
       new array::Array3D(m_grid, "wvel_rel", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
-  zero_above_ice(model->stress_balance()->velocity_w(), model->geometry().ice_thickness, *result);
+  zero_above_ice(model->stress_balance()->velocity_w(), geometry.ice_thickness, *result);
 
   return result;
 }
@@ -3800,7 +3799,7 @@ StressBalanceStrainRates::StressBalanceStrainRates(const IceModel *m) : Diag<Ice
       .units("s^-1");
 }
 
-std::shared_ptr<array::Array> StressBalanceStrainRates::compute_impl() const {
+std::shared_ptr<array::Array> StressBalanceStrainRates::compute_impl(const Geometry &geometry) const {
 
   auto result = std::make_shared<array::Array2D<stressbalance::PrincipalStrainRates> >(
       m_grid, "strain_rates", array::WITHOUT_GHOSTS);
@@ -3809,14 +3808,14 @@ std::shared_ptr<array::Array> StressBalanceStrainRates::compute_impl() const {
 
   array::Vector1 velbar_with_ghosts(m_grid, "velbar");
   {
-    auto velbar = array::cast<array::Vector>(StressBalanceVelbar(model).compute());
+    auto velbar = array::cast<array::Vector>(StressBalanceVelbar(model).compute(geometry));
 
     // copy_from communicates ghosts
     velbar_with_ghosts.copy_from(*velbar);
   }
 
   array::CellType1 cell_type(m_grid, "cell_type");
-  cell_type.copy_from(model->geometry().cell_type);
+  cell_type.copy_from(geometry.cell_type);
 
   compute_2D_principal_strain_rates(velbar_with_ghosts, cell_type, *result);
 
@@ -3833,7 +3832,7 @@ StressBalanceDeviatoricStresses::StressBalanceDeviatoricStresses(const IceModel 
   m_vars[2].long_name("deviatoric shear stress").units("Pa");
 }
 
-std::shared_ptr<array::Array> StressBalanceDeviatoricStresses::compute_impl() const {
+std::shared_ptr<array::Array> StressBalanceDeviatoricStresses::compute_impl(const Geometry &geometry) const {
 
   auto result = std::make_shared<array::Array2D<stressbalance::DeviatoricStresses> >(
       m_grid, "deviatoric_stresses", array::WITHOUT_GHOSTS);
@@ -3842,7 +3841,7 @@ std::shared_ptr<array::Array> StressBalanceDeviatoricStresses::compute_impl() co
   result->metadata(2) = m_vars[2];
 
   const array::Array3D &enthalpy = model->energy_balance_model()->enthalpy();
-  const array::Scalar &thickness = model->geometry().ice_thickness;
+  const array::Scalar &thickness = geometry.ice_thickness;
 
   array::Scalar hardness(m_grid, "hardness");
   array::Vector1 velocity(m_grid, "velocity");
@@ -3851,10 +3850,10 @@ std::shared_ptr<array::Array> StressBalanceDeviatoricStresses::compute_impl() co
                         hardness);
 
   // copy_from updates ghosts
-  velocity.copy_from(*array::cast<array::Vector>(StressBalanceVelbar(model).compute()));
+  velocity.copy_from(*array::cast<array::Vector>(StressBalanceVelbar(model).compute(geometry)));
 
   array::CellType1 cell_type(m_grid, "cell_type");
-  cell_type.copy_from(model->geometry().cell_type);
+  cell_type.copy_from(geometry.cell_type);
 
   stressbalance::compute_2D_stresses(*model->stress_balance()->shallow()->flow_law(), velocity,
                                      hardness, cell_type, *result);
@@ -3877,13 +3876,13 @@ StressBalanceFlux::StressBalanceFlux(const IceModel *m)
       .output_units("m^2 year^-1");
 }
 
-std::shared_ptr<array::Array> StressBalanceFlux::compute_impl() const {
+std::shared_ptr<array::Array> StressBalanceFlux::compute_impl(const Geometry &geometry) const {
   double H_threshold = m_config->get_number("geometry.ice_free_thickness_standard");
 
   auto result = allocate<array::Vector>("flux");
 
   // get the thickness
-  const array::Scalar &thickness = model->geometry().ice_thickness;
+  const array::Scalar &thickness = geometry.ice_thickness;
 
   const array::Array3D
     &u3 = model->stress_balance()->velocity_u(),
@@ -3957,11 +3956,11 @@ StressBalanceFluxMag::StressBalanceFluxMag(const IceModel *m)
   m_vars[0]["valid_min"]  = { 0.0 };
 }
 
-std::shared_ptr<array::Array> StressBalanceFluxMag::compute_impl() const {
-  const array::Scalar &thickness = model->geometry().ice_thickness;
+std::shared_ptr<array::Array> StressBalanceFluxMag::compute_impl(const Geometry &geometry) const {
+  const array::Scalar &thickness = geometry.ice_thickness;
 
   // Compute the vertically-averaged horizontal ice velocity:
-  auto result = array::cast<array::Scalar>(StressBalanceVelbarMag(model).compute());
+  auto result = array::cast<array::Scalar>(StressBalanceVelbarMag(model).compute(geometry));
 
   result->metadata() = m_vars[0];
 
@@ -3999,12 +3998,12 @@ StressBalanceVelbar::StressBalanceVelbar(const IceModel *m)
       .output_units("m year^-1");
 }
 
-std::shared_ptr<array::Array> StressBalanceVelbar::compute_impl() const {
+std::shared_ptr<array::Array> StressBalanceVelbar::compute_impl(const Geometry &geometry) const {
   // get the thickness
-  const array::Scalar& thickness = model->geometry().ice_thickness;
+  const array::Scalar& thickness = geometry.ice_thickness;
 
   // Compute the vertically-integrated horizontal ice flux:
-  auto result = array::cast<array::Vector>(StressBalanceFlux(model).compute());
+  auto result = array::cast<array::Vector>(StressBalanceFlux(model).compute(geometry));
 
   // Override metadata set by the flux computation
   result->metadata(0) = m_vars[0];
@@ -4043,17 +4042,17 @@ StressBalanceVelbarMag::StressBalanceVelbarMag(const IceModel *m)
   m_vars[0]["valid_min"]  = { 0.0 };
 }
 
-std::shared_ptr<array::Array> StressBalanceVelbarMag::compute_impl() const {
+std::shared_ptr<array::Array> StressBalanceVelbarMag::compute_impl(const Geometry &geometry) const {
   auto result = allocate<array::Scalar>("velbar_mag");
 
   // compute vertically-averaged horizontal velocity:
-  auto velbar = array::cast<array::Vector>(StressBalanceVelbar(model).compute());
+  auto velbar = array::cast<array::Vector>(StressBalanceVelbar(model).compute(geometry));
 
   // compute its magnitude:
   compute_magnitude(*velbar, *result);
 
   // mask out ice-free areas:
-  apply_mask(model->geometry().ice_thickness, fill_value(), *result);
+  apply_mask(geometry.ice_thickness, fill_value(), *result);
 
   return result;
 }
@@ -4064,7 +4063,7 @@ StressBalanceVonmisesStress::StressBalanceVonmisesStress(const IceModel *m)
   m_vars[0].long_name("tensile von Mises stress").units("Pascal");
 }
 
-std::shared_ptr<array::Array> StressBalanceVonmisesStress::compute_impl() const {
+std::shared_ptr<array::Array> StressBalanceVonmisesStress::compute_impl(const Geometry &geometry) const {
 
   using std::max;
   using std::sqrt;
@@ -4074,16 +4073,16 @@ std::shared_ptr<array::Array> StressBalanceVonmisesStress::compute_impl() const 
 
   array::Scalar &vonmises_stress = *result;
 
-  auto velbar = array::cast<array::Vector>(StressBalanceVelbar(model).compute());
+  auto velbar = array::cast<array::Vector>(StressBalanceVelbar(model).compute(geometry));
   array::Vector &velocity = *velbar;
 
   using StrainRates = array::Array2D<stressbalance::PrincipalStrainRates>;
-  auto eigen12 = array::cast<StrainRates>(StressBalanceStrainRates(model).compute());
+  auto eigen12 = array::cast<StrainRates>(StressBalanceStrainRates(model).compute(geometry));
   const auto &strain_rates = *eigen12;
 
-  const array::Scalar &ice_thickness = model->geometry().ice_thickness;
+  const array::Scalar &ice_thickness = geometry.ice_thickness;
   const array::Array3D &enthalpy = model->energy_balance_model()->enthalpy();
-  const auto &mask = model->geometry().cell_type;
+  const auto &mask = geometry.cell_type;
 
   std::shared_ptr<const rheology::FlowLaw> flow_law;
 
@@ -4141,14 +4140,14 @@ StressBalanceTauxz::StressBalanceTauxz(const IceModel *m) : Diag<IceModel>(m) {
  * eta-transformation or special cases at ice margins.
  * CODE DUPLICATION WITH StressBalanceTauyz
  */
-std::shared_ptr<array::Array> StressBalanceTauxz::compute_impl() const {
+std::shared_ptr<array::Array> StressBalanceTauxz::compute_impl(const Geometry &geometry) const {
 
   std::shared_ptr<array::Array3D> result(
       new array::Array3D(m_grid, "tauxz", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
-  const array::Scalar &thickness = model->geometry().ice_thickness,
-                      &surface   = model->geometry().ice_surface_elevation;
+  const array::Scalar &thickness = geometry.ice_thickness,
+                      &surface   = geometry.ice_surface_elevation;
 
   array::AccessScope list{ &surface, &thickness, result.get() };
 
@@ -4194,14 +4193,14 @@ StressBalanceTauyz::StressBalanceTauyz(const IceModel *m) : Diag<IceModel>(m) {
  * eta-transformation or special cases at ice margins.
  * CODE DUPLICATION WITH StressBalanceTauxz
  */
-std::shared_ptr<array::Array> StressBalanceTauyz::compute_impl() const {
+std::shared_ptr<array::Array> StressBalanceTauyz::compute_impl(const Geometry &geometry) const {
 
   std::shared_ptr<array::Array3D> result(
       new array::Array3D(m_grid, "tauyz", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata(0) = m_vars[0];
 
-  const array::Scalar &thickness = model->geometry().ice_thickness,
-                      &surface   = model->geometry().ice_surface_elevation;
+  const array::Scalar &thickness = geometry.ice_thickness,
+                      &surface   = geometry.ice_surface_elevation;
 
   array::AccessScope list{ &surface, &thickness, result.get() };
 
@@ -4246,14 +4245,15 @@ StressBalanceVelbaseMag::StressBalanceVelbaseMag(const IceModel *m)
   m_vars[0]["valid_min"]  = { 0.0 };
 }
 
-std::shared_ptr<array::Array> StressBalanceVelbaseMag::compute_impl() const {
+std::shared_ptr<array::Array> StressBalanceVelbaseMag::compute_impl(const Geometry &geometry) const {
   auto result = allocate<array::Scalar>("velbase_mag");
 
-  compute_magnitude(*array::cast<array::Vector>(StressBalanceVelbase(model).compute()), *result);
+  compute_magnitude(*array::cast<array::Vector>(StressBalanceVelbase(model).compute(geometry)),
+                    *result);
 
   double fill = fill_value();
 
-  const auto &mask = model->geometry().cell_type;
+  const auto &mask = geometry.cell_type;
 
   array::AccessScope list{&mask, result.get()};
 
@@ -4279,14 +4279,15 @@ StressBalanceVelsurfMag::StressBalanceVelsurfMag(const IceModel *m)
   m_vars[0]["valid_min"] = {0.0};
 }
 
-std::shared_ptr<array::Array> StressBalanceVelsurfMag::compute_impl() const {
+std::shared_ptr<array::Array> StressBalanceVelsurfMag::compute_impl(const Geometry &geometry) const {
   double fill = fill_value();
 
   auto result = allocate<array::Scalar>("velsurf_mag");
 
-  compute_magnitude(*array::cast<array::Vector>(StressBalanceVelsurf(model).compute()), *result);
+  compute_magnitude(*array::cast<array::Vector>(StressBalanceVelsurf(model).compute(geometry)),
+                    *result);
 
-  const auto &mask = model->geometry().cell_type;
+  const auto &mask = geometry.cell_type;
 
   array::AccessScope list{&mask, result.get()};
 
@@ -4321,7 +4322,7 @@ StressBalanceVelsurf::StressBalanceVelsurf(const IceModel *m)
   }
 }
 
-std::shared_ptr<array::Array> StressBalanceVelsurf::compute_impl() const {
+std::shared_ptr<array::Array> StressBalanceVelsurf::compute_impl(const Geometry &geometry) const {
   double fill = fill_value();
 
   auto result = allocate<array::Vector>("surf");
@@ -4333,8 +4334,8 @@ std::shared_ptr<array::Array> StressBalanceVelsurf::compute_impl() const {
     &u3 = model->stress_balance()->velocity_u(),
     &v3 = model->stress_balance()->velocity_v();
 
-  const auto &thickness = model->geometry().ice_thickness;
-  const auto &cell_type = model->geometry().cell_type;
+  const auto &thickness = geometry.ice_thickness;
+  const auto &cell_type = geometry.cell_type;
 
   extract_surface(u3, thickness, u_surf);
   extract_surface(v3, thickness, v_surf);
@@ -4362,16 +4363,17 @@ StressBalanceWvel::StressBalanceWvel(const IceModel *m) : Diag<IceModel>(m) {
       .output_units("m year^-1");
 }
 
-std::shared_ptr<array::Array> StressBalanceWvel::compute(bool zero_above_ice) const {
+std::shared_ptr<array::Array> StressBalanceWvel::compute(const Geometry &geometry,
+                                                         bool zero_above_ice) const {
   std::shared_ptr<array::Array3D> result3(
       new array::Array3D(m_grid, "wvel", array::WITHOUT_GHOSTS, m_grid->z()));
   result3->metadata() = m_vars[0];
 
-  const auto &bed = model->geometry().bed_elevation;
+  const auto &bed = geometry.bed_elevation;
   const auto &uplift = model->bed_deformation_model()->uplift();
 
-  const auto &thickness = model->geometry().ice_thickness;
-  const auto &mask      = model->geometry().cell_type;
+  const auto &thickness = geometry.ice_thickness;
+  const auto &mask      = geometry.cell_type;
 
   const array::Array3D &u3 = model->stress_balance()->velocity_u(),
                        &v3 = model->stress_balance()->velocity_v(),
@@ -4430,8 +4432,8 @@ std::shared_ptr<array::Array> StressBalanceWvel::compute(bool zero_above_ice) co
   return result3;
 }
 
-std::shared_ptr<array::Array> StressBalanceWvel::compute_impl() const {
-  return this->compute(true); // fill wvel above the ice with zeros
+std::shared_ptr<array::Array> StressBalanceWvel::compute_impl(const Geometry &geometry) const {
+  return this->compute(geometry, true); // fill wvel above the ice with zeros
 }
 
 StressBalanceWvelsurf::StressBalanceWvelsurf(const IceModel *m) : Diag<IceModel>(m) {
@@ -4450,19 +4452,19 @@ StressBalanceWvelsurf::StressBalanceWvelsurf(const IceModel *m) : Diag<IceModel>
   m_vars[0]["_FillValue"]  = { fill_value() };
 }
 
-std::shared_ptr<array::Array> StressBalanceWvelsurf::compute_impl() const {
+std::shared_ptr<array::Array> StressBalanceWvelsurf::compute_impl(const Geometry &geometry) const {
   double fill = fill_value();
 
   auto result = allocate<array::Scalar>("wvelsurf");
 
   // here "false" means "don't fill w3 above the ice surface with zeros"
-  auto w3 = array::cast<array::Array3D>(StressBalanceWvel(model).compute(false));
+  auto w3 = array::cast<array::Array3D>(StressBalanceWvel(model).compute(geometry, false));
 
-  const auto &thickness = model->geometry().ice_thickness;
+  const auto &thickness = geometry.ice_thickness;
 
   extract_surface(*w3, thickness, *result);
 
-  const auto &mask = model->geometry().cell_type;
+  const auto &mask = geometry.cell_type;
 
   array::AccessScope list{ &mask, result.get() };
 
@@ -4491,17 +4493,17 @@ StressBalanceWvelbase::StressBalanceWvelbase(const IceModel *m) : Diag<IceModel>
   m_vars[0]["_FillValue"]  = { fill_value() };
 }
 
-std::shared_ptr<array::Array> StressBalanceWvelbase::compute_impl() const {
+std::shared_ptr<array::Array> StressBalanceWvelbase::compute_impl(const Geometry &geometry) const {
   double fill = fill_value();
 
   auto result = allocate<array::Scalar>("wvelbase");
 
   // here "false" means "don't fill w3 above the ice surface with zeros"
-  auto w3 = array::cast<array::Array3D>(StressBalanceWvel(model).compute(false));
+  auto w3 = array::cast<array::Array3D>(StressBalanceWvel(model).compute(geometry, false));
 
   extract_surface(*w3, 0.0, *result);
 
-  const auto &mask = model->geometry().cell_type;
+  const auto &mask = geometry.cell_type;
 
   array::AccessScope list{ &mask, result.get() };
 
@@ -4536,7 +4538,7 @@ StressBalanceVelbase::StressBalanceVelbase(const IceModel *m) : Diag<IceModel>(m
   }
 }
 
-std::shared_ptr<array::Array> StressBalanceVelbase::compute_impl() const {
+std::shared_ptr<array::Array> StressBalanceVelbase::compute_impl(const Geometry &geometry) const {
   double fill = fill_value();
 
   auto result = allocate<array::Vector>("base");
@@ -4550,7 +4552,7 @@ std::shared_ptr<array::Array> StressBalanceVelbase::compute_impl() const {
   extract_surface(u3, 0.0, u_base);
   extract_surface(v3, 0.0, v_base);
 
-  const auto &mask = model->geometry().cell_type;
+  const auto &mask = geometry.cell_type;
 
   array::AccessScope list{ &mask, &u_base, &v_base, result.get() };
 
@@ -4572,7 +4574,7 @@ ShallowStressBalanceBeta::ShallowStressBalanceBeta(const IceModel *m) : Diag<Ice
   m_vars[0].long_name("basal drag coefficient").units("Pa s / m");
 }
 
-std::shared_ptr<array::Array> ShallowStressBalanceBeta::compute_impl() const {
+std::shared_ptr<array::Array> ShallowStressBalanceBeta::compute_impl(const Geometry &/*geometry*/) const {
   auto result = allocate<array::Scalar>("beta");
 
   const auto *yield_stress_model = model->basal_yield_stress_model();
@@ -4627,10 +4629,10 @@ public:
   }
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const {
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const {
     auto result = allocate<array::Scalar>("wallmelt");
 
-    const array::Scalar &bed_elevation = model->geometry().bed_elevation;
+    const array::Scalar &bed_elevation = geometry.bed_elevation;
 
     const auto *routing_hydrology =
         dynamic_cast<const hydrology::Routing *>(model->subglacial_hydrology_model());
@@ -4664,13 +4666,13 @@ public:
   }
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const {
 
     auto result = allocate<array::Scalar>("hydraulic_potential");
 
-    const auto &sea_level     = model->geometry().sea_level_elevation;
-    const auto &bed_elevation = model->geometry().bed_elevation;
-    const auto &ice_thickness = model->geometry().ice_thickness;
+    const auto &sea_level     = geometry.sea_level_elevation;
+    const auto &bed_elevation = geometry.bed_elevation;
+    const auto &ice_thickness = geometry.ice_thickness;
 
     const auto *routing_hydrology =
         dynamic_cast<const hydrology::Routing *>(model->subglacial_hydrology_model());
@@ -4739,7 +4741,7 @@ class SIAFDSchoofs_Theta : public Diag<IceModel>
 public:
   SIAFDSchoofs_Theta(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 SIAFDSchoofs_Theta::SIAFDSchoofs_Theta(const IceModel *m) : Diag<IceModel>(m) {
@@ -4759,7 +4761,7 @@ SIAFDSchoofs_Theta::SIAFDSchoofs_Theta(const IceModel *m) : Diag<IceModel>(m) {
   }
 }
 
-std::shared_ptr<array::Array> SIAFDSchoofs_Theta::compute_impl() const {
+std::shared_ptr<array::Array> SIAFDSchoofs_Theta::compute_impl(const Geometry &geometry) const {
   auto result = allocate<array::Scalar>("schoofs_theta");
 
   const auto *siafd =
@@ -4770,7 +4772,7 @@ std::shared_ptr<array::Array> SIAFDSchoofs_Theta::compute_impl() const {
                                   "cannot compute 'schoofs_theta': SIAFD is not available");
   }
 
-  siafd->bed_smoother().theta(model->geometry().ice_surface_elevation, *result);
+  siafd->bed_smoother().theta(geometry.ice_surface_elevation, *result);
 
   return result;
 }
@@ -4785,7 +4787,7 @@ class SIAFDThksmooth : public Diag<IceModel>
 public:
   SIAFDThksmooth(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 SIAFDThksmooth::SIAFDThksmooth(const IceModel *m)
@@ -4798,10 +4800,10 @@ SIAFDThksmooth::SIAFDThksmooth(const IceModel *m)
       .units("m");
 }
 
-std::shared_ptr<array::Array> SIAFDThksmooth::compute_impl() const {
+std::shared_ptr<array::Array> SIAFDThksmooth::compute_impl(const Geometry &geometry) const {
 
   array::CellType2 cell_type(m_grid, "cell_type");
-  cell_type.copy_from(model->geometry().cell_type);
+  cell_type.copy_from(geometry.cell_type);
 
   const auto *siafd =
     dynamic_cast<const stressbalance::SIAFD*>(model->stress_balance()->modifier());
@@ -4812,8 +4814,8 @@ std::shared_ptr<array::Array> SIAFDThksmooth::compute_impl() const {
   }
 
   auto result = allocate<array::Scalar>("thksmooth");
-  siafd->bed_smoother().smoothed_thk(model->geometry().ice_surface_elevation,
-                                     model->geometry().ice_thickness, cell_type, *result);
+  siafd->bed_smoother().smoothed_thk(geometry.ice_surface_elevation,
+                                     geometry.ice_thickness, cell_type, *result);
   return result;
 }
 
@@ -5473,7 +5475,7 @@ void IceModel::write_diagnostics(const OutputFile &file,
     auto diag = m_available_spatial_diagnostics.find(variable);
 
     if (diag != m_available_spatial_diagnostics.end()) {
-      diag->second->compute()->write(file);
+      diag->second->compute(m_geometry)->write(file);
     }
   }
 }

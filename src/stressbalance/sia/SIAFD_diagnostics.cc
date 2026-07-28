@@ -40,7 +40,7 @@ SIAFD_topgsmooth::SIAFD_topgsmooth(const SIAFD *m) : Diag<SIAFD>(m) {
       .units("m");
 }
 
-std::shared_ptr<array::Array> SIAFD_topgsmooth::compute_impl() const {
+std::shared_ptr<array::Array> SIAFD_topgsmooth::compute_impl(const Geometry &/*geometry*/) const {
   auto result = allocate<array::Scalar>("topgsmooth");
 
   result->copy_from(model->bed_smoother().smoothed_bed());
@@ -56,7 +56,7 @@ SIAFD_diffusivity::SIAFD_diffusivity(const SIAFD *m)
   m_vars[0].long_name("diffusivity of SIA mass continuity equation").units("m^2 s^-1");
 }
 
-std::shared_ptr<array::Array> SIAFD_diffusivity::compute_impl() const {
+std::shared_ptr<array::Array> SIAFD_diffusivity::compute_impl(const Geometry &/*geometry*/) const {
   auto result_ptr = allocate<array::Scalar>("diffusivity");
 
   const auto &D = model->diffusivity();
@@ -98,7 +98,7 @@ static void copy_staggered_vec(const array::Staggered &input, array::Staggered &
   }
 }
 
-std::shared_ptr<array::Array> SIAFD_diffusivity_staggered::compute_impl() const {
+std::shared_ptr<array::Array> SIAFD_diffusivity_staggered::compute_impl(const Geometry &/*geometry*/) const {
   auto result = allocate<array::Staggered>("diffusivity");
 
   copy_staggered_vec(model->diffusivity(), *result);
@@ -114,7 +114,7 @@ SIAFD_h_x::SIAFD_h_x(const SIAFD *m)
   m_vars[1].long_name("the x-component of the surface gradient, j-offset").units("1");
 }
 
-std::shared_ptr<array::Array> SIAFD_h_x::compute_impl() const {
+std::shared_ptr<array::Array> SIAFD_h_x::compute_impl(const Geometry &/*geometry*/) const {
   auto result = allocate<array::Staggered>("h_x");
 
   copy_staggered_vec(model->surface_gradient_x(), *result);
@@ -130,7 +130,7 @@ SIAFD_h_y::SIAFD_h_y(const SIAFD *m)
   m_vars[1].long_name("the y-component of the surface gradient, j-offset").units("1");
 }
 
-std::shared_ptr<array::Array> SIAFD_h_y::compute_impl() const {
+std::shared_ptr<array::Array> SIAFD_h_y::compute_impl(const Geometry &/*geometry*/) const {
 
   auto result = allocate<array::Staggered>("h_y");
 

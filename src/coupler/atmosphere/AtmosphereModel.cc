@@ -111,7 +111,7 @@ public:
   }
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
 
     auto result = allocate<array::Scalar>("air_temp_snapshot");
 
@@ -152,7 +152,7 @@ public:
   }
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
     auto result = allocate<array::Scalar>("effective_air_temp");
 
     result->copy_from(model->air_temperature());
@@ -174,7 +174,7 @@ public:
   }
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
     auto result = allocate<array::Scalar>("effective_precipitation");
 
     result->copy_from(model->precipitation());

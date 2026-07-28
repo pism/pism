@@ -852,7 +852,7 @@ class PSB_bfrict : public Diag<StressBalance>
 public:
   PSB_bfrict(const StressBalance *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 PSB_bfrict::PSB_bfrict(const StressBalance *m) : Diag<StressBalance>(m) {
@@ -860,7 +860,7 @@ PSB_bfrict::PSB_bfrict(const StressBalance *m) : Diag<StressBalance>(m) {
   m_vars[0].long_name("basal frictional heating").units("W m^-2");
 }
 
-std::shared_ptr<array::Array> PSB_bfrict::compute_impl() const {
+std::shared_ptr<array::Array> PSB_bfrict::compute_impl(const Geometry &/*geometry*/) const {
 
   auto result = allocate<array::Scalar>("bfrict");
 
@@ -875,7 +875,7 @@ class PSB_strainheat : public Diag<StressBalance>
 public:
   PSB_strainheat(const StressBalance *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 PSB_strainheat::PSB_strainheat(const StressBalance *m) : Diag<StressBalance>(m) {
@@ -886,7 +886,7 @@ PSB_strainheat::PSB_strainheat(const StressBalance *m) : Diag<StressBalance>(m) 
       .output_units("mW m^-3");
 }
 
-std::shared_ptr<array::Array> PSB_strainheat::compute_impl() const {
+std::shared_ptr<array::Array> PSB_strainheat::compute_impl(const Geometry &/*geometry*/) const {
   auto result = std::make_shared<array::Array3D>(m_grid, "strainheat",
                                                  array::WITHOUT_GHOSTS, m_grid->z());
 

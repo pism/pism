@@ -834,7 +834,7 @@ public:
   }
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
 
     const auto &layer_thicknesses = model->layer_thicknesses();
 

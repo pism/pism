@@ -124,7 +124,7 @@ const grid::DistributedGridInfo &Diagnostic::grid_info() const {
   return m_grid->info();
 }
 
-std::shared_ptr<array::Array> Diagnostic::compute() const {
+std::shared_ptr<array::Array> Diagnostic::compute(const Geometry &geometry) const {
   std::vector<std::string> names;
   for (const auto &v : m_vars) {
     names.push_back(v.get_name());
@@ -132,7 +132,7 @@ std::shared_ptr<array::Array> Diagnostic::compute() const {
   std::string all_names = join(names, ",");
 
   m_grid->ctx()->log()->message(3, "-  Computing %s...\n", all_names.c_str());
-  auto result = this->compute_impl();
+  auto result = this->compute_impl(geometry);
   m_grid->ctx()->log()->message(3, "-  Done computing %s.\n", all_names.c_str());
 
   return result;

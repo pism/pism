@@ -29,7 +29,7 @@ log.set_threshold(1)
 
 options = PISM.PETSc.Options()
 
-def write_state(model, filename):
+def write_state(model, geometry, filename):
     "Write the state of the model to a file"
 
     f = PISM.util.prepare_output(filename)
@@ -44,7 +44,7 @@ def write_state(model, filename):
         d = diags[k]
         for k in range(d.n_variables()):
             f.define_variable(d.metadata(k))
-        d.compute().write(f)
+        d.compute(geometry).write(f)
 
     f.close()
 
@@ -165,7 +165,7 @@ class Given(TestCase):
 
         check_model(model, self.T, 0.0, self.M, accumulation=self.M)
 
-        write_state(model, self.output_filename)
+        write_state(model, self.geometry, self.output_filename)
         probe_interface(model)
 
     def tearDown(self):
@@ -196,7 +196,7 @@ class DeltaT(TestCase):
 
         check_modifier(self.model, modifier, T=self.dT)
 
-        write_state(modifier, self.output_filename)
+        write_state(modifier, self.geometry, self.output_filename)
         probe_interface(modifier)
 
     def tearDown(self):
@@ -252,7 +252,7 @@ class ElevationChange(TestCase):
         check_modifier(model, modifier, T=self.dT, SMB=dSMB,
                        accumulation=dA, melt=dM, runoff=dR)
 
-        write_state(modifier, self.output_filename)
+        write_state(modifier, self.geometry, self.output_filename)
         probe_interface(modifier)
 
     def test_elevation_change_scale(self):
@@ -284,7 +284,7 @@ class ElevationChange(TestCase):
         check_modifier(model, modifier, T=self.dT, SMB=dSMB,
                        accumulation=dA, melt=dM, runoff=dR)
 
-        write_state(modifier, self.output_filename)
+        write_state(modifier, self.geometry, self.output_filename)
         probe_interface(modifier)
 
     def tearDown(self):
@@ -391,7 +391,7 @@ class TemperatureIndex1(TestCase):
         check_model(model, T, omega, SMB, accumulation=accumulation, melt=melt,
                     runoff=runoff)
 
-        write_state(model, self.output_filename)
+        write_state(model, self.geometry, self.output_filename)
         probe_interface(model)
 
     def tearDown(self):
@@ -475,7 +475,7 @@ class PIK(TestCase):
 
         check_model(model, self.T, 0.0, self.M, accumulation=self.M)
 
-        write_state(model, self.output_filename)
+        write_state(model, self.geometry, self.output_filename)
         probe_interface(model)
 
     def tearDown(self):
@@ -505,7 +505,7 @@ class Simple(TestCase):
 
         check_model(model, T, 0.0, M, accumulation=M)
 
-        write_state(model, self.output_filename)
+        write_state(model, self.geometry, self.output_filename)
         probe_interface(model)
 
     def tearDown(self):
@@ -553,7 +553,7 @@ class Anomaly(TestCase):
         check_modifier(self.model, modifier, T=self.dT, SMB=self.dSMB,
                        accumulation=dA, melt=dM, runoff=dR)
 
-        write_state(modifier, self.output_filename)
+        write_state(modifier, self.geometry, self.output_filename)
         probe_interface(modifier)
 
     def tearDown(self):
@@ -614,7 +614,7 @@ class Cache(TestCase):
 
             diff.append(cached - original)
 
-        write_state(modifier, self.output_filename)
+        write_state(modifier, self.geometry, self.output_filename)
 
         probe_interface(modifier)
 
@@ -669,7 +669,7 @@ class ForceThickness(TestCase):
         check_modifier(self.model, modifier, SMB=self.dSMB,
                        accumulation=dA, melt=dM, runoff=dR)
 
-        write_state(modifier, self.output_filename)
+        write_state(modifier, self.geometry, self.output_filename)
         probe_interface(modifier)
 
     def tearDown(self):
@@ -692,7 +692,7 @@ class EISMINTII(TestCase):
 
             model.update(self.geometry, 0, 1)
 
-            write_state(model, self.output_filename)
+            write_state(model, self.geometry, self.output_filename)
             probe_interface(model)
 
             os.remove(self.output_filename)
@@ -719,7 +719,7 @@ class Initialization(TestCase):
 
         modifier.update(self.geometry, 0, 1)
 
-        write_state(modifier, self.output_filename)
+        write_state(modifier, self.geometry, self.output_filename)
         probe_interface(modifier)
 
     def tearDown(self):

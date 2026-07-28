@@ -165,7 +165,7 @@ public:
   }
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
     auto result = allocate<array::Scalar>("shelfbtemp");
 
     result->copy_from(model->shelf_base_temperature());
@@ -184,7 +184,7 @@ public:
   }
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
     auto result = allocate<array::Scalar>("shelfbmassflux");
 
     result->copy_from(model->shelf_base_mass_flux());

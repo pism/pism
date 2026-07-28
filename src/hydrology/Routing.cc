@@ -48,7 +48,7 @@ public:
   }
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const {
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
     auto result = allocate<array::Scalar>("bwp");
 
     result->copy_from(model->subglacial_water_pressure());
@@ -74,7 +74,7 @@ public:
   }
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const {
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
     double fill = fill_value();
 
     auto result = allocate<array::Scalar>("bwprel");
@@ -114,7 +114,7 @@ public:
   }
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const {
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
 
     auto result = allocate<array::Scalar>("effbwp");
 
@@ -147,7 +147,7 @@ public:
     m_vars[1].long_name("velocity of water in subglacial layer, j-offset").units("m s^-1");
   }
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const {
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
     auto result = allocate<array::Staggered>("bwatvel");
 
     result->copy_from(model->velocity_staggered());

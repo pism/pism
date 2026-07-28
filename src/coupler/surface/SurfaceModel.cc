@@ -414,7 +414,7 @@ class PS_climatic_mass_balance : public Diag<SurfaceModel>
 public:
   PS_climatic_mass_balance(const SurfaceModel *m);
 protected:
-  std::shared_ptr<array::Array> compute_impl() const;
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 /*! @brief Ice surface temperature. */
@@ -423,7 +423,7 @@ class PS_ice_surface_temp : public Diag<SurfaceModel>
 public:
   PS_ice_surface_temp(const SurfaceModel *m);
 protected:
-  std::shared_ptr<array::Array> compute_impl() const;
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 /*! @brief Ice liquid water fraction at the ice surface. */
@@ -432,7 +432,7 @@ class PS_liquid_water_fraction : public Diag<SurfaceModel>
 public:
   PS_liquid_water_fraction(const SurfaceModel *m);
 protected:
-  std::shared_ptr<array::Array> compute_impl() const;
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 /*! @brief Mass of the surface layer (snow and firn). */
@@ -441,7 +441,7 @@ class PS_layer_mass : public Diag<SurfaceModel>
 public:
   PS_layer_mass(const SurfaceModel *m);
 protected:
-  std::shared_ptr<array::Array> compute_impl() const;
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 /*! @brief Surface layer (snow and firn) thickness. */
@@ -450,7 +450,7 @@ class PS_layer_thickness : public Diag<SurfaceModel>
 public:
   PS_layer_thickness(const SurfaceModel *m);
 protected:
-  std::shared_ptr<array::Array> compute_impl() const;
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 PS_climatic_mass_balance::PS_climatic_mass_balance(const SurfaceModel *m)
@@ -465,7 +465,7 @@ PS_climatic_mass_balance::PS_climatic_mass_balance(const SurfaceModel *m)
       .output_units("kg m^-2 year^-1");
 }
 
-std::shared_ptr<array::Array> PS_climatic_mass_balance::compute_impl() const {
+std::shared_ptr<array::Array> PS_climatic_mass_balance::compute_impl(const Geometry &/*geometry*/) const {
   auto result = allocate<array::Scalar>("climatic_mass_balance");
 
   result->copy_from(model->mass_flux());
@@ -484,7 +484,7 @@ PS_ice_surface_temp::PS_ice_surface_temp(const SurfaceModel *m) : Diag<SurfaceMo
       .units("kelvin");
 }
 
-std::shared_ptr<array::Array> PS_ice_surface_temp::compute_impl() const {
+std::shared_ptr<array::Array> PS_ice_surface_temp::compute_impl(const Geometry &/*geometry*/) const {
   auto result = allocate<array::Scalar>("ice_surface_temp");
 
   result->copy_from(model->temperature());
@@ -497,7 +497,7 @@ PS_liquid_water_fraction::PS_liquid_water_fraction(const SurfaceModel *m) : Diag
   m_vars[0].long_name("ice liquid water fraction at the ice surface").units("1");
 }
 
-std::shared_ptr<array::Array> PS_liquid_water_fraction::compute_impl() const {
+std::shared_ptr<array::Array> PS_liquid_water_fraction::compute_impl(const Geometry &/*geometry*/) const {
 
   auto result = allocate<array::Scalar>("ice_surface_liquid_water_fraction");
 
@@ -511,7 +511,7 @@ PS_layer_mass::PS_layer_mass(const SurfaceModel *m) : Diag<SurfaceModel>(m) {
   m_vars[0].long_name("mass of the surface layer (snow and firn)").units("kg");
 }
 
-std::shared_ptr<array::Array> PS_layer_mass::compute_impl() const {
+std::shared_ptr<array::Array> PS_layer_mass::compute_impl(const Geometry &/*geometry*/) const {
 
   auto result = allocate<array::Scalar>("surface_layer_mass");
 
@@ -525,7 +525,7 @@ PS_layer_thickness::PS_layer_thickness(const SurfaceModel *m) : Diag<SurfaceMode
   m_vars[0].long_name("thickness of the surface layer (snow and firn)").units("meters");
 }
 
-std::shared_ptr<array::Array> PS_layer_thickness::compute_impl() const {
+std::shared_ptr<array::Array> PS_layer_thickness::compute_impl(const Geometry &/*geometry*/) const {
 
   auto result = allocate<array::Scalar>("surface_layer_thickness");
 

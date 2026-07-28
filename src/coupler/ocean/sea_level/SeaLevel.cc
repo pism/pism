@@ -107,7 +107,7 @@ public:
   }
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
     auto result = allocate<array::Scalar>("sea_level");
 
     result->copy_from(model->elevation());
