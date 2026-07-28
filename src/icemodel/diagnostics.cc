@@ -40,6 +40,7 @@
 #include "pism/basalstrength/basal_resistance.hh"
 #include "pism/rheology/FlowLawFactory.hh"
 #include "pism/earth/BedDef.hh"
+#include "pism/hydrology/Routing.hh"
 
 #if (Pism_USE_PROJ == 1)
 #include "pism/util/Proj.hh"
@@ -4599,6 +4600,48 @@ std::shared_ptr<array::Array> ShallowStressBalanceBeta::compute_impl() const {
   return result;
 }
 
+//! \brief Report the wall melt rate from dissipation of the potential energy of the
+//! transportable water.
+class HydrologyWallMelt : public Diag<IceModel>
+{
+public:
+  HydrologyWallMelt(const IceModel *m)
+    : Diag<IceModel>(m) {
+    m_vars = { { m_sys, "wallmelt", *m_grid } };
+    m_vars[0]
+        .long_name("wall melt into subglacial hydrology layer from (turbulent)"
+                   " dissipation of energy in transportable water")
+        .units("m s^-1")
+        .output_units("m year^-1");
+
+    const auto *routing_hydrology =
+        dynamic_cast<const hydrology::Routing *>(model->subglacial_hydrology_model());
+
+    if (routing_hydrology == nullptr) {
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION, "cannot compute 'wallmelt': routing hydrology is not available");
+    }
+  }
+
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl() const {
+    auto result = allocate<array::Scalar>("wallmelt");
+
+    const array::Scalar &bed_elevation = model->geometry().bed_elevation;
+
+    const auto *routing_hydrology =
+        dynamic_cast<const hydrology::Routing *>(model->subglacial_hydrology_model());
+
+    if (routing_hydrology == nullptr) {
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION, "cannot compute 'wallmelt': routing hydrology is not available");
+    }
+
+    hydrology::wall_melt(*routing_hydrology, bed_elevation, *result);
+    return result;
+  }
+};
+
 } // end of namespace diagnostics
 
 void IceModel::init_outputs(InputOptions options, DiagnosticReport report_type) {
@@ -4781,6 +4824,10 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
   if (stress_balance()->shallow()->sliding_law() != nullptr and
       basal_yield_stress_model() != nullptr) {
     result["beta"] = f(new ShallowStressBalanceBeta(this));
+  }
+
+  if (dynamic_cast<const hydrology::Routing *>(subglacial_hydrology_model()) != nullptr) {
+    result["wallmelt"] = f(new HydrologyWallMelt(this));
   }
 
   if (m_grid->has_longitude_latitude()) {

@@ -136,32 +136,6 @@ protected:
 };
 
 
-//! \brief Report the wall melt rate from dissipation of the potential energy of the
-//! transportable water.
-class WallMelt : public Diag<Routing>
-{
-public:
-  WallMelt(const Routing *m)
-    : Diag<Routing>(m) {
-    m_vars = { { m_sys, "wallmelt", *m_grid } };
-    m_vars[0]
-        .long_name("wall melt into subglacial hydrology layer from (turbulent)"
-                   " dissipation of energy in transportable water")
-        .units("m s^-1")
-        .output_units("m year^-1");
-  }
-
-protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const {
-    auto result = allocate<array::Scalar>("wallmelt");
-
-    const array::Scalar &bed_elevation = *m_grid->variables().get_2d_scalar("bedrock_altitude");
-
-    wall_melt(*model, bed_elevation, *result);
-    return result;
-  }
-};
-
 //! @brief Diagnostically reports the staggered-grid components of the velocity of the
 //! water in the subglacial layer.
 class BasalWaterVelocity : public Diag<Routing>
@@ -983,7 +957,6 @@ std::map<std::string, Diagnostic::Ptr> Routing::spatial_diagnostics_impl() const
     {"bwp",                 Diagnostic::Ptr(new BasalWaterPressure(this))},
     {"bwprel",              Diagnostic::Ptr(new RelativeBasalWaterPressure(this))},
     {"effbwp",              Diagnostic::Ptr(new EffectiveBasalWaterPressure(this))},
-    {"wallmelt",            Diagnostic::Ptr(new WallMelt(this))},
     {"hydraulic_potential", Diagnostic::Ptr(new HydraulicPotential(this))},
   };
   return combine(result, Hydrology::spatial_diagnostics_impl());

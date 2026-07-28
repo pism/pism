@@ -150,6 +150,7 @@ public:
   const energy::EnergyModel* energy_balance_model() const;
   const YieldStress* basal_yield_stress_model() const;
   const bed::BedDef* bed_deformation_model() const;
+  const hydrology::Hydrology* subglacial_hydrology_model() const;
 
   /*!
    * Replace the ocean model with an implementation in Python.

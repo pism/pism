@@ -933,6 +933,10 @@ const bed::BedDef* IceModel::bed_deformation_model() const {
   return m_beddef.get();
 }
 
+const hydrology::Hydrology* IceModel::subglacial_hydrology_model() const {
+  return m_subglacial_hydrology.get();
+}
+
 /*!
  * Return thickness change due to calving (over the last time step).
  */
