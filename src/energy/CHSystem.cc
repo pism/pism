@@ -26,7 +26,6 @@
 #include "pism/util/array/CellType.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/Logger.hh"
-#include "pism/util/Vars.hh"
 
 namespace pism {
 namespace energy {

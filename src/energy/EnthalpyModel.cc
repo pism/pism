@@ -27,7 +27,6 @@
 #include "pism/util/io/File.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/io/IO_Flags.hh"
-#include "pism/util/Vars.hh"
 
 namespace pism {
 namespace energy {

@@ -20,7 +20,6 @@
 #include "pism/energy/TemperatureModel.hh"
 #include "pism/energy/tempSystem.hh"
 #include "pism/energy/utilities.hh"
-#include "pism/util/Vars.hh"
 #include "pism/util/array/CellType.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/pism_utilities.hh"
