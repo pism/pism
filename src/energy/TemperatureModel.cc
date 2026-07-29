@@ -30,9 +30,8 @@ namespace pism {
 namespace energy {
 
 TemperatureModel::TemperatureModel(
-    std::shared_ptr<const Grid> grid,
-    std::shared_ptr<const stressbalance::StressBalance> stress_balance)
-    : EnergyModel(grid, stress_balance),
+    std::shared_ptr<const Grid> grid)
+    : EnergyModel(grid),
       m_ice_temperature(m_grid, "temp", array::WITH_GHOSTS, m_grid->z()) {
 
   m_ice_temperature.metadata(0)

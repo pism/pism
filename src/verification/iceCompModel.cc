@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2025 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2026 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -220,7 +220,7 @@ void IceCompModel::allocate_energy_model() {
   bool bedrock_is_ice = options::Bool("-bedrock_is_ice", "set bedrock properties to those of ice");
 
   m_energy_model = std::make_shared<energy::TemperatureModel_Verification>(
-      m_grid, m_stress_balance, m_testname, bedrock_is_ice);
+      m_grid, m_testname, bedrock_is_ice);
 
   m_submodels["energy balance model"] = m_energy_model.get();
 }

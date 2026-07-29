@@ -55,9 +55,8 @@ namespace energy {
  * by default). During the winter the CH system is allowed to cool.
 */
 
-CHSystem::CHSystem(std::shared_ptr<const Grid> grid,
-                   std::shared_ptr<const stressbalance::StressBalance> stress_balance)
-    : EnergyModel(grid, stress_balance) {
+CHSystem::CHSystem(std::shared_ptr<const Grid> grid)
+    : EnergyModel(grid) {
 
   m_ice_enthalpy.set_name("ch_enthalpy");
   m_ice_enthalpy.metadata().set_name("ch_enthalpy");

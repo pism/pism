@@ -23,9 +23,8 @@ namespace pism {
 namespace energy {
 
 EnthalpyModel_Regional::EnthalpyModel_Regional(
-    std::shared_ptr<const Grid> grid,
-    std::shared_ptr<const stressbalance::StressBalance> stress_balance)
-    : EnthalpyModel(grid, stress_balance), m_basal_melt_rate_stored(m_grid, "bmr_stored") {
+    std::shared_ptr<const Grid> grid)
+    : EnthalpyModel(grid), m_basal_melt_rate_stored(m_grid, "bmr_stored") {
   // Note that the name of this variable (bmr_stored) does not matter: it is
   // *never* read or written. We make a copy of basal_melt_rate_grounded instead.
   m_basal_melt_rate_stored.metadata(0)

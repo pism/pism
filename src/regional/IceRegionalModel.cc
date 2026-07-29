@@ -153,12 +153,12 @@ void IceRegionalModel::allocate_energy_model() {
   auto energy_model = m_config->get_string("energy.model");
 
   if (energy_model == "enthalpy") {
-    m_energy_model = std::make_shared<energy::EnthalpyModel_Regional>(m_grid, m_stress_balance);
+    m_energy_model = std::make_shared<energy::EnthalpyModel_Regional>(m_grid);
   } else if (energy_model == "cold") {
     throw RuntimeError(PISM_ERROR_LOCATION,
                        "pism -regional does not support the 'cold' energy.model");
   } else {
-    m_energy_model = std::make_shared<energy::DummyEnergyModel>(m_grid, m_stress_balance);
+    m_energy_model = std::make_shared<energy::DummyEnergyModel>(m_grid);
   }
 
   m_submodels["energy balance model"] = m_energy_model.get();
@@ -168,7 +168,7 @@ void IceRegionalModel::allocate_energy_model() {
 
     m_log->message(2, "# Allocating the cryo-hydrologic warming model...\n");
 
-     m_ch_system = std::make_shared<energy::CHSystem>(m_grid, m_stress_balance);
+     m_ch_system = std::make_shared<energy::CHSystem>(m_grid);
     m_submodels["cryo-hydrologic warming"] = m_ch_system.get();
   }
 }

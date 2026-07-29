@@ -29,10 +29,6 @@
 
 namespace pism {
 
-namespace stressbalance {
-class StressBalance;
-}
-
 namespace energy {
 
 class Inputs {
@@ -74,8 +70,7 @@ public:
 
 class EnergyModel : public Component {
 public:
-  EnergyModel(std::shared_ptr<const Grid> grid,
-              std::shared_ptr<const stressbalance::StressBalance> stress_balance);
+  EnergyModel(std::shared_ptr<const Grid> grid);
 
   void restart(const File &input_file, int record, const array::Scalar &ice_thickness);
 
@@ -148,7 +143,6 @@ protected:
 
 private:
   std::string m_stdout_flags;
-  std::shared_ptr<const stressbalance::StressBalance> m_stress_balance;
 };
 
 /*!

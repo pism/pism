@@ -27,8 +27,7 @@ namespace energy {
 
 class CHSystem : public EnergyModel {
 public:
-  CHSystem(std::shared_ptr<const Grid> grid,
-           std::shared_ptr<const stressbalance::StressBalance> stress_balance);
+  CHSystem(std::shared_ptr<const Grid> grid);
   virtual ~CHSystem() = default;
 
 protected:

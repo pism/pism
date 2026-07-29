@@ -104,14 +104,12 @@ void EnergyModelStats::sum(MPI_Comm com) {
 }
 
 
-EnergyModel::EnergyModel(std::shared_ptr<const Grid> grid,
-                         std::shared_ptr<const stressbalance::StressBalance> stress_balance)
+EnergyModel::EnergyModel(std::shared_ptr<const Grid> grid)
     : Component(grid),
       m_ice_enthalpy(m_grid, "enthalpy", array::WITH_GHOSTS, m_grid->z(),
                      m_grid->max_stencil_width()),
       m_work(m_grid, "work_vector", array::WITHOUT_GHOSTS, m_grid->z()),
-      m_basal_melt_rate(m_grid, "basal_melt_rate_grounded"),
-      m_stress_balance(stress_balance) {
+      m_basal_melt_rate(m_grid, "basal_melt_rate_grounded") {
 
   // POSSIBLE standard name = land_ice_enthalpy
   m_ice_enthalpy.metadata(0)
@@ -278,17 +276,16 @@ void EnergyModel::update(double t, double dt, const Inputs &inputs) {
   }
 }
 
-MaxTimestep EnergyModel::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
+MaxTimestep EnergyModel::max_timestep_impl(double t, const CFLData *cfl_data) const {
   // silence a compiler warning
   (void) t;
 
-  if (m_stress_balance == NULL) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "EnergyModel: no stress balance provided."
-                                  " Cannot compute max. time step.");
+  if (cfl_data == NULL) {
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION, "EnergyModel: no CFL data provided. Cannot compute max. time step.");
   }
 
-  return MaxTimestep(m_stress_balance->max_timestep_cfl_3d().dt_max.value(), "energy");
+  return MaxTimestep(cfl_data->dt_max.value(), "energy");
 }
 
 const std::string& EnergyModel::stdout_flags() const {
