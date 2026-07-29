@@ -218,8 +218,8 @@ void DEBMSimple::init_impl(const Geometry &geometry) {
   }
 }
 
-MaxTimestep DEBMSimple::max_timestep_impl(double my_t) const {
-  return m_atmosphere->max_timestep(my_t);
+MaxTimestep DEBMSimple::max_timestep_impl(double t, const CFLData *cfl_data) const {
+  return m_atmosphere->max_timestep(t, cfl_data);
 }
 
 double DEBMSimple::compute_next_balance_year_start(double time) {

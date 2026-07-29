@@ -61,7 +61,7 @@ public:
                    std::shared_ptr<const stressbalance::StressBalance> stress_balance);
 
 protected:
-  MaxTimestep max_timestep_impl(double t) const;
+  MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 
   void restart_impl(const File &input_file, int record,
                     const array::Scalar &ice_thickness);

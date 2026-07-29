@@ -112,9 +112,9 @@ void OceanModel::update_impl(const Inputs &inputs, double t, double dt) {
   }
 }
 
-MaxTimestep OceanModel::max_timestep_impl(double t) const {
+MaxTimestep OceanModel::max_timestep_impl(double t, const CFLData *cfl_data) const {
   if (m_input_model) {
-    return m_input_model->max_timestep(t);
+    return m_input_model->max_timestep(t, cfl_data);
   }
   throw RuntimeError::formatted(PISM_ERROR_LOCATION, "no input model");
 }

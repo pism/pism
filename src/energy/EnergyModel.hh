@@ -107,7 +107,7 @@ public:
   const std::string& stdout_flags() const;
 protected:
 
-  virtual MaxTimestep max_timestep_impl(double t) const;
+  virtual MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 
   virtual void restart_impl(const File &input_file, int record,
                             const array::Scalar &ice_thickness) = 0;

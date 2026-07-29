@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023, 2025 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -67,7 +67,7 @@ void CosineYearlyCycle::init_impl(const Geometry &geometry) {
   m_precipitation.regrid(input_file, io::Default::Nil());
 }
 
-MaxTimestep CosineYearlyCycle::max_timestep_impl(double t) const {
+MaxTimestep CosineYearlyCycle::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
   (void) t;
   return MaxTimestep("atmosphere cosine_yearly_cycle");
 }

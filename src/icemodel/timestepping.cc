@@ -105,8 +105,9 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
   std::vector<MaxTimestep> restrictions;
 
   // get time-stepping restrictions from sub-models
-  for (auto m : m_submodels) {
-    restrictions.push_back(m.second->max_timestep(current_time));
+  CFLData cfl_3d = m_stress_balance->max_timestep_cfl_3d();
+  for (const auto& m : m_submodels) {
+    restrictions.push_back(m.second->max_timestep(current_time, &cfl_3d));
   }
 
   // mechanisms that use a retreat rate

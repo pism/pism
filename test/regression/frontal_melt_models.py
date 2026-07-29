@@ -106,7 +106,7 @@ class Constant(TestCase):
 
         check_model(model, melt_rate)
 
-        self.assertTrue(model.max_timestep(0).infinite())
+        self.assertTrue(model.max_timestep(0, None).infinite())
 
 class DischargeRoutingTest(TestCase):
 
@@ -168,7 +168,7 @@ class DischargeRoutingTest(TestCase):
 
         check_model(model, melt_rate)
 
-        self.assertTrue(model.max_timestep(0).infinite())
+        self.assertTrue(model.max_timestep(0, None).infinite())
 
     def tearDown(self):
         pass
@@ -213,7 +213,7 @@ class Given(TestCase):
 
         model.update(self.inputs, 0, 1)
 
-        self.assertTrue(model.max_timestep(0).infinite())
+        self.assertTrue(model.max_timestep(0, None).infinite())
 
         check_model(model, self.frontal_melt_rate)
 

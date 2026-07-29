@@ -742,7 +742,7 @@ void Isochrones::update(double t, double dt, const array::Array3D &u, const arra
   }
 }
 
-MaxTimestep Isochrones::max_timestep_impl(double t) const {
+MaxTimestep Isochrones::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
   return std::min(max_timestep_deposition_times(t), max_timestep_cfl());
 }
 

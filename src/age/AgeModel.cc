@@ -175,7 +175,7 @@ const array::Array3D & AgeModel::age() const {
   return m_ice_age;
 }
 
-MaxTimestep AgeModel::max_timestep_impl(double /*t*/) const {
+MaxTimestep AgeModel::max_timestep_impl(double /*t*/, const CFLData */*cfl_data*/) const {
 
   if (m_stress_balance == nullptr) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,

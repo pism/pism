@@ -1,4 +1,4 @@
-/* Copyright (C) 2023, 2025 PISM Authors
+/* Copyright (C) 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -55,7 +55,7 @@ public:
   const array::Array3D& layer_thicknesses() const;
 
 private:
-  MaxTimestep max_timestep_impl(double t) const;
+  MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 
   MaxTimestep max_timestep_cfl() const;
   MaxTimestep max_timestep_deposition_times(double t) const;

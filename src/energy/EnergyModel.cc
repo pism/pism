@@ -278,7 +278,7 @@ void EnergyModel::update(double t, double dt, const Inputs &inputs) {
   }
 }
 
-MaxTimestep EnergyModel::max_timestep_impl(double t) const {
+MaxTimestep EnergyModel::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
   // silence a compiler warning
   (void) t;
 

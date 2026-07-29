@@ -127,11 +127,9 @@ CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
 }
 
 //! Compute the CFL constant associated to first-order upwinding for the sliding contribution to mass continuity.
-/*!
-  This procedure computes the maximum horizontal speed in the icy
-  areas. In particular it computes CFL constant for the upwinding, in
-  GeometryEvolution::step(), which applies to the basal component of mass
-  flux.
+/*! This procedure computes the maximum horizontal sliding speed in the icy areas. In
+  particular it computes CFL constant for the upwinding, in GeometryEvolution::step(),
+  which applies to the basal component of mass flux.
 
   That is, because the map-plane mass continuity is advective in the
   sliding case we have a CFL condition.

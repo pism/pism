@@ -59,7 +59,7 @@ def probe_interface(model):
     model.runoff()
     model.temperature()
 
-    model.max_timestep(0)
+    model.max_timestep(0, None)
 
     model.spatial_diagnostics()
 
@@ -865,7 +865,7 @@ class ISMIP6(TestCase):
         model.init(self.geometry)
 
         t = self.ctx.time.current()
-        dt = model.max_timestep(t).value()
+        dt = model.max_timestep(t, None).value()
 
         model.update(self.geometry, t, dt)
 

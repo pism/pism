@@ -39,7 +39,7 @@ private:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  MaxTimestep max_timestep_impl(double t) const;
+  MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 
   const array::Scalar& mass_flux_impl() const;
   const array::Scalar& temperature_impl() const;

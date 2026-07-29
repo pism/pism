@@ -68,7 +68,7 @@ protected:
 
   virtual void write_state_impl(const OutputFile &output) const;
 
-  virtual MaxTimestep max_timestep_impl(double my_t) const;
+  virtual MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 
   virtual const array::Scalar& precipitation_impl() const;
   virtual const array::Scalar& air_temperature_impl() const;

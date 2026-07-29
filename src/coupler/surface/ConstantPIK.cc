@@ -71,7 +71,7 @@ void PIK::init_impl(const Geometry &geometry) {
                  "    parameterizing the ice surface temperature 'ice_surface_temp' ... \n");
 }
 
-MaxTimestep PIK::max_timestep_impl(double t) const {
+MaxTimestep PIK::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
   (void) t;
   return MaxTimestep("surface PIK");
 }

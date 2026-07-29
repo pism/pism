@@ -228,8 +228,8 @@ void TemperatureIndex::init_impl(const Geometry &geometry) {
   }
 }
 
-MaxTimestep TemperatureIndex::max_timestep_impl(double my_t) const {
-  return m_atmosphere->max_timestep(my_t);
+MaxTimestep TemperatureIndex::max_timestep_impl(double t, const CFLData *cfl_data) const {
+  return m_atmosphere->max_timestep(t, cfl_data);
 }
 
 double TemperatureIndex::compute_next_balance_year_start(double time) {

@@ -59,7 +59,7 @@ void DummyEnergyModel::update_impl(double t, double dt, const Inputs &inputs) {
   m_work.copy_from(m_ice_enthalpy);
 }
 
-MaxTimestep DummyEnergyModel::max_timestep_impl(double t) const {
+MaxTimestep DummyEnergyModel::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
   // silence a compiler warning
   (void) t;
 

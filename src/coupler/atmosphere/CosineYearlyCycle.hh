@@ -36,7 +36,7 @@ public:
   virtual void init_impl(const Geometry &geometry);
   virtual void init_timeseries_impl(const std::vector<double> &ts) const;
 protected:
-  virtual MaxTimestep max_timestep_impl(double t) const;
+  virtual MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
   virtual void update_impl(const Geometry &geometry, double t, double dt);
 
   std::shared_ptr<ScalarForcing> m_A; // amplitude scaling

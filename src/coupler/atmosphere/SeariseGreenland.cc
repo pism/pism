@@ -81,7 +81,7 @@ void SeaRISEGreenland::precip_time_series_impl(int i, int j, std::vector<double>
   }
 }
 
-MaxTimestep SeaRISEGreenland::max_timestep_impl(double t) const {
+MaxTimestep SeaRISEGreenland::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
   (void) t;
   return MaxTimestep("atmosphere searise_greenland");
 }

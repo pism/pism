@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019, 2021, 2022, 2023, 2024, 2025 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2018, 2019, 2021, 2022, 2023, 2024, 2025, 2026 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -172,7 +172,7 @@ const array::Scalar &DischargeGiven::frontal_melt_rate_impl() const {
   return m_frontal_melt_rate;
 }
 
-MaxTimestep DischargeGiven::max_timestep_impl(double t) const {
+MaxTimestep DischargeGiven::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
 
   auto dt = std::min(m_theta_ocean->max_timestep(t), m_subglacial_discharge->max_timestep(t));
 

@@ -339,13 +339,13 @@ void SurfaceModel::write_state_impl(const OutputFile &output) const {
   }
 }
 
-MaxTimestep SurfaceModel::max_timestep_impl(double t) const {
+MaxTimestep SurfaceModel::max_timestep_impl(double t, const CFLData *cfl_data) const {
   if (m_atmosphere) {
-    return m_atmosphere->max_timestep(t);
+    return m_atmosphere->max_timestep(t, cfl_data);
   }
 
   if (m_input_model) {
-    return m_input_model->max_timestep(t);
+    return m_input_model->max_timestep(t, cfl_data);
   }
 
   return MaxTimestep("surface model");

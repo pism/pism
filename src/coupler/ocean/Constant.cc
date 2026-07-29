@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022, 2023, 2025 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2022, 2023, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -67,7 +67,7 @@ void Constant::init_impl(const Geometry &geometry) {
                                            *m_water_column_pressure);
 }
 
-MaxTimestep Constant::max_timestep_impl(double t) const {
+MaxTimestep Constant::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
   (void) t;
   return MaxTimestep("ocean constant");
 }

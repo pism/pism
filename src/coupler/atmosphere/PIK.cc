@@ -111,7 +111,7 @@ void PIK::init_impl(const Geometry &geometry) {
   }
 }
 
-MaxTimestep PIK::max_timestep_impl(double t) const {
+MaxTimestep PIK::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
   (void) t;
   return MaxTimestep("atmosphere pik");
 }

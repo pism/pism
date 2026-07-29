@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2019, 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2016, 2017, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -98,7 +98,7 @@ protected:
   virtual double depth_impl() const;
   virtual unsigned int Mz_impl() const;
 
-  virtual MaxTimestep max_timestep_impl(double my_t) const;
+  virtual MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 
   using BedThermalUnit::update_impl;
   virtual void update_impl(const array::Scalar &bedrock_top_temperature,

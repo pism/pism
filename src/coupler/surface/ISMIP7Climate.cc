@@ -230,7 +230,7 @@ void ISMIP7::update_impl(const Geometry &geometry, double t, double dt) {
   dummy_melt(SMB, *m_melt);
 }
 
-MaxTimestep ISMIP7::max_timestep_impl(double t) const {
+MaxTimestep ISMIP7::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
   using std::min;
 
   auto dt = m_temperature_reference->max_timestep(t);

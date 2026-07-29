@@ -71,7 +71,7 @@ def check_model(model, geometry, T, P, ts=None, Ts=None, Ps=None):
 
     write_state(model, geometry)
 
-    model.max_timestep(ts[0])
+    model.max_timestep(ts[0], None)
 
 def check_modifier(model, modifier, geometry, T=0.0, P=0.0, ts=None, Ts=None, Ps=None):
     check_difference(modifier.air_temperature(),
@@ -102,7 +102,7 @@ def check_modifier(model, modifier, geometry, T=0.0, P=0.0, ts=None, Ts=None, Ps
 
     write_state(modifier, geometry)
 
-    modifier.max_timestep(ts[0])
+    modifier.max_timestep(ts[0], None)
 
 def precipitation(grid, value):
     precip = PISM.Scalar(grid, "precipitation")
@@ -156,7 +156,7 @@ class PIK(TestCase):
 
             check_model(model, self.geometry, T=T, P=self.P, ts=[0.5], Ts=Ts, Ps=Ps)
 
-        self.assertTrue(model.max_timestep(0).infinite())
+        self.assertTrue(model.max_timestep(0, None).infinite())
 
         with self.assertRaises(RuntimeError, msg="failed to catch an invalid parameterization"):
             config.set_string("atmosphere.pik.parameterization", "invalid")
