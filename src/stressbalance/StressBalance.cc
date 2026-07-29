@@ -846,68 +846,10 @@ TSDiagnosticList StressBalance::scalar_diagnostics_impl() const {
                        m_modifier->scalar_diagnostics());
 }
 
-//! \brief Computes basal frictional heating.
-class PSB_bfrict : public Diag<StressBalance>
-{
-public:
-  PSB_bfrict(const StressBalance *m);
-protected:
-  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
-};
-
-PSB_bfrict::PSB_bfrict(const StressBalance *m) : Diag<StressBalance>(m) {
-  m_vars = { { m_sys, "bfrict", *m_grid } };
-  m_vars[0].long_name("basal frictional heating").units("W m^-2");
-}
-
-std::shared_ptr<array::Array> PSB_bfrict::compute_impl(const Geometry &/*geometry*/) const {
-
-  auto result = allocate<array::Scalar>("bfrict");
-
-  result->copy_from(model->basal_frictional_heating());
-
-  return result;
-}
-
-//! \brief Reports the volumetric strain heating (3D).
-class PSB_strainheat : public Diag<StressBalance>
-{
-public:
-  PSB_strainheat(const StressBalance *m);
-protected:
-  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
-};
-
-PSB_strainheat::PSB_strainheat(const StressBalance *m) : Diag<StressBalance>(m) {
-  m_vars = { { m_sys, "strainheat", *m_grid, m_grid->z() } };
-  m_vars[0]
-      .long_name("rate of strain heating in ice (dissipation heating)")
-      .units("W m^-3")
-      .output_units("mW m^-3");
-}
-
-std::shared_ptr<array::Array> PSB_strainheat::compute_impl(const Geometry &/*geometry*/) const {
-  auto result = std::make_shared<array::Array3D>(m_grid, "strainheat",
-                                                 array::WITHOUT_GHOSTS, m_grid->z());
-
-  result->metadata() = m_vars[0];
-
-  result->copy_from(model->volumetric_strain_heating());
-
-  return result;
-}
-
 DiagnosticList StressBalance::spatial_diagnostics_impl() const {
-  DiagnosticList result = {
-    {"bfrict",              Diagnostic::Ptr(new PSB_bfrict(this))},
-    {"strainheat",          Diagnostic::Ptr(new PSB_strainheat(this))},
-  };
-
-  // add diagnostics from the shallow stress balance and the "modifier"
-  result = pism::combine(result, m_shallow_stress_balance->spatial_diagnostics());
-  result = pism::combine(result, m_modifier->spatial_diagnostics());
-
-  return result;
+  // combine diagnostics from the shallow stress balance and the "modifier"
+  return pism::combine(m_shallow_stress_balance->spatial_diagnostics(),
+                       m_modifier->spatial_diagnostics());
 }
 
 } // end of namespace stressbalance

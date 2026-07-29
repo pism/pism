@@ -621,6 +621,59 @@ protected:
   AmountKind m_kind;
 };
 
+//! \brief Computes basal frictional heating.
+class StressBalanceBfrict : public Diag<IceModel> {
+public:
+  StressBalanceBfrict(const IceModel *m);
+
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+StressBalanceBfrict::StressBalanceBfrict(const IceModel *m) : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "bfrict", *m_grid } };
+  m_vars[0].long_name("basal frictional heating").units("W m^-2");
+}
+
+std::shared_ptr<array::Array>
+StressBalanceBfrict::compute_impl(const Geometry & /*geometry*/) const {
+
+  auto result = allocate<array::Scalar>("bfrict");
+
+  result->copy_from(model->stress_balance()->basal_frictional_heating());
+
+  return result;
+}
+
+//! \brief Reports the volumetric strain heating (3D).
+class StressBalanceStrainheat : public Diag<IceModel> {
+public:
+  StressBalanceStrainheat(const IceModel *m);
+
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+StressBalanceStrainheat::StressBalanceStrainheat(const IceModel *m) : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "strainheat", *m_grid, m_grid->z() } };
+  m_vars[0]
+      .long_name("rate of strain heating in ice (dissipation heating)")
+      .units("W m^-3")
+      .output_units("mW m^-3");
+}
+
+std::shared_ptr<array::Array>
+StressBalanceStrainheat::compute_impl(const Geometry & /*geometry*/) const {
+  auto result =
+      std::make_shared<array::Array3D>(m_grid, "strainheat", array::WITHOUT_GHOSTS, m_grid->z());
+
+  result->metadata() = m_vars[0];
+
+  result->copy_from(model->stress_balance()->volumetric_strain_heating());
+
+  return result;
+}
+
 } // end of namespace diagnostics
 } // end of namespace pism
 
@@ -4994,6 +5047,8 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
     { "wvel", Diagnostic::Ptr(new StressBalanceWvel(this)) },
     { "wvelbase", Diagnostic::Ptr(new StressBalanceWvelbase(this)) },
     { "wvelsurf", Diagnostic::Ptr(new StressBalanceWvelsurf(this)) },
+    { "bfrict", Diagnostic::Ptr(new StressBalanceBfrict(this)) },
+    { "strainheat", Diagnostic::Ptr(new StressBalanceStrainheat(this)) },
 
     // misc
     { "rank", f(new Rank(this)) },
