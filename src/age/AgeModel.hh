@@ -21,8 +21,7 @@
 #define AGEMODEL_H
 
 #include "pism/util/Component.hh"
-#include "pism/stressbalance/StressBalance.hh"
-#include <memory>
+#include "pism/util/array/Array3D.hh"
 
 namespace pism {
 
@@ -43,8 +42,7 @@ public:
 
 class AgeModel : public Component {
 public:
-  AgeModel(std::shared_ptr<const Grid> grid,
-           std::shared_ptr<const stressbalance::StressBalance> stress_balance);
+  AgeModel(std::shared_ptr<const Grid> grid);
 
   void update(double t, double dt, const AgeModelInputs &inputs);
 
@@ -59,7 +57,6 @@ protected:
 
   array::Array3D m_ice_age;
   array::Array3D m_work;
-  std::shared_ptr<const stressbalance::StressBalance> m_stress_balance;
 };
 
 } // end of namespace pism

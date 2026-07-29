@@ -519,7 +519,7 @@ void IceModel::allocate_age_model() {
                                     "Cannot allocate an age model: m_stress_balance == nullptr.");
     }
 
-    m_age_model              = std::make_shared<AgeModel>(m_grid, m_stress_balance);
+    m_age_model              = std::make_shared<AgeModel>(m_grid);
     m_submodels["age model"] = m_age_model.get();
   }
 }

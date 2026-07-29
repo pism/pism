@@ -24,6 +24,7 @@
 #include <memory>
 #include "pism/util/Logger.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 
@@ -56,13 +57,11 @@ void AgeModelInputs::check() const {
   check_input(w3, "w3");
 }
 
-AgeModel::AgeModel(std::shared_ptr<const Grid> grid,
-                   std::shared_ptr<const stressbalance::StressBalance> stress_balance)
+AgeModel::AgeModel(std::shared_ptr<const Grid> grid)
     : Component(grid),
       // FIXME: should be able to use width=1...
       m_ice_age(m_grid, "age", array::WITH_GHOSTS, m_grid->z(), m_grid->max_stencil_width()),
-      m_work(m_grid, "work_vector", array::WITHOUT_GHOSTS, m_grid->z()),
-      m_stress_balance(stress_balance) {
+      m_work(m_grid, "work_vector", array::WITHOUT_GHOSTS, m_grid->z()) {
 
   m_ice_age.metadata()
     .long_name("age of ice")
@@ -175,15 +174,14 @@ const array::Array3D & AgeModel::age() const {
   return m_ice_age;
 }
 
-MaxTimestep AgeModel::max_timestep_impl(double /*t*/, const CFLData */*cfl_data*/) const {
+MaxTimestep AgeModel::max_timestep_impl(double /*t*/, const CFLData *cfl_data) const {
 
-  if (m_stress_balance == nullptr) {
+  if (cfl_data == nullptr) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "AgeModel: no stress balance provided."
-                                  " Cannot compute max. time step.");
+                                  "AgeModel: no CFL data provided. Cannot compute max. time step.");
   }
 
-  return MaxTimestep(m_stress_balance->max_timestep_cfl_3d().dt_max.value(), "age model");
+  return MaxTimestep(cfl_data->dt_max.value(), "age model");
 }
 
 void AgeModel::init(const InputOptions &opts) {
