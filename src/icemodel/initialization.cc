@@ -540,7 +540,7 @@ void IceModel::allocate_isochrones() {
           "Cannot allocate the isochrone tracking model: m_stress_balance == nullptr.");
     }
 
-    m_isochrones = std::make_shared<Isochrones>(m_grid, m_stress_balance);
+    m_isochrones = std::make_shared<Isochrones>(m_grid);
 
     m_submodels["isochrones"] = m_isochrones.get();
   }

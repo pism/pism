@@ -28,17 +28,12 @@ class Array3D;
 class Scalar;
 } // namespace array
 
-namespace stressbalance {
-class StressBalance;
-}
-
 /*!
  * The isochrone tracing scheme of [@ref Born2016] and [@ref Born2021].
  */
 class Isochrones : public Component {
 public:
-  Isochrones(std::shared_ptr<const Grid> grid,
-             std::shared_ptr<const stressbalance::StressBalance> stress_balance);
+  Isochrones(std::shared_ptr<const Grid> grid);
   virtual ~Isochrones() = default;
 
   void bootstrap(const array::Scalar &ice_thickness);
@@ -57,7 +52,6 @@ public:
 private:
   MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 
-  MaxTimestep max_timestep_cfl() const;
   MaxTimestep max_timestep_deposition_times(double t) const;
 
   std::set<VariableMetadata> state_impl() const;
@@ -77,8 +71,6 @@ private:
 
   //! The index of the topmost isochronal layer.
   size_t m_top_layer_index;
-
-  std::shared_ptr<const stressbalance::StressBalance> m_stress_balance;
 };
 
 } // end of namespace pism

@@ -361,9 +361,8 @@ static void renormalize(const array::Scalar &ice_thickness, array::Array3D &laye
 } // namespace details
 
 
-Isochrones::Isochrones(std::shared_ptr<const Grid> grid,
-                       std::shared_ptr<const stressbalance::StressBalance> stress_balance)
-    : Component(grid), m_stress_balance(stress_balance) {
+Isochrones::Isochrones(std::shared_ptr<const Grid> grid)
+    : Component(grid) {
 
   auto time = grid->ctx()->time();
 
@@ -742,19 +741,15 @@ void Isochrones::update(double t, double dt, const array::Array3D &u, const arra
   }
 }
 
-MaxTimestep Isochrones::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
-  return std::min(max_timestep_deposition_times(t), max_timestep_cfl());
-}
+MaxTimestep Isochrones::max_timestep_impl(double t, const CFLData *cfl_data) const {
 
-MaxTimestep Isochrones::max_timestep_cfl() const {
-
-  if (m_stress_balance == nullptr) {
+  if (cfl_data == nullptr) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "Isochrone tracking: no stress balance provided. "
+                                  "Isochrone tracking: no CFL data provided. "
                                   "Cannot compute the maximum time step.");
   }
 
-  return MaxTimestep(m_stress_balance->max_timestep_cfl_3d().dt_max.value(), "isochrones");
+  return std::min(max_timestep_deposition_times(t), cfl_data->dt_max);
 }
 
 /*!
