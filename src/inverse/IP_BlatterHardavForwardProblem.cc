@@ -151,7 +151,6 @@ std::shared_ptr<TerminationReason> IP_BlatterHardavForwardProblem::linearize_at(
   inputs.geometry           = &geometry;
   inputs.basal_yield_stress = variables.get_2d_scalar("tauc");
   inputs.enthalpy           = variables.get_3d_scalar("enthalpy");
-  inputs.basal_melt_rate    = NULL;
   inputs.age                = NULL;
   inputs.water_column_pressure = NULL;
 

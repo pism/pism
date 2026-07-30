@@ -344,9 +344,6 @@ void IceModel::enforce_consistency_of_geometry(ConsistencyFlag flag) {
 
 stressbalance::Inputs IceModel::stress_balance_inputs() {
   stressbalance::Inputs result;
-  if (m_config->get_flag("geometry.update.use_basal_melt_rate")) {
-    result.basal_melt_rate = &m_basal_melt_rate;
-  }
 
   result.basal_yield_stress = &m_basal_yield_stress;
   result.geometry           = &m_geometry;

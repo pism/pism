@@ -41,7 +41,6 @@ Inputs::Inputs() {
   geometry          = NULL;
   new_bed_elevation = true;
 
-  basal_melt_rate       = NULL;
   water_column_pressure = NULL;
   fracture_density      = NULL;
   basal_yield_stress    = NULL;
@@ -104,8 +103,7 @@ void Inputs::dump(const char *filename) const {
     vec->write(output);
   }
 
-  const array::Array *optional[] = { basal_melt_rate,
-                                     water_column_pressure,
+  const array::Array *optional[] = { water_column_pressure,
                                      fracture_density,
                                      basal_yield_stress,
                                      enthalpy,

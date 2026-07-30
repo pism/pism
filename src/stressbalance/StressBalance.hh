@@ -46,7 +46,6 @@ public:
   const Geometry *geometry;
   bool new_bed_elevation;
 
-  const array::Scalar *basal_melt_rate;
   const array::Scalar *basal_yield_stress;
   const array::Scalar *water_column_pressure;
   const array::Scalar1 *fracture_density;
