@@ -1050,9 +1050,8 @@ static void enable_ew(::SNES snes) {
   ierr = SNESKSPSetUseEW(snes, PETSC_TRUE); PISM_CHK(ierr, "SNESKSPSetUseEW");
 }
 
-void Blatter::update(const Inputs &inputs, bool full_update) {
+void Blatter::update_impl(const Inputs &inputs, bool /*full_update*/) {
   PetscErrorCode ierr;
-  (void) full_update;
 
   {
     double

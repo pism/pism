@@ -45,7 +45,7 @@ public:
 
   void init();
 
-  virtual void update(const Inputs &inputs, bool full_update) = 0;
+  void update(const Inputs &inputs, bool full_update);
 
   //! \brief Get the thickness-advective 2D velocity.
   const array::Vector1& velocity() const;
@@ -67,6 +67,8 @@ public:
   double flow_enhancement_factor() const;
 protected:
   virtual void init_impl();
+
+  virtual void update_impl(const Inputs &inputs, bool full_update) = 0;
 
   virtual DiagnosticList spatial_diagnostics_impl() const;
 
@@ -92,7 +94,7 @@ public:
   ZeroSliding(std::shared_ptr<const Grid> g);
   virtual ~ZeroSliding() = default;
 
-  virtual void update(const Inputs &inputs, bool full_update);
+  virtual void update_impl(const Inputs &inputs, bool full_update);
 
 protected:
 };
@@ -101,7 +103,7 @@ class PrescribedSliding : public ZeroSliding {
 public:
   PrescribedSliding(std::shared_ptr<const Grid> g);
   virtual ~PrescribedSliding() = default;
-  virtual void update(const Inputs &inputs, bool full_update);
+  virtual void update_impl(const Inputs &inputs, bool full_update);
 protected:
   virtual void init_impl();
 };

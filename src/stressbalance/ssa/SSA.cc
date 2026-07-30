@@ -132,7 +132,7 @@ void SSA::init_impl() {
 }
 
 //! \brief Update the SSA solution.
-void SSA::update(const Inputs &inputs, bool full_update) {
+void SSA::update_impl(const Inputs &inputs, bool full_update) {
 
   if (full_update) {
     solve(inputs);

@@ -71,6 +71,9 @@ void ShallowStressBalance::init() {
 void ShallowStressBalance::init_impl() {
   // empty
 }
+void ShallowStressBalance::update(const Inputs &inputs, bool full_update) {
+  this->update_impl(inputs, full_update);
+}
 
 std::string ShallowStressBalance::stdout_report() const {
   return "";
@@ -121,7 +124,7 @@ ZeroSliding::ZeroSliding(std::shared_ptr<const Grid> g)
 }
 
 //! \brief Update the trivial shallow stress balance object.
-void ZeroSliding::update(const Inputs &inputs, bool full_update) {
+void ZeroSliding::update_impl(const Inputs &inputs, bool full_update) {
   (void) inputs;
 
   if (full_update) {
@@ -141,7 +144,7 @@ PrescribedSliding::PrescribedSliding(std::shared_ptr<const Grid> g) : ZeroSlidin
   // empty
 }
 
-void PrescribedSliding::update(const Inputs &inputs, bool full_update) {
+void PrescribedSliding::update_impl(const Inputs &inputs, bool full_update) {
   (void)inputs;
   if (full_update) {
     m_basal_frictional_heating.set(0.0);

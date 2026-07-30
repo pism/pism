@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2021, 2023 PISM Authors
+/* Copyright (C) 2018, 2021, 2023, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -29,9 +29,9 @@ class WeertmanSliding : public ShallowStressBalance {
 public:
   WeertmanSliding(std::shared_ptr<const Grid> g);
   virtual ~WeertmanSliding() = default;
-  virtual void update(const Inputs &inputs, bool full_update);
 protected:
   void init_impl();
+  void update_impl(const Inputs &inputs, bool full_update);
 };
 
 } // end of namespace stressbalance
