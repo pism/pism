@@ -3,6 +3,11 @@
 Changes since v2.3.0
 ====================
 
+- Fix missing CF grid mapping metadata in files written by Python scripts (`pismi.py`,
+  `ssa_forward.py`, and others). `Array.write(filename)` now defines the grid mapping
+  variable (if the grid has projection information) and adds the `grid_mapping` attribute
+  to spatial variables, matching output written by `pism` itself. This makes inversion
+  output georeferenced, so tools like GDAL, `rioxarray`, and QGIS pick up the projection.
 - Add `ocean.picop.power_beta` (default 2). It sets the exponent on the thermal forcing
   `(T_a - T_f)` in the PICOP ambient melt function (`Pelle2019`, eqn. 10). The default 2 is the
   Antarctic plume value; `Cai2017` find approximately 1.2 for Petermann. Lowering it weakens the
