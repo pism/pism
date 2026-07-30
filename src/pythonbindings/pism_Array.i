@@ -7,6 +7,7 @@
 #include "util/array/Vector.hh"
 #include "util/array/Array3D.hh"
 #include "util/array/Staggered.hh"
+#include "util/io/io_helpers.hh"
 
 using namespace pism;
 %}
@@ -40,9 +41,22 @@ using namespace pism;
       OutputFile file(writer, filename);
       file.append();
 
-      for (int k = 0; k < $self->ndof(); ++k) {
-        file.define_variable($self->metadata(k));
+      // Define the grid mapping ("mapping") variable, if the grid has projection
+      // information. This makes it possible for io::define_variables() below to add the
+      // "grid_mapping" attribute to variables written by this method.
+      //
+      // Note: define_variable() is a no-op if the variable is already present.
+      const auto &mapping = grid->get_mapping_info();
+      if (mapping.has_attributes()) {
+        file.define_variable(mapping);
       }
+
+      std::set<VariableMetadata> variables;
+      for (int k = 0; k < $self->ndof(); ++k) {
+        variables.insert($self->metadata(k));
+      }
+
+      io::define_variables(file, variables, mapping, config.get_flag("output.use_MKS"));
 
       $self->write(file);
     }
