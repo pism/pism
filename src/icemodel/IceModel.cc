@@ -71,6 +71,7 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
       m_basal_yield_stress(m_grid, "tauc"),
       m_basal_melt_rate(m_grid, "bmelt"),
       m_bedtoptemp(m_grid, "bedtoptemp"),
+      m_vertical_velocity(m_grid, "wvel_rel", array::WITHOUT_GHOSTS, m_grid->z()),
       m_velocity_bc_mask(m_grid, "vel_bc_mask"),
       m_velocity_bc_values(m_grid, "_bc"), // u_bc and v_bc
       m_ice_thickness_bc_mask(grid, "thk_bc_mask"),
@@ -224,11 +225,15 @@ void IceModel::allocate_storage() {
     m_grid->variables().add(m_basal_yield_stress);
   }
 
-  {
-    m_bedtoptemp.metadata(0)
-        .long_name("temperature at the top surface of the bedrock thermal layer")
-        .units("kelvin");
-  }
+  m_bedtoptemp.metadata(0)
+      .long_name("temperature at the top surface of the bedrock thermal layer")
+      .units("kelvin");
+
+  m_vertical_velocity.metadata(0)
+      .long_name("vertical velocity of ice, relative to base of ice directly below")
+      .units("m s^-1")
+      .output_units("m year^-1")
+      .set_time_dependent(true);
 
   // basal melt rate
   m_basal_melt_rate.metadata(0)
@@ -378,7 +383,7 @@ energy::Inputs IceModel::energy_model_inputs() {
   result.volumetric_heating_rate  = &m_stress_balance->volumetric_strain_heating();
   result.u3                       = &m_stress_balance->velocity_u();
   result.v3                       = &m_stress_balance->velocity_v();
-  result.w3                       = &m_stress_balance->velocity_w();
+  result.w3                       = &m_vertical_velocity;
 
   result.check();             // make sure all data members were set
 
@@ -437,6 +442,11 @@ double IceModel::step(bool do_mass_continuity,
   try {
     profiling.begin("stress_balance");
     m_stress_balance->update(stress_balance_inputs(), updateAtDepth);
+
+    m_cfl_2d =
+        ::pism::max_timestep_cfl_2d(m_geometry.ice_thickness, m_geometry.cell_type,
+                                    m_no_model_mask.get(), m_stress_balance->advective_velocity());
+
     profiling.end("stress_balance");
   } catch (RuntimeError &e) {
     std::string output_file = save_state_on_error("_stressbalance_failed", {});
@@ -444,6 +454,22 @@ double IceModel::step(bool do_mass_continuity,
     e.add_context("performing a time step. (Note: Model state was saved to '%s'.)",
                   output_file.c_str());
     throw;
+  }
+
+  if (updateAtDepth) {
+    profiling.begin("stress_balance.vertical_velocity");
+    {
+      // compute 3D vertical velocity:
+      bool use_bmr = m_config->get_flag("geometry.update.use_basal_melt_rate");
+      stressbalance::compute_vertical_velocity(
+          m_geometry.cell_type, m_stress_balance->velocity_u(), m_stress_balance->velocity_v(),
+          use_bmr ? &m_basal_melt_rate : nullptr, m_vertical_velocity);
+    }
+    profiling.end("stress_balance.vertical_velocity");
+
+    m_cfl_3d = ::pism::max_timestep_cfl_3d(m_geometry.ice_thickness, m_geometry.cell_type,
+                                           m_no_model_mask.get(), m_stress_balance->velocity_u(),
+                                           m_stress_balance->velocity_v(), m_vertical_velocity);
   }
 
 
@@ -477,7 +503,7 @@ double IceModel::step(bool do_mass_continuity,
     inputs.ice_thickness = &m_geometry.ice_thickness;
     inputs.u3            = &m_stress_balance->velocity_u();
     inputs.v3            = &m_stress_balance->velocity_v();
-    inputs.w3            = &m_stress_balance->velocity_w();
+    inputs.w3            = &m_vertical_velocity;
 
     profiling.begin("age");
     m_age_model->update(m_t_TempAge, m_dt_TempAge, inputs);
@@ -958,6 +984,10 @@ const array::Scalar& IceModel::forced_retreat() const {
   return m_thickness_change.forced_retreat;
 }
 
+const array::Array3D& IceModel::vertical_velocity() const {
+  return m_vertical_velocity;
+}
+
 IceModel::ThicknessChanges::ThicknessChanges(const std::shared_ptr<const Grid> &grid)
   : calving(grid, "thickness_change_due_to_calving"),
     frontal_melt(grid, "thickness_change_due_to_frontal_melt"),
@@ -968,6 +998,14 @@ IceModel::ThicknessChanges::ThicknessChanges(const std::shared_ptr<const Grid> &
 void IceModel::set_python_ocean_model(std::shared_ptr<ocean::PyOceanModel> model) {
   m_ocean = std::make_shared<ocean::PyOceanModelAdapter>(m_grid, model);
   m_submodels["ocean model"] = m_ocean.get();
+}
+
+CFLData IceModel::max_timestep_cfl_2d() const {
+  return m_cfl_2d;
+}
+
+CFLData IceModel::max_timestep_cfl_3d() const {
+  return m_cfl_3d;
 }
 
 } // end of namespace pism

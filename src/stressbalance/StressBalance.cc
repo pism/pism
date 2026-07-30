@@ -131,16 +131,9 @@ StressBalance::StressBalance(std::shared_ptr<const Grid> g,
                              std::shared_ptr<ShallowStressBalance> sb,
                              std::shared_ptr<SSB_Modifier> ssb_mod)
   : Component(g),
-    m_w(m_grid, "wvel_rel", array::WITHOUT_GHOSTS, m_grid->z()),
     m_strain_heating(m_grid, "strain_heating", array::WITHOUT_GHOSTS, m_grid->z()),
     m_shallow_stress_balance(sb),
     m_modifier(ssb_mod) {
-
-  m_w.metadata(0)
-      .long_name("vertical velocity of ice, relative to base of ice directly below")
-      .units("m s^-1")
-      .output_units("m year^-1")
-      .set_time_dependent(true);
 
   m_strain_heating.metadata(0)
       .long_name("rate of strain heating in ice (dissipation heating)")
@@ -184,34 +177,13 @@ void StressBalance::update(const Inputs &inputs, bool full_update) {
                                                        m_strain_heating);
       profiling().end("stress_balance.strain_heat");
 
-      profiling().begin("stress_balance.vertical_velocity");
-      stressbalance::compute_vertical_velocity(inputs.geometry->cell_type,
-                                               u, v, inputs.basal_melt_rate, m_w);
-      profiling().end("stress_balance.vertical_velocity");
 
-      m_cfl_3d = ::pism::max_timestep_cfl_3d(inputs.geometry->ice_thickness,
-                                             inputs.geometry->cell_type,
-                                             inputs.no_model_mask,
-                                             u, v, m_w);
     }
-
-    m_cfl_2d = ::pism::max_timestep_cfl_2d(inputs.geometry->ice_thickness,
-                                           inputs.geometry->cell_type,
-                                           inputs.no_model_mask,
-                                           m_shallow_stress_balance->velocity());
   }
   catch (RuntimeError &e) {
     e.add_context("updating the stress balance");
     throw;
   }
-}
-
-CFLData StressBalance::max_timestep_cfl_2d() const {
-  return m_cfl_2d;
-}
-
-CFLData StressBalance::max_timestep_cfl_3d() const {
-  return m_cfl_3d;
 }
 
 const array::Vector& StressBalance::advective_velocity() const {
@@ -232,10 +204,6 @@ const array::Array3D& StressBalance::velocity_u() const {
 
 const array::Array3D& StressBalance::velocity_v() const {
   return m_modifier->velocity_v();
-}
-
-const array::Array3D& StressBalance::velocity_w() const {
-  return m_w;
 }
 
 const array::Scalar& StressBalance::basal_frictional_heating() const {

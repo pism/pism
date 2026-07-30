@@ -29,15 +29,17 @@
 #include "pism/util/array/Forcing.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include <memory>
 
 namespace pism {
 
 IceRegionalModel::IceRegionalModel(std::shared_ptr<Grid> g, std::shared_ptr<Context> c)
     : IceModel(g, c),
-      m_no_model_mask(m_grid, "no_model_mask"),
       m_usurf_stored(m_grid, "usurfstore"),
       m_thk_stored(m_grid, "thkstore") {
-  m_no_model_mask.set_interpolation_type(NEAREST);
+
+  m_no_model_mask = std::make_shared<array::Scalar2>(m_grid, "no_model_mask");
+  m_no_model_mask->set_interpolation_type(NEAREST);
 
   if (m_config->get_flag("energy.ch_warming.enabled")) {
     m_ch_warming_flux.reset(
@@ -53,14 +55,14 @@ void IceRegionalModel::allocate_storage() {
   m_log->message(2, "  creating IceRegionalModel vecs ...\n");
 
   // stencil width of 2 needed by SIAFD_Regional::compute_surface_gradient()
-  m_no_model_mask.metadata(0)
+  m_no_model_mask->metadata(0)
       .long_name("mask: zeros (modeling domain) and ones (no-model buffer near grid edges)")
       .set_time_dependent(false)
       .set_output_type(io::PISM_INT); // no units and no standard name
-  m_no_model_mask.metadata()["flag_values"]   = { 0, 1 };
-  m_no_model_mask.metadata()["flag_meanings"] = "normal special_treatment";
+  m_no_model_mask->metadata()["flag_values"]   = { 0, 1 };
+  m_no_model_mask->metadata()["flag_meanings"] = "normal special_treatment";
 
-  m_no_model_mask.set(0);
+  m_no_model_mask->set(0);
 
   // stencil width of 2 needed for differentiation because GHOSTS=1
   m_usurf_stored.metadata(0)
@@ -74,7 +76,7 @@ void IceRegionalModel::allocate_storage() {
       .units("m"); //  no standard name
 
   m_model_state =
-      pism::combine(m_model_state, { &m_thk_stored, &m_usurf_stored, &m_no_model_mask });
+      pism::combine(m_model_state, { &m_thk_stored, &m_usurf_stored, m_no_model_mask.get() });
 }
 
 void IceRegionalModel::model_state_setup(InputOptions input_options) {
@@ -95,7 +97,7 @@ void IceRegionalModel::model_state_setup(InputOptions input_options) {
     }
   }
 
-  m_geometry_evolution->set_no_model_mask(m_no_model_mask);
+  m_geometry_evolution->set_no_model_mask(*m_no_model_mask);
 
   if (m_ch_system) {
     const bool use_input_file =
@@ -217,12 +219,12 @@ void IceRegionalModel::bootstrap_2d(const File &input_file) {
 
   // no_model_mask
   {
-    if (input_file.variable_exists(m_no_model_mask.metadata().get_name())) {
-      m_no_model_mask.regrid(input_file, io::Default::Nil());
+    if (input_file.variable_exists(m_no_model_mask->metadata().get_name())) {
+      m_no_model_mask->regrid(input_file, io::Default::Nil());
     } else {
       // set using the no_model_strip parameter
       double strip_width = m_config->get_number("regional.no_model_strip", "meters");
-      set_no_model_strip(*m_grid, strip_width, m_no_model_mask);
+      set_no_model_strip(*m_grid, strip_width, *m_no_model_mask);
     }
 
     // m_no_model_mask was added to m_model_state, so
@@ -231,12 +233,12 @@ void IceRegionalModel::bootstrap_2d(const File &input_file) {
 
   if (m_config->get_flag("stress_balance.ssa.dirichlet_bc")) {
     array::AccessScope list
-      {&m_no_model_mask, &m_velocity_bc_mask, &m_ice_thickness_bc_mask};
+      {m_no_model_mask.get(), &m_velocity_bc_mask, &m_ice_thickness_bc_mask};
 
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
-      if (m_no_model_mask(i, j) > 0.5) {
+      if ((*m_no_model_mask)(i, j) > 0.5) {
         m_velocity_bc_mask(i, j)      = 1;
         m_ice_thickness_bc_mask(i, j) = 1;
       }
@@ -247,7 +249,7 @@ void IceRegionalModel::bootstrap_2d(const File &input_file) {
 stressbalance::Inputs IceRegionalModel::stress_balance_inputs() {
   stressbalance::Inputs result = IceModel::stress_balance_inputs();
 
-  result.no_model_mask              = &m_no_model_mask;
+  result.no_model_mask              = m_no_model_mask.get();
   result.no_model_ice_thickness     = &m_thk_stored;
   result.no_model_surface_elevation = &m_usurf_stored;
 
@@ -257,7 +259,7 @@ stressbalance::Inputs IceRegionalModel::stress_balance_inputs() {
 energy::Inputs IceRegionalModel::energy_model_inputs() {
   energy::Inputs result = IceModel::energy_model_inputs();
 
-  result.no_model_mask = &m_no_model_mask;
+  result.no_model_mask = m_no_model_mask.get();
 
   return result;
 }
@@ -298,7 +300,7 @@ void IceRegionalModel::energy_step(double t, double dt) {
 YieldStressInputs IceRegionalModel::yield_stress_inputs() {
   YieldStressInputs result = IceModel::yield_stress_inputs();
 
-  result.no_model_mask = &m_no_model_mask;
+  result.no_model_mask = m_no_model_mask.get();
 
   return result;
 }
@@ -402,7 +404,7 @@ void IceRegionalModel::hydrology_step(double t, double dt) {
   array::Scalar &sliding_speed = *m_work2d[0];
   compute_magnitude(m_stress_balance->advective_velocity(), sliding_speed);
 
-  inputs.no_model_mask      = &m_no_model_mask;
+  inputs.no_model_mask      = m_no_model_mask.get();
   inputs.geometry           = &m_geometry;
   inputs.surface_input_rate = nullptr;
   inputs.basal_melt_rate    = &m_basal_melt_rate;

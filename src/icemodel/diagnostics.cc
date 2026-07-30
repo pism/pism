@@ -2184,8 +2184,8 @@ public:
 
     const auto *stress_balance = model->stress_balance();
 
-    auto cfl_2d = stress_balance->max_timestep_cfl_2d();
-    auto cfl_3d = stress_balance->max_timestep_cfl_3d();
+    auto cfl_2d = model->max_timestep_cfl_2d();
+    auto cfl_3d = model->max_timestep_cfl_3d();
 
     auto dt_diff = max_timestep_diffusivity(stress_balance->max_diffusivity(),
                                             model->grid()->dx(),
@@ -2240,7 +2240,7 @@ public:
   }
 
   double compute() {
-    CFLData cfl = model->stress_balance()->max_timestep_cfl_3d();
+    CFLData cfl = model->max_timestep_cfl_3d();
 
     return std::max(cfl.u_max, cfl.v_max);
   }
@@ -3060,7 +3060,7 @@ std::shared_ptr<array::Array> IceViscosity::compute_impl(const Geometry &geometr
   const array::Array3D &ice_enthalpy     = model->energy_balance_model()->enthalpy(),
                        &U                = model->stress_balance()->velocity_u(),
                        &V                = model->stress_balance()->velocity_v(),
-                       &W_without_ghosts = model->stress_balance()->velocity_w();
+                       &W_without_ghosts = model->vertical_velocity();
 
   W.copy_from(W_without_ghosts);
 
@@ -3836,7 +3836,7 @@ std::shared_ptr<array::Array> StressBalanceWvelRel::compute_impl(const Geometry 
       new array::Array3D(m_grid, "wvel_rel", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
-  zero_above_ice(model->stress_balance()->velocity_w(), geometry.ice_thickness, *result);
+  zero_above_ice(model->vertical_velocity(), geometry.ice_thickness, *result);
 
   return result;
 }
@@ -4430,7 +4430,7 @@ std::shared_ptr<array::Array> StressBalanceWvel::compute(const Geometry &geometr
 
   const array::Array3D &u3 = model->stress_balance()->velocity_u(),
                        &v3 = model->stress_balance()->velocity_v(),
-                       &w3 = model->stress_balance()->velocity_w();
+                       &w3 = model->vertical_velocity();
 
   array::AccessScope list{ &thickness, &mask, &bed, &u3, &v3, &w3, &uplift, result3.get() };
 

@@ -100,15 +100,11 @@ public:
   //! \brief Get the max diffusivity (for the adaptive time-stepping).
   double max_diffusivity() const;
 
-  CFLData max_timestep_cfl_2d() const;
-  CFLData max_timestep_cfl_3d() const;
-
   // for the energy/age time step:
 
   //! \brief Get components of the the 3D velocity field.
   const array::Array3D& velocity_u() const;
   const array::Array3D& velocity_v() const;
-  const array::Array3D& velocity_w() const;
 
   //! \brief Get the basal frictional heating.
   const array::Scalar& basal_frictional_heating() const;
@@ -130,9 +126,7 @@ protected:
   virtual std::set<VariableMetadata> state_impl() const;
   virtual void write_state_impl(const OutputFile &output) const;
 
-  CFLData m_cfl_2d, m_cfl_3d;
-
-  array::Array3D m_w, m_strain_heating;
+  array::Array3D m_strain_heating;
 
   std::shared_ptr<ShallowStressBalance> m_shallow_stress_balance;
   std::shared_ptr<SSB_Modifier> m_modifier;

@@ -232,7 +232,7 @@ void IceModel::print_summary_line(bool printPrototype,  bool tempAndAge,
       tempstr = pism::printf("%.3f", m_time->convert_time_interval(T, time_units));
     }
 
-    const CFLData cfl = m_stress_balance->max_timestep_cfl_2d();
+    const auto &cfl = max_timestep_cfl_2d();
     std::string velocity_units = "meters / (" + time_units + ")";
     const double maxvel = units::convert(m_sys, std::max(cfl.u_max, cfl.v_max),
                                          "m second^-1", velocity_units);

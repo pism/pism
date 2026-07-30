@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2018, 2020, 2021, 2022, 2023, 2025 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2018, 2020, 2021, 2022, 2023, 2025, 2026 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -76,7 +76,7 @@ void IceCompModel::energy_step(double t, double dt) {
     inputs.volumetric_heating_rate  = &m_stress_balance->volumetric_strain_heating();
     inputs.u3                       = &m_stress_balance->velocity_u();
     inputs.v3                       = &m_stress_balance->velocity_v();
-    inputs.w3                       = &m_stress_balance->velocity_w();
+    inputs.w3                       = &vertical_velocity();
 
     inputs.check();             // make sure all data members were set
   }
@@ -446,7 +446,7 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
   const array::Array3D
     &u3 = m_stress_balance->velocity_u(),
     &v3 = m_stress_balance->velocity_v(),
-    &w3 = m_stress_balance->velocity_w();
+    &w3 = vertical_velocity();
 
   array::AccessScope list{&m_geometry.ice_thickness, &u3, &v3, &w3};
 
