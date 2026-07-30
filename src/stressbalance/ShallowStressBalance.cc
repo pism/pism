@@ -20,9 +20,9 @@
 #include "pism/basalstrength/basal_resistance.hh"
 #include "pism/rheology/FlowLawFactory.hh"
 #include "pism/util/Context.hh"
-#include "pism/util/array/CellType.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/Profiling.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -72,7 +72,9 @@ void ShallowStressBalance::init_impl() {
   // empty
 }
 void ShallowStressBalance::update(const Inputs &inputs, bool full_update) {
+  profiling().begin("stress_balance.shallow");
   this->update_impl(inputs, full_update);
+  profiling().end("stress_balance.shallow");
 }
 
 std::string ShallowStressBalance::stdout_report() const {

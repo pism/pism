@@ -147,14 +147,10 @@ void StressBalance::init() {
 void StressBalance::update(const Inputs &inputs, bool full_update) {
 
   try {
-    profiling().begin("stress_balance.shallow");
     m_shallow_stress_balance->update(inputs, full_update);
-    profiling().end("stress_balance.shallow");
 
-    profiling().begin("stress_balance.modifier");
     m_modifier->update(m_shallow_stress_balance->velocity(),
                        inputs, full_update);
-    profiling().end("stress_balance.modifier");
   }
   catch (RuntimeError &e) {
     e.add_context("updating the stress balance");

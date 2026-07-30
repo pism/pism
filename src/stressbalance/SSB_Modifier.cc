@@ -24,6 +24,7 @@
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/array/Vector.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/Profiling.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -58,7 +59,9 @@ void SSB_Modifier::init() {
 
 void SSB_Modifier::update(const array::Vector &sliding_velocity, const Inputs &inputs,
                           bool full_update) {
+  profiling().begin("stress_balance.modifier");
   this->update_impl(sliding_velocity, inputs, full_update);
+  profiling().end("stress_balance.modifier");
 }
 
 const array::Staggered& SSB_Modifier::diffusive_flux() {
