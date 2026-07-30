@@ -28,6 +28,7 @@
 namespace pism {
 
 class EnthalpyConverter;
+class IceBasalResistancePlasticLaw;
 
 namespace rheology {
 class FlowLaw;
@@ -108,8 +109,6 @@ public:
   //! \brief Get the basal frictional heating.
   const array::Scalar& basal_frictional_heating() const;
 
-  const array::Array3D& volumetric_strain_heating() const;
-
   //! \brief Produce a report string for the standard output.
   std::string stdout_report() const;
 
@@ -124,8 +123,6 @@ protected:
 
   virtual std::set<VariableMetadata> state_impl() const;
   virtual void write_state_impl(const OutputFile &output) const;
-
-  array::Array3D m_strain_heating;
 
   std::shared_ptr<ShallowStressBalance> m_shallow_stress_balance;
   std::shared_ptr<SSB_Modifier> m_modifier;
@@ -159,6 +156,11 @@ void compute_2D_stresses(const rheology::FlowLaw &flow_law,
 void compute_vertical_velocity(const array::CellType1 &cell_type, const array::Array3D &u,
                                const array::Array3D &v, const array::Scalar *basal_melt_rate,
                                array::Array3D &result);
+
+void compute_basal_frictional_heating(const IceBasalResistancePlasticLaw &sliding_law,
+                                      const array::Vector &basal_velocity,
+                                      const array::Scalar &tauc, const array::CellType &mask,
+                                      array::Scalar &result);
 
 void compute_volumetric_strain_heating(const array::Array3D &u, const array::Array3D &v,
                                        const array::Array3D &enthalpy,

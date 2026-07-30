@@ -51,6 +51,7 @@
 #include "pism/coupler/ocean/PyOceanModel.hh"
 #include "pism/util/io/SynchronousOutputWriter.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/stressbalance/ShallowStressBalance.hh"
 
 #if (Pism_USE_YAC == 1)
 #include "pism/util/io/YacOutputWriter.hh"
@@ -72,6 +73,7 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
       m_basal_melt_rate(m_grid, "bmelt"),
       m_bedtoptemp(m_grid, "bedtoptemp"),
       m_vertical_velocity(m_grid, "wvel_rel", array::WITHOUT_GHOSTS, m_grid->z()),
+      m_strain_heating(m_grid, "strain_heating", array::WITHOUT_GHOSTS, m_grid->z()),
       m_velocity_bc_mask(m_grid, "vel_bc_mask"),
       m_velocity_bc_values(m_grid, "_bc"), // u_bc and v_bc
       m_ice_thickness_bc_mask(grid, "thk_bc_mask"),
@@ -235,6 +237,10 @@ void IceModel::allocate_storage() {
       .output_units("m year^-1")
       .set_time_dependent(true);
 
+  m_strain_heating.metadata(0)
+      .long_name("rate of strain heating in ice (dissipation heating)")
+      .units("W m^-3");
+
   // basal melt rate
   m_basal_melt_rate.metadata(0)
       .long_name(
@@ -377,7 +383,7 @@ energy::Inputs IceModel::energy_model_inputs() {
   result.surface_liquid_fraction  = &m_surface->liquid_water_fraction(); // surface model
   result.surface_temp             = &m_surface->temperature();           // surface model
 
-  result.volumetric_heating_rate  = &m_stress_balance->volumetric_strain_heating();
+  result.volumetric_heating_rate  = &m_strain_heating;
   result.u3                       = &m_stress_balance->velocity_u();
   result.v3                       = &m_stress_balance->velocity_v();
   result.w3                       = &m_vertical_velocity;
@@ -464,6 +470,19 @@ double IceModel::step(bool do_mass_continuity,
     }
     profiling.end("stress_balance.vertical_velocity");
 
+    {
+      profiling.begin("stress_balance.strain_heat");
+      stressbalance::compute_volumetric_strain_heating(
+          m_stress_balance->velocity_u(),
+          m_stress_balance->velocity_v(),
+          m_energy_model->enthalpy(),
+          m_geometry.ice_thickness, m_geometry.cell_type,
+          *m_stress_balance->shallow()->flow_law(),
+          *m_ctx->enthalpy_converter(),
+          m_stress_balance->shallow()->flow_enhancement_factor(),
+          m_strain_heating);
+      profiling.end("stress_balance.strain_heat");
+    }
     m_cfl_3d = ::pism::max_timestep_cfl_3d(m_geometry.ice_thickness, m_geometry.cell_type,
                                            m_no_model_mask.get(), m_stress_balance->velocity_u(),
                                            m_stress_balance->velocity_v(), m_vertical_velocity);
@@ -983,6 +1002,10 @@ const array::Scalar& IceModel::forced_retreat() const {
 
 const array::Array3D& IceModel::vertical_velocity() const {
   return m_vertical_velocity;
+}
+
+const array::Array3D &IceModel::volumetric_strain_heating() const {
+  return m_strain_heating;
 }
 
 IceModel::ThicknessChanges::ThicknessChanges(const std::shared_ptr<const Grid> &grid)

@@ -73,7 +73,7 @@ void IceCompModel::energy_step(double t, double dt) {
     inputs.surface_temp             = &m_surface->temperature(); // surface model
     inputs.till_water_thickness     = &m_subglacial_hydrology->till_water_thickness();
 
-    inputs.volumetric_heating_rate  = &m_stress_balance->volumetric_strain_heating();
+    inputs.volumetric_heating_rate  = &m_strain_heating;
     inputs.u3                       = &m_stress_balance->velocity_u();
     inputs.v3                       = &m_stress_balance->velocity_v();
     inputs.w3                       = &vertical_velocity();
@@ -389,9 +389,7 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
     ice_rho   = m_config->get_number("constants.ice.density"),
     ice_c     = m_config->get_number("constants.ice.specific_heat_capacity");
 
-  const auto &strain_heating3 = m_stress_balance->volumetric_strain_heating();
-
-  array::AccessScope list{&m_geometry.ice_thickness, &strain_heating3};
+  array::AccessScope list{&m_geometry.ice_thickness, &m_strain_heating};
 
   const double time = m_testname == 'F' ? 0.0 : m_time->current();
   const double A    = m_testname == 'F' ? 0.0 : m_ApforG;
@@ -413,7 +411,7 @@ void IceCompModel::compute_strain_heating_errors(double &gmax_strain_heating_err
         }
 
         const unsigned int ks = m_grid->kBelowHeight(m_geometry.ice_thickness(i, j));
-        const double *strain_heating = strain_heating3.get_column(i, j);
+        const double *strain_heating = m_strain_heating.get_column(i, j);
 
         for (unsigned int k = 0; k < ks; k++) {  // only evaluate error if below ice surface
           const double strain_heating_err = fabs(strain_heating[k] - P.Sig[k]);

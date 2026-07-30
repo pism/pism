@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2019, 2021, 2022, 2023, 2024, 2025 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
+// Copyright (C) 2004--2019, 2021, 2022, 2023, 2024, 2025, 2026 Constantine Khroulev, Ed Bueler, Jed Brown, Torsten Albrecht
 //
 // This file is part of PISM.
 //
@@ -136,7 +136,8 @@ void SSA::update(const Inputs &inputs, bool full_update) {
 
   if (full_update) {
     solve(inputs);
-    compute_basal_frictional_heating(m_velocity,
+    compute_basal_frictional_heating(*m_basal_sliding_law,
+                                     m_velocity,
                                      *inputs.basal_yield_stress,
                                      inputs.geometry->cell_type,
                                      m_basal_frictional_heating);

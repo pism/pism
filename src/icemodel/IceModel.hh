@@ -144,6 +144,7 @@ public:
   const array::Scalar &frontal_melt() const;
   const array::Scalar &forced_retreat() const;
   const array::Array3D &vertical_velocity() const;
+  const array::Array3D &volumetric_strain_heating() const;
 
   const stressbalance::StressBalance* stress_balance() const;
   const ocean::OceanModel* ocean_model() const;
@@ -349,6 +350,9 @@ protected:
 
   //! 3D vertical velocity within the ice volume
   array::Array3D m_vertical_velocity;
+
+  //! volumetric strain heating
+  array::Array3D m_strain_heating;
 
   std::shared_ptr<FractureDensity> m_fracture;
 

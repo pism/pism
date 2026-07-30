@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2019, 2021, 2022, 2025 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010--2019, 2021, 2022, 2025, 2026 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -53,10 +53,6 @@ public:
   //! \brief Get the basal frictional heating (for the adaptive energy time-stepping).
   const array::Scalar& basal_frictional_heating();
 
-  void compute_basal_frictional_heating(const array::Vector &velocity,
-                                        const array::Scalar &tauc,
-                                        const array::CellType &mask,
-                                        array::Scalar &result) const;
   // helpers:
 
   //! \brief Produce a report string for the standard output.

@@ -33,6 +33,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/SynchronousOutputWriter.hh"
 #include "pism/util/io/io_helpers.hh"
+#include "pism/basalstrength/basal_resistance.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -129,13 +130,8 @@ StressBalance::StressBalance(std::shared_ptr<const Grid> g,
                              std::shared_ptr<ShallowStressBalance> sb,
                              std::shared_ptr<SSB_Modifier> ssb_mod)
   : Component(g),
-    m_strain_heating(m_grid, "strain_heating", array::WITHOUT_GHOSTS, m_grid->z()),
     m_shallow_stress_balance(sb),
     m_modifier(ssb_mod) {
-
-  m_strain_heating.metadata(0)
-      .long_name("rate of strain heating in ice (dissipation heating)")
-      .units("W m^-3");
 }
 
 StressBalance::~StressBalance() {
@@ -159,24 +155,6 @@ void StressBalance::update(const Inputs &inputs, bool full_update) {
     m_modifier->update(m_shallow_stress_balance->velocity(),
                        inputs, full_update);
     profiling().end("stress_balance.modifier");
-
-    if (full_update) {
-      const array::Array3D &u = m_modifier->velocity_u();
-      const array::Array3D &v = m_modifier->velocity_v();
-
-      profiling().begin("stress_balance.strain_heat");
-      stressbalance::compute_volumetric_strain_heating(u, v,
-                                                       *inputs.enthalpy,
-                                                       inputs.geometry->ice_thickness,
-                                                       inputs.geometry->cell_type,
-                                                       *m_shallow_stress_balance->flow_law(),
-                                                       *m_shallow_stress_balance->enthalpy_converter(),
-                                                       m_shallow_stress_balance->flow_enhancement_factor(),
-                                                       m_strain_heating);
-      profiling().end("stress_balance.strain_heat");
-
-
-    }
   }
   catch (RuntimeError &e) {
     e.add_context("updating the stress balance");
@@ -206,10 +184,6 @@ const array::Array3D& StressBalance::velocity_v() const {
 
 const array::Scalar& StressBalance::basal_frictional_heating() const {
   return m_shallow_stress_balance->basal_frictional_heating();
-}
-
-const array::Array3D& StressBalance::volumetric_strain_heating() const {
-  return m_strain_heating;
 }
 
 //! Compute vertical velocity using incompressibility of the ice.
@@ -819,6 +793,41 @@ void compute_2D_stresses(const rheology::FlowLaw &flow_law,
     result(i,j).xx = 2.0*nu*u_x;
     result(i,j).yy = 2.0*nu*v_y;
     result(i,j).xy = nu*(u_y+v_x);
+  }
+}
+
+//! \brief Compute the basal frictional heating.
+/*!
+  Ice shelves have zero basal friction heating.
+
+  \param[in] V *basal* sliding velocity
+  \param[in] tauc basal yield stress
+  \param[in] mask (used to determine if floating or grounded)
+  \param[out] result
+ */
+void compute_basal_frictional_heating(const IceBasalResistancePlasticLaw & sliding_law,
+                                      const array::Vector &basal_velocity,
+                                      const array::Scalar &tauc,
+                                      const array::CellType &mask,
+                                      array::Scalar &result) {
+
+  auto grid = basal_velocity.grid();
+
+  array::AccessScope list{ &basal_velocity, &result, &tauc, &mask };
+
+  for (auto p : grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.ocean(i, j)) {
+      result(i, j) = 0.0;
+    } else {
+      const auto &V  = basal_velocity(i, j);
+
+      double C = sliding_law.drag(tauc(i, j), V.u, V.v);
+      double basal_stress_x = -C * V.u, basal_stress_y = -C * V.v;
+
+      result(i, j) = -basal_stress_x * V.u - basal_stress_y * V.v;
+    }
   }
 }
 

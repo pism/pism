@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -1162,7 +1162,8 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
   // put basal velocity in m_velocity to use it in the next call
   get_basal_velocity(m_velocity);
 
-  compute_basal_frictional_heating(m_velocity, *inputs.basal_yield_stress,
+  compute_basal_frictional_heating(*m_basal_sliding_law,
+                                   m_velocity, *inputs.basal_yield_stress,
                                    inputs.geometry->cell_type,
                                    m_basal_frictional_heating);
 

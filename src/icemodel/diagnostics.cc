@@ -669,7 +669,7 @@ StressBalanceStrainheat::compute_impl(const Geometry & /*geometry*/) const {
 
   result->metadata() = m_vars[0];
 
-  result->copy_from(model->stress_balance()->volumetric_strain_heating());
+  result->copy_from(model->volumetric_strain_heating());
 
   return result;
 }

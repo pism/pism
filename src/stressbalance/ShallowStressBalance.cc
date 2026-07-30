@@ -130,37 +130,6 @@ void ZeroSliding::update(const Inputs &inputs, bool full_update) {
   }
 }
 
-//! \brief Compute the basal frictional heating.
-/*!
-  Ice shelves have zero basal friction heating.
-
-  \param[in] V *basal* sliding velocity
-  \param[in] tauc basal yield stress
-  \param[in] mask (used to determine if floating or grounded)
-  \param[out] result
- */
-void ShallowStressBalance::compute_basal_frictional_heating(const array::Vector &V,
-                                                            const array::Scalar &tauc,
-                                                            const array::CellType &mask,
-                                                            array::Scalar &result) const {
-
-  array::AccessScope list{&V, &result, &tauc, &mask};
-
-  for (auto p : m_grid->points()) {
-    const int i = p.i(), j = p.j();
-
-    if (mask.ocean(i,j)) {
-      result(i,j) = 0.0;
-    } else {
-      const double
-        C = m_basal_sliding_law->drag(tauc(i,j), V(i,j).u, V(i,j).v),
-        basal_stress_x = - C * V(i,j).u,
-        basal_stress_y = - C * V(i,j).v;
-      result(i,j) = - basal_stress_x * V(i,j).u - basal_stress_y * V(i,j).v;
-    }
-  }
-}
-
 
 /**
  * Shallow stress balance class that reads `u` and `v` fields from a

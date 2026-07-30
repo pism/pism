@@ -118,9 +118,7 @@ void IBIceModel::energy_step(double t, double dt) {
   // See: https://github.com/pism/pism/issues/292
   // ------------ Volumetric Strain Heating
   // strain_heating_sum += my_dt * sum_columns(strainheating3p)
-  const auto &strain_heating3 = m_stress_balance->volumetric_strain_heating();
-
-  array::sum_columns(strain_heating3, 1.0, my_dt, cur.strain_heating);
+  array::sum_columns(volumetric_strain_heating(), 1.0, my_dt, cur.strain_heating);
 }
 
 void IBIceModel::massContExplicitStep(double dt) {
