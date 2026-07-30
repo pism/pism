@@ -185,8 +185,8 @@ void StressBalance::update(const Inputs &inputs, bool full_update) {
       profiling().end("stress_balance.strain_heat");
 
       profiling().begin("stress_balance.vertical_velocity");
-      this->compute_vertical_velocity(inputs.geometry->cell_type,
-                                      u, v, inputs.basal_melt_rate, m_w);
+      stressbalance::compute_vertical_velocity(inputs.geometry->cell_type,
+                                               u, v, inputs.basal_melt_rate, m_w);
       profiling().end("stress_balance.vertical_velocity");
 
       m_cfl_3d = ::pism::max_timestep_cfl_3d(inputs.geometry->ice_thickness,
@@ -276,30 +276,33 @@ according to the value of the flag `geometry.update.use_basal_melt_rate`.
 
 The vertical integral is computed by the trapezoid rule.
  */
-void StressBalance::compute_vertical_velocity(const array::CellType1 &mask,
-                                              const array::Array3D &u,
-                                              const array::Array3D &v,
-                                              const array::Scalar *basal_melt_rate,
-                                              array::Array3D &result) {
+void compute_vertical_velocity(const array::CellType1 &cell_type, const array::Array3D &u,
+                               const array::Array3D &v, const array::Scalar *basal_melt_rate,
+                               array::Array3D &result) {
 
-  const bool use_upstream_fd = m_config->get_string("stress_balance.vertical_velocity_approximation") == "upstream";
+  auto grid = u.grid();
 
-  array::AccessScope list{&u, &v, &mask, &result};
+  auto config = grid->ctx()->config();
 
-  if (basal_melt_rate) {
+  const bool use_upstream_fd =
+      config->get_string("stress_balance.vertical_velocity_approximation") == "upstream";
+
+  array::AccessScope list{&u, &v, &cell_type, &result};
+
+  if (basal_melt_rate != nullptr) {
     list.add(*basal_melt_rate);
   }
 
-  const std::vector<double> &z = m_grid->z();
-  const unsigned int Mz = m_grid->Mz();
+  const std::vector<double> &z = u.levels();
+  const unsigned int Mz = z.size();
 
   const double
-    dx = m_grid->dx(),
-    dy = m_grid->dy();
+    dx = grid->dx(),
+    dy = grid->dy();
 
   std::vector<double> u_x_plus_v_y(Mz);
 
-  for (auto p : m_grid->points()) {
+  for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
     double *w_ij = result.get_column(i,j);
@@ -346,10 +349,12 @@ void StressBalance::compute_vertical_velocity(const array::CellType1 &mask,
         }
       }
 
-      if ((mask.icy(i,j) and mask.ice_free(i+1,j)) or (mask.ice_free(i,j) and mask.icy(i+1,j))) {
+      if ((cell_type.icy(i, j) and cell_type.ice_free(i + 1, j)) or
+          (cell_type.ice_free(i, j) and cell_type.icy(i + 1, j))) {
         east = 0;
       }
-      if ((mask.icy(i,j) and mask.ice_free(i-1,j)) or (mask.ice_free(i,j) and mask.icy(i-1,j))) {
+      if ((cell_type.icy(i, j) and cell_type.ice_free(i - 1, j)) or
+          (cell_type.ice_free(i, j) and cell_type.icy(i - 1, j))) {
         west = 0;
       }
 
@@ -381,10 +386,12 @@ void StressBalance::compute_vertical_velocity(const array::CellType1 &mask,
         }
       }
 
-      if ((mask.icy(i,j) and mask.ice_free(i,j+1)) or (mask.ice_free(i,j) and mask.icy(i,j+1))) {
+      if ((cell_type.icy(i, j) and cell_type.ice_free(i, j + 1)) or
+          (cell_type.ice_free(i, j) and cell_type.icy(i, j + 1))) {
         north = 0;
       }
-      if ((mask.icy(i,j) and mask.ice_free(i,j-1)) or (mask.ice_free(i,j) and mask.icy(i,j-1))) {
+      if ((cell_type.icy(i, j) and cell_type.ice_free(i, j - 1)) or
+          (cell_type.ice_free(i, j) and cell_type.icy(i, j - 1))) {
         south = 0;
       }
 

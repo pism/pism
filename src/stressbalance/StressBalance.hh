@@ -130,12 +130,6 @@ protected:
   virtual std::set<VariableMetadata> state_impl() const;
   virtual void write_state_impl(const OutputFile &output) const;
 
-  virtual void compute_vertical_velocity(const array::CellType1 &mask,
-                                         const array::Array3D &u,
-                                         const array::Array3D &v,
-                                         const array::Scalar *bmr,
-                                         array::Array3D &result);
-
   CFLData m_cfl_2d, m_cfl_3d;
 
   array::Array3D m_w, m_strain_heating;
@@ -168,6 +162,10 @@ void compute_2D_stresses(const rheology::FlowLaw &flow_law,
                          const array::Scalar &hardness,
                          const array::CellType1 &cell_type,
                          array::Array2D<DeviatoricStresses> &result);
+
+void compute_vertical_velocity(const array::CellType1 &cell_type, const array::Array3D &u,
+                               const array::Array3D &v, const array::Scalar *basal_melt_rate,
+                               array::Array3D &result);
 
 void compute_volumetric_strain_heating(const array::Array3D &u, const array::Array3D &v,
                                        const array::Array3D &enthalpy,
