@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2024, 2025 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2024, 2025, 2026 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -26,6 +26,8 @@
 #include "pism/stressbalance/timestepping.hh"
 
 namespace pism {
+
+class EnthalpyConverter;
 
 namespace rheology {
 class FlowLaw;
@@ -133,7 +135,6 @@ protected:
                                          const array::Array3D &v,
                                          const array::Scalar *bmr,
                                          array::Array3D &result);
-  virtual void compute_volumetric_strain_heating(const Inputs &inputs);
 
   CFLData m_cfl_2d, m_cfl_3d;
 
@@ -167,6 +168,15 @@ void compute_2D_stresses(const rheology::FlowLaw &flow_law,
                          const array::Scalar &hardness,
                          const array::CellType1 &cell_type,
                          array::Array2D<DeviatoricStresses> &result);
+
+void compute_volumetric_strain_heating(const array::Array3D &u, const array::Array3D &v,
+                                       const array::Array3D &enthalpy,
+                                       const array::Scalar &thickness,
+                                       const array::CellType1 &cell_type,
+                                       const rheology::FlowLaw &flow_law,
+                                       const EnthalpyConverter &EC,
+                                       double enhancement_factor,
+                                       array::Array3D &result);
 
 } // end of namespace stressbalance
 } // end of namespace pism

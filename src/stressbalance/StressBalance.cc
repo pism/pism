@@ -174,7 +174,14 @@ void StressBalance::update(const Inputs &inputs, bool full_update) {
       const array::Array3D &v = m_modifier->velocity_v();
 
       profiling().begin("stress_balance.strain_heat");
-      this->compute_volumetric_strain_heating(inputs);
+      stressbalance::compute_volumetric_strain_heating(u, v,
+                                                       *inputs.enthalpy,
+                                                       inputs.geometry->ice_thickness,
+                                                       inputs.geometry->cell_type,
+                                                       *m_shallow_stress_balance->flow_law(),
+                                                       *m_shallow_stress_balance->enthalpy_converter(),
+                                                       m_shallow_stress_balance->flow_enhancement_factor(),
+                                                       m_strain_heating);
       profiling().end("stress_balance.strain_heat");
 
       profiling().begin("stress_balance.vertical_velocity");
@@ -490,43 +497,39 @@ static inline double D2(double u_x, double u_y, double u_z, double v_x, double v
        D : genmatrix(d, 3, 3), ratsimp, factor;
        tex('D = D);
        tex('D^2 = 1/2 * mat_trace(D . D));
-
-  @return 0 on success
  */
-void StressBalance::compute_volumetric_strain_heating(const Inputs &inputs) {
-  PetscErrorCode ierr;
+void compute_volumetric_strain_heating(const array::Array3D &u, const array::Array3D &v,
+                                       const array::Array3D &enthalpy,
+                                       const array::Scalar &thickness,
+                                       const array::CellType1 &cell_type,
+                                       const rheology::FlowLaw &flow_law,
+                                       const EnthalpyConverter &EC,
+                                       double enhancement_factor,
+                                       array::Array3D &result) {
 
-  const auto &flow_law = *m_shallow_stress_balance->flow_law();
-  auto EC = m_shallow_stress_balance->enthalpy_converter();
+  assert(u.stencil_width() > 0);
+  assert(v.stencil_width() > 0);
 
-  const array::Array3D
-    &u = m_modifier->velocity_u(),
-    &v = m_modifier->velocity_v();
-
-  const array::Scalar &thickness = inputs.geometry->ice_thickness;
-  const array::Array3D  *enthalpy  = inputs.enthalpy;
-
-  const auto &mask = inputs.geometry->cell_type;
+  auto grid = thickness.grid();
 
   double
-    enhancement_factor = m_shallow_stress_balance->flow_enhancement_factor(),
     n = flow_law.exponent(),
     exponent = 0.5 * (1.0 / n + 1.0),
-    e_to_a_power = pow(enhancement_factor,-1.0/n);
+    e_to_a_power = pow(enhancement_factor, -1.0 / n);
 
-  array::AccessScope list{&mask, enthalpy, &m_strain_heating, &thickness, &u, &v};
+  array::AccessScope list{&cell_type, &enthalpy, &result, &thickness, &u, &v};
 
-  const std::vector<double> &z = m_grid->z();
-  const unsigned int Mz = m_grid->Mz();
+  const std::vector<double> &z = grid->z();
+  const unsigned int Mz = grid->Mz();
   std::vector<double> depth(Mz), pressure(Mz), hardness(Mz);
 
-  ParallelSection loop(m_grid->com);
+  ParallelSection loop(grid->com);
   try {
-    for (auto p : m_grid->points()) {
+    for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
       double H = thickness(i, j);
-      int ks = m_grid->kBelowHeight(H);
+      int ks = grid->kBelowHeight(H);
       const double
         *u_ij, *u_w, *u_n, *u_e, *u_s,
         *v_ij, *v_w, *v_n, *v_e, *v_s;
@@ -539,15 +542,17 @@ void StressBalance::compute_volumetric_strain_heating(const Inputs &inputs) {
 
       // x-derivative
       {
-        if ((mask.icy(i,j) and mask.ice_free(i+1,j)) or (mask.ice_free(i,j) and mask.icy(i+1,j))) {
+        if ((cell_type.icy(i, j) and cell_type.ice_free(i + 1, j)) or
+            (cell_type.ice_free(i, j) and cell_type.icy(i + 1, j))) {
           east = 0;
         }
-        if ((mask.icy(i,j) and mask.ice_free(i-1,j)) or (mask.ice_free(i,j) and mask.icy(i-1,j))) {
+        if ((cell_type.icy(i, j) and cell_type.ice_free(i - 1, j)) or
+            (cell_type.ice_free(i, j) and cell_type.icy(i - 1, j))) {
           west = 0;
         }
 
         if (east + west > 0) {
-          D_x = 1.0 / (m_grid->dx() * (east + west));
+          D_x = 1.0 / (grid->dx() * (east + west));
         } else {
           D_x = 0.0;
         }
@@ -555,15 +560,17 @@ void StressBalance::compute_volumetric_strain_heating(const Inputs &inputs) {
 
       // y-derivative
       {
-        if ((mask.icy(i,j) and mask.ice_free(i,j+1)) or (mask.ice_free(i,j) and mask.icy(i,j+1))) {
+        if ((cell_type.icy(i, j) and cell_type.ice_free(i, j + 1)) or
+            (cell_type.ice_free(i, j) and cell_type.icy(i, j + 1))) {
           north = 0;
         }
-        if ((mask.icy(i,j) and mask.ice_free(i,j-1)) or (mask.ice_free(i,j) and mask.icy(i,j-1))) {
+        if ((cell_type.icy(i, j) and cell_type.ice_free(i, j - 1)) or
+            (cell_type.ice_free(i, j) and cell_type.icy(i, j - 1))) {
           south = 0;
         }
 
         if (north + south > 0) {
-          D_y = 1.0 / (m_grid->dy() * (north + south));
+          D_y = 1.0 / (grid->dy() * (north + south));
         } else {
           D_y = 0.0;
         }
@@ -581,8 +588,8 @@ void StressBalance::compute_volumetric_strain_heating(const Inputs &inputs) {
       v_s  = v.get_column(i,     j - 1);
       v_n  = v.get_column(i,     j + 1);
 
-      E_ij = enthalpy->get_column(i, j);
-      Sigma = m_strain_heating.get_column(i, j);
+      E_ij = enthalpy.get_column(i, j);
+      Sigma = result.get_column(i, j);
 
       for (int k = 0; k <= ks; ++k) {
         depth[k] = H - z[k];
@@ -590,7 +597,7 @@ void StressBalance::compute_volumetric_strain_heating(const Inputs &inputs) {
 
       // pressure added by the ice (i.e. pressure difference between the
       // current level and the top of the column)
-      EC->pressure(depth, ks, pressure); // FIXME issue #15
+      EC.pressure(depth, ks, pressure); // FIXME issue #15
 
       flow_law.hardness_n(E_ij, pressure.data(), ks + 1, hardness.data());
 
@@ -619,6 +626,7 @@ void StressBalance::compute_volumetric_strain_heating(const Inputs &inputs) {
 
       int remaining_levels = Mz - (ks + 1);
       if (remaining_levels > 0) {
+        PetscErrorCode ierr;
 #if PETSC_VERSION_LT(3, 12, 0)
         ierr = PetscMemzero(&Sigma[ks+1],
                             remaining_levels*sizeof(double));
