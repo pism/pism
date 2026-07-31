@@ -31,7 +31,6 @@
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/Config.hh"
-#include "pism/util/Diagnostic.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/coupler/SeaLevel.hh"
 #include "pism/coupler/OceanModel.hh"
@@ -52,6 +51,7 @@
 #include "pism/util/io/SynchronousOutputWriter.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/stressbalance/ShallowStressBalance.hh"
+#include "pism/stressbalance/SSB_Modifier.hh"
 
 #if (Pism_USE_YAC == 1)
 #include "pism/util/io/YacOutputWriter.hh"
@@ -374,7 +374,7 @@ stressbalance::Inputs IceModel::stress_balance_inputs() {
 energy::Inputs IceModel::energy_model_inputs() {
   energy::Inputs result;
 
-  result.basal_frictional_heating = &m_stress_balance->basal_frictional_heating();
+  result.basal_frictional_heating = &m_stress_balance.shallow->basal_frictional_heating();
   result.basal_heat_flux          = &m_btu->flux_through_top_surface(); // bedrock thermal layer
   result.cell_type                = &m_geometry.cell_type;              // geometry
   result.ice_thickness            = &m_geometry.ice_thickness;          // geometry
@@ -384,8 +384,8 @@ energy::Inputs IceModel::energy_model_inputs() {
   result.surface_temp             = &m_surface->temperature();           // surface model
 
   result.volumetric_heating_rate  = &m_strain_heating;
-  result.u3                       = &m_stress_balance->velocity_u();
-  result.v3                       = &m_stress_balance->velocity_v();
+  result.u3                       = &m_stress_balance.modifier->velocity_u();
+  result.v3                       = &m_stress_balance.modifier->velocity_v();
   result.w3                       = &m_vertical_velocity;
 
   result.check();             // make sure all data members were set
@@ -444,11 +444,15 @@ double IceModel::step(bool do_mass_continuity,
 
   try {
     profiling.begin("stress_balance");
-    m_stress_balance->update(stress_balance_inputs(), updateAtDepth);
+    m_stress_balance.shallow->update(stress_balance_inputs(), updateAtDepth);
 
     m_cfl_2d =
         ::pism::max_timestep_cfl_2d(m_geometry.ice_thickness, m_geometry.cell_type,
-                                    m_no_model_mask.get(), m_stress_balance->advective_velocity());
+                                    m_no_model_mask.get(), m_stress_balance.shallow->velocity());
+
+    m_stress_balance.modifier->update(m_stress_balance.shallow->velocity(),
+                                      stress_balance_inputs(), updateAtDepth);
+
 
     profiling.end("stress_balance");
   } catch (RuntimeError &e) {
@@ -465,7 +469,8 @@ double IceModel::step(bool do_mass_continuity,
       // compute 3D vertical velocity:
       bool use_bmr = m_config->get_flag("geometry.update.use_basal_melt_rate");
       stressbalance::compute_vertical_velocity(
-          m_geometry.cell_type, m_stress_balance->velocity_u(), m_stress_balance->velocity_v(),
+          m_geometry.cell_type, m_stress_balance.modifier->velocity_u(),
+          m_stress_balance.modifier->velocity_v(),
           use_bmr ? &m_basal_melt_rate : nullptr, m_vertical_velocity);
     }
     profiling.end("stress_balance.vertical_velocity");
@@ -473,23 +478,24 @@ double IceModel::step(bool do_mass_continuity,
     {
       profiling.begin("stress_balance.strain_heat");
       stressbalance::compute_volumetric_strain_heating(
-          m_stress_balance->velocity_u(),
-          m_stress_balance->velocity_v(),
+          m_stress_balance.modifier->velocity_u(),
+          m_stress_balance.modifier->velocity_v(),
           m_energy_model->enthalpy(),
           m_geometry.ice_thickness, m_geometry.cell_type,
-          *m_stress_balance->shallow()->flow_law(),
+          *m_stress_balance.shallow->flow_law(),
           *m_ctx->enthalpy_converter(),
-          m_stress_balance->shallow()->flow_enhancement_factor(),
+          m_stress_balance.shallow->flow_enhancement_factor(),
           m_strain_heating);
       profiling.end("stress_balance.strain_heat");
     }
-    m_cfl_3d = ::pism::max_timestep_cfl_3d(m_geometry.ice_thickness, m_geometry.cell_type,
-                                           m_no_model_mask.get(), m_stress_balance->velocity_u(),
-                                           m_stress_balance->velocity_v(), m_vertical_velocity);
+    m_cfl_3d =
+        ::pism::max_timestep_cfl_3d(m_geometry.ice_thickness, m_geometry.cell_type,
+                                    m_no_model_mask.get(), m_stress_balance.modifier->velocity_u(),
+                                    m_stress_balance.modifier->velocity_v(), m_vertical_velocity);
   }
 
-
-  m_stdout_flags += m_stress_balance->stdout_report();
+  m_stdout_flags += m_stress_balance.shallow->stdout_report();
+  m_stdout_flags += m_stress_balance.modifier->stdout_report();
 
   m_stdout_flags += (updateAtDepth ? "v" : "V");
 
@@ -517,8 +523,8 @@ double IceModel::step(bool do_mass_continuity,
   if (m_age_model and updateAtDepth) {
     AgeModelInputs inputs;
     inputs.ice_thickness = &m_geometry.ice_thickness;
-    inputs.u3            = &m_stress_balance->velocity_u();
-    inputs.v3            = &m_stress_balance->velocity_v();
+    inputs.u3            = &m_stress_balance.modifier->velocity_u();
+    inputs.v3            = &m_stress_balance.modifier->velocity_v();
     inputs.w3            = &m_vertical_velocity;
 
     profiling.begin("age");
@@ -576,8 +582,8 @@ double IceModel::step(bool do_mass_continuity,
       try {
         m_geometry_evolution->flow_step(m_geometry,
                                         dt,
-                                        m_stress_balance->advective_velocity(),
-                                        m_stress_balance->diffusive_flux(),
+                                        m_stress_balance.shallow->velocity(),
+                                        m_stress_balance.modifier->diffusive_flux(),
                                         m_ice_thickness_bc_mask);
       } catch (RuntimeError &e) {
         std::string output_file = save_state_on_error("_mass_transport_failed",
@@ -658,8 +664,8 @@ double IceModel::step(bool do_mass_continuity,
 
   if (m_isochrones) {
     m_isochrones->update(current_time, dt,
-                         m_stress_balance->velocity_u(),
-                         m_stress_balance->velocity_v(),
+                         m_stress_balance.modifier->velocity_u(),
+                         m_stress_balance.modifier->velocity_v(),
                          m_geometry.ice_thickness,
                          m_geometry_evolution->top_surface_mass_balance(),
                          m_geometry_evolution->bottom_surface_mass_balance());
@@ -736,7 +742,7 @@ void IceModel::hydrology_step(double t, double dt) {
   hydrology::Inputs inputs;
 
   array::Scalar &sliding_speed = *m_work2d[0];
-  compute_magnitude(m_stress_balance->advective_velocity(), sliding_speed);
+  compute_magnitude(m_stress_balance.shallow->velocity(), sliding_speed);
 
   inputs.no_model_mask      = nullptr;
   inputs.geometry           = &m_geometry;
@@ -952,7 +958,7 @@ const GeometryEvolution& IceModel::geometry_evolution() const {
 }
 
 const stressbalance::StressBalance* IceModel::stress_balance() const {
-  return this->m_stress_balance.get();
+  return &m_stress_balance;
 }
 
 const ocean::OceanModel* IceModel::ocean_model() const {

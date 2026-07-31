@@ -10,6 +10,7 @@
 #include "pism/icebin/IBIceModel.hh"
 #include "pism/icebin/IBSurfaceModel.hh"
 #include "pism/energy/EnergyModel.hh"
+#include "pism/stressbalance/ShallowStressBalance.hh"
 
 namespace pism {
 namespace icebin {
@@ -105,13 +106,13 @@ void IBIceModel::energy_step(double t, double dt) {
   // --------- Upward Geothermal Flux
   // Use actual geothermal flux, not the long-term average..
   // See: file:///Users/rpfische/git/pism/build/doc/browser/html/classPISMBedThermalUnit.html#details
-  { cur.upward_geothermal_flux.add(my_dt, m_btu->flux_through_top_surface()); }
+  cur.upward_geothermal_flux.add(my_dt, m_btu->flux_through_top_surface());
 
   // ----------- Geothermal Flux
   cur.geothermal_flux.add(my_dt, m_btu->flux_through_bottom_surface());
 
   // ---------- Basal Frictional Heating (see iMenthalpy.cc l. 220)
-  array::Scalar const &Rb(m_stress_balance->basal_frictional_heating());
+  array::Scalar const &Rb(m_stress_balance.shallow->basal_frictional_heating());
   cur.basal_frictional_heating.add(my_dt, Rb);
 
   // NOTE: strain_heating is inf at the coastlines.

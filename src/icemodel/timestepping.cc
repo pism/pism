@@ -32,6 +32,7 @@
 #include "pism/frontretreat/calving/HayhurstCalving.hh"
 #include "pism/frontretreat/calving/vonMisesCalving.hh"
 #include "pism/frontretreat/FrontRetreat.hh"
+#include "pism/stressbalance/SSB_Modifier.hh"
 
 #include "pism/coupler/FrontalMelt.hh"
 
@@ -48,7 +49,7 @@ dx^2/maxD (if dx=dy).
 Reference: [\ref MortonMayers] pp 62--63.
  */
 MaxTimestep IceModel::max_timestep_diffusivity() {
-  double D_max = m_stress_balance->max_diffusivity();
+  double D_max = m_stress_balance.modifier->max_diffusivity();
 
   double dx = m_grid->dx(), dy = m_grid->dy(),
          adaptive_timestepping_ratio = m_config->get_number("time_stepping.adaptive_ratio");

@@ -66,71 +66,15 @@ public:
 };
 
 //! The class defining PISM's interface to the shallow stress balance code.
-/*!
-  Generally all the nontrivial fields are updated by a call to update().  The rest
-  of the methods generally provide access to precomputed results.  The following
-  diagram shows where these results are generally used in the rest of PISM.  (It
-  does not show the call graph, as would doxygen.)
-
-  \image html stressbalance-out.png "\b Methods of StressBalance, and the uses of their results.  Dotted edges show scalars and dashed edges show fields.  Dashed boxes inside the StressBalance object are important methods which may be present in shallow cases.  The age time step has inputs which are a strict subset of the inputs of the energy time step."
-
-  this command fails: \dotfile stressbalance-out.dot
-*/
-class StressBalance : public Component
+class StressBalance
 {
 public:
-  StressBalance(std::shared_ptr<const Grid> g,
-                std::shared_ptr<ShallowStressBalance> sb,
-                std::shared_ptr<SSB_Modifier> ssb_mod);
-  virtual ~StressBalance();
-
-  //! \brief Initialize the StressBalance object.
-  void init();
-
-  //! \brief Update all the fields if (full_update), only update diffusive flux
-  //! and max. diffusivity otherwise.
-  void update(const Inputs &inputs, bool full_update);
-
-  //! \brief Get the thickness-advective (SSA) 2D velocity.
-  const array::Vector& advective_velocity() const;
-
-  //! \brief Get the diffusive (SIA) vertically-averaged flux on the staggered grid.
-  const array::Staggered& diffusive_flux() const;
-
-  //! \brief Get the max diffusivity (for the adaptive time-stepping).
-  double max_diffusivity() const;
-
-  // for the energy/age time step:
-
-  //! \brief Get components of the the 3D velocity field.
-  const array::Array3D& velocity_u() const;
-  const array::Array3D& velocity_v() const;
-
-  //! \brief Get the basal frictional heating.
-  const array::Scalar& basal_frictional_heating() const;
-
-  //! \brief Produce a report string for the standard output.
-  std::string stdout_report() const;
-
-  //! \brief Returns a pointer to a shallow stress balance solver implementation.
-  const ShallowStressBalance* shallow() const;
-
-  //! \brief Returns a pointer to a stress balance modifier implementation.
-  const SSB_Modifier* modifier() const;
-protected:
-  virtual DiagnosticList spatial_diagnostics_impl() const;
-  virtual TSDiagnosticList scalar_diagnostics_impl() const;
-
-  virtual std::set<VariableMetadata> state_impl() const;
-  virtual void write_state_impl(const OutputFile &output) const;
-
-  std::shared_ptr<ShallowStressBalance> m_shallow_stress_balance;
-  std::shared_ptr<SSB_Modifier> m_modifier;
+  std::shared_ptr<ShallowStressBalance> shallow;
+  std::shared_ptr<SSB_Modifier> modifier;
 };
 
-std::shared_ptr<StressBalance> create(const std::string &model_name,
-                                      std::shared_ptr<const Grid> grid,
-                                      bool regional);
+StressBalance create(const std::string &model_name, std::shared_ptr<const Grid> grid,
+                     bool regional);
 
 struct PrincipalStrainRates {
   double eigen1;

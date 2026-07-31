@@ -18,6 +18,7 @@
 
 //This file contains various initialization routines. See the IceModel::init()
 //documentation comment in iceModel.cc for the order in which they are called.
+#include <memory>
 
 #include "pism/icemodel/IceModel.hh"
 #include "pism/basalstrength/ConstantYieldStress.hh"
@@ -65,8 +66,8 @@
 #include "pism/coupler/util/options.hh" // ForcingOptions
 #include "pism/util/ScalarForcing.hh"
 #include "pism/stressbalance/ShallowStressBalance.hh"
+#include "pism/stressbalance/SSB_Modifier.hh"
 #include "pism/util/array/Forcing.hh"
-#include <memory>
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
@@ -149,7 +150,7 @@ void IceModel::model_state_setup(InputOptions input_options) {
 
   // By now ice geometry is set (including regridding) and so we can initialize the ocean model,
   // which may need ice thickness, bed topography, and the cell type mask.
-  { m_ocean->init(m_geometry); }
+  m_ocean->init(m_geometry);
 
   // Now surface elevation is initialized, so we can initialize surface models (some use
   // elevation-based parameterizations of surface temperature and/or mass balance).
@@ -259,8 +260,12 @@ void IceModel::model_state_setup(InputOptions input_options) {
   }
 
   // this has to go after we add enthalpy to m_grid->variables()
-  if (m_stress_balance) {
-    m_stress_balance->init();
+  if (m_stress_balance.shallow != nullptr) {
+    m_stress_balance.shallow->init();
+  }
+
+  if (m_stress_balance.shallow != nullptr) {
+    m_stress_balance.modifier->init();
   }
 
   // we keep ice thickness fixed at all the locations where the sliding (SSA) velocity is
@@ -456,7 +461,7 @@ void IceModel::regrid() {
 //! \brief Decide which stress balance model to use.
 void IceModel::allocate_stressbalance() {
 
-  if (m_stress_balance) {
+  if (m_stress_balance.shallow != nullptr and m_stress_balance.modifier != nullptr) {
     return;
   }
 
@@ -466,7 +471,8 @@ void IceModel::allocate_stressbalance() {
   m_stress_balance =
       stressbalance::create(m_config->get_string("stress_balance.model"), m_grid, false);
 
-  m_submodels["stress balance"] = m_stress_balance.get();
+  m_submodels["shallow stress balance"] = m_stress_balance.shallow.get();
+  m_submodels["stress balance modifier"] = m_stress_balance.modifier.get();
 }
 
 void IceModel::allocate_geometry_evolution() {
@@ -514,11 +520,6 @@ void IceModel::allocate_age_model() {
   if (m_config->get_flag("age.enabled")) {
     m_log->message(2, "# Allocating an ice age model...\n");
 
-    if (m_stress_balance == nullptr) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "Cannot allocate an age model: m_stress_balance == nullptr.");
-    }
-
     m_age_model              = std::make_shared<AgeModel>(m_grid);
     m_submodels["age model"] = m_age_model.get();
   }
@@ -533,12 +534,6 @@ void IceModel::allocate_isochrones() {
   auto deposition_times = m_config->get_string("isochrones.deposition_times");
   if (not deposition_times.empty()) {
     m_log->message(2, "# Allocating isochrone tracking...\n");
-
-    if (m_stress_balance == nullptr) {
-      throw RuntimeError::formatted(
-          PISM_ERROR_LOCATION,
-          "Cannot allocate the isochrone tracking model: m_stress_balance == nullptr.");
-    }
 
     m_isochrones = std::make_shared<Isochrones>(m_grid);
 
@@ -673,7 +668,7 @@ void IceModel::allocate_submodels() {
   allocate_couplers();
 
   if (m_config->get_flag("fracture_density.enabled")) {
-    m_fracture = std::make_shared<FractureDensity>(m_grid, m_stress_balance->shallow()->flow_law());
+    m_fracture = std::make_shared<FractureDensity>(m_grid, m_stress_balance.shallow->flow_law());
     m_submodels["fracture_density"] = m_fracture.get();
   }
 }
@@ -881,7 +876,7 @@ void IceModel::init_calving() {
 
     if (not m_vonmises_calving) {
       m_vonmises_calving = std::make_shared<calving::vonMisesCalving>(
-          m_grid, m_stress_balance->shallow()->flow_law());
+          m_grid, m_stress_balance.shallow->flow_law());
     }
 
     m_vonmises_calving->init();

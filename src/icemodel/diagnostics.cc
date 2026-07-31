@@ -640,7 +640,7 @@ StressBalanceBfrict::compute_impl(const Geometry & /*geometry*/) const {
 
   auto result = allocate<array::Scalar>("bfrict");
 
-  result->copy_from(model->stress_balance()->basal_frictional_heating());
+  result->copy_from(model->stress_balance()->shallow->basal_frictional_heating());
 
   return result;
 }
@@ -970,9 +970,9 @@ HardnessAverage::HardnessAverage(const IceModel *m) : Diag<IceModel>(m) {
 //! \brief Computes vertically-averaged ice hardness.
 std::shared_ptr<array::Array> HardnessAverage::compute_impl(const Geometry &geometry) const {
 
-  const rheology::FlowLaw *flow_law = model->stress_balance()->shallow()->flow_law().get();
+  const rheology::FlowLaw *flow_law = model->stress_balance()->shallow->flow_law().get();
   if (flow_law == NULL) {
-    flow_law = model->stress_balance()->modifier()->flow_law().get();
+    flow_law = model->stress_balance()->modifier->flow_law().get();
     if (flow_law == NULL) {
       throw RuntimeError(PISM_ERROR_LOCATION,
                          "Can't compute vertically-averaged hardness: no flow law is used.");
@@ -2187,7 +2187,7 @@ public:
     auto cfl_2d = model->max_timestep_cfl_2d();
     auto cfl_3d = model->max_timestep_cfl_3d();
 
-    auto dt_diff = max_timestep_diffusivity(stress_balance->max_diffusivity(),
+    auto dt_diff = max_timestep_diffusivity(stress_balance->modifier->max_diffusivity(),
                                             model->grid()->dx(),
                                             model->grid()->dy(),
                                             m_config->get_number("time_stepping.adaptive_ratio"));
@@ -2213,7 +2213,7 @@ public:
   }
 
   double compute() {
-    return model->stress_balance()->max_diffusivity();
+    return model->stress_balance()->modifier->max_diffusivity();
   }
 };
 
@@ -2986,7 +2986,7 @@ std::shared_ptr<array::Array> IceHardness::compute_impl(const Geometry &geometry
   const array::Array3D &ice_enthalpy = model->energy_balance_model()->enthalpy();
   const array::Scalar &ice_thickness = geometry.ice_thickness;
 
-  const rheology::FlowLaw &flow_law = *model->stress_balance()->modifier()->flow_law();
+  const rheology::FlowLaw &flow_law = *model->stress_balance()->modifier->flow_law();
 
   array::AccessScope list{ &ice_enthalpy, &ice_thickness, result.get() };
 
@@ -3053,13 +3053,13 @@ std::shared_ptr<array::Array> IceViscosity::compute_impl(const Geometry &geometr
 
   auto EC = m_grid->ctx()->enthalpy_converter();
 
-  const rheology::FlowLaw &flow_law = *model->stress_balance()->modifier()->flow_law();
+  const rheology::FlowLaw &flow_law = *model->stress_balance()->modifier->flow_law();
 
   const array::Scalar &ice_thickness = geometry.ice_thickness;
 
   const array::Array3D &ice_enthalpy     = model->energy_balance_model()->enthalpy(),
-                       &U                = model->stress_balance()->velocity_u(),
-                       &V                = model->stress_balance()->velocity_v(),
+                       &U                = model->stress_balance()->modifier->velocity_u(),
+                       &V                = model->stress_balance()->modifier->velocity_v(),
                        &W_without_ghosts = model->vertical_velocity();
 
   W.copy_from(W_without_ghosts);
@@ -3469,11 +3469,11 @@ std::shared_ptr<array::Array> BasalShearStress::compute_impl(const Geometry &geo
                                   "cannot compute 'taub': no yield stress model available");
   }
 
-  const auto &velocity = model->stress_balance()->shallow()->velocity();
+  const auto &velocity = model->stress_balance()->shallow->velocity();
   const auto &tauc     = yield_stress_model->basal_material_yield_stress();
   const auto &mask     = geometry.cell_type;
 
-  const auto *basal_sliding_law = model->stress_balance()->shallow()->sliding_law();
+  const auto *basal_sliding_law = model->stress_balance()->shallow->sliding_law();
 
   array::AccessScope list{ &tauc, &velocity, &mask, result.get() };
   for (auto p : m_grid->points()) {
@@ -3797,7 +3797,7 @@ std::shared_ptr<array::Array> StressBalanceUvel::compute_impl(const Geometry &ge
       new array::Array3D(m_grid, "uvel", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
-  zero_above_ice(model->stress_balance()->velocity_u(), geometry.ice_thickness, *result);
+  zero_above_ice(model->stress_balance()->modifier->velocity_u(), geometry.ice_thickness, *result);
 
   return result;
 }
@@ -3817,7 +3817,7 @@ std::shared_ptr<array::Array> StressBalanceVvel::compute_impl(const Geometry &ge
       new array::Array3D(m_grid, "vvel", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
-  zero_above_ice(model->stress_balance()->velocity_v(), geometry.ice_thickness, *result);
+  zero_above_ice(model->stress_balance()->modifier->velocity_v(), geometry.ice_thickness, *result);
 
   return result;
 }
@@ -3899,7 +3899,7 @@ std::shared_ptr<array::Array> StressBalanceDeviatoricStresses::compute_impl(cons
   array::Scalar hardness(m_grid, "hardness");
   array::Vector1 velocity(m_grid, "velocity");
 
-  averaged_hardness_vec(*model->stress_balance()->shallow()->flow_law(), thickness, enthalpy,
+  averaged_hardness_vec(*model->stress_balance()->shallow->flow_law(), thickness, enthalpy,
                         hardness);
 
   // copy_from updates ghosts
@@ -3908,7 +3908,7 @@ std::shared_ptr<array::Array> StressBalanceDeviatoricStresses::compute_impl(cons
   array::CellType1 cell_type(m_grid, "cell_type");
   cell_type.copy_from(geometry.cell_type);
 
-  stressbalance::compute_2D_stresses(*model->stress_balance()->shallow()->flow_law(), velocity,
+  stressbalance::compute_2D_stresses(*model->stress_balance()->shallow->flow_law(), velocity,
                                      hardness, cell_type, *result);
 
   return result;
@@ -3938,8 +3938,8 @@ std::shared_ptr<array::Array> StressBalanceFlux::compute_impl(const Geometry &ge
   const array::Scalar &thickness = geometry.ice_thickness;
 
   const array::Array3D
-    &u3 = model->stress_balance()->velocity_u(),
-    &v3 = model->stress_balance()->velocity_v();
+    &u3 = model->stress_balance()->modifier->velocity_u(),
+    &v3 = model->stress_balance()->modifier->velocity_v();
 
   array::AccessScope list{&u3, &v3, &thickness, result.get()};
 
@@ -4144,7 +4144,7 @@ std::shared_ptr<array::Array> StressBalanceVonmisesStress::compute_impl(const Ge
     flow_law = factory.create(m_config->get_string("calving.vonmises_calving.flow_law"),
                               m_config->get_number("calving.vonmises_calving.Glen_exponent"));
   } else {
-    flow_law = model->stress_balance()->shallow()->flow_law();
+    flow_law = model->stress_balance()->shallow->flow_law();
   }
 
   double glen_exponent = flow_law->exponent();
@@ -4384,8 +4384,8 @@ std::shared_ptr<array::Array> StressBalanceVelsurf::compute_impl(const Geometry 
   array::Scalar v_surf(m_grid, "v_surf");
 
   const array::Array3D
-    &u3 = model->stress_balance()->velocity_u(),
-    &v3 = model->stress_balance()->velocity_v();
+    &u3 = model->stress_balance()->modifier->velocity_u(),
+    &v3 = model->stress_balance()->modifier->velocity_v();
 
   const auto &thickness = geometry.ice_thickness;
   const auto &cell_type = geometry.cell_type;
@@ -4428,8 +4428,8 @@ std::shared_ptr<array::Array> StressBalanceWvel::compute(const Geometry &geometr
   const auto &thickness = geometry.ice_thickness;
   const auto &mask      = geometry.cell_type;
 
-  const array::Array3D &u3 = model->stress_balance()->velocity_u(),
-                       &v3 = model->stress_balance()->velocity_v(),
+  const array::Array3D &u3 = model->stress_balance()->modifier->velocity_u(),
+                       &v3 = model->stress_balance()->modifier->velocity_v(),
                        &w3 = model->vertical_velocity();
 
   array::AccessScope list{ &thickness, &mask, &bed, &u3, &v3, &w3, &uplift, result3.get() };
@@ -4599,8 +4599,8 @@ std::shared_ptr<array::Array> StressBalanceVelbase::compute_impl(const Geometry 
   array::Scalar u_base(m_grid, "u_base");
   array::Scalar v_base(m_grid, "v_base");
 
-  const array::Array3D &u3 = model->stress_balance()->velocity_u(),
-                       &v3 = model->stress_balance()->velocity_v();
+  const array::Array3D &u3 = model->stress_balance()->modifier->velocity_u(),
+                       &v3 = model->stress_balance()->modifier->velocity_v();
 
   extract_surface(u3, 0.0, u_base);
   extract_surface(v3, 0.0, v_base);
@@ -4638,7 +4638,7 @@ std::shared_ptr<array::Array> ShallowStressBalanceBeta::compute_impl(const Geome
 
   const auto &tauc = yield_stress_model->basal_material_yield_stress();
 
-  const auto *shallow_stress_balance = model->stress_balance()->shallow();
+  const auto *shallow_stress_balance = model->stress_balance()->shallow.get();
 
   const auto *basal_sliding_law = shallow_stress_balance->sliding_law();
 
@@ -4806,7 +4806,7 @@ SIAFDSchoofs_Theta::SIAFDSchoofs_Theta(const IceModel *m) : Diag<IceModel>(m) {
   m_vars[0]["valid_range"] = { 0.0, 1.0 };
 
   const auto *siafd =
-    dynamic_cast<const stressbalance::SIAFD*>(model->stress_balance()->modifier());
+    dynamic_cast<const stressbalance::SIAFD*>(model->stress_balance()->modifier.get());
 
   if (siafd == nullptr) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -4818,7 +4818,7 @@ std::shared_ptr<array::Array> SIAFDSchoofs_Theta::compute_impl(const Geometry &g
   auto result = allocate<array::Scalar>("schoofs_theta");
 
   const auto *siafd =
-    dynamic_cast<const stressbalance::SIAFD*>(model->stress_balance()->modifier());
+    dynamic_cast<const stressbalance::SIAFD*>(model->stress_balance()->modifier.get());
 
   if (siafd == nullptr) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -4859,7 +4859,7 @@ std::shared_ptr<array::Array> SIAFDThksmooth::compute_impl(const Geometry &geome
   cell_type.copy_from(geometry.cell_type);
 
   const auto *siafd =
-    dynamic_cast<const stressbalance::SIAFD*>(model->stress_balance()->modifier());
+    dynamic_cast<const stressbalance::SIAFD*>(model->stress_balance()->modifier.get());
 
   if (siafd == nullptr) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
@@ -5054,12 +5054,12 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
     { "rank", f(new Rank(this)) },
   };
 
-  if (dynamic_cast<const stressbalance::SIAFD *>(stress_balance()->modifier()) != nullptr) {
+  if (dynamic_cast<const stressbalance::SIAFD *>(stress_balance()->modifier.get()) != nullptr) {
     result["schoofs_theta"] = f(new SIAFDSchoofs_Theta(this));
     result["thksmooth"] = f(new SIAFDThksmooth(this));
   }
 
-  if (stress_balance()->shallow()->sliding_law() != nullptr and
+  if (stress_balance()->shallow->sliding_law() != nullptr and
       basal_yield_stress_model() != nullptr) {
     result["beta"] = f(new ShallowStressBalanceBeta(this));
   }

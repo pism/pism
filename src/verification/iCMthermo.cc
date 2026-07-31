@@ -35,6 +35,8 @@
 #include "pism/coupler/SurfaceModel.hh"
 #include "pism/coupler/OceanModel.hh"
 #include "pism/hydrology/Hydrology.hh"
+#include "pism/stressbalance/ShallowStressBalance.hh"
+#include "pism/stressbalance/SSB_Modifier.hh"
 
 namespace pism {
 
@@ -64,7 +66,7 @@ void IceCompModel::energy_step(double t, double dt) {
 
   energy::Inputs inputs;
   {
-    inputs.basal_frictional_heating = &m_stress_balance->basal_frictional_heating();
+    inputs.basal_frictional_heating = &m_stress_balance.shallow->basal_frictional_heating();
     inputs.basal_heat_flux          = &m_btu->flux_through_top_surface(); // bedrock thermal layer
     inputs.cell_type                = &m_geometry.cell_type;
     inputs.ice_thickness            = &m_geometry.ice_thickness;          // geometry
@@ -74,8 +76,8 @@ void IceCompModel::energy_step(double t, double dt) {
     inputs.till_water_thickness     = &m_subglacial_hydrology->till_water_thickness();
 
     inputs.volumetric_heating_rate  = &m_strain_heating;
-    inputs.u3                       = &m_stress_balance->velocity_u();
-    inputs.v3                       = &m_stress_balance->velocity_v();
+    inputs.u3                       = &m_stress_balance.modifier->velocity_u();
+    inputs.v3                       = &m_stress_balance.modifier->velocity_v();
     inputs.w3                       = &vertical_velocity();
 
     inputs.check();             // make sure all data members were set
@@ -442,8 +444,8 @@ void IceCompModel::computeSurfaceVelocityErrors(double &gmaxUerr, double &gavUer
     avWerr  = 0.0;
 
   const array::Array3D
-    &u3 = m_stress_balance->velocity_u(),
-    &v3 = m_stress_balance->velocity_v(),
+    &u3 = m_stress_balance.modifier->velocity_u(),
+    &v3 = m_stress_balance.modifier->velocity_v(),
     &w3 = vertical_velocity();
 
   array::AccessScope list{&m_geometry.ice_thickness, &u3, &v3, &w3};

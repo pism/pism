@@ -16,6 +16,7 @@
  * along with PISM; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
+#include <memory>
 
 #include "pism/regional/IceRegionalModel.hh"
 #include "pism/coupler/SurfaceModel.hh"
@@ -29,7 +30,8 @@
 #include "pism/util/array/Forcing.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/io/IO_Flags.hh"
-#include <memory>
+#include "pism/stressbalance/ShallowStressBalance.hh"
+#include "pism/stressbalance/SSB_Modifier.hh"
 
 namespace pism {
 
@@ -177,7 +179,7 @@ void IceRegionalModel::allocate_energy_model() {
 
 void IceRegionalModel::allocate_stressbalance() {
 
-  if (m_stress_balance) {
+  if (m_stress_balance.shallow != nullptr and m_stress_balance.modifier != nullptr) {
     return;
   }
 
@@ -185,7 +187,8 @@ void IceRegionalModel::allocate_stressbalance() {
   m_stress_balance = stressbalance::create(m_config->get_string("stress_balance.model"),
                                            m_grid, regional);
 
-  m_submodels["stress balance"] = m_stress_balance.get();
+  m_submodels["shallow stress balance"] = m_stress_balance.shallow.get();
+  m_submodels["stress balance modifier"] = m_stress_balance.modifier.get();
 }
 
 
@@ -402,7 +405,7 @@ void IceRegionalModel::hydrology_step(double t, double dt) {
   hydrology::Inputs inputs;
 
   array::Scalar &sliding_speed = *m_work2d[0];
-  compute_magnitude(m_stress_balance->advective_velocity(), sliding_speed);
+  compute_magnitude(m_stress_balance.shallow->velocity(), sliding_speed);
 
   inputs.no_model_mask      = m_no_model_mask.get();
   inputs.geometry           = &m_geometry;

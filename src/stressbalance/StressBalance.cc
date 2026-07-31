@@ -116,70 +116,18 @@ void Inputs::dump(const char *filename) const {
                                      no_model_surface_elevation };
   // define
   for (const auto * vec : optional) {
-    for (const auto &var : vec->all_metadata()) {
-      output.define_variable(var);
+    if (vec != nullptr) {
+      for (const auto &var : vec->all_metadata()) {
+        output.define_variable(var);
+      }
     }
   }
   // write
-  for (const auto * vec : optional) {
-    vec->write(output);
+  for (const auto *vec : optional) {
+    if (vec != nullptr) {
+      vec->write(output);
+    }
   }
-}
-
-StressBalance::StressBalance(std::shared_ptr<const Grid> g,
-                             std::shared_ptr<ShallowStressBalance> sb,
-                             std::shared_ptr<SSB_Modifier> ssb_mod)
-  : Component(g),
-    m_shallow_stress_balance(sb),
-    m_modifier(ssb_mod) {
-}
-
-StressBalance::~StressBalance() {
-}
-
-//! \brief Initialize the StressBalance object.
-void StressBalance::init() {
-  m_shallow_stress_balance->init();
-  m_modifier->init();
-}
-
-//! \brief Performs the shallow stress balance computation.
-void StressBalance::update(const Inputs &inputs, bool full_update) {
-
-  try {
-    m_shallow_stress_balance->update(inputs, full_update);
-
-    m_modifier->update(m_shallow_stress_balance->velocity(),
-                       inputs, full_update);
-  }
-  catch (RuntimeError &e) {
-    e.add_context("updating the stress balance");
-    throw;
-  }
-}
-
-const array::Vector& StressBalance::advective_velocity() const {
-  return m_shallow_stress_balance->velocity();
-}
-
-const array::Staggered& StressBalance::diffusive_flux() const {
-  return m_modifier->diffusive_flux();
-}
-
-double StressBalance::max_diffusivity() const {
-  return m_modifier->max_diffusivity();
-}
-
-const array::Array3D& StressBalance::velocity_u() const {
-  return m_modifier->velocity_u();
-}
-
-const array::Array3D& StressBalance::velocity_v() const {
-  return m_modifier->velocity_v();
-}
-
-const array::Scalar& StressBalance::basal_frictional_heating() const {
-  return m_shallow_stress_balance->basal_frictional_heating();
 }
 
 //! Compute vertical velocity using incompressibility of the ice.
@@ -585,30 +533,6 @@ void compute_volumetric_strain_heating(const array::Array3D &u, const array::Arr
   loop.check();
 }
 
-std::string StressBalance::stdout_report() const {
-  return m_shallow_stress_balance->stdout_report() + m_modifier->stdout_report();
-}
-
-const ShallowStressBalance* StressBalance::shallow() const {
-  return m_shallow_stress_balance.get();
-}
-
-const SSB_Modifier* StressBalance::modifier() const {
-  return m_modifier.get();
-}
-
-std::set<VariableMetadata> StressBalance::state_impl() const {
-  auto shallow = m_shallow_stress_balance->state();
-  auto modifier = m_modifier->state();
-
-  return pism::combine(shallow, modifier);
-}
-
-void StressBalance::write_state_impl(const OutputFile &output) const {
-  m_shallow_stress_balance->write_state(output);
-  m_modifier->write_state(output);
-}
-
 //! \brief Compute eigenvalues of the horizontal, vertically-integrated strain rate tensor.
 /*!
 Calculates all components \f$D_{xx}, D_{yy}, D_{xy}=D_{yx}\f$ of the
@@ -825,17 +749,6 @@ void compute_basal_frictional_heating(const IceBasalResistancePlasticLaw & slidi
       result(i, j) = -basal_stress_x * V.u - basal_stress_y * V.v;
     }
   }
-}
-
-TSDiagnosticList StressBalance::scalar_diagnostics_impl() const {
-  return pism::combine(m_shallow_stress_balance->scalar_diagnostics(),
-                       m_modifier->scalar_diagnostics());
-}
-
-DiagnosticList StressBalance::spatial_diagnostics_impl() const {
-  // combine diagnostics from the shallow stress balance and the "modifier"
-  return pism::combine(m_shallow_stress_balance->spatial_diagnostics(),
-                       m_modifier->spatial_diagnostics());
 }
 
 } // end of namespace stressbalance

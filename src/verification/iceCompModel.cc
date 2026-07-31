@@ -537,7 +537,7 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
             H0 = 600.0,
             v0 = convert(m_sys, 300.0, "m year-1", "m second-1"),
             Q0 = H0 * v0,
-            B0 = m_stress_balance->shallow()->flow_law()->hardness(0, 0),
+            B0 = m_stress_balance.shallow->flow_law()->hardness(0, 0),
             C  = pow(ice_density * standard_gravity * (1.0 - ice_density/seawater_density) / (4 * B0), 3);
 
           Hexact = pow(4 * C / Q0 * xx + 1/pow(H0, 4), -0.25);
@@ -657,7 +657,7 @@ void IceCompModel::reportErrors() {
   double max_strain_heating_error = 0.0, av_strain_heating_error = 0.0;
   double maxUerr = 0.0, avUerr = 0.0, maxWerr = 0.0, avWerr = 0.0;
 
-  const rheology::FlowLaw &flow_law = *m_stress_balance->modifier()->flow_law();
+  const rheology::FlowLaw &flow_law = *m_stress_balance.modifier->flow_law();
   const double m = (2.0 * flow_law.exponent() + 2.0) / flow_law.exponent();
 
   auto EC = m_ctx->enthalpy_converter();

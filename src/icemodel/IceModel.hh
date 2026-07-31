@@ -453,7 +453,7 @@ protected:
   static const int m_n_work2d = 4;
   mutable std::vector<std::shared_ptr<array::Scalar2>> m_work2d;
 
-  std::shared_ptr<stressbalance::StressBalance> m_stress_balance;
+  stressbalance::StressBalance m_stress_balance;
 
   struct ThicknessChanges {
     ThicknessChanges(const std::shared_ptr<const Grid> &grid);
