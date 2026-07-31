@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <memory>
 #include <vector>
+#include <petsc.h>
 
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
@@ -333,7 +334,7 @@ void compute_vertical_velocity(const array::CellType1 &cell_type, const array::A
  *
  * (note the use of the summation convention). Here \f$D_{ij}\f$ is the
  * strain rate tensor. See
- * StressBalance::compute_volumetric_strain_heating() for details.
+ * compute_volumetric_strain_heating() for details.
  *
  * @param u_x,u_y,u_z partial derivatives of \f$u\f$, the x-component of the ice velocity
  * @param v_x,v_y,v_z partial derivatives of \f$v\f$, the y-component of the ice velocity
@@ -408,6 +409,9 @@ void compute_volumetric_strain_heating(const array::Array3D &u, const array::Arr
                                        double enhancement_factor,
                                        array::Array3D &result) {
 
+  using mask::icy;
+  using mask::ice_free;
+
   assert(u.stencil_width() > 0);
   assert(v.stencil_width() > 0);
 
@@ -429,13 +433,15 @@ void compute_volumetric_strain_heating(const array::Array3D &u, const array::Arr
     for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
+      auto M = cell_type.star_int(i, j);
+
       double H = thickness(i, j);
       int ks = grid->kBelowHeight(H);
       const double
-        *u_ij, *u_w, *u_n, *u_e, *u_s,
-        *v_ij, *v_w, *v_n, *v_e, *v_s;
+        *u_c, *u_w, *u_n, *u_e, *u_s,
+        *v_c, *v_w, *v_n, *v_e, *v_s;
       double *Sigma;
-      const double *E_ij;
+      const double *E_c;
 
       double west = 1, east = 1, south = 1, north = 1,
         D_x = 0,                // 1/(dx), 1/(2dx), or 0
@@ -443,12 +449,10 @@ void compute_volumetric_strain_heating(const array::Array3D &u, const array::Arr
 
       // x-derivative
       {
-        if ((cell_type.icy(i, j) and cell_type.ice_free(i + 1, j)) or
-            (cell_type.ice_free(i, j) and cell_type.icy(i + 1, j))) {
+        if ((icy(M.c) and ice_free(M.e)) or (ice_free(M.c) and icy(M.e))) {
           east = 0;
         }
-        if ((cell_type.icy(i, j) and cell_type.ice_free(i - 1, j)) or
-            (cell_type.ice_free(i, j) and cell_type.icy(i - 1, j))) {
+        if ((icy(M.c) and ice_free(M.w)) or (ice_free(M.c) and icy(M.w))) {
           west = 0;
         }
 
@@ -461,12 +465,10 @@ void compute_volumetric_strain_heating(const array::Array3D &u, const array::Arr
 
       // y-derivative
       {
-        if ((cell_type.icy(i, j) and cell_type.ice_free(i, j + 1)) or
-            (cell_type.ice_free(i, j) and cell_type.icy(i, j + 1))) {
+        if ((icy(M.c) and ice_free(M.n)) or (ice_free(M.c) and icy(M.n))) {
           north = 0;
         }
-        if ((cell_type.icy(i, j) and cell_type.ice_free(i, j - 1)) or
-            (cell_type.ice_free(i, j) and cell_type.icy(i, j - 1))) {
+        if ((icy(M.c) and ice_free(M.s)) or (ice_free(M.c) and icy(M.s))) {
           south = 0;
         }
 
@@ -477,19 +479,19 @@ void compute_volumetric_strain_heating(const array::Array3D &u, const array::Arr
         }
       }
 
-      u_ij = u.get_column(i,     j);
-      u_w  = u.get_column(i - 1, j);
-      u_e  = u.get_column(i + 1, j);
-      u_s  = u.get_column(i,     j - 1);
-      u_n  = u.get_column(i,     j + 1);
+      u_c = u.get_column(i, j);
+      u_w = u.get_column(i - 1, j);
+      u_e = u.get_column(i + 1, j);
+      u_s = u.get_column(i, j - 1);
+      u_n = u.get_column(i, j + 1);
 
-      v_ij = v.get_column(i,     j);
-      v_w  = v.get_column(i - 1, j);
-      v_e  = v.get_column(i + 1, j);
-      v_s  = v.get_column(i,     j - 1);
-      v_n  = v.get_column(i,     j + 1);
+      v_c = v.get_column(i, j);
+      v_w = v.get_column(i - 1, j);
+      v_e = v.get_column(i + 1, j);
+      v_s = v.get_column(i, j - 1);
+      v_n = v.get_column(i, j + 1);
 
-      E_ij = enthalpy.get_column(i, j);
+      E_c = enthalpy.get_column(i, j);
       Sigma = result.get_column(i, j);
 
       for (int k = 0; k <= ks; ++k) {
@@ -500,26 +502,26 @@ void compute_volumetric_strain_heating(const array::Array3D &u, const array::Arr
       // current level and the top of the column)
       EC.pressure(depth, ks, pressure); // FIXME issue #15
 
-      flow_law.hardness_n(E_ij, pressure.data(), ks + 1, hardness.data());
+      flow_law.hardness_n(E_c, pressure.data(), ks + 1, hardness.data());
 
       for (int k = 0; k <= ks; ++k) {
         double dz;
 
         double u_z = 0.0, v_z = 0.0,
-          u_x = D_x * (west  * (u_ij[k] - u_w[k]) + east  * (u_e[k] - u_ij[k])),
-          u_y = D_y * (south * (u_ij[k] - u_s[k]) + north * (u_n[k] - u_ij[k])),
-          v_x = D_x * (west  * (v_ij[k] - v_w[k]) + east  * (v_e[k] - v_ij[k])),
-          v_y = D_y * (south * (v_ij[k] - v_s[k]) + north * (v_n[k] - v_ij[k]));
+          u_x = D_x * (west  * (u_c[k] - u_w[k]) + east  * (u_e[k] - u_c[k])),
+          u_y = D_y * (south * (u_c[k] - u_s[k]) + north * (u_n[k] - u_c[k])),
+          v_x = D_x * (west  * (v_c[k] - v_w[k]) + east  * (v_e[k] - v_c[k])),
+          v_y = D_y * (south * (v_c[k] - v_s[k]) + north * (v_n[k] - v_c[k]));
 
         if (k > 0) {
           dz = z[k+1] - z[k-1];
-          u_z = (u_ij[k+1] - u_ij[k-1]) / dz;
-          v_z = (v_ij[k+1] - v_ij[k-1]) / dz;
+          u_z = (u_c[k+1] - u_c[k-1]) / dz;
+          v_z = (v_c[k+1] - v_c[k-1]) / dz;
         } else {
           // use one-sided differences for u_z and v_z on the bottom level
           dz = z[1] - z[0];
-          u_z = (u_ij[1] - u_ij[0]) / dz;
-          v_z = (v_ij[1] - v_ij[0]) / dz;
+          u_z = (u_c[1] - u_c[0]) / dz;
+          v_z = (v_c[1] - v_c[0]) / dz;
         }
 
         Sigma[k] = 2.0 * e_to_a_power * hardness[k] * pow(D2(u_x, u_y, u_z, v_x, v_y, v_z), exponent);
@@ -527,14 +529,8 @@ void compute_volumetric_strain_heating(const array::Array3D &u, const array::Arr
 
       int remaining_levels = Mz - (ks + 1);
       if (remaining_levels > 0) {
-        PetscErrorCode ierr;
-#if PETSC_VERSION_LT(3, 12, 0)
-        ierr = PetscMemzero(&Sigma[ks+1],
-                            remaining_levels*sizeof(double));
-#else
-        ierr = PetscArrayzero(&Sigma[ks+1], remaining_levels);
-#endif
-        PISM_CHK(ierr, "PetscMemzero");
+        PetscErrorCode ierr = PetscArrayzero(&Sigma[ks+1], remaining_levels);
+        PISM_CHK(ierr, "PetscArrayzero");
       }
     }
   } catch (...) {
