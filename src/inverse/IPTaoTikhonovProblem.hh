@@ -1,4 +1,4 @@
-// Copyright (C) 2012,2013,2014,2015,2016,2017,2020,2022,2023,2025  David Maxwell and Constantine Khroulev
+// Copyright (C) 2012,2013,2014,2015,2016,2017,2020,2022,2023,2025,2026  David Maxwell and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -27,7 +27,6 @@
 #include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/Logger.hh"
-#include "pism/util/array/Array.hh" //
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 
@@ -353,14 +352,8 @@ void IPTaoTikhonovProblem<ForwardProblem>::connect(Tao tao) {
     grtol = PETSC_DEFAULT,
     gttol = PETSC_DEFAULT;
 
-#if PETSC_VERSION_LT(3,7,0)
-  double fatol = 1e-10, frtol = 1e-20;
-  PetscErrorCode ierr = TaoSetTolerances(tao, fatol, frtol, gatol, grtol, gttol);
-  PISM_CHK(ierr, "TaoSetTolerances");
-#else
   PetscErrorCode ierr = TaoSetTolerances(tao, gatol, grtol, gttol);
   PISM_CHK(ierr, "TaoSetTolerances");
-#endif
 }
 
 template<class ForwardProblem>

@@ -528,10 +528,8 @@ std::shared_ptr<petsc::DM> Grid::Impl::create_dm(unsigned int da_dof, unsigned i
       &result);
   PISM_CHK(ierr, "DMDACreate2d");
 
-#if PETSC_VERSION_GE(3, 8, 0)
   ierr = DMSetUp(result);
   PISM_CHK(ierr, "DMSetUp");
-#endif
 
   return std::make_shared<petsc::DM>(result);
 }
