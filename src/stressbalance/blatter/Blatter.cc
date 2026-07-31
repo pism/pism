@@ -583,10 +583,45 @@ void Blatter::init_2d_parameters(const Inputs &inputs) {
   m_parameters.update_ghosts();
 }
 
+void Blatter::init_averaged_ice_hardness(const Inputs &inputs, const petsc::DM &da) {
+
+  assert(inputs.averaged_hardness != nullptr);
+
+  const auto &averaged_hardness = *inputs.averaged_hardness;
+
+  // solver's vertical grid:
+  int Mz_sigma = 0;
+  {
+    DMDALocalInfo info;
+    int ierr = DMDAGetLocalInfo(da, &info); PISM_CHK(ierr, "DMDAGetLocalInfo");
+    info = grid_transpose(info);
+    Mz_sigma = info.mz;
+  }
+
+  DataAccess<double***> hardness(da, 3, NOT_GHOSTED);
+
+  array::AccessScope list{&averaged_hardness};
+
+  for (auto p : m_grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    for (int k = 0; k < Mz_sigma; ++k) {
+      hardness[j][i][k] = averaged_hardness(i, j); // STORAGE_ORDER
+    } // end of the loop over sigma levels
+  } // end of the loop over grid points
+}
+
 /*!
  * Set 3D parameters on the finest grid.
  */
 void Blatter::init_ice_hardness(const Inputs &inputs, const petsc::DM &da) {
+
+  if (inputs.averaged_hardness != nullptr) {
+    init_averaged_ice_hardness(inputs, da);
+    return;
+  }
+
+  assert(inputs.enthalpy != nullptr);
 
   const auto *enthalpy = inputs.enthalpy;
   // PISM's vertical grid:
