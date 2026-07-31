@@ -22,16 +22,14 @@
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/rheology/FlowLaw.hh"
-#include "pism/stressbalance/SSB_Modifier.hh"
-#include "pism/stressbalance/ShallowStressBalance.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/Mask.hh"
-#include "pism/util/Profiling.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/array/CellType.hh"
+#include "pism/util/array/Vector.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/SynchronousOutputWriter.hh"
 #include "pism/util/io/io_helpers.hh"
@@ -41,22 +39,23 @@ namespace pism {
 namespace stressbalance {
 
 Inputs::Inputs() {
-  geometry          = NULL;
+  geometry          = nullptr;
   new_bed_elevation = true;
 
-  water_column_pressure = NULL;
-  fracture_density      = NULL;
-  basal_yield_stress    = NULL;
+  averaged_hardness     = nullptr;
+  water_column_pressure = nullptr;
+  fracture_density      = nullptr;
+  basal_yield_stress    = nullptr;
 
-  enthalpy = NULL;
-  age      = NULL;
+  enthalpy = nullptr;
+  age      = nullptr;
 
-  bc_mask   = NULL;
-  bc_values = NULL;
+  bc_mask   = nullptr;
+  bc_values = nullptr;
 
-  no_model_mask              = NULL;
-  no_model_ice_thickness     = NULL;
-  no_model_surface_elevation = NULL;
+  no_model_mask              = nullptr;
+  no_model_ice_thickness     = nullptr;
+  no_model_surface_elevation = nullptr;
 }
 
 /*!

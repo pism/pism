@@ -47,6 +47,7 @@ public:
   const Geometry *geometry;
   bool new_bed_elevation;
 
+  const array::Scalar *averaged_hardness; // optional (used by the Blatter solver)
   const array::Scalar *basal_yield_stress;
   const array::Scalar *water_column_pressure;
   const array::Scalar1 *fracture_density;
