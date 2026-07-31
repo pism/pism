@@ -16,6 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <memory>
+#include <vector>
 
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
@@ -160,54 +161,28 @@ according to the value of the flag `geometry.update.use_basal_melt_rate`.
 
 The vertical integral is computed by the trapezoid rule.
  */
-void compute_vertical_velocity(const array::CellType1 &cell_type, const array::Array3D &u,
-                               const array::Array3D &v, const array::Scalar *basal_melt_rate,
-                               array::Array3D &result) {
+class VerticalVelocity {
+public:
+  VerticalVelocity(bool upstream_fd, double dx, double dy, const std::vector<double> &z)
+    : m_upstream_fd(upstream_fd), m_Mz(z.size()), m_dx(dx), m_dy(dy), m_dz(m_Mz),
+      m_work(m_Mz) {
 
-  auto grid = u.grid();
-
-  auto config = grid->ctx()->config();
-
-  const bool use_upstream_fd =
-      config->get_string("stress_balance.vertical_velocity_approximation") == "upstream";
-
-  array::AccessScope list{&u, &v, &cell_type, &result};
-
-  if (basal_melt_rate != nullptr) {
-    list.add(*basal_melt_rate);
+    m_dz[0] = 0.0;
+    for (unsigned int k = 1; k < m_Mz; ++k) {
+      m_dz[k] = z[k] - z[k - 1];
+    }
   }
 
-  const std::vector<double> &z = u.levels();
-  const unsigned int Mz = z.size();
+  void compute(const stencils::Star<int> &cell_type, double basal_melt_rate, const double *u_w,
+               const double *u_c, const double *u_e, const double *v_s, const double *v_c,
+               const double *v_n, double *result) const {
 
-  const double
-    dx = grid->dx(),
-    dy = grid->dy();
+    using mask::ice_free;
+    using mask::icy;
 
-  std::vector<double> u_x_plus_v_y(Mz);
-
-  for (auto p : grid->points()) {
-    const int i = p.i(), j = p.j();
-
-    double *w_ij = result.get_column(i,j);
-
-    const double
-      *u_w  = u.get_column(i-1,j),
-      *u_ij = u.get_column(i,j),
-      *u_e  = u.get_column(i+1,j);
-    const double
-      *v_s  = v.get_column(i,j-1),
-      *v_ij = v.get_column(i,j),
-      *v_n  = v.get_column(i,j+1);
-
-    double
-      west  = 1.0,
-      east  = 1.0,
-      south = 1.0,
-      north = 1.0;
-    double
-      D_x = 0,                  // 1/(dx), 1/(2dx), or 0
-      D_y = 0;                  // 1/(dy), 1/(2dy), or 0
+    double west = 1.0, east = 1.0, south = 1.0, north = 1.0;
+    double D_x = 0, // 1/(dx), 1/(2dx), or 0
+        D_y    = 0; // 1/(dy), 1/(2dy), or 0
 
     // Switch between second-order centered differences in the interior and
     // first-order one-sided differences at ice margins.
@@ -216,10 +191,8 @@ void compute_vertical_velocity(const array::CellType1 &cell_type, const array::A
     {
       // use basal velocity to determine FD direction ("upwind" when it's clear, centered when it's
       // not)
-      if (use_upstream_fd) {
-        const double
-          uw = 0.5 * (u_w[0] + u_ij[0]),
-          ue = 0.5 * (u_ij[0] + u_e[0]);
+      if (m_upstream_fd) {
+        const double uw = 0.5 * (u_w[0] + u_c[0]), ue = 0.5 * (u_c[0] + u_e[0]);
 
         if (uw > 0.0 and ue >= 0.0) {
           west = 1.0;
@@ -233,17 +206,17 @@ void compute_vertical_velocity(const array::CellType1 &cell_type, const array::A
         }
       }
 
-      if ((cell_type.icy(i, j) and cell_type.ice_free(i + 1, j)) or
-          (cell_type.ice_free(i, j) and cell_type.icy(i + 1, j))) {
+      if ((icy(cell_type.c) and ice_free(cell_type.e)) or
+          (ice_free(cell_type.c) and icy(cell_type.e))) {
         east = 0;
       }
-      if ((cell_type.icy(i, j) and cell_type.ice_free(i - 1, j)) or
-          (cell_type.ice_free(i, j) and cell_type.icy(i - 1, j))) {
+      if ((icy(cell_type.c) and ice_free(cell_type.w)) or
+          (ice_free(cell_type.c) and icy(cell_type.w))) {
         west = 0;
       }
 
       if (east + west > 0) {
-        D_x = 1.0 / (dx * (east + west));
+        D_x = 1.0 / (m_dx * (east + west));
       } else {
         D_x = 0.0;
       }
@@ -253,10 +226,8 @@ void compute_vertical_velocity(const array::CellType1 &cell_type, const array::A
     {
       // use basal velocity to determine FD direction ("upwind" when it's clear, centered when it's
       // not)
-      if (use_upstream_fd) {
-        const double
-          vs = 0.5 * (v_s[0] + v_ij[0]),
-          vn = 0.5 * (v_ij[0] + v_n[0]);
+      if (m_upstream_fd) {
+        const double vs = 0.5 * (v_s[0] + v_c[0]), vn = 0.5 * (v_c[0] + v_n[0]);
 
         if (vs > 0.0 and vn >= 0.0) {
           south = 1.0;
@@ -270,43 +241,82 @@ void compute_vertical_velocity(const array::CellType1 &cell_type, const array::A
         }
       }
 
-      if ((cell_type.icy(i, j) and cell_type.ice_free(i, j + 1)) or
-          (cell_type.ice_free(i, j) and cell_type.icy(i, j + 1))) {
+      if ((icy(cell_type.c) and ice_free(cell_type.n)) or
+          (ice_free(cell_type.c) and icy(cell_type.n))) {
         north = 0;
       }
-      if ((cell_type.icy(i, j) and cell_type.ice_free(i, j - 1)) or
-          (cell_type.ice_free(i, j) and cell_type.icy(i, j - 1))) {
+      if ((icy(cell_type.c) and ice_free(cell_type.s)) or
+          (ice_free(cell_type.c) and icy(cell_type.s))) {
         south = 0;
       }
 
       if (north + south > 0) {
-        D_y = 1.0 / (dy * (north + south));
+        D_y = 1.0 / (m_dy * (north + south));
       } else {
         D_y = 0.0;
       }
     }
 
+    auto &u_x_plus_v_y = m_work;
     // compute u_x + v_y using a vectorizable loop
-    for (unsigned int k = 0; k < Mz; ++k) {
-      double
-        u_x = D_x * (west  * (u_ij[k] - u_w[k]) + east  * (u_e[k] - u_ij[k])),
-        v_y = D_y * (south * (v_ij[k] - v_s[k]) + north * (v_n[k] - v_ij[k]));
+    for (unsigned int k = 0; k < m_Mz; ++k) {
+      double u_x      = D_x * (west * (u_c[k] - u_w[k]) + east * (u_e[k] - u_c[k])),
+             v_y      = D_y * (south * (v_c[k] - v_s[k]) + north * (v_n[k] - v_c[k]));
       u_x_plus_v_y[k] = u_x + v_y;
     }
 
     // at the base: include the basal melt rate
-    if (basal_melt_rate != NULL) {
-      w_ij[0] = - (*basal_melt_rate)(i,j);
-    } else {
-      w_ij[0] = 0.0;
-    }
-
+    result[0] = -basal_melt_rate;
     // within the ice and above:
-    for (unsigned int k = 1; k < Mz; ++k) {
-      const double dz = z[k] - z[k-1];
-
-      w_ij[k] = w_ij[k - 1] - (0.5 * dz) * (u_x_plus_v_y[k] + u_x_plus_v_y[k - 1]);
+    for (unsigned int k = 1; k < m_Mz; ++k) {
+      result[k] = result[k - 1] - (0.5 * m_dz[k]) * (u_x_plus_v_y[k] + u_x_plus_v_y[k - 1]);
     }
+  }
+
+private:
+  bool m_upstream_fd;
+  unsigned int m_Mz;
+  double m_dx;
+  double m_dy;
+  std::vector<double> m_dz;
+  mutable std::vector<double> m_work;
+};
+
+void compute_vertical_velocity(const array::CellType1 &cell_type, const array::Array3D &u,
+                               const array::Array3D &v, const array::Scalar *basal_melt_rate,
+                               array::Array3D &result) {
+  auto grid = u.grid();
+
+  auto config = grid->ctx()->config();
+
+  const bool use_upstream_fd =
+      config->get_string("stress_balance.vertical_velocity_approximation") == "upstream";
+
+  array::AccessScope list{&u, &v, &cell_type, &result};
+
+  if (basal_melt_rate != nullptr) {
+    list.add(*basal_melt_rate);
+  }
+
+  VerticalVelocity w(use_upstream_fd, grid->dx(), grid->dy(), u.levels());
+
+  for (auto p : grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    const double
+      *u_w = u.get_column(i - 1, j),
+      *u_c = u.get_column(i, j),
+      *u_e = u.get_column(i + 1, j);
+    const double
+      *v_s = v.get_column(i, j - 1),
+      *v_c = v.get_column(i, j),
+      *v_n = v.get_column(i, j + 1);
+
+    w.compute(cell_type.star_int(i, j),                                    //
+              basal_melt_rate != nullptr ? (*basal_melt_rate)(i, j) : 0.0, //
+              u_w, u_c, u_e,                                               //
+              v_s, v_c, v_n,                                               //
+              result.get_column(i, j));
   }
 }
 
