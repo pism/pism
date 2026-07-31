@@ -168,8 +168,6 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
   // current time does not matter here
   (void) t;
 
-  using mask::ocean;
-
   Logger log(MPI_COMM_SELF, m_log->get_threshold());
 
   const double
@@ -229,14 +227,14 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
-      MaskValue mask = static_cast<MaskValue>(cell_type.as_int(i,j));
+      bool ocean = cell_type.ocean(i, j);
 
       const double H = ice_thickness(i, j);
       const double T_surface = ice_surface_temp(i, j);
 
       system.initThisColumn(i, j,
                             marginal(ice_thickness, i, j, margin_threshold),
-                            mask, H);
+                            H, w3.get_column(i, j), strain_heating3.get_column(i, j));
 
       const int ks = system.ks();
 
@@ -253,7 +251,7 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
                                                 basal_frictional_heating(i,j));
 
         // solve the system for this column; melting not addressed yet
-        system.solveThisColumn(x);
+        system.solveThisColumn(ocean, x);
       }       // end of "if there are enough points in ice to bother ..."
 
       // prepare for melting/refreezing
@@ -278,8 +276,8 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
         if (Tnew[k] < T_minimum) {
           log.message(1,
                       "  [[too low (<200) ice segment temp T = %f at %d, %d, %d;"
-                      " proc %d; mask=%d; w=%f m year-1]]\n",
-                      Tnew[k], i, j, k, m_grid->rank(), mask,
+                      " proc %d; ocean=%d; w=%f m year-1]]\n",
+                      Tnew[k], i, j, k, m_grid->rank(), static_cast<int>(ocean),
                       units::convert(m_sys, system.w(k), "m second^-1", "m year^-1"));
 
           m_stats.low_temperature_counter++;
@@ -297,7 +295,7 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
         } else {  // compute diff between x[k0] and Tpmp; melt or refreeze as appropriate
           const double Tpmp = melting_point_temp - beta_CC_grad * H; // FIXME issue #15
           double Texcess = x[0] - Tpmp; // positive or negative
-          if (ocean(mask)) {
+          if (ocean) {
             // when floating, only half a segment has had its temperature raised
             // above Tpmp
             column_drainage(ice_density, ice_c, L, 0.0, dz/2.0, &Texcess, &bwatnew);
@@ -312,8 +310,8 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
         if (Tnew[0] < T_minimum) {
           log.message(1,
                       "  [[too low (<200) ice/bedrock segment temp T = %f at %d,%d;"
-                      " proc %d; mask=%d; w=%f]]\n",
-                      Tnew[0],i,j,m_grid->rank(), mask,
+                      " proc %d; ocean=%d; w=%f]]\n",
+                      Tnew[0],i,j,m_grid->rank(), static_cast<int>(ocean),
                       units::convert(m_sys, system.w(0), "m second^-1", "m year^-1"));
 
           m_stats.low_temperature_counter++;
@@ -333,7 +331,7 @@ void TemperatureModel::update_impl(double t, double dt, const Inputs &inputs) {
       system.fine_to_coarse(Tnew, i, j, m_work);
 
       // basal_melt_rate(i,j) is rate of mass loss at bottom of ice
-      if (ocean(mask)) {
+      if (ocean) {
         m_basal_melt_rate(i,j) = 0.0;
       } else {
         // basalMeltRate is rate of change of bwat;  can be negative
