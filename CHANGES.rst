@@ -3,6 +3,14 @@
 Changes since v2.3.0
 ====================
 
+- Add `ocean.th.temperature_as_thermal_forcing` (default `no`), the `ocean th` counterpart of
+  `ocean.pico.temperature_as_thermal_forcing`. When `yes`, the input `theta_ocean` field is
+  interpreted as ocean thermal forcing (temperature above the freezing point) instead of
+  potential temperature, and converted to potential temperature by adding the pressure- and
+  salinity-dependent freezing point. The freezing point uses the coefficients for potential
+  temperature (`b` in `HollandJenkins1999`), consistent with the three-equation system that
+  consumes it. Thermal forcing is a temperature *difference*, so it has to be supplied in
+  `degree_Celsius`.
 - Fix missing CF grid mapping metadata in files written by Python scripts (`pismi.py`,
   `ssa_forward.py`, and others). `Array.write(filename)` now defines the grid mapping
   variable (if the grid has projection information) and adds the `grid_mapping` attribute

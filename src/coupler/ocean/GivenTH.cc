@@ -101,6 +101,12 @@ void GivenTH::init_impl(const Geometry &geometry) {
              "* Initializing the 3eqn melting parameterization ocean model\n"
              "  reading ocean temperature and salinity from a file...\n");
 
+  if (m_config->get_flag("ocean.th.temperature_as_thermal_forcing")) {
+    m_log->message(2,
+                   "  Interpreting 'theta_ocean' as thermal forcing (temperature above the\n"
+                   "  freezing point); converting it to potential temperature.\n");
+  }
+
   ForcingOptions opt(*m_grid->ctx(), "ocean.th");
 
   // potential temperature is required
@@ -140,6 +146,16 @@ void GivenTH::init_impl(const Geometry &geometry) {
                                            *m_water_column_pressure);
 }
 
+//! Freezing point of sea water, expressed as a *potential* temperature, in degrees Celsius.
+/*!
+ * Uses the coefficients for potential temperature (`b`), i.e. the same linearization the
+ * three-equation system below is written in terms of. See GivenTH::Constants.
+ */
+static double melting_point_potential_temperature(const GivenTH::Constants &c,
+                                                  double salinity, double ice_thickness) {
+  return c.b[0] * salinity + c.b[1] + c.b[2] * ice_thickness;
+}
+
 void GivenTH::update_impl(const Inputs &inputs, double t, double dt) {
   m_theta_ocean->update(t, dt);
   m_salinity_ocean->update(t, dt);
@@ -148,6 +164,12 @@ void GivenTH::update_impl(const Inputs &inputs, double t, double dt) {
   m_salinity_ocean->average(t, dt);
 
   Constants c(*m_config);
+
+  // If theta_ocean holds thermal forcing (temperature above the freezing point) instead of
+  // potential temperature, add the freezing point to recover the potential temperature
+  // expected by pointwise_update(). Thermal forcing is a temperature *difference*, so the
+  // "- 273.15" below recovers it unchanged from the input read in kelvin.
+  const bool thermal_forcing = m_config->get_flag("ocean.th.temperature_as_thermal_forcing");
 
   const array::Scalar &ice_thickness = inputs.geometry->ice_thickness;
 
@@ -161,6 +183,11 @@ void GivenTH::update_impl(const Inputs &inputs, double t, double dt) {
     const int i = p.i(), j = p.j();
 
     double potential_temperature_celsius = (*m_theta_ocean)(i,j) - 273.15;
+
+    if (thermal_forcing) {
+      potential_temperature_celsius +=
+        melting_point_potential_temperature(c, (*m_salinity_ocean)(i,j), ice_thickness(i,j));
+    }
 
     double
       shelf_base_temp_celsius = 0.0,
