@@ -112,6 +112,16 @@ SSAFEM::SSAFEM(std::shared_ptr<const Grid> grid)
                            PETSC_DEFAULT);
   PISM_CHK(ierr, "SNESSetTolerances");
 
+  // Use the "ssafem_" option prefix (compare to "bp_" used by the Blatter solver and
+  // "ssafd_" used by SSAFD) so that this solver can be configured independently of the
+  // other PETSc solvers that may be active in the same run -- in particular the adjoint
+  // solver used by the inversion code, which uses "inv_adj_".
+  //
+  // The KSP created by this SNES inherits the prefix, so the linear solver is configured
+  // using "-ssafem_ksp_*" and "-ssafem_pc_*".
+  ierr = SNESSetOptionsPrefix(m_snes, "ssafem_");
+  PISM_CHK(ierr, "SNESSetOptionsPrefix");
+
   ierr = SNESSetFromOptions(m_snes);
   PISM_CHK(ierr, "SNESSetFromOptions");
 
@@ -138,13 +148,11 @@ void SSAFEM::init_impl() {
 
   m_log->message(2, "  [using the SNES-based finite element method implementation]\n");
 
-  // process command-line options
-  {
-    m_dirichletScale = 1.0e9;
-    m_dirichletScale = options::Real(m_sys, "-ssa_fe_dirichlet_scale",
-                                     "Enforce Dirichlet conditions with this additional scaling",
-                                     "1", m_dirichletScale);
-  }
+  // Scaling of the identity blocks used to enforce Dirichlet conditions (including the
+  // homogeneous conditions applied at ice-free nodes when CFBC is on). Settable via
+  // "-ssa_fe_dirichlet_scale" or the full parameter name; see the parameter documentation
+  // for why the default may need to be lowered.
+  m_dirichletScale = m_config->get_number("stress_balance.ssa.fem.dirichlet_scale");
 
   // On restart, SSA::init() reads the SSA velocity from a PISM output file
   // into array::Vector "velocity". We use that field as an initial guess.

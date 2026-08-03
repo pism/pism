@@ -2486,6 +2486,12 @@ netcdf pism_config {
     pism_config:stress_balance.ssa.fd.upstream_surface_slope_approximation_doc = "Use an upstream-biased finite difference to estimate the surface slope in the driving stress computation";
     pism_config:stress_balance.ssa.fd.upstream_surface_slope_approximation_type = "flag";
 
+    pism_config:stress_balance.ssa.fem.dirichlet_scale = 1.0e9;
+    pism_config:stress_balance.ssa.fem.dirichlet_scale_doc = "Scaling of the identity blocks the ``SSAFEM`` solver puts into the Jacobian at Dirichlet nodes and, when :config:`stress_balance.calving_front_stress_bc` is set, at ice-free nodes. Large values make these rows dominate the matrix: with many ice-free nodes this can defeat an incomplete factorization used as a preconditioner (symptom: ``DIVERGED_PC_FAILED`` with ``SUBPC_ERROR``). The Blatter solver uses 1 for the same purpose.";
+    pism_config:stress_balance.ssa.fem.dirichlet_scale_option = "ssa_fe_dirichlet_scale";
+    pism_config:stress_balance.ssa.fem.dirichlet_scale_type = "number";
+    pism_config:stress_balance.ssa.fem.dirichlet_scale_units = "1";
+
     pism_config:stress_balance.ssa.flow_law = "gpbld";
     pism_config:stress_balance.ssa.flow_law_choices = "arr,arrwarm,gpbld,hooke,isothermal_glen,pb";
     pism_config:stress_balance.ssa.flow_law_doc = "The SSA flow law.";

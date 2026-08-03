@@ -3,6 +3,23 @@
 Changes since v2.3.0
 ====================
 
+- Add `stress_balance.ssa.fem.dirichlet_scale` (default 1e9, unchanged), the scaling of the
+  identity blocks `SSAFEM` puts into the Jacobian at Dirichlet nodes and, when
+  `stress_balance.calving_front_stress_bc` is set, at ice-free nodes. This was previously
+  reachable only through the command-line option `-ssa_fe_dirichlet_scale` (still accepted),
+  so it was not recorded in output files and could not be set from a configuration file.
+  Lower it if an incomplete-factorization preconditioner fails on a domain with many
+  ice-free nodes (`DIVERGED_PC_FAILED` / `SUBPC_ERROR`); the Blatter solver uses 1 for the
+  same purpose.
+- **Breaking:** the SSAFEM solver now uses the `ssafem_` PETSc option prefix, and the SSA
+  inversion's adjoint solver uses `inv_adj_` (matching the Blatter inverse solver). Both
+  previously read *unprefixed* options, so they shared one namespace and could not be
+  configured independently -- a global `-ksp_rtol`, for instance, would loosen the adjoint
+  solve that sets the accuracy of the inversion's gradient. Configure them with
+  `-ssafem_ksp_*`, `-ssafem_pc_*`, `-ssafem_snes_*` and `-inv_adj_ksp_*`, `-inv_adj_pc_*`.
+  Scripts passing bare `-ksp_*`/`-pc_*`/`-snes_*` to an SSAFEM run have to be updated:
+  those options are now silently ignored (run with `-options_left` to catch this).
+
 - Fix `pismi -remove_sia`, which failed with "Variable 'uvelsurf' ... contains values
   matching the _FillValue attribute". `uvelsurf` and `vvelsurf` are diagnostics and carry
   `_FillValue` over ice-free cells by construction, which `Array.regrid()` rejects. `pismi`
@@ -10,6 +27,7 @@ Changes since v2.3.0
   missing cells itself: the SIA correction is skipped where the surface velocity is absent,
   leaving the observations there untouched. Note that this path does not interpolate, so
   the file has to be on the model grid; `pismi` stops with an explicit message if it is not.
+
 - Add `ocean.th.temperature_as_thermal_forcing` (default `no`), the `ocean th` counterpart of
   `ocean.pico.temperature_as_thermal_forcing`. When `yes`, the input `theta_ocean` field is
   interpreted as ocean thermal forcing (temperature above the freezing point) instead of

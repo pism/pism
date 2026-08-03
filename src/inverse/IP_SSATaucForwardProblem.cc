@@ -68,6 +68,14 @@ IP_SSATaucForwardProblem::IP_SSATaucForwardProblem(std::shared_ptr<const Grid> g
   ierr = KSPCreate(m_grid->com, m_ksp.rawptr());
   PISM_CHK(ierr, "KSPCreate");
 
+  // Use the "inv_adj_" option prefix, matching the Blatter inverse solver. Without it this
+  // solver would share the (unprefixed) option namespace with the SSAFEM forward solver,
+  // making it impossible to configure the two independently. Note that the default
+  // tolerance set below is tighter than usual: this solve determines the accuracy of the
+  // gradient, so loosening it degrades the optimization.
+  ierr = KSPSetOptionsPrefix(m_ksp, "inv_adj_");
+  PISM_CHK(ierr, "KSPSetOptionsPrefix");
+
   double ksp_rtol = 1e-12;
   ierr = KSPSetTolerances(m_ksp, ksp_rtol, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
   PISM_CHK(ierr, "KSPSetTolerances");
