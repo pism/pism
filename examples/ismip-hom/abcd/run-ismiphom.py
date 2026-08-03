@@ -9,16 +9,20 @@ number of unknowns) using algebraic multigrid preconditioner on the coarse level
 Here's an example:
 
 mpiexec -n 2 python3 run-ismiphom.py \
-   -pc_type mg \
-   -pc_mg_levels 2 \
+   -bp_pc_type mg \
+   -bp_pc_mg_levels 2 \
    -stress_balance.blatter.coarsening_factor 4 \
-   -snes_monitor \
-   -ksp_monitor
+   -bp_snes_monitor \
+   -bp_ksp_monitor
 
 This command uses "aggressive" coarsening (factor of 4) and 2 multigrid levels (5 and 2
 nodes in the vertical direction).
 
-To use AMG on the coarse level, add "-mg_coarse_pc_type gamg".
+Note the "bp_" prefix: the Blatter solver's SNES (and the KSP and DM below it) use it, so
+unprefixed PETSc options are ignored. Run with "-options_left" to catch a typo in one of
+these.
+
+To use AMG on the coarse level, add "-bp_mg_coarse_pc_type gamg".
 
 """
 
