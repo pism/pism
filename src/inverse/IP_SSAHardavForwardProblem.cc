@@ -66,6 +66,11 @@ IP_SSAHardavForwardProblem::IP_SSAHardavForwardProblem(std::shared_ptr<const Gri
   ierr = KSPCreate(m_grid->com, m_ksp.rawptr());
   PISM_CHK(ierr, "KSPCreate");
 
+  // See the comment in IP_SSATaucForwardProblem: this solver needs an option prefix of its
+  // own so that it does not share the (unprefixed) namespace with SSAFEM.
+  ierr = KSPSetOptionsPrefix(m_ksp, "inv_adj_");
+  PISM_CHK(ierr, "KSPSetOptionsPrefix");
+
   double ksp_rtol = 1e-12;
   ierr = KSPSetTolerances(m_ksp, ksp_rtol, PETSC_DEFAULT, PETSC_DEFAULT, PETSC_DEFAULT);
   PISM_CHK(ierr, "KSPSetTolerances");
