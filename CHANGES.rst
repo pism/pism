@@ -3,6 +3,13 @@
 Changes since v2.3.0
 ====================
 
+- Fix `pismi -remove_sia`, which failed with "Variable 'uvelsurf' ... contains values
+  matching the _FillValue attribute". `uvelsurf` and `vvelsurf` are diagnostics and carry
+  `_FillValue` over ice-free cells by construction, which `Array.regrid()` rejects. `pismi`
+  now reads these fields (and `u_ssa`/`v_ssa`) through `File.read_variable()` and masks the
+  missing cells itself: the SIA correction is skipped where the surface velocity is absent,
+  leaving the observations there untouched. Note that this path does not interpolate, so
+  the file has to be on the model grid; `pismi` stops with an explicit message if it is not.
 - Add `ocean.th.temperature_as_thermal_forcing` (default `no`), the `ocean th` counterpart of
   `ocean.pico.temperature_as_thermal_forcing`. When `yes`, the input `theta_ocean` field is
   interpreted as ocean thermal forcing (temperature above the freezing point) instead of
