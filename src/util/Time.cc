@@ -377,7 +377,8 @@ static double start_time(const Config &config,
 
   if (ref_date != reference_date) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "reference date in '%s' (%s) does not match the selected date (%s)",
+                                  "reference date in '%s' (%s) does not match the selected date (%s):\n"
+                                  "cannot set start time from the input file",
                                   file->name().c_str(), ref_date.c_str(), reference_date.c_str());
   }
 
