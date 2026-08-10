@@ -5119,54 +5119,54 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
 std::map<std::string, TSDiagnostic::Ptr> IceModel::allocate_scalar_diagnostics() {
   std::map<std::string, TSDiagnostic::Ptr> result;
 
-  using namespace diagnostics;
+  using namespace diagnostics::scalar;
 
   using s = TSDiagnostic::Ptr; // "s" for "scalar"
 
   result = {
     // area
-    {"ice_area_glacierized",                s(new scalar::IceAreaGlacierized(this))},
-    {"ice_area_glacierized_cold_base",      s(new scalar::IceAreaGlacierizedColdBase(this))},
-    {"ice_area_glacierized_grounded",       s(new scalar::IceAreaGlacierizedGrounded(this))},
-    {"ice_area_glacierized_floating",       s(new scalar::IceAreaGlacierizedShelf(this))},
-    {"ice_area_glacierized_temperate_base", s(new scalar::IceAreaGlacierizedTemperateBase(this))},
+    {"ice_area_glacierized",                s(new IceAreaGlacierized(this))},
+    {"ice_area_glacierized_cold_base",      s(new IceAreaGlacierizedColdBase(this))},
+    {"ice_area_glacierized_grounded",       s(new IceAreaGlacierizedGrounded(this))},
+    {"ice_area_glacierized_floating",       s(new IceAreaGlacierizedShelf(this))},
+    {"ice_area_glacierized_temperate_base", s(new IceAreaGlacierizedTemperateBase(this))},
     // mass
-    {"ice_mass_glacierized",             s(new scalar::IceMassGlacierized(this))},
-    {"ice_mass",                         s(new scalar::IceMass(this))},
-    {"tendency_of_ice_mass_glacierized", s(new scalar::IceMassRateOfChangeGlacierized(this))},
-    {"limnsw",                           s(new scalar::IceMassNotDisplacingSeaWater(this))},
+    {"ice_mass_glacierized",             s(new IceMassGlacierized(this))},
+    {"ice_mass",                         s(new IceMass(this))},
+    {"tendency_of_ice_mass_glacierized", s(new IceMassRateOfChangeGlacierized(this))},
+    {"limnsw",                           s(new IceMassNotDisplacingSeaWater(this))},
     // volume
-    {"ice_volume_glacierized",             s(new scalar::IceVolumeGlacierized(this))},
-    {"ice_volume_glacierized_cold",        s(new scalar::IceVolumeGlacierizedCold(this))},
-    {"ice_volume_glacierized_grounded",    s(new scalar::IceVolumeGlacierizedGrounded(this))},
-    {"ice_volume_glacierized_floating",    s(new scalar::IceVolumeGlacierizedShelf(this))},
-    {"ice_volume_glacierized_temperate",   s(new scalar::IceVolumeGlacierizedTemperate(this))},
-    {"ice_volume",                         s(new scalar::IceVolume(this))},
-    {"ice_volume_cold",                    s(new scalar::IceVolumeCold(this))},
-    {"ice_volume_temperate",               s(new scalar::IceVolumeTemperate(this))},
-    {"tendency_of_ice_volume_glacierized", s(new scalar::IceVolumeRateOfChangeGlacierized(this))},
-    {"tendency_of_ice_volume",             s(new scalar::IceVolumeRateOfChange(this))},
-    {"sea_level_rise_potential",           s(new scalar::SeaLevelRisePotential(this))},
+    {"ice_volume_glacierized",             s(new IceVolumeGlacierized(this))},
+    {"ice_volume_glacierized_cold",        s(new IceVolumeGlacierizedCold(this))},
+    {"ice_volume_glacierized_grounded",    s(new IceVolumeGlacierizedGrounded(this))},
+    {"ice_volume_glacierized_floating",    s(new IceVolumeGlacierizedShelf(this))},
+    {"ice_volume_glacierized_temperate",   s(new IceVolumeGlacierizedTemperate(this))},
+    {"ice_volume",                         s(new IceVolume(this))},
+    {"ice_volume_cold",                    s(new IceVolumeCold(this))},
+    {"ice_volume_temperate",               s(new IceVolumeTemperate(this))},
+    {"tendency_of_ice_volume_glacierized", s(new IceVolumeRateOfChangeGlacierized(this))},
+    {"tendency_of_ice_volume",             s(new IceVolumeRateOfChange(this))},
+    {"sea_level_rise_potential",           s(new SeaLevelRisePotential(this))},
     // energy
-    {"ice_enthalpy_glacierized", s(new scalar::IceEnthalpyGlacierized(this))},
-    {"ice_enthalpy",         s(new scalar::IceEnthalpy(this))},
+    {"ice_enthalpy_glacierized", s(new IceEnthalpyGlacierized(this))},
+    {"ice_enthalpy",         s(new IceEnthalpy(this))},
     // time-stepping
-    {"max_diffusivity", s(new scalar::MaxDiffusivity(this))},
-    {"max_horizontal_vel", s(new scalar::MaxHorizontalVelocity(this))},
-    {"dt",              s(new scalar::TimeStepLength(this))},
-    {"dt_ratio",        s(new scalar::TimeStepRatio(this))},
+    {"max_diffusivity", s(new MaxDiffusivity(this))},
+    {"max_horizontal_vel", s(new MaxHorizontalVelocity(this))},
+    {"dt",              s(new TimeStepLength(this))},
+    {"dt_ratio",        s(new TimeStepRatio(this))},
     // balancing the books
-    {"tendency_of_ice_mass",                           s(new scalar::IceMassRateOfChange(this))},
-    {"tendency_of_ice_mass_due_to_flow",               s(new scalar::IceMassRateOfChangeDueToFlow(this))},
-    {"tendency_of_ice_mass_due_to_conservation_error", s(new scalar::IceMassFluxConservationError(this))},
-    {"tendency_of_ice_mass_due_to_basal_mass_flux",    s(new scalar::IceMassFluxBasal(this))},
-    {"tendency_of_ice_mass_due_to_surface_mass_flux",  s(new scalar::IceMassFluxSurface(this))},
-    {"tendency_of_ice_mass_due_to_discharge",          s(new scalar::IceMassFluxDischarge(this))},
-    {"tendency_of_ice_mass_due_to_calving",            s(new scalar::IceMassFluxCalving(this))},
+    {"tendency_of_ice_mass",                           s(new IceMassRateOfChange(this))},
+    {"tendency_of_ice_mass_due_to_flow",               s(new IceMassRateOfChangeDueToFlow(this))},
+    {"tendency_of_ice_mass_due_to_conservation_error", s(new IceMassFluxConservationError(this))},
+    {"tendency_of_ice_mass_due_to_basal_mass_flux",    s(new IceMassFluxBasal(this))},
+    {"tendency_of_ice_mass_due_to_surface_mass_flux",  s(new IceMassFluxSurface(this))},
+    {"tendency_of_ice_mass_due_to_discharge",          s(new IceMassFluxDischarge(this))},
+    {"tendency_of_ice_mass_due_to_calving",            s(new IceMassFluxCalving(this))},
     // other fluxes
-    {"basal_mass_flux_grounded", s(new scalar::IceMassFluxBasalGrounded(this))},
-    {"basal_mass_flux_floating", s(new scalar::IceMassFluxBasalFloating(this))},
-    {"grounding_line_flux",      s(new scalar::IceMassFluxAtGroundingLine(this))},
+    {"basal_mass_flux_grounded", s(new IceMassFluxBasalGrounded(this))},
+    {"basal_mass_flux_floating", s(new IceMassFluxBasalFloating(this))},
+    {"grounding_line_flux",      s(new IceMassFluxAtGroundingLine(this))},
   };
 
   // add ISMIP variable names
