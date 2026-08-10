@@ -674,6 +674,31 @@ StressBalanceStrainheat::compute_impl(const Geometry & /*geometry*/) const {
   return result;
 }
 
+
+//! \brief Computes the mass of ice not displacing sea water (per cell)
+class IceMassNotDisplacingSeaWater : public Diag<IceModel> {
+public:
+  IceMassNotDisplacingSeaWater(const IceModel *m) : Diag<IceModel>(m) {
+    m_vars = { { m_sys, "limnsw", *m_grid } };
+    m_vars[0]
+        .units("kg")
+        .long_name("mass of the ice not displacing sea water")
+        .standard_name("land_ice_mass_not_displacing_sea_water");
+    m_vars[0]["_FillValue"] = { fill_value() };
+  }
+
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const {
+
+    auto result = allocate<array::Scalar>("ice_mass");
+
+    ice_mass_not_displacing_seawater(
+        geometry, m_config->get_number("output.ice_free_thickness_standard"), *result);
+
+    return result;
+  }
+};
+
 } // end of namespace diagnostics
 } // end of namespace pism
 
@@ -1765,10 +1790,10 @@ public:
   IceMassNotDisplacingSeaWater(const IceModel *m)
       : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "limnsw") {
 
-    set_units("kg", "kg");
-    m_variable["long_name"]     = "mass of the ice not displacing sea water";
-    m_variable["standard_name"] = "land_ice_mass_not_displacing_sea_water";
-    m_variable["valid_min"]     = { 0.0 };
+    m_variable.units("kg")
+        .long_name("mass of the ice not displacing sea water")
+        .standard_name("land_ice_mass_not_displacing_sea_water");
+    m_variable["valid_min"] = { 0.0 };
   }
 
   double compute() {
@@ -4938,6 +4963,7 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
     { "height_above_flotation", f(new HeightAboveFloatation(this)) },
     { "ice_area_specific_volume", d::wrap(m_geometry.ice_area_specific_volume) },
     { "ice_mass", f(new IceMass(this)) },
+    { "limnsw", f(new IceMassNotDisplacingSeaWater(this)) },
     { "mask", d::wrap(m_geometry.cell_type) },
     { "pressure", f(new PressureInIce(this)) },
     { "thk", f(new IceThickness(this)) },

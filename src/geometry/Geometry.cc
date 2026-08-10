@@ -286,6 +286,9 @@ double ice_volume(const Geometry &geometry, double thickness_threshold) {
   return GlobalSum(grid->com, volume);
 }
 
+/*!
+ * Compute total volume of the ice not displacing sea water
+ */
 double ice_volume_not_displacing_seawater(const Geometry &geometry,
                                           double thickness_threshold) {
   auto grid = geometry.ice_thickness.grid();
@@ -317,6 +320,43 @@ double ice_volume_not_displacing_seawater(const Geometry &geometry,
   } // end of the loop over grid points
 
   return GlobalSum(grid->com, volume);
+}
+
+/*!
+ * Compute mass of the ice not displacing sea water at each grid point
+ */
+void ice_mass_not_displacing_seawater(const Geometry &geometry,
+                                      double thickness_threshold,
+                                      array::Scalar &result) {
+  auto grid = geometry.ice_thickness.grid();
+  auto config = grid->ctx()->config();
+
+  const double
+    sea_water_density = config->get_number("constants.sea_water.density"),
+    ice_density       = config->get_number("constants.ice.density"),
+    cell_area         = grid->cell_area();
+
+  array::AccessScope list{&geometry.cell_type, &geometry.ice_thickness,
+                          &geometry.bed_elevation, &geometry.sea_level_elevation, &result};
+
+  for (auto p : grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    const double
+      bed       = geometry.bed_elevation(i, j),
+      thickness = geometry.ice_thickness(i, j),
+      sea_level = geometry.sea_level_elevation(i, j);
+
+    if (geometry.cell_type.grounded(i, j) and thickness > thickness_threshold) {
+      double max_floating_thickness =
+          std::max(sea_level - bed, 0.0) * (sea_water_density / ice_density);
+      double volume = cell_area * (thickness - max_floating_thickness);
+
+      result(i, j) = ice_density * volume;
+    } else {
+      result(i, j) = 0.0;
+    }
+  } // end of the loop over grid points
 }
 
 static double compute_area(const Grid &grid, std::function<bool(int, int)> condition) {

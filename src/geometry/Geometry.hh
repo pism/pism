@@ -55,6 +55,8 @@ public:
 };
 
 void ice_bottom_surface(const Geometry &geometry, array::Scalar &result);
+void ice_mass_not_displacing_seawater(const Geometry &geometry, double thickness_threshold,
+                                      array::Scalar &result);
 
 double ice_volume(const Geometry &geometry, double thickness_threshold);
 double ice_area_floating(const Geometry &geometry, double thickness_threshold);
