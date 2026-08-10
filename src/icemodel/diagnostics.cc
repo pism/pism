@@ -5115,7 +5115,9 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
 
   // get diagnostics from submodels (may override some diagnostics allocated above)
   for (const auto& m : m_submodels) {
-    result = pism::combine(result, m.second->spatial_diagnostics());
+    // Note: the order of arguments of pism::combine() matters here: we want sub-models to
+    // be able to override "generic" diagnostics already present in "result".
+    result = pism::combine(m.second->spatial_diagnostics(), result);
   }
 
   // add ISMIP variable names
