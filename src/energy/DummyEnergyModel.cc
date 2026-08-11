@@ -25,14 +25,14 @@ namespace pism {
 namespace energy {
 
 DummyEnergyModel::DummyEnergyModel(
-    std::shared_ptr<const Grid> grid,
-    std::shared_ptr<const stressbalance::StressBalance> stress_balance)
-    : EnthalpyModel(grid, stress_balance) {
+    std::shared_ptr<const Grid> grid)
+    : EnthalpyModel(grid) {
   // empty
 }
 
-void DummyEnergyModel::restart_impl(const File &input_file, int record) {
-  EnthalpyModel::restart_impl(input_file, record);
+void DummyEnergyModel::restart_impl(const File &input_file, int record,
+                                    const array::Scalar &ice_thickness) {
+  EnthalpyModel::restart_impl(input_file, record, ice_thickness);
 
   m_log->message(2,
                  "NOTE: this \"energy balance\" model holds enthalpy and basal melt rate constant in time.\n");
@@ -58,7 +58,7 @@ void DummyEnergyModel::update_impl(double t, double dt, const Inputs &inputs) {
   m_work.copy_from(m_ice_enthalpy);
 }
 
-MaxTimestep DummyEnergyModel::max_timestep_impl(double t) const {
+MaxTimestep DummyEnergyModel::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
   // silence a compiler warning
   (void) t;
 

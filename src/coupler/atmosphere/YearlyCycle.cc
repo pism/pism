@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2020, 2023, 2024, 2025 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2020, 2023, 2024, 2025, 2026 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir and Andy Aschwanden
 //
 // This file is part of PISM.
@@ -163,7 +163,7 @@ public:
   }
 
 private:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
     auto result = allocate<array::Scalar>("air_temp_mean_summer");
 
     result->copy_from(model->mean_summer_temp());

@@ -60,7 +60,7 @@ public:
 private:
   void update_impl(const Inputs &inputs, double t, double dt);
   void init_impl(const Geometry &geometry);
-  MaxTimestep max_timestep_impl(double t) const;
+  MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 
   std::shared_ptr<array::Forcing> m_theta_ocean;
   std::shared_ptr<array::Forcing> m_salinity_ocean;

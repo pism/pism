@@ -87,9 +87,6 @@ def run(Mx, My, t_final, part_grid, C=1.0):
 
     ge = PISM.GeometryEvolution(grid)
 
-    # grid info
-    geometry.latitude.set(0.0)
-    geometry.longitude.set(0.0)
     # environment
     geometry.bed_elevation.set(-10.0)
     geometry.sea_level_elevation.set(0.0)

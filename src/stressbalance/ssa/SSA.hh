@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2020, 2022, 2023, 2024, 2025 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2020, 2022, 2023, 2024, 2025, 2026 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -103,11 +103,12 @@ public:
 
   SSAStrengthExtension *strength_extension;
 
-  virtual void update(const Inputs &inputs, bool full_update);
-
   virtual std::string stdout_report() const;
 protected:
+  virtual void update_impl(const Inputs &inputs, bool full_update);
+
   virtual std::set<VariableMetadata> state_impl() const;
+
   virtual void write_state_impl(const OutputFile &output) const;
 
   virtual void init_impl();

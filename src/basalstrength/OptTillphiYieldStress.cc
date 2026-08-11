@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2023, 2025 PISM Authors
+// Copyright (C) 2004--2023, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -174,7 +174,7 @@ void OptTillphiYieldStress::init_impl(const YieldStressInputs &inputs) {
                                 "cannot be initialized without an input file");
 }
 
-MaxTimestep OptTillphiYieldStress::max_timestep_impl(double t) const {
+MaxTimestep OptTillphiYieldStress::max_timestep_impl(double t, const CFLData *cfl_data) const {
   MaxTimestep dt_max;
   {
     if (t < m_t_last) {
@@ -198,7 +198,7 @@ MaxTimestep OptTillphiYieldStress::max_timestep_impl(double t) const {
     dt_max = MaxTimestep(dt, "tillphi_opt");
   }
 
-  auto dt_mohr_coulomb = MohrCoulombYieldStress::max_timestep_impl(t);
+  auto dt_mohr_coulomb = MohrCoulombYieldStress::max_timestep_impl(t, cfl_data);
 
   return std::min(dt_max, dt_mohr_coulomb);
 }

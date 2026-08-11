@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2023, 2025 Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2023, 2025, 2026 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -57,7 +57,7 @@ void ConstantYieldStress::init_impl(const YieldStressInputs &inputs) {
   regrid(name(), m_basal_yield_stress);
 }
 
-MaxTimestep ConstantYieldStress::max_timestep_impl(double t) const {
+MaxTimestep ConstantYieldStress::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
   (void) t;
   return MaxTimestep(name());
 }

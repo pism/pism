@@ -27,6 +27,7 @@
 
 namespace pism {
 
+struct CFLData;
 class MaxTimestep;
 class File;
 class Geometry;
@@ -135,10 +136,10 @@ public:
   std::set<VariableMetadata> state() const;
 
   //! Reports the maximum time-step the model can take at time t.
-  MaxTimestep max_timestep(double t) const;
+  MaxTimestep max_timestep(double t, const CFLData *cfl_data) const;
 
 protected:
-  virtual MaxTimestep max_timestep_impl(double t) const;
+  virtual MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data = nullptr) const;
 
   virtual std::set<VariableMetadata> state_impl() const;
   virtual void write_state_impl(const OutputFile &output) const;

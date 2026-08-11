@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2020, 2021, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2019, 2020, 2021, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -95,16 +95,7 @@ SteadyState::SteadyState(std::shared_ptr<const Grid> grid)
 void SteadyState::update_impl(double t, double dt, const Inputs& inputs) {
   NullTransport::update_impl(t, dt, inputs);
 
-  // Accumulate time-integrated surface input so the next flux update can be driven by the
-  // time-averaged input rate. This matters for model-derived (runoff) input, which is
-  // strongly seasonal; the flux is only re-solved every flux_update_interval, so a snapshot
-  // taken at the update instant would misrepresent the interval. (For file-based forcing the
-  // instantaneous rate is used directly, preserving the original behavior.)
-  if (m_from_runoff) {
-    m_input_accumulator.add(dt, m_surface_input_rate);
-  }
-
-  double t_next = m_t_last + max_timestep(m_t_last).value();
+  double t_next = m_t_last + max_timestep(m_t_last, nullptr).value();
 
   if (t >= t_next or std::abs(t_next - t) < m_t_eps or
       m_bootstrap) {
@@ -147,7 +138,7 @@ std::map<std::string, Diagnostic::Ptr> SteadyState::spatial_diagnostics_impl() c
   return combine(m_emptying_problem->diagnostics(), hydro_diagnostics);
 }
 
-MaxTimestep SteadyState::max_timestep_impl(double t) const {
+MaxTimestep SteadyState::max_timestep_impl(double t, const CFLData *cfl_data) const {
 
   // compute the maximum time step coming from the forcing (water input rate)
   double dt_forcing = 0.0;
@@ -218,7 +209,7 @@ MaxTimestep SteadyState::max_timestep_impl(double t) const {
 
   double dt = std::min(dt_forcing, dt_interval);
 
-  auto dt_null = NullTransport::max_timestep_impl(t);
+  auto dt_null = NullTransport::max_timestep_impl(t, cfl_data);
   if (dt_null.finite()) {
     dt = std::min(dt, dt_null.value());
   }

@@ -315,7 +315,7 @@ void SSATestCase::write(const std::string &filename) {
     std::vector<std::shared_ptr<array::Array>> vecs;
     for (auto &pair : m_ssa->spatial_diagnostics()) {
       try {
-        vecs.push_back(pair.second->compute());
+        vecs.push_back(pair.second->compute(m_geometry));
       } catch (RuntimeError &e) {
         // ignore errors: some diagnostics may need variables not present in this context
       }

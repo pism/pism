@@ -26,7 +26,6 @@
 #include "pism/util/error_handling.hh"
 
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/Vars.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Profiling.hh"
 #include "pism/util/Context.hh"
@@ -49,7 +48,7 @@ public:
   }
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const {
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
     auto result = allocate<array::Scalar>("bwp");
 
     result->copy_from(model->subglacial_water_pressure());
@@ -75,7 +74,7 @@ public:
   }
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const {
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
     double fill = fill_value();
 
     auto result = allocate<array::Scalar>("bwprel");
@@ -115,7 +114,7 @@ public:
   }
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const {
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
 
     auto result = allocate<array::Scalar>("effbwp");
 
@@ -136,32 +135,6 @@ protected:
 };
 
 
-//! \brief Report the wall melt rate from dissipation of the potential energy of the
-//! transportable water.
-class WallMelt : public Diag<Routing>
-{
-public:
-  WallMelt(const Routing *m)
-    : Diag<Routing>(m) {
-    m_vars = { { m_sys, "wallmelt", *m_grid } };
-    m_vars[0]
-        .long_name("wall melt into subglacial hydrology layer from (turbulent)"
-                   " dissipation of energy in transportable water")
-        .units("m s^-1")
-        .output_units("m year^-1");
-  }
-
-protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const {
-    auto result = allocate<array::Scalar>("wallmelt");
-
-    const array::Scalar &bed_elevation = *m_grid->variables().get_2d_scalar("bedrock_altitude");
-
-    wall_melt(*model, bed_elevation, *result);
-    return result;
-  }
-};
-
 //! @brief Diagnostically reports the staggered-grid components of the velocity of the
 //! water in the subglacial layer.
 class BasalWaterVelocity : public Diag<Routing>
@@ -174,72 +147,10 @@ public:
     m_vars[1].long_name("velocity of water in subglacial layer, j-offset").units("m s^-1");
   }
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const {
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
     auto result = allocate<array::Staggered>("bwatvel");
 
     result->copy_from(model->velocity_staggered());
-
-    return result;
-  }
-};
-
-//! Compute the hydraulic potential.
-/*!
-  Computes \f$\psi = P + \rho_w g (b + W)\f$.
-*/
-void hydraulic_potential(const array::Scalar &W,
-                         const array::Scalar &P,
-                         const array::Scalar &sea_level,
-                         const array::Scalar &bed,
-                         const array::Scalar &ice_thickness,
-                         array::Scalar &result) {
-
-  auto grid = result.grid();
-
-  auto config = grid->ctx()->config();
-
-  double
-    ice_density       = config->get_number("constants.ice.density"),
-    sea_water_density = config->get_number("constants.sea_water.density"),
-    C                 = ice_density / sea_water_density,
-    rg                = (config->get_number("constants.fresh_water.density") *
-                         config->get_number("constants.standard_gravity"));
-
-  array::AccessScope list{&P, &W, &sea_level, &ice_thickness, &bed, &result};
-
-  for (auto p : grid->points()) {
-    const int i = p.i(), j = p.j();
-
-    double b = std::max(bed(i, j), sea_level(i, j) - C * ice_thickness(i, j));
-
-    result(i, j) = P(i, j) + rg * (b + W(i, j));
-  }
-}
-
-/*! @brief Report hydraulic potential in the subglacial hydrology system */
-class HydraulicPotential : public Diag<Routing>
-{
-public:
-  HydraulicPotential(const Routing *m) : Diag<Routing>(m) {
-    m_vars = { { m_sys, "hydraulic_potential", *m_grid } };
-    m_vars[0].long_name("hydraulic potential in the subglacial hydrology system").units("Pa");
-  }
-
-protected:
-  std::shared_ptr<array::Array> compute_impl() const {
-
-    auto result = allocate<array::Scalar>("hydraulic_potential");
-
-    const auto &sea_level     = *m_grid->variables().get_2d_scalar("sea_level");
-    const auto &bed_elevation = *m_grid->variables().get_2d_scalar("bedrock_altitude");
-    const auto &ice_thickness = *m_grid->variables().get_2d_scalar("land_ice_thickness");
-
-    hydraulic_potential(model->subglacial_water_thickness(),
-                        model->subglacial_water_pressure(),
-                        sea_level,
-                        bed_elevation,
-                        ice_thickness,
-                        *result);
 
     return result;
   }
@@ -614,6 +525,39 @@ void wall_melt(const Routing &model,
     } else {
       result(i, j) = 0.0;
     }
+  }
+}
+
+//! Compute the hydraulic potential.
+/*!
+  Computes \f$\psi = P + \rho_w g (b + W)\f$.
+*/
+void hydraulic_potential(const array::Scalar &W,
+                         const array::Scalar &P,
+                         const array::Scalar &sea_level,
+                         const array::Scalar &bed,
+                         const array::Scalar &ice_thickness,
+                         array::Scalar &result) {
+
+  auto grid = result.grid();
+
+  auto config = grid->ctx()->config();
+
+  double
+    ice_density       = config->get_number("constants.ice.density"),
+    sea_water_density = config->get_number("constants.sea_water.density"),
+    C                 = ice_density / sea_water_density,
+    rg                = (config->get_number("constants.fresh_water.density") *
+                         config->get_number("constants.standard_gravity"));
+
+  array::AccessScope list{&P, &W, &sea_level, &ice_thickness, &bed, &result};
+
+  for (auto p : grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    double b = std::max(bed(i, j), sea_level(i, j) - C * ice_thickness(i, j));
+
+    result(i, j) = P(i, j) + rg * (b + W(i, j));
   }
 }
 
@@ -997,8 +941,6 @@ std::map<std::string, Diagnostic::Ptr> Routing::spatial_diagnostics_impl() const
     {"bwp",                 Diagnostic::Ptr(new BasalWaterPressure(this))},
     {"bwprel",              Diagnostic::Ptr(new RelativeBasalWaterPressure(this))},
     {"effbwp",              Diagnostic::Ptr(new EffectiveBasalWaterPressure(this))},
-    {"wallmelt",            Diagnostic::Ptr(new WallMelt(this))},
-    {"hydraulic_potential", Diagnostic::Ptr(new HydraulicPotential(this))},
   };
   return combine(result, Hydrology::spatial_diagnostics_impl());
 }

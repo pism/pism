@@ -43,7 +43,7 @@ protected:
   virtual const array::Scalar& melt_impl() const;
   virtual const array::Scalar& runoff_impl() const;
 
-  MaxTimestep max_timestep_impl(double t) const;
+  MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 protected:
   // storage for the rest of the fields is inherited from SurfaceModel
   std::shared_ptr<array::Scalar> m_mass_flux;

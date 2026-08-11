@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2019, 2020, 2022, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2016, 2017, 2019, 2020, 2022, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -48,12 +48,12 @@ public:
   void flow_step(const Geometry &ice_geometry, double dt,
                  const array::Vector    &advective_velocity,
                  const array::Staggered &diffusive_flux,
-                 const array::Scalar  &thickness_bc_mask);
+                 const array::Scalar    &thickness_bc_mask);
 
   void source_term_step(const Geometry &geometry, double dt,
                         const array::Scalar &thickness_bc_mask,
-                        const array::Scalar   &surface_mass_balance_rate,
-                        const array::Scalar   &basal_melt_rate);
+                        const array::Scalar &surface_mass_balance_rate,
+                        const array::Scalar &basal_melt_rate);
 
   void apply_flux_divergence(Geometry &geometry) const;
   void apply_mass_fluxes(Geometry &geometry) const;

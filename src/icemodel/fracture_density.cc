@@ -1,4 +1,4 @@
-// Copyright (C) 2011-2020, 2023, 2025 Torsten Albrecht and Constantine Khroulev
+// Copyright (C) 2011-2020, 2023, 2025, 2026 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -64,7 +64,7 @@ void IceModel::update_fracture_density(double dt) {
   // compute the vertically-averaged ice hardness
   auto &hardness = *m_work2d[1];
   {
-    rheology::averaged_hardness_vec(*m_stress_balance->shallow()->flow_law(),
+    rheology::averaged_hardness_vec(*m_stress_balance.shallow->flow_law(),
                                     m_geometry.ice_thickness,
                                     m_energy_model->enthalpy(),
                                     hardness);
@@ -73,7 +73,7 @@ void IceModel::update_fracture_density(double dt) {
   // This model has the same time-step restriction as the mass transport code so we don't
   // check if this time step is short enough.
   m_fracture->update(dt, m_geometry,
-                     m_stress_balance->shallow()->velocity(),
+                     m_stress_balance.shallow->velocity(),
                      hardness, bc_mask);
 }
 

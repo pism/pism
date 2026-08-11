@@ -36,6 +36,14 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/projection.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/basalstrength/YieldStress.hh"
+#include "pism/basalstrength/basal_resistance.hh"
+#include "pism/rheology/FlowLawFactory.hh"
+#include "pism/earth/BedDef.hh"
+#include "pism/hydrology/Routing.hh"
+#include "pism/energy/BedThermalUnit.hh"
+#include "pism/stressbalance/sia/SIAFD.hh"
+#include "pism/stressbalance/sia/BedSmoother.hh"
 
 #if (Pism_USE_PROJ == 1)
 #include "pism/util/Proj.hh"
@@ -78,7 +86,7 @@ public:
   }
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
 
     auto result        = std::make_shared<array::Scalar>(m_grid, "");
     result->metadata() = m_vars[0];
@@ -613,6 +621,84 @@ protected:
   AmountKind m_kind;
 };
 
+//! \brief Computes basal frictional heating.
+class StressBalanceBfrict : public Diag<IceModel> {
+public:
+  StressBalanceBfrict(const IceModel *m);
+
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+StressBalanceBfrict::StressBalanceBfrict(const IceModel *m) : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "bfrict", *m_grid } };
+  m_vars[0].long_name("basal frictional heating").units("W m^-2");
+}
+
+std::shared_ptr<array::Array>
+StressBalanceBfrict::compute_impl(const Geometry & /*geometry*/) const {
+
+  auto result = allocate<array::Scalar>("bfrict");
+
+  result->copy_from(model->stress_balance()->shallow->basal_frictional_heating());
+
+  return result;
+}
+
+//! \brief Reports the volumetric strain heating (3D).
+class StressBalanceStrainheat : public Diag<IceModel> {
+public:
+  StressBalanceStrainheat(const IceModel *m);
+
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+StressBalanceStrainheat::StressBalanceStrainheat(const IceModel *m) : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "strainheat", *m_grid, m_grid->z() } };
+  m_vars[0]
+      .long_name("rate of strain heating in ice (dissipation heating)")
+      .units("W m^-3")
+      .output_units("mW m^-3");
+}
+
+std::shared_ptr<array::Array>
+StressBalanceStrainheat::compute_impl(const Geometry & /*geometry*/) const {
+  auto result =
+      std::make_shared<array::Array3D>(m_grid, "strainheat", array::WITHOUT_GHOSTS, m_grid->z());
+
+  result->metadata() = m_vars[0];
+
+  result->copy_from(model->volumetric_strain_heating());
+
+  return result;
+}
+
+
+//! \brief Computes the mass of ice not displacing sea water (per cell)
+class IceMassNotDisplacingSeaWater : public Diag<IceModel> {
+public:
+  IceMassNotDisplacingSeaWater(const IceModel *m) : Diag<IceModel>(m) {
+    m_vars = { { m_sys, "limnsw", *m_grid } };
+    m_vars[0]
+        .units("kg")
+        .long_name("mass of the ice not displacing sea water")
+        .standard_name("land_ice_mass_not_displacing_sea_water");
+    m_vars[0]["_FillValue"] = { fill_value() };
+  }
+
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const {
+
+    auto result = allocate<array::Scalar>("ice_mass");
+
+    ice_mass_not_displacing_seawater(
+        geometry, m_config->get_number("output.ice_free_thickness_standard"), *result);
+
+    return result;
+  }
+};
+
 } // end of namespace diagnostics
 } // end of namespace pism
 
@@ -750,12 +836,11 @@ public:
   IceMarginPressureDifference(IceModel *m);
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const;
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 IceMarginPressureDifference::IceMarginPressureDifference(IceModel *m) : Diag<IceModel>(m) {
 
-  /* set metadata: */
   m_vars = { { m_sys, "ice_margin_pressure_difference", *m_grid } };
   m_vars[0]
       .long_name(
@@ -764,15 +849,15 @@ IceMarginPressureDifference::IceMarginPressureDifference(IceModel *m) : Diag<Ice
   m_vars[0]["_FillValue"] = { fill_value() };
 }
 
-std::shared_ptr<array::Array> IceMarginPressureDifference::compute_impl() const {
+std::shared_ptr<array::Array> IceMarginPressureDifference::compute_impl(const Geometry &geometry) const {
 
   auto result = allocate<array::Scalar>("ice_margin_pressure_difference");
 
   array::CellType1 mask(m_grid, "mask");
 
-  const auto &H         = model->geometry().ice_thickness;
-  const auto &bed       = model->geometry().bed_elevation;
-  const auto &sea_level = model->geometry().sea_level_elevation;
+  const auto &H         = geometry.ice_thickness;
+  const auto &bed       = geometry.bed_elevation;
+  const auto &sea_level = geometry.sea_level_elevation;
 
   {
     const double H_threshold = m_config->get_number("stress_balance.ice_free_thickness_standard");
@@ -891,7 +976,7 @@ public:
   HardnessAverage(const IceModel *m);
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 HardnessAverage::HardnessAverage(const IceModel *m) : Diag<IceModel>(m) {
@@ -908,11 +993,11 @@ HardnessAverage::HardnessAverage(const IceModel *m) : Diag<IceModel>(m) {
 }
 
 //! \brief Computes vertically-averaged ice hardness.
-std::shared_ptr<array::Array> HardnessAverage::compute_impl() const {
+std::shared_ptr<array::Array> HardnessAverage::compute_impl(const Geometry &geometry) const {
 
-  const rheology::FlowLaw *flow_law = model->stress_balance()->shallow()->flow_law().get();
+  const rheology::FlowLaw *flow_law = model->stress_balance()->shallow->flow_law().get();
   if (flow_law == NULL) {
-    flow_law = model->stress_balance()->modifier()->flow_law().get();
+    flow_law = model->stress_balance()->modifier->flow_law().get();
     if (flow_law == NULL) {
       throw RuntimeError(PISM_ERROR_LOCATION,
                          "Can't compute vertically-averaged hardness: no flow law is used.");
@@ -922,10 +1007,10 @@ std::shared_ptr<array::Array> HardnessAverage::compute_impl() const {
   auto result        = std::make_shared<array::Scalar>(m_grid, "hardav");
   result->metadata() = m_vars[0];
 
-  const auto &cell_type = model->geometry().cell_type;
+  const auto &cell_type = geometry.cell_type;
 
   const array::Array3D &ice_enthalpy = model->energy_balance_model()->enthalpy();
-  const array::Scalar &ice_thickness = model->geometry().ice_thickness;
+  const array::Scalar &ice_thickness = geometry.ice_thickness;
   double fill = fill_value();
 
   array::AccessScope list{ &cell_type, &ice_enthalpy, &ice_thickness, result.get() };
@@ -957,7 +1042,7 @@ public:
   Rank(const IceModel *m);
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 Rank::Rank(const IceModel *m) : Diag<IceModel>(m) {
@@ -969,7 +1054,7 @@ Rank::Rank(const IceModel *m) : Diag<IceModel>(m) {
       .set_output_type(io::PISM_INT);
 }
 
-std::shared_ptr<array::Array> Rank::compute_impl() const {
+std::shared_ptr<array::Array> Rank::compute_impl(const Geometry &/*geometry*/) const {
 
   auto result        = std::make_shared<array::Scalar>(m_grid, "rank");
   result->metadata() = m_vars[0];
@@ -989,7 +1074,7 @@ public:
   CTS(const IceModel *m);
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 CTS::CTS(const IceModel *m) : Diag<IceModel>(m) {
@@ -999,13 +1084,13 @@ CTS::CTS(const IceModel *m) : Diag<IceModel>(m) {
       .units("1");
 }
 
-std::shared_ptr<array::Array> CTS::compute_impl() const {
+std::shared_ptr<array::Array> CTS::compute_impl(const Geometry &geometry) const {
 
-  std::shared_ptr<array::Array3D> result(new array::Array3D(m_grid, "cts", array::WITHOUT_GHOSTS, m_grid->z()));
+  std::shared_ptr<array::Array3D> result(
+      new array::Array3D(m_grid, "cts", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
-  energy::compute_cts(model->energy_balance_model()->enthalpy(), model->geometry().ice_thickness,
-                      *result);
+  energy::compute_cts(model->energy_balance_model()->enthalpy(), geometry.ice_thickness, *result);
 
   return result;
 }
@@ -1016,7 +1101,7 @@ public:
   Temperature(const IceModel *m);
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 Temperature::Temperature(const IceModel *m) : Diag<IceModel>(m) {
@@ -1028,13 +1113,13 @@ Temperature::Temperature(const IceModel *m) : Diag<IceModel>(m) {
   m_vars[0]["valid_min"] = { 0.0 };
 }
 
-std::shared_ptr<array::Array> Temperature::compute_impl() const {
+std::shared_ptr<array::Array> Temperature::compute_impl(const Geometry &geometry) const {
 
   std::shared_ptr<array::Array3D> result(
       new array::Array3D(m_grid, "temp", array::WITHOUT_GHOSTS, m_grid->z()));
   result->metadata() = m_vars[0];
 
-  const auto &thickness = model->geometry().ice_thickness;
+  const auto &thickness = geometry.ice_thickness;
   const auto &enthalpy  = model->energy_balance_model()->enthalpy();
 
   auto EC = model->ctx()->enthalpy_converter();
@@ -1071,7 +1156,7 @@ class TemperaturePA : public Diag<IceModel>
 public:
   TemperaturePA(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 
@@ -1084,14 +1169,14 @@ TemperaturePA::TemperaturePA(const IceModel *m)
   m_vars[0]["valid_max"] = {0};
 }
 
-std::shared_ptr<array::Array> TemperaturePA::compute_impl() const {
+std::shared_ptr<array::Array> TemperaturePA::compute_impl(const Geometry &geometry) const {
   bool cold_mode = set_member(m_config->get_string("energy.model"), {"cold", "none"});
   double melting_point_temp = m_config->get_number("constants.fresh_water.melting_point_temperature");
 
   auto result = std::make_shared<array::Array3D>(m_grid, "temp_pa", array::WITHOUT_GHOSTS, m_grid->z());
   result->metadata() = m_vars[0];
 
-  const auto &thickness = model->geometry().ice_thickness;
+  const auto &thickness = geometry.ice_thickness;
   const auto &enthalpy  = model->energy_balance_model()->enthalpy();
 
   auto EC = model->ctx()->enthalpy_converter();
@@ -1138,7 +1223,7 @@ class TemperaturePABasal : public Diag<IceModel>
 public:
   TemperaturePABasal(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 TemperaturePABasal::TemperaturePABasal(const IceModel *m)
@@ -1147,7 +1232,7 @@ TemperaturePABasal::TemperaturePABasal(const IceModel *m)
   m_vars[0].long_name("pressure-adjusted ice temperature at the base of ice").units("degree_Celsius");
 }
 
-std::shared_ptr<array::Array> TemperaturePABasal::compute_impl() const {
+std::shared_ptr<array::Array> TemperaturePABasal::compute_impl(const Geometry &geometry) const {
 
   bool cold_mode = set_member(m_config->get_string("energy.model"), {"cold", "none"});
   double melting_point_temp = m_config->get_number("constants.fresh_water.melting_point_temperature");
@@ -1155,7 +1240,7 @@ std::shared_ptr<array::Array> TemperaturePABasal::compute_impl() const {
   auto result = std::make_shared<array::Scalar>(m_grid, "temp_pa_base");
   result->metadata() = m_vars[0];
 
-  const auto &thickness = model->geometry().ice_thickness;
+  const auto &thickness = geometry.ice_thickness;
   const auto &enthalpy = model->energy_balance_model()->enthalpy();
 
   auto EC = model->ctx()->enthalpy_converter();
@@ -1196,7 +1281,7 @@ class IceEnthalpySurface : public Diag<IceModel>
 public:
   IceEnthalpySurface(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 IceEnthalpySurface::IceEnthalpySurface(const IceModel *m)
@@ -1206,7 +1291,7 @@ IceEnthalpySurface::IceEnthalpySurface(const IceModel *m)
   m_vars[0]["_FillValue"] = {fill_value()};
 }
 
-std::shared_ptr<array::Array> IceEnthalpySurface::compute_impl() const {
+std::shared_ptr<array::Array> IceEnthalpySurface::compute_impl(const Geometry &geometry) const {
 
   auto result = std::make_shared<array::Scalar>(m_grid, "enthalpysurf");
   result->metadata() = m_vars[0];
@@ -1214,7 +1299,7 @@ std::shared_ptr<array::Array> IceEnthalpySurface::compute_impl() const {
   // compute levels corresponding to 1 m below the ice surface:
 
   const array::Array3D& ice_enthalpy = model->energy_balance_model()->enthalpy();
-  const array::Scalar& ice_thickness = model->geometry().ice_thickness;
+  const array::Scalar& ice_thickness = geometry.ice_thickness;
 
   array::AccessScope list{&ice_thickness, result.get()};
 
@@ -1245,7 +1330,7 @@ class IceEnthalpyBasal : public Diag<IceModel>
 public:
   IceEnthalpyBasal(const IceModel *m);
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 IceEnthalpyBasal::IceEnthalpyBasal(const IceModel *m)
@@ -1255,14 +1340,14 @@ IceEnthalpyBasal::IceEnthalpyBasal(const IceModel *m)
   m_vars[0]["_FillValue"] = {fill_value()};
 }
 
-std::shared_ptr<array::Array> IceEnthalpyBasal::compute_impl() const {
+std::shared_ptr<array::Array> IceEnthalpyBasal::compute_impl(const Geometry &geometry) const {
 
   auto result = std::make_shared<array::Scalar>(m_grid, "enthalpybase");
   result->metadata() = m_vars[0];
 
   extract_surface(model->energy_balance_model()->enthalpy(), 0.0, *result);  // z=0 slice
 
-  apply_mask(model->geometry().ice_thickness, fill_value(), *result);
+  apply_mask(geometry.ice_thickness, fill_value(), *result);
 
   return result;
 }
@@ -1273,7 +1358,7 @@ class TemperatureBasal : public Diag<IceModel>
 public:
   TemperatureBasal(const IceModel *m, AreaType area_type);
 private:
-  std::shared_ptr<array::Array> compute_impl() const;
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 
   AreaType m_area_type;
 };
@@ -1305,18 +1390,18 @@ TemperatureBasal::TemperatureBasal(const IceModel *m, AreaType area_type)
   m_vars[0]["_FillValue"] = { fill_value() };
 }
 
-std::shared_ptr<array::Array> TemperatureBasal::compute_impl() const {
+std::shared_ptr<array::Array> TemperatureBasal::compute_impl(const Geometry &geometry) const {
 
   auto result = allocate<array::Scalar>("basal_temperature");
 
-  const auto &thickness = model->geometry().ice_thickness;
+  const auto &thickness = geometry.ice_thickness;
 
   auto EC = model->ctx()->enthalpy_converter();
 
   extract_surface(model->energy_balance_model()->enthalpy(), 0.0, *result); // z=0 (basal) slice
   // Now result contains basal enthalpy.
 
-  const auto &cell_type = model->geometry().cell_type;
+  const auto &cell_type = geometry.cell_type;
   double fill = fill_value();
 
   array::AccessScope list{ &cell_type, result.get(), &thickness };
@@ -1351,7 +1436,7 @@ public:
   TemperatureSurface(const IceModel *m);
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 TemperatureSurface::TemperatureSurface(const IceModel *m) : Diag<IceModel>(m) {
@@ -1363,11 +1448,11 @@ TemperatureSurface::TemperatureSurface(const IceModel *m) : Diag<IceModel>(m) {
   m_vars[0]["_FillValue"] = { fill_value() };
 }
 
-std::shared_ptr<array::Array> TemperatureSurface::compute_impl() const {
+std::shared_ptr<array::Array> TemperatureSurface::compute_impl(const Geometry &geometry) const {
 
-  const array::Scalar &thickness = model->geometry().ice_thickness;
+  const array::Scalar &thickness = geometry.ice_thickness;
 
-  auto enth   = IceEnthalpySurface(model).compute();
+  auto enth   = IceEnthalpySurface(model).compute(geometry);
   auto result = array::cast<array::Scalar>(enth);
 
   auto EC = model->ctx()->enthalpy_converter();
@@ -1405,7 +1490,7 @@ public:
   LiquidFraction(const IceModel *m);
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 LiquidFraction::LiquidFraction(const IceModel *m) : Diag<IceModel>(m) {
@@ -1414,7 +1499,7 @@ LiquidFraction::LiquidFraction(const IceModel *m) : Diag<IceModel>(m) {
   m_vars[0]["valid_range"] = { 0.0, 1.0 };
 }
 
-std::shared_ptr<array::Array> LiquidFraction::compute_impl() const {
+std::shared_ptr<array::Array> LiquidFraction::compute_impl(const Geometry &geometry) const {
 
   std::shared_ptr<array::Array3D> result(
       new array::Array3D(m_grid, "liqfrac", array::WITHOUT_GHOSTS, m_grid->z()));
@@ -1426,7 +1511,7 @@ std::shared_ptr<array::Array> LiquidFraction::compute_impl() const {
     result->set(0.0);
   } else {
     energy::compute_liquid_water_fraction(model->energy_balance_model()->enthalpy(),
-                                          model->geometry().ice_thickness, *result);
+                                          geometry.ice_thickness, *result);
   }
 
   return result;
@@ -1438,7 +1523,7 @@ public:
   TemperateIceThickness(const IceModel *m);
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 TemperateIceThickness::TemperateIceThickness(const IceModel *m) : Diag<IceModel>(m) {
@@ -1447,13 +1532,13 @@ TemperateIceThickness::TemperateIceThickness(const IceModel *m) : Diag<IceModel>
   m_vars[0]["_FillValue"] = { fill_value() };
 }
 
-std::shared_ptr<array::Array> TemperateIceThickness::compute_impl() const {
+std::shared_ptr<array::Array> TemperateIceThickness::compute_impl(const Geometry &geometry) const {
 
   auto result = allocate<array::Scalar>("tempicethk");
 
-  const auto &cell_type     = model->geometry().cell_type;
+  const auto &cell_type     = geometry.cell_type;
   const auto &ice_enthalpy  = model->energy_balance_model()->enthalpy();
-  const auto &ice_thickness = model->geometry().ice_thickness;
+  const auto &ice_thickness = geometry.ice_thickness;
 
   array::AccessScope list{ &cell_type, result.get(), &ice_enthalpy, &ice_thickness };
 
@@ -1504,7 +1589,7 @@ public:
   TemperateIceThicknessBasal(const IceModel *m);
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 TemperateIceThicknessBasal::TemperateIceThicknessBasal(const IceModel *m) : Diag<IceModel>(m) {
@@ -1516,15 +1601,15 @@ TemperateIceThicknessBasal::TemperateIceThicknessBasal(const IceModel *m) : Diag
 /*!
  * Uses linear interpolation to go beyond vertical grid resolution.
  */
-std::shared_ptr<array::Array> TemperateIceThicknessBasal::compute_impl() const {
+std::shared_ptr<array::Array> TemperateIceThicknessBasal::compute_impl(const Geometry &geometry) const {
 
   auto result = allocate<array::Scalar>("tempicethk_basal");
 
   auto EC = model->ctx()->enthalpy_converter();
 
-  const auto &cell_type     = model->geometry().cell_type;
+  const auto &cell_type     = geometry.cell_type;
   const auto &ice_enthalpy  = model->energy_balance_model()->enthalpy();
-  const auto &ice_thickness = model->geometry().ice_thickness;
+  const auto &ice_thickness = geometry.ice_thickness;
   double fill = fill_value();
 
   array::AccessScope list{ &cell_type, result.get(), &ice_thickness, &ice_enthalpy };
@@ -1705,10 +1790,10 @@ public:
   IceMassNotDisplacingSeaWater(const IceModel *m)
       : TSDiag<TSSnapshotDiagnostic, IceModel>(m, "limnsw") {
 
-    set_units("kg", "kg");
-    m_variable["long_name"]     = "mass of the ice not displacing sea water";
-    m_variable["standard_name"] = "land_ice_mass_not_displacing_sea_water";
-    m_variable["valid_min"]     = { 0.0 };
+    m_variable.units("kg")
+        .long_name("mass of the ice not displacing sea water")
+        .standard_name("land_ice_mass_not_displacing_sea_water");
+    m_variable["valid_min"] = { 0.0 };
   }
 
   double compute() {
@@ -2124,10 +2209,10 @@ public:
 
     const auto *stress_balance = model->stress_balance();
 
-    auto cfl_2d = stress_balance->max_timestep_cfl_2d();
-    auto cfl_3d = stress_balance->max_timestep_cfl_3d();
+    auto cfl_2d = model->max_timestep_cfl_2d();
+    auto cfl_3d = model->max_timestep_cfl_3d();
 
-    auto dt_diff = max_timestep_diffusivity(stress_balance->max_diffusivity(),
+    auto dt_diff = max_timestep_diffusivity(stress_balance->modifier->max_diffusivity(),
                                             model->grid()->dx(),
                                             model->grid()->dy(),
                                             m_config->get_number("time_stepping.adaptive_ratio"));
@@ -2153,7 +2238,7 @@ public:
   }
 
   double compute() {
-    return model->stress_balance()->max_diffusivity();
+    return model->stress_balance()->modifier->max_diffusivity();
   }
 };
 
@@ -2180,7 +2265,7 @@ public:
   }
 
   double compute() {
-    CFLData cfl = model->stress_balance()->max_timestep_cfl_3d();
+    CFLData cfl = model->max_timestep_cfl_3d();
 
     return std::max(cfl.u_max, cfl.v_max);
   }
@@ -2498,13 +2583,13 @@ public:
   }
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const {
 
     auto result        = std::make_shared<array::Scalar>(m_grid, "dHdt");
     result->metadata() = m_vars[0];
 
     if (m_interval_length > 0.0) {
-      model->geometry().ice_thickness.add(-1.0, m_last_thickness, *result);
+      geometry.ice_thickness.add(-1.0, m_last_thickness, *result);
       result->scale(1.0 / m_interval_length);
     } else {
       result->set(fill_value());
@@ -2532,7 +2617,7 @@ public:
   LatLonBounds(const IceModel *m, const std::string &var_name, const std::string &proj_string);
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 
   std::string m_var_name, m_proj_string;
 };
@@ -2567,7 +2652,7 @@ LatLonBounds::LatLonBounds(const IceModel *m, const std::string &var_name,
   // will not be available and so this code will not run.
 }
 
-std::shared_ptr<array::Array> LatLonBounds::compute_impl() const {
+std::shared_ptr<array::Array> LatLonBounds::compute_impl(const Geometry &/*geometry*/) const {
   std::shared_ptr<array::Array3D> result(new array::Array3D(
       m_grid, m_var_name + "_bnds", array::WITHOUT_GHOSTS, { 0.0, 1.0, 2.0, 3.0 }));
   result->metadata(0) = m_vars[0];
@@ -2586,7 +2671,7 @@ public:
   IceAreaFraction(const IceModel *m);
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 IceAreaFraction::IceAreaFraction(const IceModel *m) : Diag<IceModel>(m) {
@@ -2597,21 +2682,21 @@ IceAreaFraction::IceAreaFraction(const IceModel *m) : Diag<IceModel>(m) {
       .units("1");
 }
 
-std::shared_ptr<array::Array> IceAreaFraction::compute_impl() const {
+std::shared_ptr<array::Array> IceAreaFraction::compute_impl(const Geometry &geometry) const {
 
   auto result = allocate<array::Scalar>(land_ice_area_fraction_name);
 
-  const array::Scalar1 &thickness         = model->geometry().ice_thickness,
-                       &surface_elevation = model->geometry().ice_surface_elevation,
-                       &bed_topography    = model->geometry().bed_elevation;
+  const array::Scalar1 &thickness         = geometry.ice_thickness,
+                       &surface_elevation = geometry.ice_surface_elevation,
+                       &bed_topography    = geometry.bed_elevation;
 
-  const array::CellType1 &cell_type = model->geometry().cell_type;
+  const array::CellType1 &cell_type = geometry.cell_type;
 
   array::AccessScope list{ &thickness, &surface_elevation, &bed_topography, &cell_type,
                            result.get() };
 
   const bool do_part_grid   = m_config->get_flag("geometry.part_grid.enabled");
-  const array::Scalar &Href = model->geometry().ice_area_specific_volume;
+  const array::Scalar &Href = geometry.ice_area_specific_volume;
   ;
   if (do_part_grid) {
     list.add(Href);
@@ -2663,7 +2748,7 @@ public:
   IceAreaFractionGrounded(const IceModel *m);
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 IceAreaFractionGrounded::IceAreaFractionGrounded(const IceModel *m) : Diag<IceModel>(m) {
@@ -2674,18 +2759,18 @@ IceAreaFractionGrounded::IceAreaFractionGrounded(const IceModel *m) : Diag<IceMo
       .units("1");
 }
 
-std::shared_ptr<array::Array> IceAreaFractionGrounded::compute_impl() const {
+std::shared_ptr<array::Array> IceAreaFractionGrounded::compute_impl(const Geometry &geometry) const {
   auto result = std::make_shared<array::Scalar>(m_grid, grounded_ice_sheet_area_fraction_name);
   result->metadata() = m_vars[0];
 
   const double ice_density   = m_config->get_number("constants.ice.density"),
                ocean_density = m_config->get_number("constants.sea_water.density");
 
-  const auto &ice_thickness  = model->geometry().ice_thickness;
-  const auto &sea_level      = model->geometry().sea_level_elevation;
-  const auto &bed_topography = model->geometry().bed_elevation;
+  const auto &ice_thickness  = geometry.ice_thickness;
+  const auto &sea_level      = geometry.sea_level_elevation;
+  const auto &bed_topography = geometry.bed_elevation;
 
-  const auto &cell_type = model->geometry().cell_type;
+  const auto &cell_type = geometry.cell_type;
 
   compute_grounded_cell_fraction(ice_density, ocean_density, sea_level, ice_thickness,
                                  bed_topography, *result);
@@ -2716,7 +2801,7 @@ public:
   IceAreaFractionFloating(const IceModel *m);
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 IceAreaFractionFloating::IceAreaFractionFloating(const IceModel *m) : Diag<IceModel>(m) {
@@ -2727,10 +2812,10 @@ IceAreaFractionFloating::IceAreaFractionFloating(const IceModel *m) : Diag<IceMo
       .units("1");
 }
 
-std::shared_ptr<array::Array> IceAreaFractionFloating::compute_impl() const {
+std::shared_ptr<array::Array> IceAreaFractionFloating::compute_impl(const Geometry &geometry) const {
 
-  auto ice_area_fraction      = IceAreaFraction(model).compute();
-  auto grounded_area_fraction = IceAreaFractionGrounded(model).compute();
+  auto ice_area_fraction      = IceAreaFraction(model).compute(geometry);
+  auto grounded_area_fraction = IceAreaFractionGrounded(model).compute(geometry);
 
   auto result        = ice_area_fraction;
   result->metadata() = m_vars[0];
@@ -2747,7 +2832,7 @@ public:
   HeightAboveFloatation(const IceModel *m);
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 HeightAboveFloatation::HeightAboveFloatation(const IceModel *m) : Diag<IceModel>(m) {
@@ -2759,19 +2844,19 @@ HeightAboveFloatation::HeightAboveFloatation(const IceModel *m) : Diag<IceModel>
   m_vars[0]["comment"]    = "shows how close to floatation the ice is at a given location";
 }
 
-std::shared_ptr<array::Array> HeightAboveFloatation::compute_impl() const {
+std::shared_ptr<array::Array> HeightAboveFloatation::compute_impl(const Geometry &geometry) const {
 
   auto result = allocate<array::Scalar>("height_above_flotation");
 
-  const auto &cell_type = model->geometry().cell_type;
+  const auto &cell_type = geometry.cell_type;
 
   const double ice_density   = m_config->get_number("constants.ice.density"),
                ocean_density = m_config->get_number("constants.sea_water.density");
   double fill = fill_value();
 
-  const auto &sea_level      = model->geometry().sea_level_elevation;
-  const auto &ice_thickness  = model->geometry().ice_thickness;
-  const auto &bed_topography = model->geometry().bed_elevation;
+  const auto &sea_level      = geometry.sea_level_elevation;
+  const auto &ice_thickness  = geometry.ice_thickness;
+  const auto &bed_topography = geometry.bed_elevation;
 
   array::AccessScope list{ &cell_type, result.get(), &ice_thickness, &bed_topography, &sea_level };
 
@@ -2804,7 +2889,7 @@ public:
   IceMass(const IceModel *m);
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 IceMass::IceMass(const IceModel *m) : Diag<IceModel>(m) {
@@ -2813,15 +2898,15 @@ IceMass::IceMass(const IceModel *m) : Diag<IceModel>(m) {
   m_vars[0]["_FillValue"] = { fill_value() };
 }
 
-std::shared_ptr<array::Array> IceMass::compute_impl() const {
+std::shared_ptr<array::Array> IceMass::compute_impl(const Geometry &geometry) const {
 
   auto result = allocate<array::Scalar>("ice_mass");
 
-  const auto &cell_type = model->geometry().cell_type;
+  const auto &cell_type = geometry.cell_type;
 
   const double ice_density = m_config->get_number("constants.ice.density");
 
-  const array::Scalar &ice_thickness = model->geometry().ice_thickness;
+  const array::Scalar &ice_thickness = geometry.ice_thickness;
 
   auto cell_area = m_grid->cell_area();
 
@@ -2850,7 +2935,7 @@ std::shared_ptr<array::Array> IceMass::compute_impl() const {
 
   // Add the mass of ice in Href:
   if (m_config->get_flag("geometry.part_grid.enabled")) {
-    const array::Scalar &Href = model->geometry().ice_area_specific_volume;
+    const array::Scalar &Href = geometry.ice_area_specific_volume;
     list.add(Href);
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
@@ -2870,7 +2955,7 @@ public:
   BedTopographySeaLevelAdjusted(const IceModel *m);
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const;
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 BedTopographySeaLevelAdjusted::BedTopographySeaLevelAdjusted(const IceModel *m)
@@ -2879,12 +2964,12 @@ BedTopographySeaLevelAdjusted::BedTopographySeaLevelAdjusted(const IceModel *m)
   m_vars[0].long_name("sea-level adjusted bed topography (zero is at sea level)").units("meters");
 }
 
-std::shared_ptr<array::Array> BedTopographySeaLevelAdjusted::compute_impl() const {
+std::shared_ptr<array::Array> BedTopographySeaLevelAdjusted::compute_impl(const Geometry &geometry) const {
 
   auto result = allocate<array::Scalar>("topg_sl_adjusted");
 
-  const auto &bed       = model->geometry().bed_elevation;
-  const auto &sea_level = model->geometry().sea_level_elevation;
+  const auto &bed       = geometry.bed_elevation;
+  const auto &sea_level = geometry.sea_level_elevation;
 
   array::AccessScope list{ &bed, &sea_level, result.get() };
 
@@ -2903,7 +2988,7 @@ public:
   IceHardness(const IceModel *m);
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const;
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 IceHardness::IceHardness(const IceModel *m) : Diag<IceModel>(m) {
@@ -2915,7 +3000,7 @@ IceHardness::IceHardness(const IceModel *m) : Diag<IceModel>(m) {
   m_vars[0]["comment"] = "units depend on the Glen exponent used by the flow law";
 }
 
-std::shared_ptr<array::Array> IceHardness::compute_impl() const {
+std::shared_ptr<array::Array> IceHardness::compute_impl(const Geometry &geometry) const {
 
   std::shared_ptr<array::Array3D> result(
       new array::Array3D(m_grid, "hardness", array::WITHOUT_GHOSTS, m_grid->z()));
@@ -2924,9 +3009,9 @@ std::shared_ptr<array::Array> IceHardness::compute_impl() const {
   auto EC = m_grid->ctx()->enthalpy_converter();
 
   const array::Array3D &ice_enthalpy = model->energy_balance_model()->enthalpy();
-  const array::Scalar &ice_thickness = model->geometry().ice_thickness;
+  const array::Scalar &ice_thickness = geometry.ice_thickness;
 
-  const rheology::FlowLaw &flow_law = *model->stress_balance()->modifier()->flow_law();
+  const rheology::FlowLaw &flow_law = *model->stress_balance()->modifier->flow_law();
 
   array::AccessScope list{ &ice_enthalpy, &ice_thickness, result.get() };
 
@@ -2964,7 +3049,7 @@ public:
   IceViscosity(IceModel *m);
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const;
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
 };
 
 IceViscosity::IceViscosity(IceModel *m) : Diag<IceModel>(m) {
@@ -2981,7 +3066,7 @@ static inline double square(double x) {
   return x * x;
 }
 
-std::shared_ptr<array::Array> IceViscosity::compute_impl() const {
+std::shared_ptr<array::Array> IceViscosity::compute_impl(const Geometry &geometry) const {
 
   std::shared_ptr<array::Array3D> result(
       new array::Array3D(m_grid, "effective_viscosity", array::WITHOUT_GHOSTS, m_grid->z()));
@@ -2993,14 +3078,14 @@ std::shared_ptr<array::Array> IceViscosity::compute_impl() const {
 
   auto EC = m_grid->ctx()->enthalpy_converter();
 
-  const rheology::FlowLaw &flow_law = *model->stress_balance()->modifier()->flow_law();
+  const rheology::FlowLaw &flow_law = *model->stress_balance()->modifier->flow_law();
 
-  const array::Scalar &ice_thickness = model->geometry().ice_thickness;
+  const array::Scalar &ice_thickness = geometry.ice_thickness;
 
   const array::Array3D &ice_enthalpy     = model->energy_balance_model()->enthalpy(),
-                       &U                = model->stress_balance()->velocity_u(),
-                       &V                = model->stress_balance()->velocity_v(),
-                       &W_without_ghosts = model->stress_balance()->velocity_w();
+                       &U                = model->stress_balance()->modifier->velocity_u(),
+                       &V                = model->stress_balance()->modifier->velocity_v(),
+                       &W_without_ghosts = model->vertical_velocity();
 
   W.copy_from(W_without_ghosts);
 
@@ -3010,7 +3095,7 @@ std::shared_ptr<array::Array> IceViscosity::compute_impl() const {
 
   double fill = fill_value();
 
-  const array::CellType1 &mask = model->geometry().cell_type;
+  const array::CellType1 &mask = geometry.cell_type;
 
   array::AccessScope list{ &U, &V, &W, &ice_enthalpy, &ice_thickness, &mask, result.get() };
 
@@ -3133,11 +3218,11 @@ public:
   }
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const {
 
     auto result = allocate<array::Scalar>("thk");
 
-    result->copy_from(model->geometry().ice_thickness);
+    result->copy_from(geometry.ice_thickness);
 
     return result;
   }
@@ -3155,11 +3240,11 @@ public:
   }
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const {
 
     auto result = allocate<array::Scalar>("ice_base_elevation");
 
-    ice_bottom_surface(model->geometry(), *result);
+    ice_bottom_surface(geometry, *result);
 
     return result;
   }
@@ -3177,10 +3262,10 @@ public:
   }
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const {
     auto result = allocate<array::Scalar>("usurf");
 
-    result->copy_from(model->geometry().ice_surface_elevation);
+    result->copy_from(geometry.ice_surface_elevation);
 
     return result;
   }
@@ -3266,6 +3351,1551 @@ protected:
   }
 };
 
+//! \brief Reports the pressure within the ice (3D).
+class PressureInIce : public Diag<IceModel>
+{
+public:
+  PressureInIce(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+
+PressureInIce::PressureInIce(const IceModel *m) : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "pressure", *m_grid, m_grid->z() } };
+  m_vars[0].long_name("pressure in ice (hydrostatic)").units("Pa");
+}
+
+std::shared_ptr<array::Array> PressureInIce::compute_impl(const Geometry &geometry) const {
+
+  std::shared_ptr<array::Array3D> result(
+      new array::Array3D(m_grid, "pressure", array::WITHOUT_GHOSTS, m_grid->z()));
+  result->metadata(0) = m_vars[0];
+
+  const array::Scalar &thickness = geometry.ice_thickness;
+
+  array::AccessScope list{ &thickness, result.get() };
+
+  const double rg = m_config->get_number("constants.ice.density") *
+                    m_config->get_number("constants.standard_gravity");
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (auto p : m_grid->points()) {
+      const int i = p.i(), j = p.j();
+
+      unsigned int ks  = m_grid->kBelowHeight(thickness(i, j));
+      double *P_out_ij = result->get_column(i, j);
+      const double H   = thickness(i, j);
+      // within the ice:
+      for (unsigned int k = 0; k <= ks; ++k) {
+        P_out_ij[k] = rg * (H - m_grid->z(k)); // FIXME: add atmospheric pressure?
+      }
+      // above the ice:
+      for (unsigned int k = ks + 1; k < m_grid->Mz(); ++k) {
+        P_out_ij[k] = 0.0; // FIXME: use atmospheric pressure?
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  return result;
+}
+
+//! \brief Computes the gravitational driving stress (diagnostically).
+class DrivingShearStress : public Diag<IceModel>
+{
+public:
+  DrivingShearStress(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+DrivingShearStress::DrivingShearStress(const IceModel *m)
+  : Diag<IceModel>(m) {
+
+  // set metadata:
+  m_vars = { { m_sys, "taud_x", *m_grid }, { m_sys, "taud_y", *m_grid } };
+  m_vars[0].long_name("X-component of the driving shear stress at the base of ice");
+  m_vars[1].long_name("Y-component of the driving shear stress at the base of ice");
+
+  for (auto &v : m_vars) {
+    v.units("Pa");
+    v["comment"] = "this field is purely diagnostic (not used by the model)";
+  }
+}
+
+/*!
+ * The driving stress computed here is not used by the model, so this
+ * implementation intentionally does not use the eta-transformation or special
+ * cases at ice margins.
+ */
+std::shared_ptr<array::Array> DrivingShearStress::compute_impl(const Geometry &geometry) const {
+
+  auto result = allocate<array::Vector>("taud");
+
+  const array::Scalar &thickness = geometry.ice_thickness;
+  const array::Scalar &surface   = geometry.ice_surface_elevation;
+
+  double standard_gravity = m_config->get_number("constants.standard_gravity"),
+         ice_density      = m_config->get_number("constants.ice.density");
+
+  array::AccessScope list{ &surface, &thickness, result.get() };
+
+  for (auto p : m_grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    double pressure = ice_density * standard_gravity * thickness(i, j);
+    if (pressure <= 0.0) {
+      (*result)(i, j).u = 0.0;
+      (*result)(i, j).v = 0.0;
+    } else {
+      (*result)(i, j).u = -pressure * diff_x_p(surface, i, j);
+      (*result)(i, j).v = -pressure * diff_y_p(surface, i, j);
+    }
+  }
+
+  return result;
+}
+
+//! @brief Computes the basal shear stress @f$ \tau_b @f$.
+class BasalShearStress : public Diag<IceModel>
+{
+public:
+  BasalShearStress(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+
+BasalShearStress::BasalShearStress(const IceModel *m) : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "taub_x", *m_grid }, { m_sys, "taub_y", *m_grid } };
+
+  m_vars[0].long_name("X-component of the shear stress at the base of ice");
+  m_vars[1].long_name("Y-component of the shear stress at the base of ice");
+
+  for (auto &v : m_vars) {
+    v.units("Pa");
+    v["comment"] = "this field is purely diagnostic (not used by the model)";
+  }
+}
+
+
+std::shared_ptr<array::Array> BasalShearStress::compute_impl(const Geometry &geometry) const {
+
+  auto result = allocate<array::Vector>("taub");
+
+  const auto *yield_stress_model = model->basal_yield_stress_model();
+
+  if (yield_stress_model == nullptr) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "cannot compute 'taub': no yield stress model available");
+  }
+
+  const auto &velocity = model->stress_balance()->shallow->velocity();
+  const auto &tauc     = yield_stress_model->basal_material_yield_stress();
+  const auto &mask     = geometry.cell_type;
+
+  const auto *basal_sliding_law = model->stress_balance()->shallow->sliding_law();
+
+  array::AccessScope list{ &tauc, &velocity, &mask, result.get() };
+  for (auto p : m_grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.grounded_ice(i, j)) {
+      double beta     = basal_sliding_law->drag(tauc(i, j), velocity(i, j).u, velocity(i, j).v);
+      (*result)(i, j) = -beta * velocity(i, j);
+    } else {
+      (*result)(i, j) = 0.0;
+    }
+  }
+
+  return result;
+}
+
+//! \brief Computes the magnitude of the gravitational driving stress
+//! (diagnostically).
+class DrivingShearStressmagnitude : public Diag<IceModel>
+{
+public:
+  DrivingShearStressmagnitude(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+DrivingShearStressmagnitude::DrivingShearStressmagnitude(const IceModel *m) : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "taud_mag", *m_grid } };
+  m_vars[0]
+      .long_name("magnitude of the gravitational driving stress at the base of ice")
+      .units("Pa");
+  m_vars[0]["comment"] = "this field is purely diagnostic (not used by the model)";
+}
+
+std::shared_ptr<array::Array> DrivingShearStressmagnitude::compute_impl(const Geometry &geometry) const {
+  auto result = allocate<array::Scalar>("taud_mag");
+  auto taud = array::cast<array::Vector>(DrivingShearStress(model).compute(geometry));
+
+  compute_magnitude(*taud, *result);
+
+  return result;
+}
+
+//! \brief Computes the magnitude of the basal shear stress
+//! (diagnostically).
+class BasalShearStressMagnitude : public Diag<IceModel>
+{
+public:
+  BasalShearStressMagnitude(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+BasalShearStressMagnitude::BasalShearStressMagnitude(const IceModel *m) : Diag<IceModel>(m) {
+
+  auto ismip = m_config->get_flag("output.ISMIP");
+
+  m_vars = { { m_sys, ismip ? "strbasemag" : "taub_mag", *m_grid } };
+  m_vars[0]
+      .long_name("magnitude of the basal shear stress at the base of ice")
+      .standard_name("land_ice_basal_drag") // ISMIP "standard" name
+      .units("Pa");
+  m_vars[0]["comment"] = "this field is purely diagnostic (not used by the model)";
+}
+
+std::shared_ptr<array::Array> BasalShearStressMagnitude::compute_impl(const Geometry &geometry) const {
+  auto result = allocate<array::Scalar>("taub_mag");
+
+  auto taub = array::cast<array::Vector>(BasalShearStress(model).compute(geometry));
+
+  compute_magnitude(*taub, *result);
+
+  return result;
+}
+
+//! \brief Computes uflux and vflux, components of vertically-integrated horizontal
+//! flux of ice.
+class StressBalanceFlux : public Diag<IceModel>
+{
+public:
+  StressBalanceFlux(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+//! \brief Computes flux_mag, the magnitude of vertically-integrated horizontal
+//! flux of ice.
+class StressBalanceFluxMag : public Diag<IceModel>
+{
+public:
+  StressBalanceFluxMag(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+//! \brief Computes the vertically-averaged ice velocity.
+class StressBalanceVelbar : public Diag<IceModel>
+{
+public:
+  StressBalanceVelbar(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+//! \brief Computes velbar_mag, the magnitude of vertically-integrated horizontal
+//! velocity of ice and masks out ice-free areas.
+class StressBalanceVelbarMag : public Diag<IceModel>
+{
+public:
+  StressBalanceVelbarMag(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+//! \brief Reports the vertically-integrated (2D) principal strain rates.
+class StressBalanceStrainRates : public Diag<IceModel>
+{
+public:
+  StressBalanceStrainRates(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+//! \brief Reports the vertically-integrated (2D) deviatoric stresses.
+class StressBalanceDeviatoricStresses : public Diag<IceModel>
+{
+public:
+  StressBalanceDeviatoricStresses(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+/*! @brief tensile von Mises stress */
+class StressBalanceVonmisesStress : public Diag<IceModel>
+{
+public:
+  StressBalanceVonmisesStress(const IceModel *m);
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+//! \brief Computes the x-component of the horizontal ice velocity.
+class StressBalanceUvel : public Diag<IceModel>
+{
+public:
+  StressBalanceUvel(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+//! \brief Computes the y-component of the horizontal ice velocity.
+class StressBalanceVvel : public Diag<IceModel>
+{
+public:
+  StressBalanceVvel(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+//! \brief Computes vertical velocity of ice, relative to the bed directly
+//! below.
+class StressBalanceWvelRel : public Diag<IceModel>
+{
+public:
+  StressBalanceWvelRel(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+//! \brief Reports the xz component of the shear stress within the ice (3D), according to the SIA formula.
+class StressBalanceTauxz : public Diag<IceModel>
+{
+public:
+  StressBalanceTauxz(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+//! \brief Reports the yz component of the shear stress within the ice (3D), according to the SIA formula.
+class StressBalanceTauyz : public Diag<IceModel>
+{
+public:
+  StressBalanceTauyz(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+//! \brief Computes velbase_mag, the magnitude of horizontal velocity of ice at base
+//! of ice and masks out ice-free areas.
+class StressBalanceVelbaseMag : public Diag<IceModel>
+{
+public:
+  StressBalanceVelbaseMag(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+//! \brief Computes velsurf_mag, the magnitude of horizontal ice velocity at the
+//! surface.
+class StressBalanceVelsurfMag : public Diag<IceModel>
+{
+public:
+  StressBalanceVelsurfMag(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+//! \brief Computes velsurf, the horizontal velocity of ice at ice surface.
+class StressBalanceVelsurf : public Diag<IceModel>
+{
+public:
+  StressBalanceVelsurf(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+//! Computes vertical ice velocity (relative to the geoid).
+/*!
+  \f[
+  w(s) = \tilde w(s) + \frac{\partial b}{\partial t} + U(s) \cdot \nabla b
+  \f]
+  in grounded areas. In floating shelves
+  \f[
+  w(s) = \tilde w(s) - \tilde  w(z_{\text{sea level}}).
+  \f]
+
+  This ensures that \f$\tilde w(z_{\text{sea level}}) = 0\f$.
+*/
+class StressBalanceWvel : public Diag<IceModel>
+{
+public:
+  StressBalanceWvel(const IceModel *m);
+  virtual std::shared_ptr<array::Array> compute(const Geometry &geometry, bool zero_above_ice) const;
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+//! Computes wvelsurf, the vertical velocity of ice at ice surface.
+class StressBalanceWvelsurf : public Diag<IceModel>
+{
+public:
+  StressBalanceWvelsurf(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+//! Computes wvelbase, the vertical velocity of ice at the base of ice.
+class StressBalanceWvelbase : public Diag<IceModel>
+{
+public:
+  StressBalanceWvelbase(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+//! \brief Computes horizontal ice velocity at the base of ice.
+class StressBalanceVelbase : public Diag<IceModel>
+{
+public:
+  StressBalanceVelbase(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+class ShallowStressBalanceBeta : public Diag<IceModel>
+{
+public:
+  ShallowStressBalanceBeta(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+StressBalanceUvel::StressBalanceUvel(const IceModel *m) : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "uvel", *m_grid } };
+  m_vars[0]
+      .long_name("horizontal velocity of ice in the X direction")
+      .standard_name("land_ice_x_velocity")
+      .units("m s^-1")
+      .output_units("m year^-1");
+}
+
+/*!
+ * Copy F to result and set it to zero above the surface of the ice.
+ */
+static void zero_above_ice(const array::Array3D &F, const array::Scalar &H,
+                           array::Array3D &result) {
+
+  array::AccessScope list{ &F, &H, &result };
+
+  auto grid = result.grid();
+
+  auto Mz = grid->Mz();
+
+  ParallelSection loop(grid->com);
+  try {
+    for (auto p : grid->points()) {
+      const int i = p.i(), j = p.j();
+
+      int ks = grid->kBelowHeight(H(i, j));
+
+      const double *F_ij = F.get_column(i, j);
+      double *F_out_ij   = result.get_column(i, j);
+
+      // in the ice:
+      for (int k = 0; k <= ks; k++) {
+        F_out_ij[k] = F_ij[k];
+      }
+      // above the ice:
+      for (unsigned int k = ks + 1; k < Mz; k++) {
+        F_out_ij[k] = 0.0;
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+}
+
+std::shared_ptr<array::Array> StressBalanceUvel::compute_impl(const Geometry &geometry) const {
+
+  std::shared_ptr<array::Array3D> result(
+      new array::Array3D(m_grid, "uvel", array::WITHOUT_GHOSTS, m_grid->z()));
+  result->metadata() = m_vars[0];
+
+  zero_above_ice(model->stress_balance()->modifier->velocity_u(), geometry.ice_thickness, *result);
+
+  return result;
+}
+
+StressBalanceVvel::StressBalanceVvel(const IceModel *m) : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "vvel", *m_grid } };
+  m_vars[0]
+      .long_name("horizontal velocity of ice in the Y direction")
+      .standard_name("land_ice_y_velocity")
+      .units("m s^-1")
+      .output_units("m year^-1");
+}
+
+std::shared_ptr<array::Array> StressBalanceVvel::compute_impl(const Geometry &geometry) const {
+
+  std::shared_ptr<array::Array3D> result(
+      new array::Array3D(m_grid, "vvel", array::WITHOUT_GHOSTS, m_grid->z()));
+  result->metadata() = m_vars[0];
+
+  zero_above_ice(model->stress_balance()->modifier->velocity_v(), geometry.ice_thickness, *result);
+
+  return result;
+}
+
+StressBalanceWvelRel::StressBalanceWvelRel(const IceModel *m) : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "wvel_rel", *m_grid } };
+  m_vars[0]
+      .long_name("vertical velocity of ice, relative to base of ice directly below")
+      .units("m s^-1")
+      .output_units("m year^-1");
+}
+
+std::shared_ptr<array::Array> StressBalanceWvelRel::compute_impl(const Geometry &geometry) const {
+
+  std::shared_ptr<array::Array3D> result(
+      new array::Array3D(m_grid, "wvel_rel", array::WITHOUT_GHOSTS, m_grid->z()));
+  result->metadata() = m_vars[0];
+
+  zero_above_ice(model->vertical_velocity(), geometry.ice_thickness, *result);
+
+  return result;
+}
+
+StressBalanceStrainRates::StressBalanceStrainRates(const IceModel *m) : Diag<IceModel>(m) {
+
+  m_vars = { { m_sys, "eigen1", *m_grid }, { m_sys, "eigen2", *m_grid } };
+  m_vars[0]
+      .long_name("first eigenvalue of the horizontal, vertically-integrated strain rate tensor")
+      .units("s^-1");
+  m_vars[1]
+      .long_name("second eigenvalue of the horizontal, vertically-integrated strain rate tensor")
+      .units("s^-1");
+}
+
+std::shared_ptr<array::Array> StressBalanceStrainRates::compute_impl(const Geometry &geometry) const {
+
+  auto result = std::make_shared<array::Array2D<stressbalance::PrincipalStrainRates> >(
+      m_grid, "strain_rates", array::WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+  result->metadata(1) = m_vars[1];
+
+  array::Vector1 velbar_with_ghosts(m_grid, "velbar");
+  {
+    auto velbar = array::cast<array::Vector>(StressBalanceVelbar(model).compute(geometry));
+
+    // copy_from communicates ghosts
+    velbar_with_ghosts.copy_from(*velbar);
+  }
+
+  array::CellType1 cell_type(m_grid, "cell_type");
+  cell_type.copy_from(geometry.cell_type);
+
+  compute_2D_principal_strain_rates(velbar_with_ghosts, cell_type, *result);
+
+  return result;
+}
+
+StressBalanceDeviatoricStresses::StressBalanceDeviatoricStresses(const IceModel *m) : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "sigma_xx", *m_grid },
+             { m_sys, "sigma_yy", *m_grid },
+             { m_sys, "sigma_xy", *m_grid } };
+
+  m_vars[0].long_name("deviatoric stress in X direction").units("Pa");
+  m_vars[1].long_name("deviatoric stress in Y direction").units("Pa");
+  m_vars[2].long_name("deviatoric shear stress").units("Pa");
+}
+
+std::shared_ptr<array::Array> StressBalanceDeviatoricStresses::compute_impl(const Geometry &geometry) const {
+
+  auto result = std::make_shared<array::Array2D<stressbalance::DeviatoricStresses> >(
+      m_grid, "deviatoric_stresses", array::WITHOUT_GHOSTS);
+  result->metadata(0) = m_vars[0];
+  result->metadata(1) = m_vars[1];
+  result->metadata(2) = m_vars[2];
+
+  const array::Array3D &enthalpy = model->energy_balance_model()->enthalpy();
+  const array::Scalar &thickness = geometry.ice_thickness;
+
+  array::Scalar hardness(m_grid, "hardness");
+  array::Vector1 velocity(m_grid, "velocity");
+
+  averaged_hardness_vec(*model->stress_balance()->shallow->flow_law(), thickness, enthalpy,
+                        hardness);
+
+  // copy_from updates ghosts
+  velocity.copy_from(*array::cast<array::Vector>(StressBalanceVelbar(model).compute(geometry)));
+
+  array::CellType1 cell_type(m_grid, "cell_type");
+  cell_type.copy_from(geometry.cell_type);
+
+  stressbalance::compute_2D_stresses(*model->stress_balance()->shallow->flow_law(), velocity,
+                                     hardness, cell_type, *result);
+
+  return result;
+}
+
+StressBalanceFlux::StressBalanceFlux(const IceModel *m)
+  : Diag<IceModel>(m) {
+
+  // set metadata:
+  m_vars = { { m_sys, "uflux", *m_grid }, { m_sys, "vflux", *m_grid } };
+  m_vars[0]
+      .long_name("Vertically integrated horizontal flux of ice in the X direction")
+      .units("m^2 s^-1")
+      .output_units("m^2 year^-1");
+  m_vars[1]
+      .long_name("Vertically integrated horizontal flux of ice in the Y direction")
+      .units("m^2 s^-1")
+      .output_units("m^2 year^-1");
+}
+
+std::shared_ptr<array::Array> StressBalanceFlux::compute_impl(const Geometry &geometry) const {
+  double H_threshold = m_config->get_number("geometry.ice_free_thickness_standard");
+
+  auto result = allocate<array::Vector>("flux");
+
+  // get the thickness
+  const array::Scalar &thickness = geometry.ice_thickness;
+
+  const array::Array3D
+    &u3 = model->stress_balance()->modifier->velocity_u(),
+    &v3 = model->stress_balance()->modifier->velocity_v();
+
+  array::AccessScope list{&u3, &v3, &thickness, result.get()};
+
+  const auto &z = m_grid->z();
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (auto p : m_grid->points()) {
+      const int i = p.i(), j = p.j();
+
+      double H = thickness(i,j);
+
+      // an "ice-free" cell:
+      if (H < H_threshold) {
+        (*result)(i, j) = 0.0;
+        continue;
+      }
+
+      // an icy cell:
+      {
+        const auto *u = u3.get_column(i, j);
+        const auto *v = v3.get_column(i, j);
+
+        Vector2d Q(0.0, 0.0);
+
+        // ks is "k just below the surface"
+        auto ks = m_grid->kBelowHeight(H);
+
+        if (ks > 0) {
+          Vector2d v0(u[0], v[0]);
+
+          for (unsigned int k = 1; k <= ks; ++k) {
+            Vector2d v1(u[k], v[k]);
+
+            // trapezoid rule
+            Q += (z[k] - z[k - 1]) * 0.5 * (v0 + v1);
+
+            v0 = v1;
+          }
+        }
+
+        // rectangle method to integrate over the last level
+        Q += (H - z[ks]) * Vector2d(u[ks], v[ks]);
+
+        (*result)(i, j) = Q;
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  return result;
+}
+
+
+StressBalanceFluxMag::StressBalanceFluxMag(const IceModel *m)
+  : Diag<IceModel>(m) {
+
+  // set metadata:
+  m_vars = { { m_sys, "flux_mag", *m_grid } };
+  m_vars[0]
+      .long_name("magnitude of vertically-integrated horizontal flux of ice")
+      .units("m^2 s^-1")
+      .output_units("m^2 year^-1");
+  m_vars[0]["_FillValue"] = { fill_value() };
+  m_vars[0]["valid_min"]  = { 0.0 };
+}
+
+std::shared_ptr<array::Array> StressBalanceFluxMag::compute_impl(const Geometry &geometry) const {
+  const array::Scalar &thickness = geometry.ice_thickness;
+
+  // Compute the vertically-averaged horizontal ice velocity:
+  auto result = array::cast<array::Scalar>(StressBalanceVelbarMag(model).compute(geometry));
+
+  result->metadata() = m_vars[0];
+
+  array::AccessScope list{&thickness, result.get()};
+
+  for (auto p : m_grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    (*result)(i,j) *= thickness(i,j);
+  }
+
+  apply_mask(thickness, fill_value(), *result);
+
+  return result;
+}
+
+StressBalanceVelbar::StressBalanceVelbar(const IceModel *m)
+  : Diag<IceModel>(m) {
+
+  auto ismip = m_config->get_flag("output.ISMIP");
+
+  // set metadata:
+  m_vars = {{m_sys, ismip ? "xvelmean" : "ubar", *m_grid },
+            {m_sys, ismip ? "yvelmean" : "vbar", *m_grid }};
+
+  m_vars[0]
+      .long_name("vertical mean of horizontal ice velocity in the X direction")
+      .standard_name("land_ice_vertical_mean_x_velocity")
+      .units("m s^-1")
+      .output_units("m year^-1");
+  m_vars[1]
+      .long_name("vertical mean of horizontal ice velocity in the Y direction")
+      .standard_name("land_ice_vertical_mean_y_velocity")
+      .units("m s^-1")
+      .output_units("m year^-1");
+}
+
+std::shared_ptr<array::Array> StressBalanceVelbar::compute_impl(const Geometry &geometry) const {
+  // get the thickness
+  const array::Scalar& thickness = geometry.ice_thickness;
+
+  // Compute the vertically-integrated horizontal ice flux:
+  auto result = array::cast<array::Vector>(StressBalanceFlux(model).compute(geometry));
+
+  // Override metadata set by the flux computation
+  result->metadata(0) = m_vars[0];
+  result->metadata(1) = m_vars[1];
+
+  array::AccessScope list{&thickness, result.get()};
+
+  for (auto p : m_grid->points()) {
+    const int i = p.i(), j = p.j();
+    double thk = thickness(i,j);
+
+    // Ice flux is masked already, but we need to check for division
+    // by zero anyway.
+    if (thk > 0.0) {
+      (*result)(i,j) /= thk;
+    } else {
+      (*result)(i,j) = 0.0;
+    }
+  }
+
+  return result;
+}
+
+StressBalanceVelbarMag::StressBalanceVelbarMag(const IceModel *m)
+  : Diag<IceModel>(m) {
+
+  // set metadata:
+  m_vars = {{m_sys, "velbar_mag", *m_grid }};
+
+  m_vars[0]
+      .long_name("magnitude of vertically-integrated horizontal velocity of ice")
+      .units("m second^-1")
+      .output_units("m year^-1");
+
+  m_vars[0]["_FillValue"] = { fill_value() };
+  m_vars[0]["valid_min"]  = { 0.0 };
+}
+
+std::shared_ptr<array::Array> StressBalanceVelbarMag::compute_impl(const Geometry &geometry) const {
+  auto result = allocate<array::Scalar>("velbar_mag");
+
+  // compute vertically-averaged horizontal velocity:
+  auto velbar = array::cast<array::Vector>(StressBalanceVelbar(model).compute(geometry));
+
+  // compute its magnitude:
+  compute_magnitude(*velbar, *result);
+
+  // mask out ice-free areas:
+  apply_mask(geometry.ice_thickness, fill_value(), *result);
+
+  return result;
+}
+
+StressBalanceVonmisesStress::StressBalanceVonmisesStress(const IceModel *m)
+    : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "vonmises_stress", *m_grid } };
+  m_vars[0].long_name("tensile von Mises stress").units("Pascal");
+}
+
+std::shared_ptr<array::Array> StressBalanceVonmisesStress::compute_impl(const Geometry &geometry) const {
+
+  using std::max;
+  using std::sqrt;
+  using std::pow;
+
+  auto result = allocate<array::Scalar>("vonmises_stress");
+
+  array::Scalar &vonmises_stress = *result;
+
+  auto velbar = array::cast<array::Vector>(StressBalanceVelbar(model).compute(geometry));
+  array::Vector &velocity = *velbar;
+
+  using StrainRates = array::Array2D<stressbalance::PrincipalStrainRates>;
+  auto eigen12 = array::cast<StrainRates>(StressBalanceStrainRates(model).compute(geometry));
+  const auto &strain_rates = *eigen12;
+
+  const array::Scalar &ice_thickness = geometry.ice_thickness;
+  const array::Array3D &enthalpy = model->energy_balance_model()->enthalpy();
+  const auto &mask = geometry.cell_type;
+
+  std::shared_ptr<const rheology::FlowLaw> flow_law;
+
+  if (m_config->get_flag("calving.vonmises_calving.use_custom_flow_law")) {
+    rheology::FlowLawFactory factory(m_config, m_grid->ctx()->enthalpy_converter());
+    flow_law = factory.create(m_config->get_string("calving.vonmises_calving.flow_law"),
+                              m_config->get_number("calving.vonmises_calving.Glen_exponent"));
+  } else {
+    flow_law = model->stress_balance()->shallow->flow_law();
+  }
+
+  double glen_exponent = flow_law->exponent();
+
+  array::AccessScope list{&vonmises_stress, &velocity, &strain_rates, &ice_thickness,
+      &enthalpy, &mask};
+
+  for (auto pt : m_grid->points()) {
+    const int i = pt.i(), j = pt.j();
+
+    if (mask.icy(i, j)) {
+
+      const double       H = ice_thickness(i, j);
+      const unsigned int k = m_grid->kBelowHeight(H);
+
+      const double
+        *enthalpy_column   = enthalpy.get_column(i, j),
+        hardness           = averaged_hardness(*flow_law, H, k, m_grid->z().data(), enthalpy_column),
+        eigen1             = strain_rates(i, j).eigen1,
+        eigen2             = strain_rates(i, j).eigen2;
+
+      // [\ref Morlighem2016] equation 6
+      const double effective_tensile_strain_rate = sqrt(0.5 * (pow(max(0.0, eigen1), 2) +
+                                                               pow(max(0.0, eigen2), 2)));
+      // [\ref Morlighem2016] equation 7
+      vonmises_stress(i, j) = sqrt(3.0) * hardness * pow(effective_tensile_strain_rate,
+                                                         1.0 / glen_exponent);
+
+    } else { // end of "if (mask.icy(i, j))"
+      vonmises_stress(i, j) = 0.0;
+    }
+  }   // end of loop over grid points
+
+  return result;
+}
+
+StressBalanceTauxz::StressBalanceTauxz(const IceModel *m) : Diag<IceModel>(m) {
+  m_vars = {{m_sys, "tauxz", *m_grid, m_grid->z()}};
+  m_vars[0].long_name("shear stress xz component (in shallow ice approximation SIA)").units("Pa");
+}
+
+
+/*!
+ * The SIA-applicable shear stress component tauxz computed here is not used
+ * by the model.  This implementation intentionally does not use the
+ * eta-transformation or special cases at ice margins.
+ * CODE DUPLICATION WITH StressBalanceTauyz
+ */
+std::shared_ptr<array::Array> StressBalanceTauxz::compute_impl(const Geometry &geometry) const {
+
+  std::shared_ptr<array::Array3D> result(
+      new array::Array3D(m_grid, "tauxz", array::WITHOUT_GHOSTS, m_grid->z()));
+  result->metadata() = m_vars[0];
+
+  const array::Scalar &thickness = geometry.ice_thickness,
+                      &surface   = geometry.ice_surface_elevation;
+
+  array::AccessScope list{ &surface, &thickness, result.get() };
+
+  const double rg = m_config->get_number("constants.ice.density") *
+                    m_config->get_number("constants.standard_gravity");
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (auto p : m_grid->points()) {
+      const int i = p.i(), j = p.j();
+
+      unsigned int ks      = m_grid->kBelowHeight(thickness(i, j));
+      double *tauxz_out_ij = result->get_column(i, j);
+      const double H = thickness(i, j), dhdx = diff_x_p(surface, i, j);
+
+      // within the ice:
+      for (unsigned int k = 0; k <= ks; ++k) {
+        tauxz_out_ij[k] = -rg * (H - m_grid->z(k)) * dhdx;
+      }
+      // above the ice:
+      for (unsigned int k = ks + 1; k < m_grid->Mz(); ++k) {
+        tauxz_out_ij[k] = 0.0;
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  return result;
+}
+
+
+StressBalanceTauyz::StressBalanceTauyz(const IceModel *m) : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "tauyz", *m_grid, m_grid->z() } };
+  m_vars[0].long_name("shear stress yz component (in shallow ice approximation SIA)").units("Pa");
+}
+
+
+/*!
+ * The SIA-applicable shear stress component tauyz computed here is not used
+ * by the model.  This implementation intentionally does not use the
+ * eta-transformation or special cases at ice margins.
+ * CODE DUPLICATION WITH StressBalanceTauxz
+ */
+std::shared_ptr<array::Array> StressBalanceTauyz::compute_impl(const Geometry &geometry) const {
+
+  std::shared_ptr<array::Array3D> result(
+      new array::Array3D(m_grid, "tauyz", array::WITHOUT_GHOSTS, m_grid->z()));
+  result->metadata(0) = m_vars[0];
+
+  const array::Scalar &thickness = geometry.ice_thickness,
+                      &surface   = geometry.ice_surface_elevation;
+
+  array::AccessScope list{ &surface, &thickness, result.get() };
+
+  const double rg = m_config->get_number("constants.ice.density") *
+                    m_config->get_number("constants.standard_gravity");
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (auto p : m_grid->points()) {
+      const int i = p.i(), j = p.j();
+
+      unsigned int ks      = m_grid->kBelowHeight(thickness(i, j));
+      double *tauyz_out_ij = result->get_column(i, j);
+      const double H = thickness(i, j), dhdy = diff_y_p(surface, i, j);
+
+      // within the ice:
+      for (unsigned int k = 0; k <= ks; ++k) {
+        tauyz_out_ij[k] = -rg * (H - m_grid->z(k)) * dhdy;
+      }
+      // above the ice:
+      for (unsigned int k = ks + 1; k < m_grid->Mz(); ++k) {
+        tauyz_out_ij[k] = 0.0;
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  return result;
+}
+
+StressBalanceVelbaseMag::StressBalanceVelbaseMag(const IceModel *m)
+  : Diag<IceModel>(m) {
+
+  m_vars = { { m_sys, "velbase_mag", *m_grid } };
+  m_vars[0]
+      .long_name("magnitude of horizontal velocity of ice at base of ice")
+      .units("m s^-1")
+      .output_units("m year^-1");
+  m_vars[0]["_FillValue"] = { fill_value() };
+  m_vars[0]["valid_min"]  = { 0.0 };
+}
+
+std::shared_ptr<array::Array> StressBalanceVelbaseMag::compute_impl(const Geometry &geometry) const {
+  auto result = allocate<array::Scalar>("velbase_mag");
+
+  compute_magnitude(*array::cast<array::Vector>(StressBalanceVelbase(model).compute(geometry)),
+                    *result);
+
+  double fill = fill_value();
+
+  const auto &mask = geometry.cell_type;
+
+  array::AccessScope list{&mask, result.get()};
+
+  for (auto p : m_grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.ice_free(i, j)) {
+      (*result)(i, j) = fill;
+    }
+  }
+
+  return result;
+}
+
+StressBalanceVelsurfMag::StressBalanceVelsurfMag(const IceModel *m)
+  : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "velsurf_mag", *m_grid } };
+  m_vars[0]
+      .long_name("magnitude of horizontal velocity of ice at ice surface")
+      .units("m s^-1")
+      .output_units("m year^-1");
+  m_vars[0]["_FillValue"] = { fill_value() };
+  m_vars[0]["valid_min"] = {0.0};
+}
+
+std::shared_ptr<array::Array> StressBalanceVelsurfMag::compute_impl(const Geometry &geometry) const {
+  double fill = fill_value();
+
+  auto result = allocate<array::Scalar>("velsurf_mag");
+
+  compute_magnitude(*array::cast<array::Vector>(StressBalanceVelsurf(model).compute(geometry)),
+                    *result);
+
+  const auto &mask = geometry.cell_type;
+
+  array::AccessScope list{&mask, result.get()};
+
+  for (auto p : m_grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.ice_free(i, j)) {
+      (*result)(i, j) = fill;
+    }
+  }
+
+  return result;
+}
+
+
+StressBalanceVelsurf::StressBalanceVelsurf(const IceModel *m)
+  : Diag<IceModel>(m) {
+
+  auto ismip = m_config->get_flag("output.ISMIP");
+  m_vars = { { m_sys, ismip ? "xvelsurf" : "uvelsurf", *m_grid },
+             { m_sys, ismip ? "yvelsurf" : "vvelsurf", *m_grid } };
+  m_vars[0]
+      .long_name("x-component of the horizontal velocity of ice at ice surface")
+      .standard_name("land_ice_surface_x_velocity"); // InitMIP "standard" name
+  m_vars[1]
+      .long_name("y-component of the horizontal velocity of ice at ice surface")
+      .standard_name("land_ice_surface_y_velocity"); // InitMIP "standard" name
+
+  for (auto &v : m_vars) {
+    v.units("m s^-1").output_units("m year^-1");
+    v["_FillValue"] = { fill_value() };
+  }
+}
+
+std::shared_ptr<array::Array> StressBalanceVelsurf::compute_impl(const Geometry &geometry) const {
+  double fill = fill_value();
+
+  auto result = allocate<array::Vector>("surf");
+
+  array::Scalar u_surf(m_grid, "u_surf");
+  array::Scalar v_surf(m_grid, "v_surf");
+
+  const array::Array3D
+    &u3 = model->stress_balance()->modifier->velocity_u(),
+    &v3 = model->stress_balance()->modifier->velocity_v();
+
+  const auto &thickness = geometry.ice_thickness;
+  const auto &cell_type = geometry.cell_type;
+
+  extract_surface(u3, thickness, u_surf);
+  extract_surface(v3, thickness, v_surf);
+
+  array::AccessScope list{ &cell_type, &u_surf, &v_surf, result.get() };
+
+  for (auto p : m_grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    if (cell_type.ice_free(i, j)) {
+      (*result)(i, j) = fill;
+    } else {
+      (*result)(i, j) = { u_surf(i, j), v_surf(i, j) };
+    }
+  }
+
+  return result;
+}
+
+StressBalanceWvel::StressBalanceWvel(const IceModel *m) : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "wvel", *m_grid } };
+  m_vars[0]
+      .long_name("vertical velocity of ice, relative to geoid")
+      .units("m s^-1")
+      .output_units("m year^-1");
+}
+
+std::shared_ptr<array::Array> StressBalanceWvel::compute(const Geometry &geometry,
+                                                         bool zero_above_ice) const {
+  std::shared_ptr<array::Array3D> result3(
+      new array::Array3D(m_grid, "wvel", array::WITHOUT_GHOSTS, m_grid->z()));
+  result3->metadata() = m_vars[0];
+
+  const auto &bed = geometry.bed_elevation;
+  const auto &uplift = model->bed_deformation_model()->uplift();
+
+  const auto &thickness = geometry.ice_thickness;
+  const auto &mask      = geometry.cell_type;
+
+  const array::Array3D &u3 = model->stress_balance()->modifier->velocity_u(),
+                       &v3 = model->stress_balance()->modifier->velocity_v(),
+                       &w3 = model->vertical_velocity();
+
+  array::AccessScope list{ &thickness, &mask, &bed, &u3, &v3, &w3, &uplift, result3.get() };
+
+  const double ice_density       = m_config->get_number("constants.ice.density"),
+               sea_water_density = m_config->get_number("constants.sea_water.density"),
+               R                 = ice_density / sea_water_density;
+
+  ParallelSection loop(m_grid->com);
+  try {
+    for (auto p : m_grid->points()) {
+      const int i = p.i(), j = p.j();
+
+      const double *u = u3.get_column(i, j), *v = v3.get_column(i, j), *w = w3.get_column(i, j);
+      double *result = result3->get_column(i, j);
+
+      int ks = m_grid->kBelowHeight(thickness(i, j));
+
+      // in the ice:
+      if (mask.grounded(i, j)) {
+        const double bed_dx = diff_x_p(bed, i, j), bed_dy = diff_y_p(bed, i, j),
+                     uplift_ij = uplift(i, j);
+        for (int k = 0; k <= ks; k++) {
+          result[k] = w[k] + uplift_ij + u[k] * bed_dx + v[k] * bed_dy;
+        }
+
+      } else { // floating
+        const double z_sl = R * thickness(i, j), w_sl = w3.interpolate(i, j, z_sl);
+
+        for (int k = 0; k <= ks; k++) {
+          result[k] = w[k] - w_sl;
+        }
+      }
+
+      // above the ice:
+      if (zero_above_ice) {
+        // set to zeros
+        for (unsigned int k = ks + 1; k < m_grid->Mz(); k++) {
+          result[k] = 0.0;
+        }
+      } else {
+        // extrapolate using the topmost value
+        for (unsigned int k = ks + 1; k < m_grid->Mz(); k++) {
+          result[k] = result[ks];
+        }
+      }
+    }
+  } catch (...) {
+    loop.failed();
+  }
+  loop.check();
+
+  return result3;
+}
+
+std::shared_ptr<array::Array> StressBalanceWvel::compute_impl(const Geometry &geometry) const {
+  return this->compute(geometry, true); // fill wvel above the ice with zeros
+}
+
+StressBalanceWvelsurf::StressBalanceWvelsurf(const IceModel *m) : Diag<IceModel>(m) {
+
+  auto ismip = m_config->get_flag("output.ISMIP");
+
+  // set metadata:
+  m_vars = { { m_sys, ismip ? "zvelsurf" : "wvelsurf", *m_grid } };
+
+  m_vars[0]
+      .long_name("vertical velocity of ice at ice surface, relative to the geoid")
+      .standard_name("land_ice_surface_upward_velocity") // InitMIP "standard" name
+      .units("m s^-1")
+      .output_units("m year^-1");
+
+  m_vars[0]["_FillValue"]  = { fill_value() };
+}
+
+std::shared_ptr<array::Array> StressBalanceWvelsurf::compute_impl(const Geometry &geometry) const {
+  double fill = fill_value();
+
+  auto result = allocate<array::Scalar>("wvelsurf");
+
+  // here "false" means "don't fill w3 above the ice surface with zeros"
+  auto w3 = array::cast<array::Array3D>(StressBalanceWvel(model).compute(geometry, false));
+
+  const auto &thickness = geometry.ice_thickness;
+
+  extract_surface(*w3, thickness, *result);
+
+  const auto &mask = geometry.cell_type;
+
+  array::AccessScope list{ &mask, result.get() };
+
+  for (auto p : m_grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.ice_free(i, j)) {
+      (*result)(i, j) = fill;
+    }
+  }
+
+  return result;
+}
+
+StressBalanceWvelbase::StressBalanceWvelbase(const IceModel *m) : Diag<IceModel>(m) {
+
+  auto ismip = m_config->get_flag("output.ISMIP");
+
+  m_vars = { { m_sys, ismip ? "zvelbase" : "wvelbase", *m_grid } };
+  m_vars[0]
+      .long_name("vertical velocity of ice at the base of ice, relative to the geoid")
+      .standard_name("land_ice_basal_upward_velocity") // InitMIP "standard" name
+      .units("m s^-1")
+      .output_units("m year^-1");
+
+  m_vars[0]["_FillValue"]  = { fill_value() };
+}
+
+std::shared_ptr<array::Array> StressBalanceWvelbase::compute_impl(const Geometry &geometry) const {
+  double fill = fill_value();
+
+  auto result = allocate<array::Scalar>("wvelbase");
+
+  // here "false" means "don't fill w3 above the ice surface with zeros"
+  auto w3 = array::cast<array::Array3D>(StressBalanceWvel(model).compute(geometry, false));
+
+  extract_surface(*w3, 0.0, *result);
+
+  const auto &mask = geometry.cell_type;
+
+  array::AccessScope list{ &mask, result.get() };
+
+  for (auto p : m_grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.ice_free(i, j)) {
+      (*result)(i, j) = fill;
+    }
+  }
+
+  return result;
+}
+
+StressBalanceVelbase::StressBalanceVelbase(const IceModel *m) : Diag<IceModel>(m) {
+
+  auto ismip = m_config->get_flag("output.ISMIP");
+
+  // set metadata:
+  m_vars = { { m_sys, ismip ? "xvelbase" : "uvelbase", *m_grid },
+             { m_sys, ismip ? "yvelbase" : "vvelbase", *m_grid } };
+  m_vars[0]
+      .long_name("x-component of the horizontal velocity of ice at the base of ice")
+      .standard_name("land_ice_basal_x_velocity"); // InitMIP "standard" name
+  m_vars[1]
+      .long_name("y-component of the horizontal velocity of ice at the base of ice")
+      .standard_name("land_ice_basal_y_velocity"); // InitMIP "standard" name
+
+  for (auto &v : m_vars) {
+    v.units("m s^-1").output_units("m year^-1");
+    v["_FillValue"]  = { fill_value() };
+  }
+}
+
+std::shared_ptr<array::Array> StressBalanceVelbase::compute_impl(const Geometry &geometry) const {
+  double fill = fill_value();
+
+  auto result = allocate<array::Vector>("base");
+
+  array::Scalar u_base(m_grid, "u_base");
+  array::Scalar v_base(m_grid, "v_base");
+
+  const array::Array3D &u3 = model->stress_balance()->modifier->velocity_u(),
+                       &v3 = model->stress_balance()->modifier->velocity_v();
+
+  extract_surface(u3, 0.0, u_base);
+  extract_surface(v3, 0.0, v_base);
+
+  const auto &mask = geometry.cell_type;
+
+  array::AccessScope list{ &mask, &u_base, &v_base, result.get() };
+
+  for (auto p : m_grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.ice_free(i, j)) {
+      (*result)(i, j) = fill;
+    } else {
+      (*result)(i, j) = { u_base(i, j), v_base(i, j) };
+    }
+  }
+
+  return result;
+}
+
+ShallowStressBalanceBeta::ShallowStressBalanceBeta(const IceModel *m) : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "beta", *m_grid } };
+  m_vars[0].long_name("basal drag coefficient").units("Pa s / m");
+}
+
+std::shared_ptr<array::Array> ShallowStressBalanceBeta::compute_impl(const Geometry &/*geometry*/) const {
+  auto result = allocate<array::Scalar>("beta");
+
+  const auto *yield_stress_model = model->basal_yield_stress_model();
+
+  if (yield_stress_model == nullptr) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "basal yield stress model is not available");
+  }
+
+  const auto &tauc = yield_stress_model->basal_material_yield_stress();
+
+  const auto *shallow_stress_balance = model->stress_balance()->shallow.get();
+
+  const auto *basal_sliding_law = shallow_stress_balance->sliding_law();
+
+  if (basal_sliding_law == nullptr) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "basal sliding law is not available");
+  }
+
+  const auto &velocity = shallow_stress_balance->velocity();
+
+  array::AccessScope list{&tauc, &velocity, result.get()};
+  for (auto p : m_grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    (*result)(i,j) =  basal_sliding_law->drag(tauc(i,j), velocity(i,j).u, velocity(i,j).v);
+  }
+
+  return result;
+}
+
+//! \brief Report the wall melt rate from dissipation of the potential energy of the
+//! transportable water.
+class HydrologyWallMelt : public Diag<IceModel>
+{
+public:
+  HydrologyWallMelt(const IceModel *m)
+    : Diag<IceModel>(m) {
+    m_vars = { { m_sys, "wallmelt", *m_grid } };
+    m_vars[0]
+        .long_name("wall melt into subglacial hydrology layer from (turbulent)"
+                   " dissipation of energy in transportable water")
+        .units("m s^-1")
+        .output_units("m year^-1");
+
+    const auto *routing_hydrology =
+        dynamic_cast<const hydrology::Routing *>(model->subglacial_hydrology_model());
+
+    if (routing_hydrology == nullptr) {
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION, "cannot compute 'wallmelt': routing hydrology is not available");
+    }
+  }
+
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const {
+    auto result = allocate<array::Scalar>("wallmelt");
+
+    const array::Scalar &bed_elevation = geometry.bed_elevation;
+
+    const auto *routing_hydrology =
+        dynamic_cast<const hydrology::Routing *>(model->subglacial_hydrology_model());
+
+    if (routing_hydrology == nullptr) {
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION, "cannot compute 'wallmelt': routing hydrology is not available");
+    }
+
+    hydrology::wall_melt(*routing_hydrology, bed_elevation, *result);
+    return result;
+  }
+};
+
+/*! @brief Report hydraulic potential in the subglacial hydrology system */
+class HydraulicPotential : public Diag<IceModel>
+{
+public:
+  HydraulicPotential(const IceModel *m) : Diag<IceModel>(m) {
+    m_vars = { { m_sys, "hydraulic_potential", *m_grid } };
+    m_vars[0].long_name("hydraulic potential in the subglacial hydrology system").units("Pa");
+
+    const auto *routing_hydrology =
+        dynamic_cast<const hydrology::Routing *>(model->subglacial_hydrology_model());
+
+    if (routing_hydrology == nullptr) {
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "cannot compute 'hydraulic_potential': routing hydrology is not available");
+    }
+  }
+
+protected:
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const {
+
+    auto result = allocate<array::Scalar>("hydraulic_potential");
+
+    const auto &sea_level     = geometry.sea_level_elevation;
+    const auto &bed_elevation = geometry.bed_elevation;
+    const auto &ice_thickness = geometry.ice_thickness;
+
+    const auto *routing_hydrology =
+        dynamic_cast<const hydrology::Routing *>(model->subglacial_hydrology_model());
+
+    if (routing_hydrology == nullptr) {
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "cannot compute 'hydraulic_potential': routing hydrology is not available");
+    }
+
+    hydrology::hydraulic_potential(routing_hydrology->subglacial_water_thickness(),
+                                   routing_hydrology->subglacial_water_pressure(), sea_level,
+                                   bed_elevation, ice_thickness, *result);
+
+    return result;
+  }
+};
+
+class HeatFluxFromBedrock : public DiagAverageRate<IceModel>
+{
+public:
+  HeatFluxFromBedrock(const IceModel *m)
+      : DiagAverageRate<IceModel>(m, "heat_flux_from_bedrock", RATE) {
+
+    m_accumulator.metadata()["units"] = "joule m^-2";
+
+    auto ismip = m_config->get_flag("output.ISMIP");
+    m_vars      = { { m_sys, ismip ? "hfgeoubed" : "heat_flux_from_bedrock", *m_grid } };
+    m_vars[0]
+        .long_name("upward heat flux from bedrock into ice at the ice base")
+        .standard_name((ismip ? "upward_geothermal_heat_flux_in_land_ice" :
+                                "upward_geothermal_heat_flux_at_ground_level_in_land_ice"))
+        .units("W m^-2")
+        .output_units("mW m^-2");
+    m_vars[0]["cell_methods"] = "time: mean";
+    m_vars[0]["comment"]      = "positive values correspond to an upward flux";
+    m_vars[0]["_FillValue"]   = { fill_value() };
+  }
+
+protected:
+  virtual void update_impl(double dt) {
+    const auto &Q         = model->bedrock_thermal_model()->flux_through_top_surface();
+    const auto &cell_type = model->geometry().cell_type;
+
+    array::AccessScope list{&Q, &cell_type, &m_accumulator};
+
+    for (auto p : m_grid->points()) {
+      const int i = p.i(), j = p.j();
+
+      if (cell_type.grounded_ice(i, j)) {
+        m_accumulator(i, j) += dt * Q(i, j);
+      }
+    }
+
+    m_interval_length += dt;
+  }
+};
+
+//! \brief Computes the multiplier \f$\theta\f$ in Schoof's (2003) theory of the
+//! effect of bed roughness on the diffusivity of the SIA.
+/*!
+  See page \ref bedrough and reference [\ref Schoofbasaltopg2003].
+*/
+class SIAFDSchoofs_Theta : public Diag<IceModel>
+{
+public:
+  SIAFDSchoofs_Theta(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+SIAFDSchoofs_Theta::SIAFDSchoofs_Theta(const IceModel *m) : Diag<IceModel>(m) {
+  m_vars = { { m_sys, "schoofs_theta", *m_grid } };
+
+  m_vars[0]
+      .long_name("multiplier 'theta' in Schoof's (2003) theory of bed roughness in SIA")
+      .units("1");
+  m_vars[0]["valid_range"] = { 0.0, 1.0 };
+
+  const auto *siafd =
+    dynamic_cast<const stressbalance::SIAFD*>(model->stress_balance()->modifier.get());
+
+  if (siafd == nullptr) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "cannot compute 'schoofs_theta': SIAFD is not available");
+  }
+}
+
+std::shared_ptr<array::Array> SIAFDSchoofs_Theta::compute_impl(const Geometry &geometry) const {
+  auto result = allocate<array::Scalar>("schoofs_theta");
+
+  const auto *siafd =
+    dynamic_cast<const stressbalance::SIAFD*>(model->stress_balance()->modifier.get());
+
+  if (siafd == nullptr) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "cannot compute 'schoofs_theta': SIAFD is not available");
+  }
+
+  siafd->bed_smoother().theta(geometry.ice_surface_elevation, *result);
+
+  return result;
+}
+
+//! \brief Computes the thickness relative to the smoothed bed elevation in
+//! Schoof's (2003) theory of the effect of bed roughness on the SIA.
+/*!
+  See page \ref bedrough and reference [\ref Schoofbasaltopg2003].
+*/
+class SIAFDThksmooth : public Diag<IceModel>
+{
+public:
+  SIAFDThksmooth(const IceModel *m);
+protected:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const;
+};
+
+SIAFDThksmooth::SIAFDThksmooth(const IceModel *m)
+  : Diag<IceModel>(m) {
+
+  m_vars = { { m_sys, "thksmooth", *m_grid } };
+  m_vars[0]
+      .long_name(
+          "thickness relative to smoothed bed elevation in Schoof's (2003) theory of bed roughness in SIA")
+      .units("m");
+}
+
+std::shared_ptr<array::Array> SIAFDThksmooth::compute_impl(const Geometry &geometry) const {
+
+  array::CellType2 cell_type(m_grid, "cell_type");
+  cell_type.copy_from(geometry.cell_type);
+
+  const auto *siafd =
+    dynamic_cast<const stressbalance::SIAFD*>(model->stress_balance()->modifier.get());
+
+  if (siafd == nullptr) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "cannot compute 'schoofs_theta': SIAFD is not available");
+  }
+
+  auto result = allocate<array::Scalar>("thksmooth");
+  siafd->bed_smoother().smoothed_thk(geometry.ice_surface_elevation,
+                                     geometry.ice_thickness, cell_type, *result);
+  return result;
+}
 
 } // end of namespace diagnostics
 
@@ -3327,15 +4957,15 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
 
   using d       = Diagnostic;
   using f       = Diagnostic::Ptr; // "f" for "field"
-  result = {
-    // geometry
+  result        = {
+           // geometry
     { "cell_grounded_fraction", d::wrap(m_geometry.cell_grounded_fraction) },
     { "height_above_flotation", f(new HeightAboveFloatation(this)) },
     { "ice_area_specific_volume", d::wrap(m_geometry.ice_area_specific_volume) },
     { "ice_mass", f(new IceMass(this)) },
-    { "lat", d::wrap(m_geometry.latitude) },
-    { "lon", d::wrap(m_geometry.longitude) },
+    { "limnsw", f(new IceMassNotDisplacingSeaWater(this)) },
     { "mask", d::wrap(m_geometry.cell_type) },
+    { "pressure", f(new PressureInIce(this)) },
     { "thk", f(new IceThickness(this)) },
     { "topg_sl_adjusted", f(new BedTopographySeaLevelAdjusted(this)) },
     { "usurf", f(new IceSurfaceElevation(this)) },
@@ -3355,6 +4985,7 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
     { "tempbase", f(new TemperatureBasal(this, BOTH)) },
     { "temppabase", f(new TemperaturePABasal(this)) },
     { "tempsurf", f(new TemperatureSurface(this)) },
+    { "heat_flux_from_bedrock", f(new HeatFluxFromBedrock(this)) },
 
     // rheology-related stuff
     { "tempicethk", f(new TemperateIceThickness(this)) },
@@ -3383,7 +5014,7 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
     { "tendency_of_ice_amount", f(new TendencyOfIceAmount(this, AMOUNT)) },
     { "tendency_of_ice_amount_due_to_flow", f(new TendencyOfIceAmountDueToFlow(this, AMOUNT)) },
     { "tendency_of_ice_amount_due_to_conservation_error",
-      f(new ConservationErrorFlux(this, AMOUNT)) },
+             f(new ConservationErrorFlux(this, AMOUNT)) },
     { "tendency_of_ice_amount_due_to_surface_mass_flux", f(new SurfaceFlux(this, AMOUNT)) },
     { "tendency_of_ice_amount_due_to_basal_mass_flux", f(new BasalFlux(this, AMOUNT)) },
     { "tendency_of_ice_amount_due_to_discharge", f(new DischargeFlux(this, AMOUNT)) },
@@ -3419,10 +5050,60 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
     { "bmelt", d::wrap(m_basal_melt_rate) },
     { "grounding_line_flux", f(new GroundingLineFlux(this)) },
     { "ice_mass_transport_across_grounding_line", f(new MassTransportAcrossGroundingLine(this)) },
+    { "taud", f(new DrivingShearStress(this)) },
+    { "taud_mag", f(new DrivingShearStressmagnitude(this)) },
+
+    // velocities and fluxes that use ice geometry
+    { "velbar_mag", Diagnostic::Ptr(new StressBalanceVelbarMag(this)) },
+    { "flux", Diagnostic::Ptr(new StressBalanceFlux(this)) },
+    { "flux_mag", Diagnostic::Ptr(new StressBalanceFluxMag(this)) },
+    { "velbar", Diagnostic::Ptr(new StressBalanceVelbar(this)) },
+    { "strain_rates", Diagnostic::Ptr(new StressBalanceStrainRates(this)) },
+    { "deviatoric_stresses", Diagnostic::Ptr(new StressBalanceDeviatoricStresses(this)) },
+    { "vonmises_stress", Diagnostic::Ptr(new StressBalanceVonmisesStress(this)) },
+    { "uvel", Diagnostic::Ptr(new StressBalanceUvel(this)) },
+    { "vvel", Diagnostic::Ptr(new StressBalanceVvel(this)) },
+    { "wvel_rel", Diagnostic::Ptr(new StressBalanceWvelRel(this)) },
+    { "tauxz", Diagnostic::Ptr(new StressBalanceTauxz(this)) },
+    { "tauyz", Diagnostic::Ptr(new StressBalanceTauyz(this)) },
+    { "velbase_mag", Diagnostic::Ptr(new StressBalanceVelbaseMag(this)) },
+    { "velsurf_mag", Diagnostic::Ptr(new StressBalanceVelsurfMag(this)) },
+    { "velbase", Diagnostic::Ptr(new StressBalanceVelbase(this)) },
+    { "velsurf", Diagnostic::Ptr(new StressBalanceVelsurf(this)) },
+    { "wvel", Diagnostic::Ptr(new StressBalanceWvel(this)) },
+    { "wvelbase", Diagnostic::Ptr(new StressBalanceWvelbase(this)) },
+    { "wvelsurf", Diagnostic::Ptr(new StressBalanceWvelsurf(this)) },
+    { "bfrict", Diagnostic::Ptr(new StressBalanceBfrict(this)) },
+    { "strainheat", Diagnostic::Ptr(new StressBalanceStrainheat(this)) },
 
     // misc
     { "rank", f(new Rank(this)) },
   };
+
+  if (dynamic_cast<const stressbalance::SIAFD *>(stress_balance()->modifier.get()) != nullptr) {
+    result["schoofs_theta"] = f(new SIAFDSchoofs_Theta(this));
+    result["thksmooth"] = f(new SIAFDThksmooth(this));
+  }
+
+  if (stress_balance()->shallow->sliding_law() != nullptr and
+      basal_yield_stress_model() != nullptr) {
+    result["beta"] = f(new ShallowStressBalanceBeta(this));
+  }
+
+  if (dynamic_cast<const hydrology::Routing *>(subglacial_hydrology_model()) != nullptr) {
+    result["wallmelt"] = f(new HydrologyWallMelt(this));
+    result["hydraulic_potential"] = f(new HydraulicPotential(this));
+  }
+
+  if (m_grid->has_longitude_latitude()) {
+    result["lon"] = d::wrap(m_grid->longitude());
+    result["lat"] = d::wrap(m_grid->latitude());
+  }
+
+  if (basal_yield_stress_model() != nullptr) {
+    result["taub"]     = f(new BasalShearStress(this));
+    result["taub_mag"] = f(new BasalShearStressMagnitude(this));
+  }
 
 #if (Pism_USE_PROJ == 1)
   std::string proj = m_grid->get_mapping_info()["proj_params"];
@@ -3432,25 +5113,32 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
   }
 #endif
 
-  // add ISMIP variable names
-  if (m_config->get_flag("output.ISMIP")) {
-    result["base"]        = result["ice_base_elevation"];
-    result["lithk"]       = result["thk"];
-    result["dlithkdt"]    = result["dHdt"];
-    result["orog"]        = result["usurf"];
-    result["acabf"]       = result["tendency_of_ice_amount_due_to_surface_mass_flux"];
-    result["libmassbfgr"] = result["basal_mass_flux_grounded"];
-    result["libmassbffl"] = result["basal_mass_flux_floating"];
-    result["lifmassbf"]   = result["tendency_of_ice_amount_due_to_discharge"];
-    result["licalvf"]     = result["tendency_of_ice_amount_due_to_calving"];
-    result["litempbotgr"] = f(new TemperatureBasal(this, GROUNDED));
-    result["litempbotfl"] = f(new TemperatureBasal(this, SHELF));
-    result["ligroundf"]   = result["grounding_line_flux"];
+  // get diagnostics from submodels (may override some diagnostics allocated above)
+  for (const auto& m : m_submodels) {
+    // Note: the order of arguments of pism::combine() matters here: we want sub-models to
+    // be able to override "generic" diagnostics already present in "result".
+    result = pism::combine(m.second->spatial_diagnostics(), result);
   }
 
-  // get diagnostics from submodels
-  for (const auto& m : m_submodels) {
-    result = pism::combine(result, m.second->spatial_diagnostics());
+  // add ISMIP variable names
+  if (m_config->get_flag("output.ISMIP")) {
+    result["acabf"]       = result["tendency_of_ice_amount_due_to_surface_mass_flux"];
+    result["base"]        = result["ice_base_elevation"];
+    result["dlithkdt"]    = result["dHdt"];
+    result["hfgeoubed"]   = result["heat_flux_from_bedrock"];
+    result["libmassbffl"] = result["basal_mass_flux_floating"];
+    result["libmassbfgr"] = result["basal_mass_flux_grounded"];
+    result["licalvf"]     = result["tendency_of_ice_amount_due_to_calving"];
+    result["lifmassbf"]   = result["tendency_of_ice_amount_due_to_discharge"];
+    result["ligroundf"]   = result["grounding_line_flux"];
+    result["litempbotfl"] = f(new TemperatureBasal(this, SHELF));
+    result["litempbotgr"] = f(new TemperatureBasal(this, GROUNDED));
+    result["lithk"]       = result["thk"];
+    result["orog"]        = result["usurf"];
+    result["strbasemag"]  = result["taub_mag"];
+    result["velmean"]     = result["velbar"];
+    result["zvelbase"]    = result["wvelbase"];
+    result["zvelsurf"]    = result["wvelsurf"];
   }
 
   return result;
@@ -3459,54 +5147,54 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
 std::map<std::string, TSDiagnostic::Ptr> IceModel::allocate_scalar_diagnostics() {
   std::map<std::string, TSDiagnostic::Ptr> result;
 
-  using namespace diagnostics;
+  using namespace diagnostics::scalar;
 
   using s = TSDiagnostic::Ptr; // "s" for "scalar"
 
   result = {
     // area
-    {"ice_area_glacierized",                s(new scalar::IceAreaGlacierized(this))},
-    {"ice_area_glacierized_cold_base",      s(new scalar::IceAreaGlacierizedColdBase(this))},
-    {"ice_area_glacierized_grounded",       s(new scalar::IceAreaGlacierizedGrounded(this))},
-    {"ice_area_glacierized_floating",       s(new scalar::IceAreaGlacierizedShelf(this))},
-    {"ice_area_glacierized_temperate_base", s(new scalar::IceAreaGlacierizedTemperateBase(this))},
+    {"ice_area_glacierized",                s(new IceAreaGlacierized(this))},
+    {"ice_area_glacierized_cold_base",      s(new IceAreaGlacierizedColdBase(this))},
+    {"ice_area_glacierized_grounded",       s(new IceAreaGlacierizedGrounded(this))},
+    {"ice_area_glacierized_floating",       s(new IceAreaGlacierizedShelf(this))},
+    {"ice_area_glacierized_temperate_base", s(new IceAreaGlacierizedTemperateBase(this))},
     // mass
-    {"ice_mass_glacierized",             s(new scalar::IceMassGlacierized(this))},
-    {"ice_mass",                         s(new scalar::IceMass(this))},
-    {"tendency_of_ice_mass_glacierized", s(new scalar::IceMassRateOfChangeGlacierized(this))},
-    {"limnsw",                           s(new scalar::IceMassNotDisplacingSeaWater(this))},
+    {"ice_mass_glacierized",             s(new IceMassGlacierized(this))},
+    {"ice_mass",                         s(new IceMass(this))},
+    {"tendency_of_ice_mass_glacierized", s(new IceMassRateOfChangeGlacierized(this))},
+    {"limnsw",                           s(new IceMassNotDisplacingSeaWater(this))},
     // volume
-    {"ice_volume_glacierized",             s(new scalar::IceVolumeGlacierized(this))},
-    {"ice_volume_glacierized_cold",        s(new scalar::IceVolumeGlacierizedCold(this))},
-    {"ice_volume_glacierized_grounded",    s(new scalar::IceVolumeGlacierizedGrounded(this))},
-    {"ice_volume_glacierized_floating",    s(new scalar::IceVolumeGlacierizedShelf(this))},
-    {"ice_volume_glacierized_temperate",   s(new scalar::IceVolumeGlacierizedTemperate(this))},
-    {"ice_volume",                         s(new scalar::IceVolume(this))},
-    {"ice_volume_cold",                    s(new scalar::IceVolumeCold(this))},
-    {"ice_volume_temperate",               s(new scalar::IceVolumeTemperate(this))},
-    {"tendency_of_ice_volume_glacierized", s(new scalar::IceVolumeRateOfChangeGlacierized(this))},
-    {"tendency_of_ice_volume",             s(new scalar::IceVolumeRateOfChange(this))},
-    {"sea_level_rise_potential",           s(new scalar::SeaLevelRisePotential(this))},
+    {"ice_volume_glacierized",             s(new IceVolumeGlacierized(this))},
+    {"ice_volume_glacierized_cold",        s(new IceVolumeGlacierizedCold(this))},
+    {"ice_volume_glacierized_grounded",    s(new IceVolumeGlacierizedGrounded(this))},
+    {"ice_volume_glacierized_floating",    s(new IceVolumeGlacierizedShelf(this))},
+    {"ice_volume_glacierized_temperate",   s(new IceVolumeGlacierizedTemperate(this))},
+    {"ice_volume",                         s(new IceVolume(this))},
+    {"ice_volume_cold",                    s(new IceVolumeCold(this))},
+    {"ice_volume_temperate",               s(new IceVolumeTemperate(this))},
+    {"tendency_of_ice_volume_glacierized", s(new IceVolumeRateOfChangeGlacierized(this))},
+    {"tendency_of_ice_volume",             s(new IceVolumeRateOfChange(this))},
+    {"sea_level_rise_potential",           s(new SeaLevelRisePotential(this))},
     // energy
-    {"ice_enthalpy_glacierized", s(new scalar::IceEnthalpyGlacierized(this))},
-    {"ice_enthalpy",         s(new scalar::IceEnthalpy(this))},
+    {"ice_enthalpy_glacierized", s(new IceEnthalpyGlacierized(this))},
+    {"ice_enthalpy",         s(new IceEnthalpy(this))},
     // time-stepping
-    {"max_diffusivity", s(new scalar::MaxDiffusivity(this))},
-    {"max_horizontal_vel", s(new scalar::MaxHorizontalVelocity(this))},
-    {"dt",              s(new scalar::TimeStepLength(this))},
-    {"dt_ratio",        s(new scalar::TimeStepRatio(this))},
+    {"max_diffusivity", s(new MaxDiffusivity(this))},
+    {"max_horizontal_vel", s(new MaxHorizontalVelocity(this))},
+    {"dt",              s(new TimeStepLength(this))},
+    {"dt_ratio",        s(new TimeStepRatio(this))},
     // balancing the books
-    {"tendency_of_ice_mass",                           s(new scalar::IceMassRateOfChange(this))},
-    {"tendency_of_ice_mass_due_to_flow",               s(new scalar::IceMassRateOfChangeDueToFlow(this))},
-    {"tendency_of_ice_mass_due_to_conservation_error", s(new scalar::IceMassFluxConservationError(this))},
-    {"tendency_of_ice_mass_due_to_basal_mass_flux",    s(new scalar::IceMassFluxBasal(this))},
-    {"tendency_of_ice_mass_due_to_surface_mass_flux",  s(new scalar::IceMassFluxSurface(this))},
-    {"tendency_of_ice_mass_due_to_discharge",          s(new scalar::IceMassFluxDischarge(this))},
-    {"tendency_of_ice_mass_due_to_calving",            s(new scalar::IceMassFluxCalving(this))},
+    {"tendency_of_ice_mass",                           s(new IceMassRateOfChange(this))},
+    {"tendency_of_ice_mass_due_to_flow",               s(new IceMassRateOfChangeDueToFlow(this))},
+    {"tendency_of_ice_mass_due_to_conservation_error", s(new IceMassFluxConservationError(this))},
+    {"tendency_of_ice_mass_due_to_basal_mass_flux",    s(new IceMassFluxBasal(this))},
+    {"tendency_of_ice_mass_due_to_surface_mass_flux",  s(new IceMassFluxSurface(this))},
+    {"tendency_of_ice_mass_due_to_discharge",          s(new IceMassFluxDischarge(this))},
+    {"tendency_of_ice_mass_due_to_calving",            s(new IceMassFluxCalving(this))},
     // other fluxes
-    {"basal_mass_flux_grounded", s(new scalar::IceMassFluxBasalGrounded(this))},
-    {"basal_mass_flux_floating", s(new scalar::IceMassFluxBasalFloating(this))},
-    {"grounding_line_flux",      s(new scalar::IceMassFluxAtGroundingLine(this))},
+    {"basal_mass_flux_grounded", s(new IceMassFluxBasalGrounded(this))},
+    {"basal_mass_flux_floating", s(new IceMassFluxBasalFloating(this))},
+    {"grounding_line_flux",      s(new IceMassFluxAtGroundingLine(this))},
   };
 
   // add ISMIP variable names
@@ -3870,7 +5558,7 @@ void IceModel::write_diagnostics(const OutputFile &file,
     auto diag = m_available_spatial_diagnostics.find(variable);
 
     if (diag != m_available_spatial_diagnostics.end()) {
-      diag->second->compute()->write(file);
+      diag->second->compute(m_geometry)->write(file);
     }
   }
 }

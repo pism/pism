@@ -23,7 +23,7 @@
 
 #include "pism/icemodel/IceModel.hh"
 
-#include "pism/stressbalance/StressBalance.hh"
+#include "pism/stressbalance/SSB_Modifier.hh"
 
 #include "pism/util/Grid.hh"
 #include "pism/util/Config.hh"
@@ -89,8 +89,8 @@ unsigned int count_CFL_violations(const array::Array3D &u3,
 void IceModel::print_summary(bool tempAndAge, double dt) {
 
   const array::Array3D
-    &u3 = m_stress_balance->velocity_u(),
-    &v3 = m_stress_balance->velocity_v();
+    &u3 = m_stress_balance.modifier->velocity_u(),
+    &v3 = m_stress_balance.modifier->velocity_v();
 
   unsigned int n_CFL_violations = count_CFL_violations(u3, v3, m_geometry.ice_thickness,
                                                        tempAndAge ? m_dt_TempAge : dt);
@@ -109,7 +109,7 @@ void IceModel::print_summary(bool tempAndAge, double dt) {
   }
 
   // get maximum diffusivity
-  double max_diffusivity = m_stress_balance->max_diffusivity();
+  double max_diffusivity = m_stress_balance.modifier->max_diffusivity();
   // get volumes in m^3 and areas in m^2
   double volume = ice_volume(m_geometry, 0.0);
   double area = ice_area(m_geometry, 0.0);
@@ -232,7 +232,7 @@ void IceModel::print_summary_line(bool printPrototype,  bool tempAndAge,
       tempstr = pism::printf("%.3f", m_time->convert_time_interval(T, time_units));
     }
 
-    const CFLData cfl = m_stress_balance->max_timestep_cfl_2d();
+    const auto &cfl = max_timestep_cfl_2d();
     std::string velocity_units = "meters / (" + time_units + ")";
     const double maxvel = units::convert(m_sys, std::max(cfl.u_max, cfl.v_max),
                                          "m second^-1", velocity_units);

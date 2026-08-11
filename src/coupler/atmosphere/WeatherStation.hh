@@ -58,7 +58,7 @@ protected:
   void precip_time_series_impl(int i, int j, std::vector<double> &values) const;
   void temp_time_series_impl(int i, int j, std::vector<double> &values) const;
 
-  MaxTimestep max_timestep_impl(double t) const;
+  MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 protected:
 
   std::shared_ptr<ScalarForcing> m_precipitation_timeseries;

@@ -135,7 +135,6 @@ std::shared_ptr<TerminationReason> IP_BlatterTaucForwardProblem::linearize_at(
   inputs.geometry           = &geometry;
   inputs.basal_yield_stress = &m_tauc_copy;  // use our converted tauc
   inputs.enthalpy           = variables.get_3d_scalar("enthalpy");
-  inputs.basal_melt_rate    = NULL;
   inputs.age                = NULL;
   inputs.water_column_pressure = NULL;
 
