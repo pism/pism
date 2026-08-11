@@ -7,6 +7,8 @@ Changes from 2.3.2 to 2.3.3
   `-log_view` output that references events not declared in the file's preamble (e.g.
   `PetscBarrier`, `MatMult MF`). The file is now executed with auto-vivifying dictionaries
   instead of imported as a module.
+- Fix `issue 578`_ (broken 3D diagnostics `uvel`, `vvel`, `wvel`, `wvel_rel`).
+
 Changes from 2.3.1 to 2.3.2
 ===========================
 
@@ -1238,6 +1240,7 @@ Miscellaneous
 .. _issue 568: https://github.com/pism/pism/issues/568
 .. _issue 569: https://github.com/pism/pism/issues/569
 .. _issue 509: https://github.com/pism/pism/issues/509
+.. _issue 578: https://github.com/pism/pism/issues/578
 .. _ocean models: http://www.pism.io/docs/climate_forcing/ocean.html
 .. _pull request 547: https://github.com/pism/pism/pull/547
 .. _YAC: https://dkrz-sw.gitlab-pages.dkrz.de/yac/index.html
