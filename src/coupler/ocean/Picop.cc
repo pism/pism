@@ -49,6 +49,7 @@
 #include "pism/util/Grid.hh"
 #include "pism/util/pism_utilities.hh"  // GlobalSum
 #include "pism/stressbalance/StressBalance.hh"
+#include "pism/stressbalance/ShallowStressBalance.hh"
 #include "pism/hydrology/Hydrology.hh"
 
 #include "pism/coupler/ocean/Picop.hh"
@@ -271,10 +272,9 @@ void Picop::update_impl(const Inputs &inputs, double t, double dt) {
 }
 
 
-MaxTimestep Picop::max_timestep_impl(double t) const {
-  (void) t;
+MaxTimestep Picop::max_timestep_impl(double t, const CFLData *cfl_data) const {
 
-  auto pico_dt_max = m_pico->max_timestep(t);
+  auto pico_dt_max = m_pico->max_timestep(t, cfl_data);
   if (pico_dt_max.finite()) {
     return { pico_dt_max.value(), "ocean picop" };
   }
@@ -890,7 +890,7 @@ void Picop::compute_grounding_line_elevation(const Inputs &inputs,
                                              array::Scalar1 &result) {
 
   const auto &cell_type = inputs.geometry->cell_type;
-  const auto &adv_vel   = inputs.stress_balance->advective_velocity();
+  const auto &adv_vel   = inputs.stress_balance->shallow->velocity();
 
   array::AccessScope scope{ &adv_vel, &m_flow_direction, &result };
 

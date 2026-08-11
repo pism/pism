@@ -618,7 +618,7 @@ double IceModel::step(bool do_mass_continuity,
   {
     ocean::Inputs inputs;
     inputs.geometry = &m_geometry;
-    inputs.stress_balance = m_stress_balance.get();
+    inputs.stress_balance = &m_stress_balance;
     inputs.hydrology = m_subglacial_hydrology.get();
     m_ocean->update(inputs, current_time, dt);
   }
