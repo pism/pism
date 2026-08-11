@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2011, 2013, 2014, 2015, 2016, 2017, 2020, 2021, 2022, 2023, 2024, 2025 Constantine Khroulev
+// Copyright (C) 2009--2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -303,6 +303,14 @@ std::shared_ptr<array::Vector> Vars::get_2d_vector_shared(const std::string &nam
 
 std::shared_ptr<array::CellType> Vars::get_2d_cell_type_shared(const std::string &name) const {
   return get_shared_<array::CellType>(this, name, "2D cell type");
+}
+
+std::shared_ptr<array::CellType1> Vars::get_2d_cell_type1_shared(const std::string &name) const {
+  return get_shared_<array::CellType1>(this, name, "2D cell type (ghosted)");
+}
+
+std::shared_ptr<array::CellType2> Vars::get_2d_cell_type2_shared(const std::string &name) const {
+  return get_shared_<array::CellType2>(this, name, "2D cell type (ghosted, stencil width=2)");
 }
 
 
