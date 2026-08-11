@@ -18,6 +18,7 @@
 */
 
 #include <functional>
+#include <memory>
 
 #include "pism/geometry/Geometry.hh"
 
@@ -173,7 +174,7 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
   }
 }
 
-void Geometry::dump(const char *filename) const {
+std::shared_ptr<OutputFile> Geometry::dump(const char *filename) const {
   auto grid = ice_thickness.grid();
   auto ctx    = grid->ctx();
   auto config = ctx->config();
@@ -182,7 +183,7 @@ void Geometry::dump(const char *filename) const {
   auto writer = std::make_shared<SynchronousOutputWriter>(ctx->com(), *config);
   writer->initialize({}, true);
 
-  OutputFile file(writer, filename);
+  auto file = std::make_shared<OutputFile>(writer, filename);
 
   auto time = grid->ctx()->time();
 
@@ -197,22 +198,24 @@ void Geometry::dump(const char *filename) const {
   }
 
   {
-    file.define_variable(time->metadata());
+    file->define_variable(time->metadata());
 
     for (const auto *v : variables) {
       for (const auto &var : v->all_metadata()) {
-        file.define_variable(var);
+        file->define_variable(var);
       }
     }
   }
 
   {
-    file.append_time(time->current());
+    file->append_time(time->current());
 
     for (const auto *v : variables) {
-      v->write(file);
+      v->write(*file);
     }
   }
+
+  return file;
 }
 
 /*! Compute the elevation of the bottom surface of the ice.
