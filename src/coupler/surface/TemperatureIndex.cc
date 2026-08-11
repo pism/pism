@@ -289,8 +289,10 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
     sigmalapserate = m_config->get_number("surface.pdd.std_dev.lapse_lat_rate"),
     sigmabaselat   = m_config->get_number("surface.pdd.std_dev.lapse_lat_base");
 
+  const bool use_sigma_lapse_rate = sigmalapserate != 0.0;
+
   const array::Scalar *latitude = nullptr;
-  if ((fausto_greve != nullptr) or sigmalapserate != 0.0) {
+  if ((fausto_greve != nullptr) or use_sigma_lapse_rate) {
     latitude = &m_grid->latitude();
     list.add(*latitude);
   }
@@ -353,7 +355,7 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
       }
 
       // apply standard deviation lapse rate on top of prescribed values
-      if (sigmalapserate != 0.0) {
+      if (use_sigma_lapse_rate) {
         double lat = (*latitude)(i, j);
         for (int k = 0; k < N; ++k) {
           S[k] += sigmalapserate * (lat - sigmabaselat);
