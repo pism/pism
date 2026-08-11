@@ -57,12 +57,8 @@ CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
 
   array::AccessScope list{&ice_thickness, &u3, &v3, &w3, &cell_type};
 
-  bool has_no_model_mask;
   if (no_model_mask != nullptr) {
-    has_no_model_mask = true;
     list.add(*no_model_mask);
-  } else {
-    has_no_model_mask = false;
   }
   
   // update global max of abs of velocities for CFL; only velocities under surface
@@ -76,12 +72,7 @@ CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
     for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
-      bool is_modeled = true;
-      if (has_no_model_mask) {
-        if ((*no_model_mask)(i, j) == 1) {
-          is_modeled = false;
-        }
-      }
+      bool is_modeled = no_model_mask == nullptr ? true : ((*no_model_mask)(i, j) < 0.5);
       
       if ((cell_type.icy(i, j)) && is_modeled) {
         const int ks = grid->kBelowHeight(ice_thickness(i, j));
@@ -127,11 +118,9 @@ CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
 }
 
 //! Compute the CFL constant associated to first-order upwinding for the sliding contribution to mass continuity.
-/*!
-  This procedure computes the maximum horizontal speed in the icy
-  areas. In particular it computes CFL constant for the upwinding, in
-  GeometryEvolution::step(), which applies to the basal component of mass
-  flux.
+/*! This procedure computes the maximum horizontal sliding speed in the icy areas. In
+  particular it computes CFL constant for the upwinding, in GeometryEvolution::step(),
+  which applies to the basal component of mass flux.
 
   That is, because the map-plane mass continuity is advective in the
   sliding case we have a CFL condition.
@@ -152,24 +141,15 @@ CFLData max_timestep_cfl_2d(const array::Scalar &ice_thickness,
 
   array::AccessScope list{&velocity, &cell_type};
 
-  bool has_no_model_mask;
   if (no_model_mask != nullptr) {
-    has_no_model_mask = true;
     list.add(*no_model_mask);
-  } else {
-    has_no_model_mask = false;
   }
   
   double u_max = 0.0, v_max = 0.0;
   for (auto p : grid->points()) {
     const int i = p.i(), j = p.j();
 
-    bool is_modeled = true;
-    if (has_no_model_mask) {
-      if ((*no_model_mask)(i, j) == 1) {
-        is_modeled = false;
-      }
-    }
+    bool is_modeled = no_model_mask == nullptr ? true : ((*no_model_mask)(i, j) < 0.5);
       
     if ((cell_type.icy(i, j)) && is_modeled) {
       const double

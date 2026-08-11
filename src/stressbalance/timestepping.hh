@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2022, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2022, 2023, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -34,12 +34,6 @@ class Scalar;
 class Scalar1;
 class Vector;
 } // end of namespace array
-
-struct CFLData {
-  CFLData();
-  MaxTimestep dt_max;
-  double u_max, v_max, w_max;
-};
 
 /*! @brief Compute the max. time step according to the CFL condition (within the volume of the
     ice). */

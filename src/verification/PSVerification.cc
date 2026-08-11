@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2023, 2025 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -70,7 +70,7 @@ void Verification::write_state_impl(const OutputFile &output) const {
   m_temperature->write(output);
 }
 
-MaxTimestep Verification::max_timestep_impl(double t) const {
+MaxTimestep Verification::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
   (void) t;
   return MaxTimestep("verification surface model");
 }

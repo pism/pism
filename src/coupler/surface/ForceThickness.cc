@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2024, 2025 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2024, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -292,9 +292,9 @@ Equivalently (since \f$\alpha \Delta t>0\f$),
 Therefore we set here
    \f[\Delta t = \frac{2}{\alpha}.\f]
  */
-MaxTimestep ForceThickness::max_timestep_impl(double my_t) const {
+MaxTimestep ForceThickness::max_timestep_impl(double t, const CFLData *cfl_data) const {
   double max_dt = 2.0 / m_alpha;
-  MaxTimestep input_max_dt = m_input_model->max_timestep(my_t);
+  MaxTimestep input_max_dt = m_input_model->max_timestep(t, cfl_data);
 
   return std::min(input_max_dt, MaxTimestep(max_dt, "surface forcing"));
 }

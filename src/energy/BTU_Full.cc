@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -145,7 +145,7 @@ void BTU_Full::write_state_impl(const OutputFile &output) const {
   m_temp->write(output);
 }
 
-MaxTimestep BTU_Full::max_timestep_impl(double t) const {
+MaxTimestep BTU_Full::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
   (void) t;
   // No time step restriction: we are using an unconditionally stable method.
   return MaxTimestep("bedrock thermal layer");

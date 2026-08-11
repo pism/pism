@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2022, 2023, 2025 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2022, 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -57,7 +57,6 @@ protected:
 
   std::map<std::string, Diagnostic::Ptr> allocate_spatial_diagnostics();
 private:
-  array::Scalar2 m_no_model_mask;
   array::Scalar2   m_usurf_stored;
   array::Scalar1   m_thk_stored;
 

@@ -351,7 +351,7 @@ Spatially-variable fields
 #. ``heat_flux_from_bedrock``
 
    :Units: mW m^-2
-   :Description: upward geothermal flux at the top bedrock surface
+   :Description: upward heat flux from bedrock into ice at the ice base
    :Standard name: ``upward_geothermal_heat_flux_at_ground_level_in_land_ice``
    :Comment: positive values correspond to an upward flux
 
@@ -434,6 +434,12 @@ Spatially-variable fields
    :Units: degree_north
    :Description: latitude
    :Standard name: ``latitude``
+
+#. ``limnsw``
+
+   :Units: kg
+   :Description: mass of the ice not displacing sea water
+   :Standard name: ``land_ice_mass_not_displacing_sea_water``
 
 #. ``liqfrac``
 

@@ -135,7 +135,7 @@ macro(pism_find_petsc)
   message(STATUS
     "Looking for PETSc (PETSC_DIR='$ENV{PETSC_DIR}', PETSC_ARCH='$ENV{PETSC_ARCH}')...")
 
-  pism_find_library(PETSC "PETSc>=3.7.0")
+  pism_find_library(PETSC "PETSc>=3.15.0")
 endmacro()
 
 macro(pism_find_prerequisites)

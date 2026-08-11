@@ -1,4 +1,4 @@
-/* Copyright (C) 2019, 2022, 2023 PISM Authors
+/* Copyright (C) 2019, 2022, 2023, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -49,7 +49,7 @@ public:
               array::Scalar &ice_area_specific_volume);
 
 protected:
-  MaxTimestep max_timestep_impl(double t) const;
+  MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 
   std::shared_ptr<array::Forcing> m_retreat_mask;
 };

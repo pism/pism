@@ -122,7 +122,8 @@ void SIAFD::init() {
 
 //! \brief Do the update; if full_update == false skip the update of 3D velocities and strain
 //! heating.
-void SIAFD::update(const array::Vector &sliding_velocity, const Inputs &inputs, bool full_update) {
+void SIAFD::update_impl(const array::Vector &sliding_velocity, const Inputs &inputs,
+                        bool full_update) {
 
   // Check if the smoothed bed computed by BedSmoother is out of date and
   // recompute if necessary.

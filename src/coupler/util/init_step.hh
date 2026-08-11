@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2025 PISM Authors
+/* Copyright (C) 2017, 2018, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -38,7 +38,7 @@ void init_step(M *model, const In &inputs, const Time& time) {
   // Take a one year long step if we can.
   MaxTimestep max_dt(one_year_from_now - now);
 
-  max_dt = std::min(max_dt, model->max_timestep(now));
+  max_dt = std::min(max_dt, model->max_timestep(now, nullptr));
 
   // Do not take time-steps shorter than 1 second
   if (max_dt.value() < 1.0) {

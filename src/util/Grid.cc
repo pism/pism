@@ -31,6 +31,7 @@
 #include <vector>
 #include <utility>              // std::swap
 
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
@@ -88,6 +89,9 @@ struct Grid::Impl : public grid::DistributedGridInfo {
 
   //! z coordinates within the ice
   std::vector<double> z;
+
+  std::shared_ptr<const array::Scalar> longitude;
+  std::shared_ptr<const array::Scalar> latitude;
 };
 
 Grid::Impl::Impl(std::shared_ptr<const Context> context)
@@ -524,10 +528,8 @@ std::shared_ptr<petsc::DM> Grid::Impl::create_dm(unsigned int da_dof, unsigned i
       &result);
   PISM_CHK(ierr, "DMDACreate2d");
 
-#if PETSC_VERSION_GE(3, 8, 0)
   ierr = DMSetUp(result);
   PISM_CHK(ierr, "DMSetUp");
-#endif
 
   return std::make_shared<petsc::DM>(result);
 }
@@ -1424,6 +1426,34 @@ std::vector<double> subset(unsigned int xs, unsigned int xm, const std::vector<d
   return result;
 }
 
+std::shared_ptr<array::Scalar> allocate_longitude(std::shared_ptr<const Grid> grid) {
+
+  auto longitude = std::make_shared<array::Scalar>(grid, "lon");
+  longitude->metadata(0)
+      .long_name("longitude")
+      .units("degree_east")
+      .standard_name("longitude")
+      .set_time_dependent(false);
+  longitude->metadata()["grid_mapping"] = "";
+  longitude->metadata()["valid_range"]  = { -180.0, 180.0 };
+
+  return longitude;
+}
+
+std::shared_ptr<array::Scalar> allocate_latitude(std::shared_ptr<const Grid> grid) {
+
+  auto latitude = std::make_shared<array::Scalar>(grid, "lat");
+  latitude->metadata(0)
+      .long_name("latitude")
+      .units("degree_north")
+      .standard_name("latitude")
+      .set_time_dependent(false);
+  latitude->metadata()["grid_mapping"] = "";
+  latitude->metadata()["valid_range"]  = { -90.0, 90.0 };
+
+  return latitude;
+}
+
 } // namespace grid
 
 //! Create a grid using command-line options and (possibly) an input file.
@@ -1599,6 +1629,33 @@ std::shared_ptr<InputInterpolation> Grid::get_interpolation(const std::vector<do
 void Grid::forget_interpolations() {
   m_impl->regridding_2d.clear();
 }
+
+
+void Grid::set_longitude_latitude(std::shared_ptr<const array::Scalar> lon,
+                                  std::shared_ptr<const array::Scalar> lat) {
+  m_impl->longitude = lon;
+  m_impl->latitude = lat;
+}
+
+bool Grid::has_longitude_latitude() const {
+  return (m_impl->longitude != nullptr and m_impl->latitude != nullptr);
+}
+
+
+const array::Scalar& Grid::longitude() const {
+  if (m_impl->longitude == nullptr) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "grid point longitudes are not available");
+  }
+  return *m_impl->longitude;
+}
+
+const array::Scalar& Grid::latitude() const {
+  if (m_impl->latitude == nullptr) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "grid point latitudes are not available");
+  }
+  return *m_impl->latitude;
+}
+
 
 GridPoints::GridPoints(const Grid &grid, unsigned int stencil_width)
     : GridPoints(grid.info(), stencil_width) {

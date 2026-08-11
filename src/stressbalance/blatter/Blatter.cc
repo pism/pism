@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -583,10 +583,45 @@ void Blatter::init_2d_parameters(const Inputs &inputs) {
   m_parameters.update_ghosts();
 }
 
+void Blatter::init_averaged_ice_hardness(const Inputs &inputs, const petsc::DM &da) {
+
+  assert(inputs.averaged_hardness != nullptr);
+
+  const auto &averaged_hardness = *inputs.averaged_hardness;
+
+  // solver's vertical grid:
+  int Mz_sigma = 0;
+  {
+    DMDALocalInfo info;
+    int ierr = DMDAGetLocalInfo(da, &info); PISM_CHK(ierr, "DMDAGetLocalInfo");
+    info = grid_transpose(info);
+    Mz_sigma = info.mz;
+  }
+
+  DataAccess<double***> hardness(da, 3, NOT_GHOSTED);
+
+  array::AccessScope list{&averaged_hardness};
+
+  for (auto p : m_grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    for (int k = 0; k < Mz_sigma; ++k) {
+      hardness[j][i][k] = averaged_hardness(i, j); // STORAGE_ORDER
+    } // end of the loop over sigma levels
+  } // end of the loop over grid points
+}
+
 /*!
  * Set 3D parameters on the finest grid.
  */
 void Blatter::init_ice_hardness(const Inputs &inputs, const petsc::DM &da) {
+
+  if (inputs.averaged_hardness != nullptr) {
+    init_averaged_ice_hardness(inputs, da);
+    return;
+  }
+
+  assert(inputs.enthalpy != nullptr);
 
   const auto *enthalpy = inputs.enthalpy;
   // PISM's vertical grid:
@@ -1050,9 +1085,8 @@ static void enable_ew(::SNES snes) {
   ierr = SNESKSPSetUseEW(snes, PETSC_TRUE); PISM_CHK(ierr, "SNESKSPSetUseEW");
 }
 
-void Blatter::update(const Inputs &inputs, bool full_update) {
+void Blatter::update_impl(const Inputs &inputs, bool /*full_update*/) {
   PetscErrorCode ierr;
-  (void) full_update;
 
   {
     double
@@ -1162,7 +1196,8 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
   // put basal velocity in m_velocity to use it in the next call
   get_basal_velocity(m_velocity);
 
-  compute_basal_frictional_heating(m_velocity, *inputs.basal_yield_stress,
+  compute_basal_frictional_heating(*m_basal_sliding_law,
+                                   m_velocity, *inputs.basal_yield_stress,
                                    inputs.geometry->cell_type,
                                    m_basal_frictional_heating);
 

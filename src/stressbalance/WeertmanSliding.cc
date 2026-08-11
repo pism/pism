@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2021, 2022, 2023, 2025 PISM Authors
+/* Copyright (C) 2018, 2021, 2022, 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -73,7 +73,7 @@ void WeertmanSliding::init_impl() {
  * This parameterization is used for areas of grounded ice where the base of the ice is
  * temperate.
  */
-void WeertmanSliding::update(const Inputs &inputs, bool full_update) {
+void WeertmanSliding::update_impl(const Inputs &inputs, bool full_update) {
 
   (void) full_update;
 

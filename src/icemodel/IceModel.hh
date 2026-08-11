@@ -143,6 +143,8 @@ public:
   const array::Scalar &calving() const;
   const array::Scalar &frontal_melt() const;
   const array::Scalar &forced_retreat() const;
+  const array::Array3D &vertical_velocity() const;
+  const array::Array3D &volumetric_strain_heating() const;
 
   const stressbalance::StressBalance* stress_balance() const;
   const ocean::OceanModel* ocean_model() const;
@@ -150,6 +152,7 @@ public:
   const energy::EnergyModel* energy_balance_model() const;
   const YieldStress* basal_yield_stress_model() const;
   const bed::BedDef* bed_deformation_model() const;
+  const hydrology::Hydrology* subglacial_hydrology_model() const;
 
   /*!
    * Replace the ocean model with an implementation in Python.
@@ -160,6 +163,10 @@ public:
   const GeometryEvolution& geometry_evolution() const;
 
   double dt() const;
+
+  CFLData max_timestep_cfl_3d() const;
+
+  CFLData max_timestep_cfl_2d() const;
 
 protected:
   virtual void allocate_submodels();
@@ -341,12 +348,20 @@ protected:
   //! temperature at the top surface of the bedrock thermal layer
   array::Scalar m_bedtoptemp;
 
+  //! 3D vertical velocity within the ice volume
+  array::Array3D m_vertical_velocity;
+
+  //! volumetric strain heating
+  array::Array3D m_strain_heating;
+
   std::shared_ptr<FractureDensity> m_fracture;
 
   //! mask to determine Dirichlet boundary locations for the sliding velocity
   array::Scalar2 m_velocity_bc_mask;
   //! Dirichlet boundary velocities
   array::Vector2 m_velocity_bc_values;
+
+  std::shared_ptr<array::Scalar2> m_no_model_mask;
 
   //! Mask prescribing locations where ice thickness is held constant
   array::Scalar1 m_ice_thickness_bc_mask;
@@ -366,6 +381,8 @@ protected:
   std::string m_stdout_flags;
 
   unsigned int m_step_counter;
+
+  CFLData m_cfl_2d, m_cfl_3d;
 
   // see iceModel.cc
   virtual void allocate_storage();
@@ -436,7 +453,7 @@ protected:
   static const int m_n_work2d = 4;
   mutable std::vector<std::shared_ptr<array::Scalar2>> m_work2d;
 
-  std::shared_ptr<stressbalance::StressBalance> m_stress_balance;
+  stressbalance::StressBalance m_stress_balance;
 
   struct ThicknessChanges {
     ThicknessChanges(const std::shared_ptr<const Grid> &grid);

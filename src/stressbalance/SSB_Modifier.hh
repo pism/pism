@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2023, 2025 PISM Authors
+// Copyright (C) 2010--2023, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -43,9 +43,7 @@ public:
 
   virtual void init();
 
-  virtual void update(const array::Vector &sliding_velocity,
-                      const Inputs &inputs,
-                      bool full_update) = 0;
+  void update(const array::Vector &sliding_velocity, const Inputs &inputs, bool full_update);
 
   //! \brief Get the diffusive (SIA) vertically-averaged flux on the staggered grid.
   const array::Staggered& diffusive_flux();
@@ -62,6 +60,9 @@ public:
   std::shared_ptr<const rheology::FlowLaw> flow_law() const;
 
 protected:
+  virtual void update_impl(const array::Vector &sliding_velocity, const Inputs &inputs,
+                           bool full_update) = 0;
+
   std::shared_ptr<rheology::FlowLaw> m_flow_law;
   std::shared_ptr<EnthalpyConverter> m_EC;
   double m_D_max;
@@ -78,9 +79,10 @@ public:
 
   virtual void init();
 
-  virtual void update(const array::Vector &sliding_velocity,
-                      const Inputs &inputs,
-                      bool full_update);
+protected:
+  virtual void update_impl(const array::Vector &sliding_velocity,
+                           const Inputs &inputs,
+                           bool full_update);
 };
 
 } // end of namespace stressbalance
