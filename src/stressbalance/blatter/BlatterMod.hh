@@ -38,9 +38,9 @@ public:
 
   void init();
 
-  void update_impl(const array::Vector &sliding_velocity,
-                   const Inputs &inputs,
-                   bool full_update);
+  virtual void update_impl(const array::Vector &sliding_velocity,
+                           const Inputs &inputs,
+                           bool full_update);
 private:
   std::shared_ptr<Blatter> m_solver;
 

@@ -40,7 +40,7 @@ public:
   Blatter(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor);
   virtual ~Blatter() = default;
 
-  void update_impl(const Inputs &inputs, bool /*full_update*/);
+  virtual void update_impl(const Inputs &inputs, bool /*full_update*/);
 
   std::shared_ptr<array::Array3D> velocity_u_sigma() const;
   std::shared_ptr<array::Array3D> velocity_v_sigma() const;
