@@ -3771,7 +3771,7 @@ protected:
 };
 
 StressBalanceUvel::StressBalanceUvel(const IceModel *m) : Diag<IceModel>(m) {
-  m_vars = { { m_sys, "uvel", *m_grid } };
+  m_vars = { { m_sys, "uvel", *m_grid, m_grid->z() } };
   m_vars[0]
       .long_name("horizontal velocity of ice in the X direction")
       .standard_name("land_ice_x_velocity")
@@ -3828,7 +3828,7 @@ std::shared_ptr<array::Array> StressBalanceUvel::compute_impl(const Geometry &ge
 }
 
 StressBalanceVvel::StressBalanceVvel(const IceModel *m) : Diag<IceModel>(m) {
-  m_vars = { { m_sys, "vvel", *m_grid } };
+  m_vars = { { m_sys, "vvel", *m_grid, m_grid->z() } };
   m_vars[0]
       .long_name("horizontal velocity of ice in the Y direction")
       .standard_name("land_ice_y_velocity")
@@ -3848,7 +3848,7 @@ std::shared_ptr<array::Array> StressBalanceVvel::compute_impl(const Geometry &ge
 }
 
 StressBalanceWvelRel::StressBalanceWvelRel(const IceModel *m) : Diag<IceModel>(m) {
-  m_vars = { { m_sys, "wvel_rel", *m_grid } };
+  m_vars = { { m_sys, "wvel_rel", *m_grid, m_grid->z() } };
   m_vars[0]
       .long_name("vertical velocity of ice, relative to base of ice directly below")
       .units("m s^-1")
@@ -4434,7 +4434,7 @@ std::shared_ptr<array::Array> StressBalanceVelsurf::compute_impl(const Geometry 
 }
 
 StressBalanceWvel::StressBalanceWvel(const IceModel *m) : Diag<IceModel>(m) {
-  m_vars = { { m_sys, "wvel", *m_grid } };
+  m_vars = { { m_sys, "wvel", *m_grid, m_grid->z() } };
   m_vars[0]
       .long_name("vertical velocity of ice, relative to geoid")
       .units("m s^-1")

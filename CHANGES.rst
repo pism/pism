@@ -129,6 +129,10 @@ Changes since v2.3.0
 - Allow regridding 3D fields whose vertical coordinate is dimensionless (e.g. Blatter's
   `z_sigma`). `InputGridInfo` previously hard-coded "meters" for any Z dimension and
   failed with "cannot convert '1' to 'meters'" when reading sigma-coordinate fields.
+- Fix `util/pism_plot_profiling` so it no longer fails with a `KeyError` on PETSc
+  `-log_view` output that references events not declared in the file's preamble (e.g.
+  `PetscBarrier`, `MatMult MF`). The file is now executed with auto-vivifying dictionaries
+  instead of imported as a module.
 - Install a `pismi` executable from a CMake build so the inverse modeling driver can be run
   as `pismi ...` regardless of whether PISM was installed via CMake or `pip install .`
   (previously a CMake install required `python -m PISM.pismi ...`).
@@ -166,11 +170,11 @@ Changes since v2.3.0
   CMAKE_INSTALL_PREFIX) may misbehave. If you want a clean ctest run that mirrors
   a developer build rather than a wheel build, do a separate plain-CMake configure
   into a fresh dir::
-     
+
      cmake -S . -B build-dev -DPism_BUILD_PYTHON_BINDINGS=ON
      cmake --build build-dev -j
      ctest --test-dir build-dev
-   
+
 - To add CMake build options, pass --config-settings repeatedly::
     pip install --no-build-isolation . \
     -C cmake.define.Pism_USE_PROJ=ON \

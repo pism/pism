@@ -21,10 +21,12 @@
 #define GEOMETRY_H
 
 #include "pism/util/array/CellType.hh"
+#include <memory>
 
 namespace pism {
 
 class Grid;
+class OutputFile;
 
 class Geometry {
 public:
@@ -51,7 +53,7 @@ public:
   array::Scalar cell_grounded_fraction;
   array::Scalar2 ice_surface_elevation;
 
-  void dump(const char *filename) const;
+  std::shared_ptr<OutputFile> dump(const char *filename) const;
 };
 
 void ice_bottom_surface(const Geometry &geometry, array::Scalar &result);
