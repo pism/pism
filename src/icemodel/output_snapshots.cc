@@ -170,6 +170,11 @@ void IceModel::write_snapshot() {
     }
   }
 
+  if (not m_snapshot_writer->is_async()) {
+    // make sure all changes are written
+    m_snapshot_file->sync();
+  }
+
   if (m_split_snapshots) {
     m_snapshot_file.reset();
   }
