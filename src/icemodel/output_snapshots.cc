@@ -176,6 +176,7 @@ void IceModel::write_snapshot() {
   }
 
   if (m_split_snapshots) {
+    m_snapshot_file->close();
     m_snapshot_file.reset();
   }
 
