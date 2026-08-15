@@ -192,62 +192,8 @@ void BedThermalUnit::write_state_impl(const OutputFile &output) const {
   m_bottom_surface_flux.write(output);
 }
 
-class BTU_geothermal_flux_at_ground_level : public Diag<BedThermalUnit> {
-public:
-  BTU_geothermal_flux_at_ground_level(const BedThermalUnit *m);
-protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
-};
-
-class HeatFluxFromBedrock : public DiagAverageRate<BedThermalUnit>
-{
-public:
-  HeatFluxFromBedrock(const BedThermalUnit *m)
-      : DiagAverageRate<BedThermalUnit>(m, "heat_flux_from_bedrock", RATE) {
-
-    m_accumulator.metadata()["units"] = "joule m^-2";
-
-    auto ismip6 = m_config->get_flag("output.ISMIP6");
-    m_vars      = { { m_sys, ismip6 ? "hfgeoubed" : "heat_flux_from_bedrock", *m_grid } };
-    m_vars[0]
-        .long_name("upward heat flux from bedrock into ice at the ice base")
-        .standard_name((ismip6 ? "upward_geothermal_heat_flux_in_land_ice" :
-                                 "upward_geothermal_heat_flux_at_ground_level_in_land_ice"))
-        .units("W m^-2")
-        .output_units("mW m^-2");
-    m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["comment"]      = "positive values correspond to an upward flux";
-    m_vars[0]["_FillValue"]   = { fill_value() };
-  }
-
-protected:
-  virtual void update_impl(double dt) {
-    const auto &Q         = model->flux_through_top_surface();
-    const auto *cell_type = m_grid->variables().get_2d_cell_type("mask");
-
-    array::AccessScope list{&Q, cell_type, &m_accumulator};
-
-    for (auto p : m_grid->points()) {
-      const int i = p.i(), j = p.j();
-
-      if (cell_type->grounded_ice(i, j)) {
-        m_accumulator(i, j) += dt * Q(i, j);
-      }
-    }
-
-    m_interval_length += dt;
-  }
-};
-
 DiagnosticList BedThermalUnit::spatial_diagnostics_impl() const {
-  DiagnosticList result = { { "bheatflx", Diagnostic::wrap(m_bottom_surface_flux) },
-                            { "heat_flux_from_bedrock",
-                              Diagnostic::Ptr(new HeatFluxFromBedrock(this)) } };
-
-  if (m_config->get_flag("output.ISMIP6")) {
-    result["hfgeoubed"] = result["heat_flux_from_bedrock"];
-  }
-  return result;
+  return { { "bheatflx", Diagnostic::wrap(m_bottom_surface_flux) } };
 }
 
 void BedThermalUnit::update(const array::Scalar &bedrock_top_temperature,

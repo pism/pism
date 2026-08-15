@@ -85,7 +85,7 @@ void DEBMEnhanced::init_impl(const Geometry &geometry) {
   // Cache the latitude and surface-elevation fields and build the initial horizon map and
   // surface normals. The horizon is recomputed from the (evolving) surface elevation every
   // surface.debm_enhanced.update_interval (see update_insolation_input).
-  m_latitude = &geometry.latitude;
+  m_latitude = &m_grid->latitude();
   m_surface_elevation = &geometry.ice_surface_elevation;
   m_terrain->init(geometry.ice_surface_elevation);
   m_t_last_horizon = m_grid->ctx()->time()->current();

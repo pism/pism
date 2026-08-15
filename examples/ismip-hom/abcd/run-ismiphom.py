@@ -191,7 +191,7 @@ def run_test(test_name, L, output_file):
         # `stress_balance.spatial_diagnostics()[...].compute()` chained would free
         # the container before compute() runs and segfault.
         diagnostics = stress_balance.spatial_diagnostics()
-        velsurf = diagnostics["velsurf"].compute()
+        velsurf = diagnostics["velsurf"].compute(geometry)
 
         # Current PISM requires each variable to be defined before it is written
         # to a "prepared" output file. 'velsurf' is a 2-component (vector) field.

@@ -1,4 +1,4 @@
-/* Copyright (C) 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -18,6 +18,7 @@
 */
 
 #include <functional>
+#include <memory>
 
 #include "pism/geometry/Geometry.hh"
 
@@ -28,7 +29,6 @@
 #include "pism/util/Context.hh"
 #include "pism/util/VariableMetadata.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/io/io_helpers.hh"
 #include "pism/util/io/IO_Flags.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/io/SynchronousOutputWriter.hh"
@@ -38,31 +38,13 @@ namespace pism {
 Geometry::Geometry(const std::shared_ptr<const Grid> &grid)
   // FIXME: ideally these fields should be "global", i.e. without ghosts.
   // (However this may increase communication costs...)
-  : latitude(grid, "lat"),
-    longitude(grid, "lon"),
-    bed_elevation(grid, "topg"),
+  : bed_elevation(grid, "topg"),
     sea_level_elevation(grid, "sea_level"),
     ice_thickness(grid, "thk"),
     ice_area_specific_volume(grid, "ice_area_specific_volume"),
     cell_type(grid, "mask"),
     cell_grounded_fraction(grid, "cell_grounded_fraction"),
     ice_surface_elevation(grid, "usurf") {
-
-  latitude.metadata(0)
-      .long_name("latitude")
-      .units("degree_north")
-      .standard_name("latitude")
-      .set_time_dependent(false);
-  latitude.metadata()["grid_mapping"] = "";
-  latitude.metadata()["valid_range"]  = { -90.0, 90.0 };
-
-  longitude.metadata(0)
-      .long_name("longitude")
-      .units("degree_east")
-      .standard_name("longitude")
-      .set_time_dependent(false);
-  longitude.metadata()["grid_mapping"] = "";
-  longitude.metadata()["valid_range"]  = { -180.0, 180.0 };
 
   bed_elevation.metadata(0)
       .long_name("bedrock surface elevation")
@@ -104,8 +86,6 @@ Geometry::Geometry(const std::shared_ptr<const Grid> &grid)
       .standard_name("surface_altitude");
 
   // make sure all the fields are initialized
-  latitude.set(0.0);
-  longitude.set(0.0);
   bed_elevation.set(0.0);
   sea_level_elevation.set(0.0);
   ice_thickness.set(0.0);
@@ -194,7 +174,7 @@ void Geometry::ensure_consistency(double ice_free_thickness_threshold) {
   }
 }
 
-void Geometry::dump(const char *filename) const {
+std::shared_ptr<OutputFile> Geometry::dump(const char *filename) const {
   auto grid = ice_thickness.grid();
   auto ctx    = grid->ctx();
   auto config = ctx->config();
@@ -203,37 +183,39 @@ void Geometry::dump(const char *filename) const {
   auto writer = std::make_shared<SynchronousOutputWriter>(ctx->com(), *config);
   writer->initialize({}, true);
 
-  OutputFile file(writer, filename);
+  auto file = std::make_shared<OutputFile>(writer, filename);
 
   auto time = grid->ctx()->time();
 
-  const array::Array *variables[] = { &latitude,
-                                      &longitude,
-                                      &bed_elevation,
-                                      &sea_level_elevation,
-                                      &ice_thickness,
-                                      &ice_area_specific_volume,
-                                      &cell_type,
-                                      &cell_grounded_fraction,
-                                      &ice_surface_elevation };
+  std::vector<const array::Array *> variables = {
+    &bed_elevation, &sea_level_elevation,    &ice_thickness,        &ice_area_specific_volume,
+    &cell_type,     &cell_grounded_fraction, &ice_surface_elevation
+  };
+
+  if (grid->has_longitude_latitude()) {
+    variables.push_back(&grid->longitude());
+    variables.push_back(&grid->latitude());
+  }
 
   {
-    file.define_variable(time->metadata());
+    file->define_variable(time->metadata());
 
     for (const auto *v : variables) {
       for (const auto &var : v->all_metadata()) {
-        file.define_variable(var);
+        file->define_variable(var);
       }
     }
   }
 
   {
-    file.append_time(time->current());
+    file->append_time(time->current());
 
     for (const auto *v : variables) {
-      v->write(file);
+      v->write(*file);
     }
   }
+
+  return file;
 }
 
 /*! Compute the elevation of the bottom surface of the ice.
@@ -307,6 +289,9 @@ double ice_volume(const Geometry &geometry, double thickness_threshold) {
   return GlobalSum(grid->com, volume);
 }
 
+/*!
+ * Compute total volume of the ice not displacing sea water
+ */
 double ice_volume_not_displacing_seawater(const Geometry &geometry,
                                           double thickness_threshold) {
   auto grid = geometry.ice_thickness.grid();
@@ -338,6 +323,43 @@ double ice_volume_not_displacing_seawater(const Geometry &geometry,
   } // end of the loop over grid points
 
   return GlobalSum(grid->com, volume);
+}
+
+/*!
+ * Compute mass of the ice not displacing sea water at each grid point
+ */
+void ice_mass_not_displacing_seawater(const Geometry &geometry,
+                                      double thickness_threshold,
+                                      array::Scalar &result) {
+  auto grid = geometry.ice_thickness.grid();
+  auto config = grid->ctx()->config();
+
+  const double
+    sea_water_density = config->get_number("constants.sea_water.density"),
+    ice_density       = config->get_number("constants.ice.density"),
+    cell_area         = grid->cell_area();
+
+  array::AccessScope list{&geometry.cell_type, &geometry.ice_thickness,
+                          &geometry.bed_elevation, &geometry.sea_level_elevation, &result};
+
+  for (auto p : grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    const double
+      bed       = geometry.bed_elevation(i, j),
+      thickness = geometry.ice_thickness(i, j),
+      sea_level = geometry.sea_level_elevation(i, j);
+
+    if (geometry.cell_type.grounded(i, j) and thickness > thickness_threshold) {
+      double max_floating_thickness =
+          std::max(sea_level - bed, 0.0) * (sea_water_density / ice_density);
+      double volume = cell_area * (thickness - max_floating_thickness);
+
+      result(i, j) = ice_density * volume;
+    } else {
+      result(i, j) = 0.0;
+    }
+  } // end of the loop over grid points
 }
 
 static double compute_area(const Grid &grid, std::function<bool(int, int)> condition) {

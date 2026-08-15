@@ -48,7 +48,7 @@ protected:
   virtual std::set<VariableMetadata> state_impl() const;
   void write_state_impl(const OutputFile &output) const;
 
-  MaxTimestep max_timestep_impl(double t) const;
+  MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 
 protected:
   std::shared_ptr<array::Scalar> m_mass_flux;

@@ -357,7 +357,7 @@ void Pico::update_impl(const Inputs &inputs, double t, double dt) {
 }
 
 
-MaxTimestep Pico::max_timestep_impl(double t) const {
+MaxTimestep Pico::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
   (void) t;
 
   return MaxTimestep("ocean pico");

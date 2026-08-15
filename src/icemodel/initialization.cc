@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2025 Ed Bueler and Constantine Khroulev
+// Copyright (C) 2009--2026 Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -18,6 +18,7 @@
 
 //This file contains various initialization routines. See the IceModel::init()
 //documentation comment in iceModel.cc for the order in which they are called.
+#include <memory>
 
 #include "pism/icemodel/IceModel.hh"
 #include "pism/basalstrength/ConstantYieldStress.hh"
@@ -37,7 +38,6 @@
 #include "pism/hydrology/Distributed.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/Config.hh"
-#include "pism/util/Time.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
 #include "pism/coupler/OceanModel.hh"
@@ -66,8 +66,8 @@
 #include "pism/coupler/util/options.hh" // ForcingOptions
 #include "pism/util/ScalarForcing.hh"
 #include "pism/stressbalance/ShallowStressBalance.hh"
+#include "pism/stressbalance/SSB_Modifier.hh"
 #include "pism/util/array/Forcing.hh"
-#include <memory>
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
@@ -150,7 +150,7 @@ void IceModel::model_state_setup(InputOptions input_options) {
 
   // By now ice geometry is set (including regridding) and so we can initialize the ocean model,
   // which may need ice thickness, bed topography, and the cell type mask.
-  { m_ocean->init(m_geometry); }
+  m_ocean->init(m_geometry);
 
   // Now surface elevation is initialized, so we can initialize surface models (some use
   // elevation-based parameterizations of surface temperature and/or mass balance).
@@ -238,7 +238,7 @@ void IceModel::model_state_setup(InputOptions input_options) {
   {
     switch (input_options.type) {
     case INIT_RESTART: {
-      m_energy_model->restart(*input_file, input_options.record);
+      m_energy_model->restart(*input_file, (int)input_options.record, m_geometry.ice_thickness);
       break;
     }
     case INIT_BOOTSTRAP: {
@@ -260,8 +260,12 @@ void IceModel::model_state_setup(InputOptions input_options) {
   }
 
   // this has to go after we add enthalpy to m_grid->variables()
-  if (m_stress_balance) {
-    m_stress_balance->init();
+  if (m_stress_balance.shallow != nullptr) {
+    m_stress_balance.shallow->init();
+  }
+
+  if (m_stress_balance.shallow != nullptr) {
+    m_stress_balance.modifier->init();
   }
 
   // we keep ice thickness fixed at all the locations where the sliding (SSA) velocity is
@@ -312,6 +316,19 @@ void IceModel::restart_2d(const File &input_file, unsigned int last_record) {
   for (auto *variable : m_model_state) {
     variable->read(input_file, last_record);
   }
+
+  // read longitude and latitude from the input file *if* they were not initialized yet
+  if (not m_grid->has_longitude_latitude()) {
+    if (input_file.variable_exists("lon") and input_file.variable_exists("lat")) {
+      auto longitude = grid::allocate_longitude(m_grid);
+      longitude->read(input_file, last_record);
+
+      auto latitude = grid::allocate_latitude(m_grid);
+      latitude->read(input_file, last_record);
+
+      m_grid->set_longitude_latitude(longitude, latitude);
+    }
+  }
 }
 
 void IceModel::bootstrap_2d(const File &input_file) {
@@ -335,18 +352,20 @@ void IceModel::bootstrap_2d(const File &input_file) {
 
   m_log->message(2, "  reading 2D model state variables by regridding ...\n");
 
-  // longitude
-  if (m_geometry.longitude.metadata().has_attribute("initialized")) {
-    m_geometry.longitude.metadata()["initialized"] = "";
-  } else {
-    m_geometry.longitude.regrid(input_file, io::Default(0.0));
-  }
+  // Try to initialize grid longitudes and latitudes from an input file *if* they were not
+  // computed using projection information yet.
+  if (not m_grid->has_longitude_latitude()) {
+    auto lon = input_file.find_variable("lon", "longitude");
+    auto lat = input_file.find_variable("lat", "latitude");
+    if (lon.exists and lat.exists) {
+      auto longitude = grid::allocate_longitude(m_grid);
+      longitude->regrid(input_file, io::Default::Nil());
 
-  // latitude
-  if (m_geometry.latitude.metadata().has_attribute("initialized")) {
-    m_geometry.latitude.metadata()["initialized"] = "";
-  } else {
-    m_geometry.latitude.regrid(input_file, io::Default(0.0));
+      auto latitude = grid::allocate_latitude(m_grid);
+      latitude->regrid(input_file, io::Default::Nil());
+
+      m_grid->set_longitude_latitude(longitude, latitude);
+    }
   }
 
   m_geometry.ice_thickness.regrid(
@@ -415,6 +434,16 @@ void IceModel::regrid() {
       }
     }
 
+    if (set_member("lat", regrid_vars) and set_member("lon", regrid_vars)) {
+      auto longitude = grid::allocate_longitude(m_grid);
+      longitude->regrid(regrid_file, io::Default::Nil());
+
+      auto latitude = grid::allocate_latitude(m_grid);
+      latitude->regrid(regrid_file, io::Default::Nil());
+
+      m_grid->set_longitude_latitude(longitude, latitude);
+    }
+
     // Check the range of the ice thickness.
     {
       double max_thickness = array::max(m_geometry.ice_thickness), Lz = m_grid->Lz();
@@ -432,7 +461,7 @@ void IceModel::regrid() {
 //! \brief Decide which stress balance model to use.
 void IceModel::allocate_stressbalance() {
 
-  if (m_stress_balance) {
+  if (m_stress_balance.shallow != nullptr and m_stress_balance.modifier != nullptr) {
     return;
   }
 
@@ -442,7 +471,8 @@ void IceModel::allocate_stressbalance() {
   m_stress_balance =
       stressbalance::create(m_config->get_string("stress_balance.model"), m_grid, false);
 
-  m_submodels["stress balance"] = m_stress_balance.get();
+  m_submodels["shallow stress balance"] = m_stress_balance.shallow.get();
+  m_submodels["stress balance modifier"] = m_stress_balance.modifier.get();
 }
 
 void IceModel::allocate_geometry_evolution() {
@@ -490,12 +520,7 @@ void IceModel::allocate_age_model() {
   if (m_config->get_flag("age.enabled")) {
     m_log->message(2, "# Allocating an ice age model...\n");
 
-    if (m_stress_balance == nullptr) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                    "Cannot allocate an age model: m_stress_balance == nullptr.");
-    }
-
-    m_age_model              = std::make_shared<AgeModel>(m_grid, m_stress_balance);
+    m_age_model              = std::make_shared<AgeModel>(m_grid);
     m_submodels["age model"] = m_age_model.get();
   }
 }
@@ -510,13 +535,7 @@ void IceModel::allocate_isochrones() {
   if (not deposition_times.empty()) {
     m_log->message(2, "# Allocating isochrone tracking...\n");
 
-    if (m_stress_balance == nullptr) {
-      throw RuntimeError::formatted(
-          PISM_ERROR_LOCATION,
-          "Cannot allocate the isochrone tracking model: m_stress_balance == nullptr.");
-    }
-
-    m_isochrones = std::make_shared<Isochrones>(m_grid, m_stress_balance);
+    m_isochrones = std::make_shared<Isochrones>(m_grid);
 
     m_submodels["isochrones"] = m_isochrones.get();
   }
@@ -532,11 +551,11 @@ void IceModel::allocate_energy_model() {
 
   auto energy_model = m_config->get_string("energy.model");
   if (energy_model == "enthalpy") {
-    m_energy_model = std::make_shared<energy::EnthalpyModel>(m_grid, m_stress_balance);
+    m_energy_model = std::make_shared<energy::EnthalpyModel>(m_grid);
   } else if (energy_model == "cold") {
-    m_energy_model = std::make_shared<energy::TemperatureModel>(m_grid, m_stress_balance);
+    m_energy_model = std::make_shared<energy::TemperatureModel>(m_grid);
   } else {
-    m_energy_model = std::make_shared<energy::DummyEnergyModel>(m_grid, m_stress_balance);
+    m_energy_model = std::make_shared<energy::DummyEnergyModel>(m_grid);
   }
 
   m_submodels["energy balance model"] = m_energy_model.get();
@@ -597,7 +616,7 @@ void IceModel::allocate_basal_yield_stress() {
 
   std::string model = m_config->get_string("stress_balance.model");
 
-  // only these two use the yield stress (so far):
+  // only these three use the yield stress (so far):
   if (set_member(model, { "ssa", "ssa+sia", "blatter" })) {
     std::string yield_stress_model = m_config->get_string("basal_yield_stress.model");
 
@@ -649,7 +668,7 @@ void IceModel::allocate_submodels() {
   allocate_couplers();
 
   if (m_config->get_flag("fracture_density.enabled")) {
-    m_fracture = std::make_shared<FractureDensity>(m_grid, m_stress_balance->shallow()->flow_law());
+    m_fracture = std::make_shared<FractureDensity>(m_grid, m_stress_balance.shallow->flow_law());
     m_submodels["fracture_density"] = m_fracture.get();
   }
 }
@@ -857,7 +876,7 @@ void IceModel::init_calving() {
 
     if (not m_vonmises_calving) {
       m_vonmises_calving = std::make_shared<calving::vonMisesCalving>(
-          m_grid, m_stress_balance->shallow()->flow_law());
+          m_grid, m_stress_balance.shallow->flow_law());
     }
 
     m_vonmises_calving->init();
@@ -965,8 +984,12 @@ void IceModel::compute_lat_lon() {
     m_log->message(2, "* Computing longitude and latitude using projection parameters...\n");
 
 #if (Pism_USE_PROJ==1)
-    compute_longitude(projection, m_geometry.longitude);
-    compute_latitude(projection, m_geometry.latitude);
+    auto longitude = grid::allocate_longitude(m_grid);
+    compute_longitude(projection, *longitude);
+    auto latitude = grid::allocate_latitude(m_grid);
+    compute_latitude(projection, *latitude);
+
+    m_grid->set_longitude_latitude(longitude, latitude);
 #else
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "Cannot compute longitude and latitude.\n"
@@ -974,11 +997,6 @@ void IceModel::compute_lat_lon() {
                                   "or set '%s' to 'false'.",
                                   compute_lon_lat);
 #endif
-
-    // IceModel::bootstrap_2d() uses these attributes to determine if it needs to regrid
-    // longitude and latitude.
-    m_geometry.longitude.metadata()["initialized"] = "true";
-    m_geometry.latitude.metadata()["initialized"] = "true";
   }
 }
 

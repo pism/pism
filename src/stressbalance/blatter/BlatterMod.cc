@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2023, 2025 PISM Authors
+/* Copyright (C) 2020, 2021, 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -51,11 +51,8 @@ void BlatterMod::init() {
  *
  * - estimates the maximum diffusivity used to compute the time step restriction
  */
-void BlatterMod::update(const array::Vector &sliding_velocity,
-                        const Inputs &inputs,
-                        bool full_update) {
-  (void) sliding_velocity;
-  (void) full_update;
+void BlatterMod::update_impl(const array::Vector & /*sliding_velocity*/, const Inputs &inputs,
+                             bool /*full_update*/) {
 
   // transfer velocity onto the PISM vertical grid, setting m_u and m_v
   transfer(inputs.geometry->ice_thickness);

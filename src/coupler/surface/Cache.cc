@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2025 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -97,7 +97,7 @@ void Cache::update_impl(const Geometry &geometry, double t, double dt) {
   }
 }
 
-MaxTimestep Cache::max_timestep_impl(double t) const {
+MaxTimestep Cache::max_timestep_impl(double t, const CFLData *cfl_data) const {
   double dt = m_next_update_time - t;
 
   double time_resolution = m_config->get_number("time_stepping.resolution", "seconds");
@@ -116,7 +116,7 @@ MaxTimestep Cache::max_timestep_impl(double t) const {
 
   MaxTimestep cache_dt(dt, "surface cache");
 
-  MaxTimestep input_max_timestep = m_input_model->max_timestep(t);
+  MaxTimestep input_max_timestep = m_input_model->max_timestep(t, cfl_data);
   if (input_max_timestep.finite()) {
     return std::min(input_max_timestep, cache_dt);
   }

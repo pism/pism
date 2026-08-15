@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2025 PISM Authors
+// Copyright (C) 2010--2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -244,7 +244,7 @@ void BedDef::update(const array::Scalar &ice_thickness, const array::Scalar &sea
   }
 }
 
-MaxTimestep BedDef::max_timestep_impl(double t) const {
+MaxTimestep BedDef::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
 
   if (t < m_t_last) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,

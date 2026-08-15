@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2019, 2020, 2022, 2023, 2025 PISM Authors
+/* Copyright (C) 2016, 2017, 2019, 2020, 2022, 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -23,9 +23,8 @@ namespace pism {
 namespace energy {
 
 EnthalpyModel_Regional::EnthalpyModel_Regional(
-    std::shared_ptr<const Grid> grid,
-    std::shared_ptr<const stressbalance::StressBalance> stress_balance)
-    : EnthalpyModel(grid, stress_balance), m_basal_melt_rate_stored(m_grid, "bmr_stored") {
+    std::shared_ptr<const Grid> grid)
+    : EnthalpyModel(grid), m_basal_melt_rate_stored(m_grid, "bmr_stored") {
   // Note that the name of this variable (bmr_stored) does not matter: it is
   // *never* read or written. We make a copy of basal_melt_rate_grounded instead.
   m_basal_melt_rate_stored.metadata(0)
@@ -33,8 +32,9 @@ EnthalpyModel_Regional::EnthalpyModel_Regional(
       .units("m s^-1");
 }
 
-void EnthalpyModel_Regional::restart_impl(const File &input_file, int record) {
-  EnthalpyModel::restart_impl(input_file, record);
+void EnthalpyModel_Regional::restart_impl(const File &input_file, int record,
+                                          const array::Scalar &ice_thickness) {
+  EnthalpyModel::restart_impl(input_file, record, ice_thickness);
 
   m_basal_melt_rate_stored.copy_from(m_basal_melt_rate);
 }

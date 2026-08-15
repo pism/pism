@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2023, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,11 +28,11 @@ namespace energy {
 /*! @brief The enthalpy-based energy balance model for regional runs. */
 class EnthalpyModel_Regional : public EnthalpyModel {
 public:
-  EnthalpyModel_Regional(std::shared_ptr<const Grid> grid,
-                         std::shared_ptr<const stressbalance::StressBalance> stress_balance);
+  EnthalpyModel_Regional(std::shared_ptr<const Grid> grid);
 
 protected:
-  virtual void restart_impl(const File &input_file, int record);
+  virtual void restart_impl(const File &input_file, int record,
+                            const array::Scalar &ice_thickness);
 
   virtual void bootstrap_impl(const File &input_file,
                               const array::Scalar &ice_thickness,

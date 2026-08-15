@@ -56,15 +56,32 @@ RUN <<EOF
     libproj25 \
     libpython3.12 \
     libudunits2-0 \
+    proj-data \
     python3 \
-    python3-netcdf4 \
-    python3-numpy \
-    python3-pyproj \
+    python3-pip \
     python3-venv \
     ""
 
     rm -rf /var/lib/apt/lists/*
 EOF
+
+# Create a venv for Python stuff that we cannot install using apt-get:
+RUN python3 -m venv --system-site-packages /opt/pism
+
+# Install more Python packages
+RUN <<EOF
+    echo "Install additional Python packages"
+    set -eux
+    . /opt/pism/bin/activate
+    python3 -m pip install "mpi4py>=4.0.0" numpy netCDF4 pyproj geopandas rioxarray
+EOF
+
+# "Activate" the virtual environment in /opt/pism.
+#
+# See https://docs.python.org/3/library/venv.html#how-venvs-work for details.
+ENV VIRTUAL_ENV=/opt/pism
+# Note that this puts the "pism" executable in the path as well
+ENV PATH=/opt/pism/bin:$PATH
 
 FROM pism-runtime AS pism-base
 
@@ -105,8 +122,6 @@ RUN <<EOF
     pkg-config \
     python3 \
     python3-dev \
-    python3-netcdf4 \
-    python3-numpy \
     python3-pip \
     python3-setuptools \
     python3-venv \
@@ -180,15 +195,4 @@ RUN <<EOF
 
     rm -rf ${build_dir}
     rm -rf /opt/petsc/share/petsc
-EOF
-
-# Create a venv for Python stuff that we cannot install using apt-get:
-RUN python3 -m venv --system-site-packages /opt/pism
-
-# Install a more recent mpi4py version
-RUN <<EOF
-    echo "Install mpi4py"
-    set -eux
-    . /opt/pism/bin/activate
-    python3 -m pip install "mpi4py>=4.0.0"
 EOF

@@ -62,7 +62,7 @@ protected:
   virtual void init_impl(const Geometry &geometry);
   // provides default (pass-through) implementations for "modifiers"
   virtual void update_impl(const Inputs &inputs, double t, double dt);
-  virtual MaxTimestep max_timestep_impl(double t) const;
+  virtual MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 
   virtual std::set<VariableMetadata> state_impl() const;
   virtual void write_state_impl(const OutputFile &output) const;

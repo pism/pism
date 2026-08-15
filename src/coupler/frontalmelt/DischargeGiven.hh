@@ -39,7 +39,7 @@ private:
 
   const array::Scalar& frontal_melt_rate_impl() const;
 
-  MaxTimestep max_timestep_impl(double t) const;
+  MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 
   // input
   std::shared_ptr<array::Forcing> m_subglacial_discharge;

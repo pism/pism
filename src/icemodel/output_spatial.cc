@@ -82,17 +82,17 @@ static std::set<std::string> process_variable_list_shortcuts(const Config &confi
                     "tendency_of_subglacial_water_mass_at_domain_boundary" });
   }
 
-  if (result.find("ismip6") != result.end()) {
+  if (result.find("ismip") != result.end()) {
 
-    const char *flag_name = "output.ISMIP6";
+    const char *flag_name = "output.ISMIP";
 
     if (not config.get_flag(flag_name)) {
-      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Please set %s to save ISMIP6 diagnostics "
-                                    "(-spatial_vars ismip6).", flag_name);
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Please set %s to save ISMIP diagnostics "
+                                    "(-spatial_vars ismip).", flag_name);
     }
 
-    result.erase("ismip6");
-    for (const auto& v : set_split(config.get_string("output.ISMIP6_spatial_variables"), ',')) {
+    result.erase("ismip");
+    for (const auto& v : set_split(config.get_string("output.ISMIP_spatial_variables"), ',')) {
       result.insert(v);
     }
   }
@@ -281,10 +281,7 @@ void IceModel::write_spatial_diagnostics() {
     // called).
     m_last_spatial_time = current_time;
 
-    // ISMIP6 runs need to save diagnostics at the beginning of the run
-    if (not m_config->get_flag("output.ISMIP6")) {
-      return;
-    }
+    return;
   }
 
   if (saving_after < m_time->start()) {

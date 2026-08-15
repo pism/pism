@@ -16,45 +16,46 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #include <memory>
+#include <vector>
+#include <petsc.h>
 
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/rheology/FlowLaw.hh"
-#include "pism/stressbalance/SSB_Modifier.hh"
-#include "pism/stressbalance/ShallowStressBalance.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/EnthalpyConverter.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/Mask.hh"
-#include "pism/util/Profiling.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/array/CellType.hh"
+#include "pism/util/array/Vector.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/SynchronousOutputWriter.hh"
 #include "pism/util/io/io_helpers.hh"
+#include "pism/basalstrength/basal_resistance.hh"
 
 namespace pism {
 namespace stressbalance {
 
 Inputs::Inputs() {
-  geometry          = NULL;
+  geometry          = nullptr;
   new_bed_elevation = true;
 
-  basal_melt_rate       = NULL;
-  water_column_pressure = NULL;
-  fracture_density      = NULL;
-  basal_yield_stress    = NULL;
+  averaged_hardness     = nullptr;
+  water_column_pressure = nullptr;
+  fracture_density      = nullptr;
+  basal_yield_stress    = nullptr;
 
-  enthalpy = NULL;
-  age      = NULL;
+  enthalpy = nullptr;
+  age      = nullptr;
 
-  bc_mask   = NULL;
-  bc_values = NULL;
+  bc_mask   = nullptr;
+  bc_values = nullptr;
 
-  no_model_mask              = NULL;
-  no_model_ice_thickness     = NULL;
-  no_model_surface_elevation = NULL;
+  no_model_mask              = nullptr;
+  no_model_ice_thickness     = nullptr;
+  no_model_surface_elevation = nullptr;
 }
 
 /*!
@@ -81,15 +82,17 @@ void Inputs::dump(const char *filename) const {
   output.define_variable(time->metadata());
   output.append_time(time->current());
 
-  const array::Array *geom[] = { &geometry->latitude,
-                                 &geometry->longitude,
-                                 &geometry->bed_elevation,
-                                 &geometry->sea_level_elevation,
-                                 &geometry->ice_thickness,
-                                 &geometry->ice_area_specific_volume,
-                                 &geometry->cell_type,
-                                 &geometry->cell_grounded_fraction,
-                                 &geometry->ice_surface_elevation };
+  std::vector<const array::Array *> geom = { &geometry->bed_elevation,
+                                             &geometry->sea_level_elevation,
+                                             &geometry->ice_thickness,
+                                             &geometry->ice_area_specific_volume,
+                                             &geometry->cell_type,
+                                             &geometry->cell_grounded_fraction,
+                                             &geometry->ice_surface_elevation };
+  if (grid->has_longitude_latitude()) {
+    geom.push_back(&grid->longitude());
+    geom.push_back(&grid->latitude());
+  }
 
   // define
   for (const auto * vec : geom) {
@@ -102,8 +105,7 @@ void Inputs::dump(const char *filename) const {
     vec->write(output);
   }
 
-  const array::Array *optional[] = { basal_melt_rate,
-                                     water_column_pressure,
+  const array::Array *optional[] = { water_column_pressure,
                                      fracture_density,
                                      basal_yield_stress,
                                      enthalpy,
@@ -115,126 +117,18 @@ void Inputs::dump(const char *filename) const {
                                      no_model_surface_elevation };
   // define
   for (const auto * vec : optional) {
-    for (const auto &var : vec->all_metadata()) {
-      output.define_variable(var);
+    if (vec != nullptr) {
+      for (const auto &var : vec->all_metadata()) {
+        output.define_variable(var);
+      }
     }
   }
   // write
-  for (const auto * vec : optional) {
-    vec->write(output);
-  }
-}
-
-StressBalance::StressBalance(std::shared_ptr<const Grid> g,
-                             std::shared_ptr<ShallowStressBalance> sb,
-                             std::shared_ptr<SSB_Modifier> ssb_mod)
-  : Component(g),
-    m_w(m_grid, "wvel_rel", array::WITHOUT_GHOSTS, m_grid->z()),
-    m_strain_heating(m_grid, "strain_heating", array::WITHOUT_GHOSTS, m_grid->z()),
-    m_shallow_stress_balance(sb),
-    m_modifier(ssb_mod) {
-
-  m_w.metadata(0)
-      .long_name("vertical velocity of ice, relative to base of ice directly below")
-      .units("m s^-1")
-      .output_units("m year^-1")
-      .set_time_dependent(true);
-
-  m_strain_heating.metadata(0)
-      .long_name("rate of strain heating in ice (dissipation heating)")
-      .units("W m^-3");
-}
-
-StressBalance::~StressBalance() {
-}
-
-//! \brief Initialize the StressBalance object.
-void StressBalance::init() {
-  m_shallow_stress_balance->init();
-  m_modifier->init();
-}
-
-//! \brief Performs the shallow stress balance computation.
-void StressBalance::update(const Inputs &inputs, bool full_update) {
-
-  try {
-    profiling().begin("stress_balance.shallow");
-    m_shallow_stress_balance->update(inputs, full_update);
-    profiling().end("stress_balance.shallow");
-
-    profiling().begin("stress_balance.modifier");
-    m_modifier->update(m_shallow_stress_balance->velocity(),
-                       inputs, full_update);
-    profiling().end("stress_balance.modifier");
-
-    if (full_update) {
-      const array::Array3D &u = m_modifier->velocity_u();
-      const array::Array3D &v = m_modifier->velocity_v();
-
-      profiling().begin("stress_balance.strain_heat");
-      this->compute_volumetric_strain_heating(inputs);
-      profiling().end("stress_balance.strain_heat");
-
-      profiling().begin("stress_balance.vertical_velocity");
-      this->compute_vertical_velocity(inputs.geometry->cell_type,
-                                      u, v, inputs.basal_melt_rate, m_w);
-      profiling().end("stress_balance.vertical_velocity");
-
-      m_cfl_3d = ::pism::max_timestep_cfl_3d(inputs.geometry->ice_thickness,
-                                             inputs.geometry->cell_type,
-                                             inputs.no_model_mask,
-                                             u, v, m_w);
+  for (const auto *vec : optional) {
+    if (vec != nullptr) {
+      vec->write(output);
     }
-
-    m_cfl_2d = ::pism::max_timestep_cfl_2d(inputs.geometry->ice_thickness,
-                                           inputs.geometry->cell_type,
-                                           inputs.no_model_mask,
-                                           m_shallow_stress_balance->velocity());
   }
-  catch (RuntimeError &e) {
-    e.add_context("updating the stress balance");
-    throw;
-  }
-}
-
-CFLData StressBalance::max_timestep_cfl_2d() const {
-  return m_cfl_2d;
-}
-
-CFLData StressBalance::max_timestep_cfl_3d() const {
-  return m_cfl_3d;
-}
-
-const array::Vector& StressBalance::advective_velocity() const {
-  return m_shallow_stress_balance->velocity();
-}
-
-const array::Staggered& StressBalance::diffusive_flux() const {
-  return m_modifier->diffusive_flux();
-}
-
-double StressBalance::max_diffusivity() const {
-  return m_modifier->max_diffusivity();
-}
-
-const array::Array3D& StressBalance::velocity_u() const {
-  return m_modifier->velocity_u();
-}
-
-const array::Array3D& StressBalance::velocity_v() const {
-  return m_modifier->velocity_v();
-}
-
-const array::Array3D& StressBalance::velocity_w() const {
-  return m_w;
-}
-
-const array::Scalar& StressBalance::basal_frictional_heating() const {
-  return m_shallow_stress_balance->basal_frictional_heating();
-}
-
-const array::Array3D& StressBalance::volumetric_strain_heating() const {
-  return m_strain_heating;
 }
 
 //! Compute vertical velocity using incompressibility of the ice.
@@ -267,51 +161,28 @@ according to the value of the flag `geometry.update.use_basal_melt_rate`.
 
 The vertical integral is computed by the trapezoid rule.
  */
-void StressBalance::compute_vertical_velocity(const array::CellType1 &mask,
-                                              const array::Array3D &u,
-                                              const array::Array3D &v,
-                                              const array::Scalar *basal_melt_rate,
-                                              array::Array3D &result) {
+class VerticalVelocity {
+public:
+  VerticalVelocity(bool upstream_fd, double dx, double dy, const std::vector<double> &z)
+    : m_upstream_fd(upstream_fd), m_Mz(z.size()), m_dx(dx), m_dy(dy), m_dz(m_Mz),
+      m_work(m_Mz) {
 
-  const bool use_upstream_fd = m_config->get_string("stress_balance.vertical_velocity_approximation") == "upstream";
-
-  array::AccessScope list{&u, &v, &mask, &result};
-
-  if (basal_melt_rate) {
-    list.add(*basal_melt_rate);
+    m_dz[0] = 0.0;
+    for (unsigned int k = 1; k < m_Mz; ++k) {
+      m_dz[k] = z[k] - z[k - 1];
+    }
   }
 
-  const std::vector<double> &z = m_grid->z();
-  const unsigned int Mz = m_grid->Mz();
+  void compute(const stencils::Star<int> &cell_type, double basal_melt_rate, const double *u_w,
+               const double *u_c, const double *u_e, const double *v_s, const double *v_c,
+               const double *v_n, double *result) const {
 
-  const double
-    dx = m_grid->dx(),
-    dy = m_grid->dy();
+    using mask::ice_free;
+    using mask::icy;
 
-  std::vector<double> u_x_plus_v_y(Mz);
-
-  for (auto p : m_grid->points()) {
-    const int i = p.i(), j = p.j();
-
-    double *w_ij = result.get_column(i,j);
-
-    const double
-      *u_w  = u.get_column(i-1,j),
-      *u_ij = u.get_column(i,j),
-      *u_e  = u.get_column(i+1,j);
-    const double
-      *v_s  = v.get_column(i,j-1),
-      *v_ij = v.get_column(i,j),
-      *v_n  = v.get_column(i,j+1);
-
-    double
-      west  = 1.0,
-      east  = 1.0,
-      south = 1.0,
-      north = 1.0;
-    double
-      D_x = 0,                  // 1/(dx), 1/(2dx), or 0
-      D_y = 0;                  // 1/(dy), 1/(2dy), or 0
+    double west = 1.0, east = 1.0, south = 1.0, north = 1.0;
+    double D_x = 0, // 1/(dx), 1/(2dx), or 0
+        D_y    = 0; // 1/(dy), 1/(2dy), or 0
 
     // Switch between second-order centered differences in the interior and
     // first-order one-sided differences at ice margins.
@@ -320,10 +191,8 @@ void StressBalance::compute_vertical_velocity(const array::CellType1 &mask,
     {
       // use basal velocity to determine FD direction ("upwind" when it's clear, centered when it's
       // not)
-      if (use_upstream_fd) {
-        const double
-          uw = 0.5 * (u_w[0] + u_ij[0]),
-          ue = 0.5 * (u_ij[0] + u_e[0]);
+      if (m_upstream_fd) {
+        const double uw = 0.5 * (u_w[0] + u_c[0]), ue = 0.5 * (u_c[0] + u_e[0]);
 
         if (uw > 0.0 and ue >= 0.0) {
           west = 1.0;
@@ -337,15 +206,17 @@ void StressBalance::compute_vertical_velocity(const array::CellType1 &mask,
         }
       }
 
-      if ((mask.icy(i,j) and mask.ice_free(i+1,j)) or (mask.ice_free(i,j) and mask.icy(i+1,j))) {
+      if ((icy(cell_type.c) and ice_free(cell_type.e)) or
+          (ice_free(cell_type.c) and icy(cell_type.e))) {
         east = 0;
       }
-      if ((mask.icy(i,j) and mask.ice_free(i-1,j)) or (mask.ice_free(i,j) and mask.icy(i-1,j))) {
+      if ((icy(cell_type.c) and ice_free(cell_type.w)) or
+          (ice_free(cell_type.c) and icy(cell_type.w))) {
         west = 0;
       }
 
       if (east + west > 0) {
-        D_x = 1.0 / (dx * (east + west));
+        D_x = 1.0 / (m_dx * (east + west));
       } else {
         D_x = 0.0;
       }
@@ -355,10 +226,8 @@ void StressBalance::compute_vertical_velocity(const array::CellType1 &mask,
     {
       // use basal velocity to determine FD direction ("upwind" when it's clear, centered when it's
       // not)
-      if (use_upstream_fd) {
-        const double
-          vs = 0.5 * (v_s[0] + v_ij[0]),
-          vn = 0.5 * (v_ij[0] + v_n[0]);
+      if (m_upstream_fd) {
+        const double vs = 0.5 * (v_s[0] + v_c[0]), vn = 0.5 * (v_c[0] + v_n[0]);
 
         if (vs > 0.0 and vn >= 0.0) {
           south = 1.0;
@@ -372,41 +241,82 @@ void StressBalance::compute_vertical_velocity(const array::CellType1 &mask,
         }
       }
 
-      if ((mask.icy(i,j) and mask.ice_free(i,j+1)) or (mask.ice_free(i,j) and mask.icy(i,j+1))) {
+      if ((icy(cell_type.c) and ice_free(cell_type.n)) or
+          (ice_free(cell_type.c) and icy(cell_type.n))) {
         north = 0;
       }
-      if ((mask.icy(i,j) and mask.ice_free(i,j-1)) or (mask.ice_free(i,j) and mask.icy(i,j-1))) {
+      if ((icy(cell_type.c) and ice_free(cell_type.s)) or
+          (ice_free(cell_type.c) and icy(cell_type.s))) {
         south = 0;
       }
 
       if (north + south > 0) {
-        D_y = 1.0 / (dy * (north + south));
+        D_y = 1.0 / (m_dy * (north + south));
       } else {
         D_y = 0.0;
       }
     }
 
+    auto &u_x_plus_v_y = m_work;
     // compute u_x + v_y using a vectorizable loop
-    for (unsigned int k = 0; k < Mz; ++k) {
-      double
-        u_x = D_x * (west  * (u_ij[k] - u_w[k]) + east  * (u_e[k] - u_ij[k])),
-        v_y = D_y * (south * (v_ij[k] - v_s[k]) + north * (v_n[k] - v_ij[k]));
+    for (unsigned int k = 0; k < m_Mz; ++k) {
+      double u_x      = D_x * (west * (u_c[k] - u_w[k]) + east * (u_e[k] - u_c[k])),
+             v_y      = D_y * (south * (v_c[k] - v_s[k]) + north * (v_n[k] - v_c[k]));
       u_x_plus_v_y[k] = u_x + v_y;
     }
 
     // at the base: include the basal melt rate
-    if (basal_melt_rate != NULL) {
-      w_ij[0] = - (*basal_melt_rate)(i,j);
-    } else {
-      w_ij[0] = 0.0;
-    }
-
+    result[0] = -basal_melt_rate;
     // within the ice and above:
-    for (unsigned int k = 1; k < Mz; ++k) {
-      const double dz = z[k] - z[k-1];
-
-      w_ij[k] = w_ij[k - 1] - (0.5 * dz) * (u_x_plus_v_y[k] + u_x_plus_v_y[k - 1]);
+    for (unsigned int k = 1; k < m_Mz; ++k) {
+      result[k] = result[k - 1] - (0.5 * m_dz[k]) * (u_x_plus_v_y[k] + u_x_plus_v_y[k - 1]);
     }
+  }
+
+private:
+  bool m_upstream_fd;
+  unsigned int m_Mz;
+  double m_dx;
+  double m_dy;
+  std::vector<double> m_dz;
+  mutable std::vector<double> m_work;
+};
+
+void compute_vertical_velocity(const array::CellType1 &cell_type, const array::Array3D &u,
+                               const array::Array3D &v, const array::Scalar *basal_melt_rate,
+                               array::Array3D &result) {
+  auto grid = u.grid();
+
+  auto config = grid->ctx()->config();
+
+  const bool use_upstream_fd =
+      config->get_string("stress_balance.vertical_velocity_approximation") == "upstream";
+
+  array::AccessScope list{&u, &v, &cell_type, &result};
+
+  if (basal_melt_rate != nullptr) {
+    list.add(*basal_melt_rate);
+  }
+
+  VerticalVelocity w(use_upstream_fd, grid->dx(), grid->dy(), u.levels());
+
+  for (auto p : grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    const double
+      *u_w = u.get_column(i - 1, j),
+      *u_c = u.get_column(i, j),
+      *u_e = u.get_column(i + 1, j);
+    const double
+      *v_s = v.get_column(i, j - 1),
+      *v_c = v.get_column(i, j),
+      *v_n = v.get_column(i, j + 1);
+
+    w.compute(cell_type.star_int(i, j),                                    //
+              basal_melt_rate != nullptr ? (*basal_melt_rate)(i, j) : 0.0, //
+              u_w, u_c, u_e,                                               //
+              v_s, v_c, v_n,                                               //
+              result.get_column(i, j));
   }
 }
 
@@ -423,7 +333,7 @@ void StressBalance::compute_vertical_velocity(const array::CellType1 &mask,
  *
  * (note the use of the summation convention). Here \f$D_{ij}\f$ is the
  * strain rate tensor. See
- * StressBalance::compute_volumetric_strain_heating() for details.
+ * compute_volumetric_strain_heating() for details.
  *
  * @param u_x,u_y,u_z partial derivatives of \f$u\f$, the x-component of the ice velocity
  * @param v_x,v_y,v_z partial derivatives of \f$v\f$, the y-component of the ice velocity
@@ -488,48 +398,49 @@ static inline double D2(double u_x, double u_y, double u_z, double v_x, double v
        D : genmatrix(d, 3, 3), ratsimp, factor;
        tex('D = D);
        tex('D^2 = 1/2 * mat_trace(D . D));
-
-  @return 0 on success
  */
-void StressBalance::compute_volumetric_strain_heating(const Inputs &inputs) {
-  PetscErrorCode ierr;
+void compute_volumetric_strain_heating(const array::Array3D &u, const array::Array3D &v,
+                                       const array::Array3D &enthalpy,
+                                       const array::Scalar &thickness,
+                                       const array::CellType1 &cell_type,
+                                       const rheology::FlowLaw &flow_law,
+                                       const EnthalpyConverter &EC,
+                                       double enhancement_factor,
+                                       array::Array3D &result) {
 
-  const auto &flow_law = *m_shallow_stress_balance->flow_law();
-  auto EC = m_shallow_stress_balance->enthalpy_converter();
+  using mask::icy;
+  using mask::ice_free;
 
-  const array::Array3D
-    &u = m_modifier->velocity_u(),
-    &v = m_modifier->velocity_v();
+  assert(u.stencil_width() > 0);
+  assert(v.stencil_width() > 0);
 
-  const array::Scalar &thickness = inputs.geometry->ice_thickness;
-  const array::Array3D  *enthalpy  = inputs.enthalpy;
-
-  const auto &mask = inputs.geometry->cell_type;
+  auto grid = thickness.grid();
 
   double
-    enhancement_factor = m_shallow_stress_balance->flow_enhancement_factor(),
     n = flow_law.exponent(),
     exponent = 0.5 * (1.0 / n + 1.0),
-    e_to_a_power = pow(enhancement_factor,-1.0/n);
+    e_to_a_power = pow(enhancement_factor, -1.0 / n);
 
-  array::AccessScope list{&mask, enthalpy, &m_strain_heating, &thickness, &u, &v};
+  array::AccessScope list{&cell_type, &enthalpy, &result, &thickness, &u, &v};
 
-  const std::vector<double> &z = m_grid->z();
-  const unsigned int Mz = m_grid->Mz();
+  const std::vector<double> &z = grid->z();
+  const unsigned int Mz = grid->Mz();
   std::vector<double> depth(Mz), pressure(Mz), hardness(Mz);
 
-  ParallelSection loop(m_grid->com);
+  ParallelSection loop(grid->com);
   try {
-    for (auto p : m_grid->points()) {
+    for (auto p : grid->points()) {
       const int i = p.i(), j = p.j();
 
+      auto M = cell_type.star_int(i, j);
+
       double H = thickness(i, j);
-      int ks = m_grid->kBelowHeight(H);
+      int ks = grid->kBelowHeight(H);
       const double
-        *u_ij, *u_w, *u_n, *u_e, *u_s,
-        *v_ij, *v_w, *v_n, *v_e, *v_s;
+        *u_c, *u_w, *u_n, *u_e, *u_s,
+        *v_c, *v_w, *v_n, *v_e, *v_s;
       double *Sigma;
-      const double *E_ij;
+      const double *E_c;
 
       double west = 1, east = 1, south = 1, north = 1,
         D_x = 0,                // 1/(dx), 1/(2dx), or 0
@@ -537,15 +448,15 @@ void StressBalance::compute_volumetric_strain_heating(const Inputs &inputs) {
 
       // x-derivative
       {
-        if ((mask.icy(i,j) and mask.ice_free(i+1,j)) or (mask.ice_free(i,j) and mask.icy(i+1,j))) {
+        if ((icy(M.c) and ice_free(M.e)) or (ice_free(M.c) and icy(M.e))) {
           east = 0;
         }
-        if ((mask.icy(i,j) and mask.ice_free(i-1,j)) or (mask.ice_free(i,j) and mask.icy(i-1,j))) {
+        if ((icy(M.c) and ice_free(M.w)) or (ice_free(M.c) and icy(M.w))) {
           west = 0;
         }
 
         if (east + west > 0) {
-          D_x = 1.0 / (m_grid->dx() * (east + west));
+          D_x = 1.0 / (grid->dx() * (east + west));
         } else {
           D_x = 0.0;
         }
@@ -553,34 +464,34 @@ void StressBalance::compute_volumetric_strain_heating(const Inputs &inputs) {
 
       // y-derivative
       {
-        if ((mask.icy(i,j) and mask.ice_free(i,j+1)) or (mask.ice_free(i,j) and mask.icy(i,j+1))) {
+        if ((icy(M.c) and ice_free(M.n)) or (ice_free(M.c) and icy(M.n))) {
           north = 0;
         }
-        if ((mask.icy(i,j) and mask.ice_free(i,j-1)) or (mask.ice_free(i,j) and mask.icy(i,j-1))) {
+        if ((icy(M.c) and ice_free(M.s)) or (ice_free(M.c) and icy(M.s))) {
           south = 0;
         }
 
         if (north + south > 0) {
-          D_y = 1.0 / (m_grid->dy() * (north + south));
+          D_y = 1.0 / (grid->dy() * (north + south));
         } else {
           D_y = 0.0;
         }
       }
 
-      u_ij = u.get_column(i,     j);
-      u_w  = u.get_column(i - 1, j);
-      u_e  = u.get_column(i + 1, j);
-      u_s  = u.get_column(i,     j - 1);
-      u_n  = u.get_column(i,     j + 1);
+      u_c = u.get_column(i, j);
+      u_w = u.get_column(i - 1, j);
+      u_e = u.get_column(i + 1, j);
+      u_s = u.get_column(i, j - 1);
+      u_n = u.get_column(i, j + 1);
 
-      v_ij = v.get_column(i,     j);
-      v_w  = v.get_column(i - 1, j);
-      v_e  = v.get_column(i + 1, j);
-      v_s  = v.get_column(i,     j - 1);
-      v_n  = v.get_column(i,     j + 1);
+      v_c = v.get_column(i, j);
+      v_w = v.get_column(i - 1, j);
+      v_e = v.get_column(i + 1, j);
+      v_s = v.get_column(i, j - 1);
+      v_n = v.get_column(i, j + 1);
 
-      E_ij = enthalpy->get_column(i, j);
-      Sigma = m_strain_heating.get_column(i, j);
+      E_c = enthalpy.get_column(i, j);
+      Sigma = result.get_column(i, j);
 
       for (int k = 0; k <= ks; ++k) {
         depth[k] = H - z[k];
@@ -588,28 +499,28 @@ void StressBalance::compute_volumetric_strain_heating(const Inputs &inputs) {
 
       // pressure added by the ice (i.e. pressure difference between the
       // current level and the top of the column)
-      EC->pressure(depth, ks, pressure); // FIXME issue #15
+      EC.pressure(depth, ks, pressure); // FIXME issue #15
 
-      flow_law.hardness_n(E_ij, pressure.data(), ks + 1, hardness.data());
+      flow_law.hardness_n(E_c, pressure.data(), ks + 1, hardness.data());
 
       for (int k = 0; k <= ks; ++k) {
         double dz;
 
         double u_z = 0.0, v_z = 0.0,
-          u_x = D_x * (west  * (u_ij[k] - u_w[k]) + east  * (u_e[k] - u_ij[k])),
-          u_y = D_y * (south * (u_ij[k] - u_s[k]) + north * (u_n[k] - u_ij[k])),
-          v_x = D_x * (west  * (v_ij[k] - v_w[k]) + east  * (v_e[k] - v_ij[k])),
-          v_y = D_y * (south * (v_ij[k] - v_s[k]) + north * (v_n[k] - v_ij[k]));
+          u_x = D_x * (west  * (u_c[k] - u_w[k]) + east  * (u_e[k] - u_c[k])),
+          u_y = D_y * (south * (u_c[k] - u_s[k]) + north * (u_n[k] - u_c[k])),
+          v_x = D_x * (west  * (v_c[k] - v_w[k]) + east  * (v_e[k] - v_c[k])),
+          v_y = D_y * (south * (v_c[k] - v_s[k]) + north * (v_n[k] - v_c[k]));
 
         if (k > 0) {
           dz = z[k+1] - z[k-1];
-          u_z = (u_ij[k+1] - u_ij[k-1]) / dz;
-          v_z = (v_ij[k+1] - v_ij[k-1]) / dz;
+          u_z = (u_c[k+1] - u_c[k-1]) / dz;
+          v_z = (v_c[k+1] - v_c[k-1]) / dz;
         } else {
           // use one-sided differences for u_z and v_z on the bottom level
           dz = z[1] - z[0];
-          u_z = (u_ij[1] - u_ij[0]) / dz;
-          v_z = (v_ij[1] - v_ij[0]) / dz;
+          u_z = (u_c[1] - u_c[0]) / dz;
+          v_z = (v_c[1] - v_c[0]) / dz;
         }
 
         Sigma[k] = 2.0 * e_to_a_power * hardness[k] * pow(D2(u_x, u_y, u_z, v_x, v_y, v_z), exponent);
@@ -617,43 +528,14 @@ void StressBalance::compute_volumetric_strain_heating(const Inputs &inputs) {
 
       int remaining_levels = Mz - (ks + 1);
       if (remaining_levels > 0) {
-#if PETSC_VERSION_LT(3, 12, 0)
-        ierr = PetscMemzero(&Sigma[ks+1],
-                            remaining_levels*sizeof(double));
-#else
-        ierr = PetscArrayzero(&Sigma[ks+1], remaining_levels);
-#endif
-        PISM_CHK(ierr, "PetscMemzero");
+        PetscErrorCode ierr = PetscArrayzero(&Sigma[ks+1], remaining_levels);
+        PISM_CHK(ierr, "PetscArrayzero");
       }
     }
   } catch (...) {
     loop.failed();
   }
   loop.check();
-}
-
-std::string StressBalance::stdout_report() const {
-  return m_shallow_stress_balance->stdout_report() + m_modifier->stdout_report();
-}
-
-const ShallowStressBalance* StressBalance::shallow() const {
-  return m_shallow_stress_balance.get();
-}
-
-const SSB_Modifier* StressBalance::modifier() const {
-  return m_modifier.get();
-}
-
-std::set<VariableMetadata> StressBalance::state_impl() const {
-  auto shallow = m_shallow_stress_balance->state();
-  auto modifier = m_modifier->state();
-
-  return pism::combine(shallow, modifier);
-}
-
-void StressBalance::write_state_impl(const OutputFile &output) const {
-  m_shallow_stress_balance->write_state(output);
-  m_modifier->write_state(output);
 }
 
 //! \brief Compute eigenvalues of the horizontal, vertically-integrated strain rate tensor.
@@ -839,6 +721,40 @@ void compute_2D_stresses(const rheology::FlowLaw &flow_law,
   }
 }
 
+//! \brief Compute the basal frictional heating.
+/*!
+  Ice shelves have zero basal friction heating.
+
+  \param[in] V *basal* sliding velocity
+  \param[in] tauc basal yield stress
+  \param[in] mask (used to determine if floating or grounded)
+  \param[out] result
+ */
+void compute_basal_frictional_heating(const IceBasalResistancePlasticLaw & sliding_law,
+                                      const array::Vector &basal_velocity,
+                                      const array::Scalar &tauc,
+                                      const array::CellType &mask,
+                                      array::Scalar &result) {
+
+  auto grid = basal_velocity.grid();
+
+  array::AccessScope list{ &basal_velocity, &result, &tauc, &mask };
+
+  for (auto p : grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    if (mask.ocean(i, j)) {
+      result(i, j) = 0.0;
+    } else {
+      const auto &V  = basal_velocity(i, j);
+
+      double C = sliding_law.drag(tauc(i, j), V.u, V.v);
+      double basal_stress_x = -C * V.u, basal_stress_y = -C * V.v;
+
+      result(i, j) = -basal_stress_x * V.u - basal_stress_y * V.v;
+    }
+  }
+}
 
 } // end of namespace stressbalance
 } // end of namespace pism

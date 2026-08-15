@@ -33,20 +33,16 @@ COPY --from=pism-base /opt/yaxt /opt/yaxt/
 # Add HDF5, NetCDF, PETSc to PATH:
 ENV PATH="/opt/hdf5/bin:/opt/netcdf/bin:/opt/petsc/bin:$PATH"
 
-# "Activate" the virtual environment in /opt/pism.
-#
-# See https://docs.python.org/3/library/venv.html#how-venvs-work for details.
-ENV VIRTUAL_ENV=/opt/pism
-# Note that this puts the "pism" executable in the path as well
-ENV PATH=/opt/pism/bin:$PATH
-
 ENV PYTHONPATH=""
 # Add YAC to PYTHONPATH
-ENV PYTHONPATH=/opt/yac/local/lib/python3.12/dist-packages/:$PYTHONPATH
+ENV PYTHONPATH=/opt/yac/lib/python3.12/site-packages/:$PYTHONPATH
 # Add PETSc to PYTHONPATH
 ENV PYTHONPATH=/opt/petsc/lib/:$PYTHONPATH
 # Add PISM to PYTHONPATH
 ENV PYTHONPATH=/opt/pism/lib/python3.12/site-packages/:$PYTHONPATH
+
+# PROJ data location
+ENV PROJ_DATA=/usr/share/proj
 
 RUN ln -s /opt/intel/oneapi/setvars.sh /etc/profile.d/02-intel-oneapi-setvars.sh
 
