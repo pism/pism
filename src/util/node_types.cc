@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2020, 2021, 2022, 2023, 2025 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2020, 2021, 2022, 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -19,7 +19,6 @@
 
 #include "pism/util/node_types.hh"
 
-#include "pism/util/array/Scalar.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
@@ -97,18 +96,24 @@ void compute_node_types(const array::Scalar1 &ice_thickness,
         sw_element_is_icy = (icy.c + icy.w + icy.sw + icy.s) >= 3,
         se_element_is_icy = (icy.c + icy.s + icy.se + icy.e) >= 3;
 
-      if (ne_element_is_icy and nw_element_is_icy and
-          sw_element_is_icy and se_element_is_icy) {
-        // all four elements are icy: we are at an interior node
-        result(i, j) = NODE_INTERIOR;
-      } else if (icy.c != 0) {
-        // the current node is icy: we are at a boundary
-        result(i, j) = NODE_BOUNDARY;
-      } else {
-        // all elements are ice-free: we are at an exterior node
-        result(i, j) = NODE_EXTERIOR;
-      }
+      // one of the 4 neighbors is ice-free
+      const bool margin = (icy.n == 0 or icy.e == 0 or icy.s == 0 or icy.w == 0);
 
+      // assume that a node is "exterior" unless we can tell that it is not:
+      result(i, j) = NODE_EXTERIOR;
+
+      if (icy.c != 0) {
+        if (ne_element_is_icy and nw_element_is_icy and sw_element_is_icy and
+            se_element_is_icy and (not margin)) {
+          // all four surrounding elements are icy and the current node is not at a
+          // margin: we are at an interior node
+          result(i, j) = NODE_INTERIOR;
+        } else if (ne_element_is_icy or nw_element_is_icy or sw_element_is_icy or
+                   se_element_is_icy) {
+          // at least one surrounding element is icy
+          result(i, j) = NODE_BOUNDARY;
+        }
+      }
     }
   } catch (...) {
     loop.failed();
