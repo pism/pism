@@ -21,11 +21,11 @@
 import numpy as np
 
 import PISM
+import PISM.testing
+
 ctx = PISM.Context()
 ctx.config.set_flag("stress_balance.calving_front_stress_bc", True)
 ctx.log.set_threshold(1)
-
-import PISM.testing
 
 grid = PISM.testing.shallow_grid(Mx=6, My=6, Lx=1e4, Ly=1e4)
 
@@ -47,12 +47,16 @@ inputs.geometry = geometry
 inputs.enthalpy = enthalpy
 inputs.basal_yield_stress = tauc
 
+
 def M(N):
-    return np.array([int (x) for x in np.binary_repr(N, width=16)], dtype=int).reshape(4,4)
+    """Return the mask (icy=1, ice free=0) for the geometric configuration number `N`."""
+    return np.array([int(x) for x in np.binary_repr(N, width=16)], dtype=int).reshape(4, 4)
+
 
 def test_solver(N):
+    """Try running the SSAFEM solver with using geometric configuration number `N`."""
     geometry.ice_thickness.set(0.0)
-    geometry.ice_thickness.local_part()[3:7,3:7] = M(i) * H
+    geometry.ice_thickness.local_part()[3:7, 3:7] = M(N) * H
     geometry.ensure_consistency(0.0)
 
     try:
@@ -62,12 +66,14 @@ def test_solver(N):
         mag = PISM.Scalar(grid, "vel_mag")
         PISM.compute_magnitude(ssa.velocity(), mag)
         return mag
-    except:
+    except RuntimeError:
         return False
 
+
 def test_node_type(N, prn=True):
+    """Print ice and node types masks for config. `N` if `prn` is True, otherwise return them."""
     mask = M(N)
-    geometry.ice_thickness.local_part()[3:7,3:7] = mask
+    geometry.ice_thickness.local_part()[3:7, 3:7] = mask
     node = PISM.Scalar(grid, "node_type")
     PISM.compute_node_types(geometry.ice_thickness, 1e-3, node)
     if prn:
@@ -77,6 +83,7 @@ def test_node_type(N, prn=True):
         print(node.to_numpy().astype('b')[1:-1, 1:-1])
     else:
         return mask, node.to_numpy().astype('b')
+
 
 failed = []
 for i in range(2**16):
