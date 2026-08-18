@@ -339,8 +339,6 @@ class SeaRISE(TestCase):
         latitude.set(70.0)
         longitude.set(-45.0)
 
-        self.grid.longitude().dump("lon.nc")
-
         self.geometry = PISM.Geometry(self.grid)
         self.geometry.ice_thickness.set(2500.0)
         self.geometry.ensure_consistency(0.0)
