@@ -34,7 +34,7 @@ Changes since v2.3.0
   onto an ISMIP7-Greenland grid.
 - Add a top-level `pyproject.toml` so PISM can be built and installed via
   `pip install --no-build-isolation .` using scikit-build-core. This installs the
-  `pism` CLI, `libpism`, and the `PISM` and `siple` Python packages into the active
+  `pism` CLI, `libpism`, and the `PISM` Python package into the active
   Python environment. The standalone `cmake -B build && cmake --install build` flow
   continues to work unchanged. `petsc4py`, `mpi4py`, NetCDF, FFTW, GSL, and PETSc must
   be available on the host before invoking pip; build isolation is disabled because
@@ -75,6 +75,15 @@ Changes since v2.3.0
 
 - Added a new surface coupler `-surface.models ismip7` derived from ISMIP6. This coupler
   only uses direct forcing and forcing gradients, skipping anomalies.
+
+- Remove the `siple` inverse-problems library and the SSA inversion methods that
+  depended on it. `inverse.stress_balance.method` (`-inv_method`) no longer accepts
+  `sd`, `nlcg`, or `ign`; use one of the Tikhonov methods (`tikhonov_lmvm`,
+  `tikhonov_cg`, `tikhonov_blmvm`, `tikhonov_lcl`, `tikhonov_gn`) instead. The
+  `site-packages/siple` tree, `PISM.invert.ssa_siple`, `PISM.invert.sipletools`, and the
+  `Python:inversion:nlcg` regression test are gone, along with the options
+  `-inv_monitor_adjoint`, `-inv_morozov_scale`, `-inv_ls_verbose`, and `-ign_theta`,
+  which only applied to those methods.
 
 Changes from 2.3.0 to 2.3.1
 ===========================
