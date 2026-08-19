@@ -1,4 +1,4 @@
-/* Copyright (C) 2016--2025 PISM Authors
+/* Copyright (C) 2016--2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -1068,7 +1068,7 @@ public:
   }
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
     auto result = allocate<array::Scalar>("flux_divergence");
 
     result->copy_from(model->flux_divergence());
@@ -1085,7 +1085,7 @@ public:
   }
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
     auto result = allocate<array::Staggered>("flux_staggered");
 
     result->copy_from(model->flux_staggered());

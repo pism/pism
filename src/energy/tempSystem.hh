@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2023 PISM Authors
+// Copyright (C) 2009--2023, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,9 +20,10 @@
 #define PISM_tempSystem_hh
 
 #include "pism/util/ColumnSystem.hh"
-#include "pism/util/Mask.hh"
 
 namespace pism {
+
+class Config;
 
 namespace energy {
 //! Tridiagonal linear system for vertical column of temperature-based conservation of energy problem.
@@ -58,13 +59,14 @@ public:
                 const array::Array3D &w3,
                 const array::Array3D &strain_heating3);
 
-  void initThisColumn(int i, int j, bool is_marginal, MaskValue new_mask, double ice_thickness);
+  void initThisColumn(int i, int j, bool is_marginal, double ice_thickness,
+                      const double *w, const double *strain_heating);
 
   void setSurfaceBoundaryValuesThisColumn(double my_Ts);
   void setBasalBoundaryValuesThisColumn(double my_G0, double my_Tshelfbase,
                                                   double my_Rb);
 
-  void solveThisColumn(std::vector<double> &x);
+  void solveThisColumn(bool ocean, std::vector<double> &x);
 
   double lambda() const {
     return m_lambda;
@@ -81,7 +83,6 @@ protected:
   std::vector<double> m_T_n, m_T_e, m_T_s, m_T_w;
 
   double m_lambda, m_Ts, m_G0, m_Tshelfbase, m_Rb;
-  MaskValue    m_mask;
   bool        m_is_marginal;
   double m_nu,
     m_rho_c_I,

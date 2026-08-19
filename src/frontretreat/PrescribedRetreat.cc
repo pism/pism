@@ -87,7 +87,7 @@ void PrescribedRetreat::update(double t, double dt, array::Scalar &ice_thickness
   }
 }
 
-MaxTimestep PrescribedRetreat::max_timestep_impl(double t) const {
+MaxTimestep PrescribedRetreat::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
   auto dt = m_retreat_mask->max_timestep(t);
 
   if (dt.finite()) {

@@ -1575,7 +1575,7 @@ netcdf pism_config {
     pism_config:inverse.stress_balance.length_scale_units = "meters";
 
     pism_config:inverse.stress_balance.method = "tikhonov_lmvm";
-    pism_config:inverse.stress_balance.method_choices = "sd,nlcg,ign,tikhonov_lmvm,tikhonov_cg,tikhonov_blmvm,tikhonov_lcl,tikhonov_gn";
+    pism_config:inverse.stress_balance.method_choices = "tikhonov_lmvm,tikhonov_cg,tikhonov_blmvm,tikhonov_lcl,tikhonov_gn";
     pism_config:inverse.stress_balance.method_doc = "algorithm to use for stress balance inversions";
     pism_config:inverse.stress_balance.method_option = "inv_method";
     pism_config:inverse.stress_balance.method_type = "keyword";
@@ -1948,17 +1948,17 @@ netcdf pism_config {
     pism_config:ocean.th.periodic_doc = "If true, interpret forcing data as periodic in time";
     pism_config:ocean.th.periodic_type = "flag";
 
-    pism_config:output.ISMIP6 = "false";
-    pism_config:output.ISMIP6_doc = "Follow ISMIP6 conventions (units, variable names, \"standard names\") when writing output variables.";
-    pism_config:output.ISMIP6_type = "flag";
+    pism_config:output.ISMIP = "false";
+    pism_config:output.ISMIP_doc = "Follow ISMIP conventions (units, variable names, \"standard names\") when writing output variables.";
+    pism_config:output.ISMIP_type = "flag";
 
-    pism_config:output.ISMIP6_scalar_variables = "lim,limnsw,iareagr,iareafl,tendacabf,tendlibmassbf,tendlibmassbffl,tendlicalvf,tendlifmassbf";
-    pism_config:output.ISMIP6_scalar_variables_doc = "Comma-separated list of scalar variables (time series) reported by models participating in ISMIP6 simulations.";
-    pism_config:output.ISMIP6_scalar_variables_type = "string";
+    pism_config:output.ISMIP_scalar_variables = "iareafl,iareagr,lim,limnsw,tendacabf,tendlibmassbffl,tendlibmassbfgr,tendlicalvf,tendlifmassbf,tendligroundf";
+    pism_config:output.ISMIP_scalar_variables_doc = "Comma-separated list of scalar variables (time series) reported by models participating in ISMIP simulations.";
+    pism_config:output.ISMIP_scalar_variables_type = "string";
 
-    pism_config:output.ISMIP6_spatial_variables = "lithk,orog,topg,hfgeoubed,acabf,libmassbfgr,libmassbffl,dlithkdt,velsurf,zvelsurf,velbase,zvelbase,velmean,litemptop,litempbotgr,litempbotfl,strbasemag,licalvf,lifmassbf,sftgif,sftgrf,sftflf";
-    pism_config:output.ISMIP6_spatial_variables_doc = "Comma-separated list of fields reported by models participating in ISMIP6 simulations.";
-    pism_config:output.ISMIP6_spatial_variables_type = "string";
+    pism_config:output.ISMIP_spatial_variables = "acabf,base,dlithkdt,hfgeoubed,libmassbffl,libmassbfgr,licalvf,lifmassbf,ligroundf,litempbotfl,litempbotgr,litemptop,lithk,orog,sftflf,sftgif,sftgrf,strbasemag,topg,velbase,velmean,velsurf,zvelbase,zvelsurf";
+    pism_config:output.ISMIP_spatial_variables_doc = "Comma-separated list of fields reported by models participating in ISMIP simulations.";
+    pism_config:output.ISMIP_spatial_variables_type = "string";
 
     pism_config:output.asynchronous = "false";
     pism_config:output.asynchronous_doc = "If ``true`` PISM will use YAC-based asynchronous output code";
@@ -2700,13 +2700,13 @@ netcdf pism_config {
     pism_config:surface.elevation_change.temperature_lapse_rate_units = "K / km";
 
     pism_config:surface.elevation_dependent.M_limit_max = 0.0;
-    pism_config:surface.elevation_dependent.M_limit_max_doc = "climatic mass balance at elevations below `h_{\\text{min}}` (inactive if equal to :config:`surface.elevation_dependent.M_limit_min`)";
+    pism_config:surface.elevation_dependent.M_limit_max_doc = "climatic mass balance at elevations above `h_{\\text{max}}` (inactive if equal to :config:`surface.elevation_dependent.M_limit_max`)";
     pism_config:surface.elevation_dependent.M_limit_max_option = "M_limit_max";
     pism_config:surface.elevation_dependent.M_limit_max_type = "number";
     pism_config:surface.elevation_dependent.M_limit_max_units = "m year^-1";
 
     pism_config:surface.elevation_dependent.M_limit_min = 0.0;
-    pism_config:surface.elevation_dependent.M_limit_min_doc = "climatic mass balance at elevations above `h_{\\text{max}}` (inactive if equal to :config:`surface.elevation_dependent.M_limit_max`)";
+    pism_config:surface.elevation_dependent.M_limit_min_doc = "climatic mass balance at elevations below `h_{\\text{min}}` (inactive if equal to :config:`surface.elevation_dependent.M_limit_min`)";
     pism_config:surface.elevation_dependent.M_limit_min_option = "M_limit_min";
     pism_config:surface.elevation_dependent.M_limit_min_type = "number";
     pism_config:surface.elevation_dependent.M_limit_min_units = "m year^-1";

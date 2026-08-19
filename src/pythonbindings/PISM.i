@@ -269,25 +269,49 @@ pism_class(pism::EnthalpyConverter, "pism/util/EnthalpyConverter.hh");
 %shared_ptr(pism::Context);
 %include "util/Context.hh"
 
+%shared_ptr(pism::array::Scalar)
 %include pism_Grid.i
 
 /* array::Array uses Grid and VariableMetadata so they have to be wrapped first. */
 %include pism_Array.i
+
+/* Geometry containts Arrays, so it has to go after pism_Array.i */
+%shared_ptr(pism::Geometry)
+%{
+#include "geometry/Geometry.hh"
+%}
+// Treat data members of Geometry as read-only.
+%feature("immutable", "1");
+%include "geometry/Geometry.hh"
+%feature("immutable", "0");
 
 /* pism::Vars uses array::Array, so Array has to be wrapped first. */
 %include pism_Vars.i
 
 pism_class(pism::Time, "pism/util/Time.hh")
 
+/* Diagnostic has Geometry in its API, so it has to go after Geometry.hh */
 %shared_ptr(pism::Diagnostic)
 %include "util/Diagnostic.hh"
 %include "stressbalance/timestepping.hh"
 
+/* Component has Diagnostic in its public API, so it has to go after Diagnostic.hh */
 %shared_ptr(pism::Component)
 %include "util/Component.hh"
 
 /* GeometryEvolution is a Component, so this has to go after Component.hh */
-%include geometry.i
+%{
+#include "geometry/GeometryEvolution.hh"
+%}
+
+%shared_ptr(pism::GeometryEvolution)
+%shared_ptr(pism::RegionalGeometryEvolution)
+%include "geometry/GeometryEvolution.hh"
+
+#if (Pism_DEBUG==1)
+pism_class(pism::MPDATA2, "pism/geometry/MPDATA2.hh")
+pism_class(pism::UNO, "pism/geometry/UNO.hh")
+#endif
 
 %include "basalstrength/basal_resistance.hh"
 

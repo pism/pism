@@ -24,10 +24,18 @@ import netCDF4
 import yac
 import numpy as np
 import json
-from mpi4py import MPI
 from enum import Enum
 import traceback
 from pyproj import Proj
+
+import mpi4py
+# Disable thread support: this way "from mpi4py import MPI" will call MPI_Init() instead
+# of MPI_Init_thread(). It turns out that initializing MPI using MPI_Init_thread() here
+# and using MPI_Init() in PISM may lead to hanging when using IntelMPI (Intel(R) MPI
+# Library for Linux* OS, Version 2021.17 Build 20251215 (id: 2ac2f63)) and more than 35
+# MPI processes for PISM. :-/
+mpi4py.rc.threads = False
+from mpi4py import MPI
 
 logger = logging.getLogger("pism_output")
 
@@ -44,6 +52,7 @@ ST = {"lithk", "orog", "topg", "base",
 FL = {"hfgeoubed", "acabf", "libmassbfgr", "libmassbffl",
       "dlithkdt", "licalvf", "libgroundf", "lifmassbf"}
 
+fill_value = netCDF4.default_fillvals["f4"]
 
 class OutputGrid(object):
     x = None
@@ -503,11 +512,12 @@ class OutputFile:
         self.nc_dataset = netCDF4.Dataset(file_name, mode)
 
         if "time" in self.nc_dataset.dimensions:
-            time_length = len(self.nc_dataset.dimensions["time"])
+            self.time_length = len(self.nc_dataset.dimensions["time"])
         else:
-            time_length = 0
+            self.time_length = 0
 
-        self.time_index = time_length - 1 if time_length > 0 else 0
+    def time_index(self):
+        return self.time_length - 1 if self.time_length > 0 else 0
 
     def set_attributes(self, file_attributes):
         """Set attributes in the NetCDF dataset."""
@@ -516,8 +526,8 @@ class OutputFile:
 
     def append_time(self, time_seconds):
         """Create one more time record by adding a value to the time dimension."""
-        self.time_index = len(self.nc_dataset.dimensions["time"])
-        self.nc_dataset.variables["time"][self.time_index] = time_seconds
+        self.nc_dataset.variables["time"][self.time_length] = time_seconds
+        self.time_length += 1
 
     def append_history(self, string):
         """Append a `string` to the global attribute 'history'."""
@@ -574,7 +584,7 @@ class OutputFile:
         hyperslab = ndims * [slice(None)]
 
         if time_dependent:
-            hyperslab.insert(0, self.time_index)
+            hyperslab.insert(0, self.time_index())
 
         if ndims == 2:
             tmp = array[0]
@@ -602,7 +612,7 @@ class OutputFile:
         if name not in self.nc_dataset.variables:
             return
 
-        logger.debug(f"writing {self.nc_dataset.filepath()}:{name}")
+        logger.debug(f"writing {self.nc_dataset.filepath()}:{name}:{start}:{count}")
 
         self.nc_dataset.variables[name][hyperslab] = array
 
@@ -811,15 +821,28 @@ def main(compression_level, output_grid=None):
                     variables[file_name] = {}
 
                 # ISMIP7 requirement: all variables are saved as single-precision float
-                #
-                # FIXME: overriding this data type saves PISM's snapshots as single-precision
-                # float, so they should not be used to re-start PISM.
-                metadata["dtype"] = "f4"
+                if one_var_per_file(file_name):
+                    metadata["dtype"] = "f4"
 
-                # ISMIP7 requirement: time should have units of "days since 1850-01-01"
+                attributes = metadata["attributes"]
+
+                # ISMIP7 requirement: all fields must have the _FillValue attribute
+                if variable_name in FL.union(ST) and "_FillValue" not in attributes:
+                    attributes["_FillValue"] = fill_value
+
+                units = attributes["units"]
                 if variable_name in ["time", "time_bounds"]:
-                    units = metadata["attributes"]["units"]
-                    metadata["attributes"]["units"] = units.replace("seconds", "days")
+                    # ISMIP7 requirement: time should have units of "days since 1850-01-01"
+                    attributes["units"] = units.replace("seconds", "days")
+                else:
+                    # ISMIP7 requirement: unit strings
+                    replacements = [["m^-2", "m-2"],
+                                    ["s^-1", "s-1"],
+                                    ["second^-1", "s-1"],
+                                    ["kelvin", "K"]]
+                    for a, b in replacements:
+                        units = units.replace(a, b)
+                    attributes["units"] = units
 
                 variables[file_name][variable_name] = metadata
 
@@ -860,6 +883,7 @@ def main(compression_level, output_grid=None):
 
                     for field in fields_in_file:
                         F = get_file(file_name, field)
+
                         F.write_variable(array, metadata)
 
                         # write the end point of time bounds to "time":

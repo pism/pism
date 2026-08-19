@@ -44,7 +44,7 @@ protected:
   std::set<VariableMetadata> state_impl() const;
   void write_state_impl(const OutputFile &output) const;
 
-  MaxTimestep max_timestep_impl(double t) const;
+  MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 
   std::string m_input_file;
 

@@ -15,7 +15,6 @@ if (Pism_BUILD_PYTHON_BINDINGS)
 
   list(APPEND PISM_Python_deps
     AgeModel.i
-    geometry.i
     pism_BedDef.i
     pism_ColumnSystem.i
     pism_DM.i

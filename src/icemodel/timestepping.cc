@@ -32,6 +32,7 @@
 #include "pism/frontretreat/calving/HayhurstCalving.hh"
 #include "pism/frontretreat/calving/vonMisesCalving.hh"
 #include "pism/frontretreat/FrontRetreat.hh"
+#include "pism/stressbalance/SSB_Modifier.hh"
 
 #include "pism/coupler/FrontalMelt.hh"
 
@@ -48,7 +49,7 @@ dx^2/maxD (if dx=dy).
 Reference: [\ref MortonMayers] pp 62--63.
  */
 MaxTimestep IceModel::max_timestep_diffusivity() {
-  double D_max = m_stress_balance->max_diffusivity();
+  double D_max = m_stress_balance.modifier->max_diffusivity();
 
   double dx = m_grid->dx(), dy = m_grid->dy(),
          adaptive_timestepping_ratio = m_config->get_number("time_stepping.adaptive_ratio");
@@ -105,8 +106,8 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
   std::vector<MaxTimestep> restrictions;
 
   // get time-stepping restrictions from sub-models
-  for (auto m : m_submodels) {
-    restrictions.push_back(m.second->max_timestep(current_time));
+  for (const auto& m : m_submodels) {
+    restrictions.push_back(m.second->max_timestep(current_time, &m_cfl_3d));
   }
 
   // mechanisms that use a retreat rate
@@ -165,9 +166,7 @@ IceModel::TimesteppingInfo IceModel::max_timestep(unsigned int counter) {
 
   // mass continuity stability criteria
   if (m_config->get_flag("geometry.update.enabled")) {
-    auto cfl = m_stress_balance->max_timestep_cfl_2d();
-
-    restrictions.push_back(MaxTimestep(cfl.dt_max.value(), "2D CFL"));
+    restrictions.push_back(MaxTimestep(max_timestep_cfl_2d().dt_max.value(), "2D CFL"));
     restrictions.push_back(max_timestep_diffusivity());
   }
 

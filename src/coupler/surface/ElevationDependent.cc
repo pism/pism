@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2022, 2023, 2024, 2025 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2022, 2023, 2024, 2025, 2026 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -16,7 +16,7 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#include "pism/coupler/surface/Elevation.hh"
+#include "pism/coupler/surface/ElevationDependent.hh"
 
 #include "pism/util/Grid.hh"
 #include "pism/util/Config.hh"
@@ -30,7 +30,7 @@ namespace pism {
 namespace surface {
 
 ///// Elevation-dependent temperature and surface mass balance.
-Elevation::Elevation(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::AtmosphereModel> input)
+ElevationDependent::ElevationDependent(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::AtmosphereModel> input)
   : SurfaceModel(grid) {
   (void) input;
 
@@ -38,13 +38,13 @@ Elevation::Elevation(std::shared_ptr<const Grid> grid, std::shared_ptr<atmospher
   m_mass_flux   = allocate_mass_flux(grid);
 }
 
-void Elevation::init_impl(const Geometry &geometry) {
+void ElevationDependent::init_impl(const Geometry &geometry) {
   (void) geometry;
 
   bool limits_set = false;
 
   m_log->message(2,
-                 "* Initializing the constant-in-time surface processes model Elevation. Setting...\n");
+                 "* Initializing the constant-in-time surface processes model elevation_dependent. Setting...\n");
 
   {
     // ice surface temperature
@@ -129,12 +129,12 @@ void Elevation::init_impl(const Geometry &geometry) {
                  meter_per_year(m_M_limit_max), m_z_M_max);
 }
 
-MaxTimestep Elevation::max_timestep_impl(double t) const {
+MaxTimestep ElevationDependent::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
   (void) t;
   return MaxTimestep("surface 'elevation'");
 }
 
-void Elevation::update_impl(const Geometry &geometry, double t, double dt) {
+void ElevationDependent::update_impl(const Geometry &geometry, double t, double dt) {
   (void) t;
   (void) dt;
 
@@ -147,27 +147,27 @@ void Elevation::update_impl(const Geometry &geometry, double t, double dt) {
   
 }
 
-const array::Scalar &Elevation::mass_flux_impl() const {
+const array::Scalar &ElevationDependent::mass_flux_impl() const {
   return *m_mass_flux;
 }
 
-const array::Scalar &Elevation::temperature_impl() const {
+const array::Scalar &ElevationDependent::temperature_impl() const {
   return *m_temperature;
 }
 
-const array::Scalar &Elevation::accumulation_impl() const {
+const array::Scalar &ElevationDependent::accumulation_impl() const {
   return *m_accumulation;
 }
 
-const array::Scalar &Elevation::melt_impl() const {
+const array::Scalar &ElevationDependent::melt_impl() const {
   return *m_melt;
 }
 
-const array::Scalar &Elevation::runoff_impl() const {
+const array::Scalar &ElevationDependent::runoff_impl() const {
   return *m_runoff;
 }
   
-void Elevation::compute_mass_flux(const array::Scalar &surface, array::Scalar &result) const {
+void ElevationDependent::compute_mass_flux(const array::Scalar &surface, array::Scalar &result) const {
   double dabdz = -m_M_min/(m_z_ELA - m_z_M_min);
   double dacdz = m_M_max/(m_z_M_max - m_z_ELA);
 
@@ -194,7 +194,7 @@ void Elevation::compute_mass_flux(const array::Scalar &surface, array::Scalar &r
       }
       else {
         throw RuntimeError(PISM_ERROR_LOCATION,
-                           "Elevation::compute_mass_flux: HOW DID I GET HERE?");
+                           "ElevationDependent::compute_mass_flux: HOW DID I GET HERE?");
       }
     }
   } catch (...) {
@@ -206,7 +206,7 @@ void Elevation::compute_mass_flux(const array::Scalar &surface, array::Scalar &r
   result.scale(m_config->get_number("constants.ice.density"));
 }
 
-void Elevation::compute_temperature(const array::Scalar &surface, array::Scalar &result) const {
+void ElevationDependent::compute_temperature(const array::Scalar &surface, array::Scalar &result) const {
 
   array::AccessScope list{&result, &surface};
 
@@ -229,7 +229,7 @@ void Elevation::compute_temperature(const array::Scalar &surface, array::Scalar 
       }
       else {
         throw RuntimeError(PISM_ERROR_LOCATION,
-                           "Elevation::compute_temperature: HOW DID I GET HERE?");
+                           "ElevationDependent::compute_temperature: HOW DID I GET HERE?");
       }
     }
   } catch (...) {

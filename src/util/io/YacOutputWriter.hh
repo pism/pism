@@ -117,6 +117,9 @@ private:
   int m_field_buffer_size = 0;
   double *m_field_buffer = nullptr;
 
+  int m_mask_buffer_size = 0;
+  double *m_mask_buffer = nullptr;
+
   // --- MPI Communication
 
   //! Tags for MPI messages sending non-gridded variable data

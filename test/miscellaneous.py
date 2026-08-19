@@ -684,7 +684,7 @@ class AgeModel(unittest.TestCase):
         v.set(0.0)
         w.set(0.0)
 
-        model = PISM.AgeModel(self.grid, None)
+        model = PISM.AgeModel(self.grid)
         input_options = PISM.process_input_options(ctx.com, ctx.config)
         model.init(input_options)
 

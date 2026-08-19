@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2019, 2021, 2022, 2023, 2024, 2025 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
+// Copyright (C) 2008-2019, 2021, 2022, 2023, 2024, 2025, 2026 Ed Bueler, Constantine Khroulev, Ricarda Winkelmann,
 // Gudfinna Adalgeirsdottir, Andy Aschwanden and Torsten Albrecht
 //
 // This file is part of PISM.
@@ -47,7 +47,7 @@ void PIK::init_impl(const Geometry &geometry) {
                                            *m_water_column_pressure);
 }
 
-MaxTimestep PIK::max_timestep_impl(double t) const {
+MaxTimestep PIK::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
   (void) t;
   return MaxTimestep("ocean PIK");
 }

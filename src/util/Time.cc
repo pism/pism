@@ -1,4 +1,4 @@
-// Copyright (C) 2011-2025 Constantine Khroulev
+// Copyright (C) 2011-2026 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -134,7 +134,7 @@ static std::string reference_date(const File *input_file,
                   default_reference_date.c_str(), input_file->name().c_str(), ref_date.c_str());
     }
 
-    return ref_date;
+    return default_reference_date;
   }
 
   return default_reference_date;
@@ -377,7 +377,8 @@ static double start_time(const Config &config,
 
   if (ref_date != reference_date) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "reference date in '%s' (%s) does not match the selected date (%s)",
+                                  "reference date in '%s' (%s) does not match the selected date (%s):\n"
+                                  "cannot set start time from the input file",
                                   file->name().c_str(), ref_date.c_str(), reference_date.c_str());
   }
 

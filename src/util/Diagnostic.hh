@@ -29,6 +29,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/io/OutputWriter.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace grid {
@@ -71,10 +72,12 @@ public:
   static Ptr wrap(const T &input);
 
   void update(double dt);
+
+  //! Reset the accumulator or possibly record the state at the beginning of a reporting interval
   void reset();
 
   //! @brief Compute a diagnostic quantity and return a pointer to a newly-allocated Array.
-  std::shared_ptr<array::Array> compute() const;
+  std::shared_ptr<array::Array> compute(const Geometry &geometry) const;
 
   const grid::DistributedGridInfo &grid_info() const;
 
@@ -97,7 +100,7 @@ protected:
   virtual void update_impl(double dt);
   virtual void reset_impl();
 
-  virtual std::shared_ptr<array::Array> compute_impl() const = 0;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const = 0;
 
   /*!
    * _FillValue in internal units
@@ -149,7 +152,7 @@ public:
   }
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
     auto result = m_input.duplicate();
 
     result->set_name(m_input.get_name());
@@ -250,7 +253,7 @@ protected:
     m_interval_length = 0.0;
   }
 
-  virtual std::shared_ptr<array::Array> compute_impl() const {
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
     auto result = Diagnostic::allocate<array::Scalar>("diagnostic");
 
     if (m_interval_length > 0.0) {

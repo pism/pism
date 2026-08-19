@@ -232,6 +232,12 @@ std::set<VariableMetadata> IceModel::state_variables() const {
       }
     }
 
+    // add longitude and latitude, if they are available
+    if (m_grid->has_longitude_latitude()) {
+      result.insert(m_grid->longitude().metadata());
+      result.insert(m_grid->latitude().metadata());
+    }
+
     // state variables from sub-models:
     for (const auto &m : m_submodels) {
       result = pism::combine(result, m.second->state());

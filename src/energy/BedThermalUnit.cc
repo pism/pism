@@ -28,6 +28,8 @@
 #include "pism/util/Logger.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/util/Vars.hh"
+#include "pism/util/array/CellType.hh"
 
 namespace pism {
 namespace energy {
@@ -190,22 +192,8 @@ void BedThermalUnit::write_state_impl(const OutputFile &output) const {
   m_bottom_surface_flux.write(output);
 }
 
-class BTU_geothermal_flux_at_ground_level : public Diag<BedThermalUnit> {
-public:
-  BTU_geothermal_flux_at_ground_level(const BedThermalUnit *m);
-protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const;
-};
-
 DiagnosticList BedThermalUnit::spatial_diagnostics_impl() const {
-  DiagnosticList result = {
-    {"bheatflx",   Diagnostic::wrap(m_bottom_surface_flux)},
-    {"heat_flux_from_bedrock", Diagnostic::Ptr(new BTU_geothermal_flux_at_ground_level(this))}};
-
-  if (m_config->get_flag("output.ISMIP6")) {
-    result["hfgeoubed"] = Diagnostic::Ptr(new BTU_geothermal_flux_at_ground_level(this));
-  }
-  return result;
+  return { { "bheatflx", Diagnostic::wrap(m_bottom_surface_flux) } };
 }
 
 void BedThermalUnit::update(const array::Scalar &bedrock_top_temperature,
@@ -219,29 +207,6 @@ const array::Scalar& BedThermalUnit::flux_through_top_surface() const {
 
 const array::Scalar& BedThermalUnit::flux_through_bottom_surface() const {
   return m_bottom_surface_flux;
-}
-
-BTU_geothermal_flux_at_ground_level::BTU_geothermal_flux_at_ground_level(const BedThermalUnit *m)
-    : Diag<BedThermalUnit>(m) {
-
-  auto ismip6 = m_config->get_flag("output.ISMIP6");
-  m_vars      = { { m_sys, ismip6 ? "hfgeoubed" : "heat_flux_from_bedrock", *m_grid } };
-  m_vars[0]
-      .long_name("upward geothermal flux at the top bedrock surface")
-      .standard_name((ismip6 ? "upward_geothermal_heat_flux_in_land_ice" :
-                               "upward_geothermal_heat_flux_at_ground_level_in_land_ice"))
-      .units("W m^-2")
-      .output_units("mW m^-2");
-  m_vars[0]["comment"] = "positive values correspond to an upward flux";
-}
-
-std::shared_ptr<array::Array> BTU_geothermal_flux_at_ground_level::compute_impl() const {
-  auto result = std::make_shared<array::Scalar>(m_grid, "hfgeoubed");
-  result->metadata() = m_vars[0];
-
-  result->copy_from(model->flux_through_top_surface());
-
-  return result;
 }
 
 } // end of namespace energy

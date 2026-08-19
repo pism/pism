@@ -1,4 +1,4 @@
-// Copyright (C) 2011--2025 PISM Authors
+// Copyright (C) 2011--2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -135,11 +135,25 @@ void TemperatureIndex::init_impl(const Geometry &geometry) {
                    m_mbscheme->method().c_str());
 
     if (m_faustogreve) {
-      m_log->message(2,
-                     "  Setting PDD parameters from [Faustoetal2009].\n");
+      if (not m_grid->has_longitude_latitude()) {
+        throw RuntimeError::formatted(
+            PISM_ERROR_LOCATION,
+            "grid point longitudes and latitudes are not available;\n"
+            "the PDD surface model with parameters from Faustoetal2009 cannot be used");
+      }
+      m_log->message(2, "  Setting PDD parameters from [Faustoetal2009].\n");
     } else {
       m_log->message(2,
                      "  Using default PDD parameters.\n");
+    }
+  }
+
+  if (m_config->get_number("surface.pdd.std_dev.lapse_lat_rate") != 0.0) {
+    if (not m_grid->has_longitude_latitude()) {
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "grid point longitudes and latitudes are not available;\n"
+          "the PDD surface model standard deviation as a function of latitude cannot be used");
     }
   }
 
@@ -214,8 +228,8 @@ void TemperatureIndex::init_impl(const Geometry &geometry) {
   }
 }
 
-MaxTimestep TemperatureIndex::max_timestep_impl(double my_t) const {
-  return m_atmosphere->max_timestep(my_t);
+MaxTimestep TemperatureIndex::max_timestep_impl(double t, const CFLData *cfl_data) const {
+  return m_atmosphere->max_timestep(t, cfl_data);
 }
 
 double TemperatureIndex::compute_next_balance_year_start(double time) {
@@ -261,25 +275,34 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
   const auto &mask = geometry.cell_type;
   const auto &H    = geometry.ice_thickness;
 
-  array::AccessScope list{&mask, &H, m_air_temp_sd.get(), &m_mass_flux,
-                               &m_firn_depth, &m_snow_depth,
-                               m_accumulation.get(), m_melt.get(), m_runoff.get()};
+  array::AccessScope list{ &mask,
+                           &H,
+                           m_air_temp_sd.get(),
+                           &m_mass_flux,
+                           &m_firn_depth,
+                           &m_snow_depth,
+                           m_accumulation.get(),
+                           m_melt.get(),
+                           m_runoff.get() };
 
   const double
     sigmalapserate = m_config->get_number("surface.pdd.std_dev.lapse_lat_rate"),
     sigmabaselat   = m_config->get_number("surface.pdd.std_dev.lapse_lat_base");
 
-  const array::Scalar *latitude = &geometry.latitude;
-  if ((fausto_greve != nullptr) or sigmalapserate != 0.0) {
+  const bool use_sigma_lapse_rate = sigmalapserate != 0.0;
+
+  const array::Scalar *latitude = nullptr;
+  if ((fausto_greve != nullptr) or use_sigma_lapse_rate) {
+    latitude = &m_grid->latitude();
     list.add(*latitude);
   }
 
   if (fausto_greve != nullptr) {
     const array::Scalar
-      *longitude        = &geometry.latitude,
-      *surface_altitude = &geometry.ice_surface_elevation;
+      &longitude        = m_grid->longitude(),
+      &surface_altitude = geometry.ice_surface_elevation;
 
-    fausto_greve->update_temp_mj(*surface_altitude, *latitude, *longitude);
+    fausto_greve->update_temp_mj(surface_altitude, *latitude, longitude);
   }
 
   LocalMassBalance::DegreeDayFactors ddf = m_base_ddf;
@@ -332,7 +355,7 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
       }
 
       // apply standard deviation lapse rate on top of prescribed values
-      if (sigmalapserate != 0.0) {
+      if (use_sigma_lapse_rate) {
         double lat = (*latitude)(i, j);
         for (int k = 0; k < N; ++k) {
           S[k] += sigmalapserate * (lat - sigmabaselat);

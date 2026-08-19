@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2022, 2023, 2025 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2022, 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -31,22 +31,22 @@
 namespace pism {
 namespace energy {
 
-EnthalpyModel::EnthalpyModel(std::shared_ptr<const Grid> grid,
-                             std::shared_ptr<const stressbalance::StressBalance> stress_balance)
-  : EnergyModel(grid, stress_balance) {
+EnthalpyModel::EnthalpyModel(std::shared_ptr<const Grid> grid)
+  : EnergyModel(grid) {
   // empty
 }
 
-void EnthalpyModel::restart_impl(const File &input_file, int record) {
+void EnthalpyModel::restart_impl(const File &input_file, int record,
+                                 const array::Scalar &ice_thickness) {
 
   m_log->message(2, "* Restarting the enthalpy-based energy balance model from %s...\n",
                  input_file.name().c_str());
 
   m_basal_melt_rate.read(input_file, record);
-  init_enthalpy(input_file, false, record);
+  init_enthalpy(input_file, false, record, ice_thickness);
 
   regrid("Energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
-  regrid_enthalpy();
+  regrid_enthalpy(ice_thickness);
 }
 
 void EnthalpyModel::bootstrap_impl(const File &input_file,
@@ -64,7 +64,7 @@ void EnthalpyModel::bootstrap_impl(const File &input_file,
   regrid("Energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
 
   int enthalpy_revision = m_ice_enthalpy.state_counter();
-  regrid_enthalpy();
+  regrid_enthalpy(ice_thickness);
 
   if (enthalpy_revision == m_ice_enthalpy.state_counter()) {
     bootstrap_ice_enthalpy(ice_thickness, surface_temperature, climatic_mass_balance,
@@ -85,7 +85,7 @@ void EnthalpyModel::initialize_impl(const array::Scalar &basal_melt_rate,
   regrid("Energy balance model", m_basal_melt_rate, REGRID_WITHOUT_REGRID_VARS);
 
   int enthalpy_revision = m_ice_enthalpy.state_counter();
-  regrid_enthalpy();
+  regrid_enthalpy(ice_thickness);
 
   if (enthalpy_revision == m_ice_enthalpy.state_counter()) {
     bootstrap_ice_enthalpy(ice_thickness, surface_temperature, climatic_mass_balance,

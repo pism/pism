@@ -90,7 +90,9 @@ void SynchronousOutputWriter::append_impl(const std::string &file_name) {
 }
 
 void SynchronousOutputWriter::sync_impl(const std::string &file_name) {
-  m_files[file_name]->sync();
+  if (m_files[file_name] != nullptr) {
+    m_files[file_name]->sync();
+  }
 }
 
 void SynchronousOutputWriter::close_impl(const std::string &file_name) {

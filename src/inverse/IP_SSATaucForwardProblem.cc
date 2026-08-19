@@ -122,7 +122,6 @@ void IP_SSATaucForwardProblem::init() {
     }
 
     inputs.geometry           = &geometry;
-    inputs.basal_melt_rate    = NULL;
     inputs.basal_yield_stress = variables.get_2d_scalar("tauc");
     inputs.enthalpy           = variables.get_3d_scalar("enthalpy");
     inputs.age                = NULL;

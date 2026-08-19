@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2022, 2023, 2025 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2022, 2023, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -71,7 +71,7 @@ void Constant::init_impl(const Geometry &geometry) {
                  m_config->get_number("frontal_melt.constant.melt_rate", "m year-1"));
 }
 
-MaxTimestep Constant::max_timestep_impl(double t) const {
+MaxTimestep Constant::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
   (void) t;
   return MaxTimestep("frontal_melt constant");
 }
