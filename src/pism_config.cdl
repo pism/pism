@@ -1575,7 +1575,7 @@ netcdf pism_config {
     pism_config:inverse.stress_balance.length_scale_units = "meters";
 
     pism_config:inverse.stress_balance.method = "tikhonov_lmvm";
-    pism_config:inverse.stress_balance.method_choices = "sd,nlcg,ign,tikhonov_lmvm,tikhonov_cg,tikhonov_blmvm,tikhonov_lcl,tikhonov_gn";
+    pism_config:inverse.stress_balance.method_choices = "tikhonov_lmvm,tikhonov_cg,tikhonov_blmvm,tikhonov_lcl,tikhonov_gn";
     pism_config:inverse.stress_balance.method_doc = "algorithm to use for stress balance inversions";
     pism_config:inverse.stress_balance.method_option = "inv_method";
     pism_config:inverse.stress_balance.method_type = "keyword";
