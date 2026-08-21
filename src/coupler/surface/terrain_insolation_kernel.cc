@@ -135,6 +135,12 @@ void sun_position(double latitude, double declination, double hour_angle,
   double A = std::atan2(sinA, cosA); // clockwise from north, in (-pi, pi]
   if (A < 0.0) {
     A += 2.0 * M_PI;
+    // A tiny negative angle (e.g. at hour_angle = pi, where sin(hour_angle) is not
+    // exactly zero in floating point) rounds to exactly 2*pi here; the documented range
+    // is [0, 2*pi).
+    if (A >= 2.0 * M_PI) {
+      A = 0.0;
+    }
   }
   azimuth = A;
 }

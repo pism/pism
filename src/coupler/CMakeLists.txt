@@ -76,3 +76,5 @@ add_library (boundary OBJECT
   ./surface/TerrainInsolation.cc
   ./surface/terrain_insolation_kernel.cc
   )
+
+add_subdirectory (surface/tests)
