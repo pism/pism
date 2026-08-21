@@ -15,8 +15,10 @@ Changes since v2.3.0
   sky-view factor (slope-corrected Dozier & Frew, 1990); the diffuse share is
   `surface.debm_enhanced.diffuse_fraction` (default 0.2) and the whole sky-view treatment can
   be disabled with `surface.debm_enhanced.use_sky_view_factor` (reverting to pure direct
-  beam). `horizon` and `sky_view_factor` diagnostics are available. All other parameters are
-  shared with `surface.debm_simple.*`.
+  beam). The `insolation` (daily-mean top-of-atmosphere rate, in `W m-2`), `horizon`, and
+  `sky_view_factor` diagnostics are available; `sky_view_factor` only when
+  `surface.debm_enhanced.use_sky_view_factor` is set. All other parameters are shared with
+  `surface.debm_simple.*`.
 - Add a ISMP7 surface model that uses the gradients but not the anomalies, and adds runoff.
 - Allow the Blatter stress balance to restart from SSA velocities: if `uvel_sigma` and
   `vvel_sigma` are not present in the input file but `u_ssa` and `v_ssa` are, use the
