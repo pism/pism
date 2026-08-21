@@ -19,7 +19,8 @@ Changes since v2.3.0
   `sky_view_factor` diagnostics are available; `sky_view_factor` only when
   `surface.debm_enhanced.use_sky_view_factor` is set. All other parameters are shared with
   `surface.debm_simple.*`.
-- Add a ISMP7 surface model that uses the gradients but not the anomalies, and adds runoff.
+- Add an `ismip7` surface model that uses the gradients but not the anomalies, and adds
+  runoff. It is exposed to Python as `PISM.SurfaceISMIP7`.
 - Allow the Blatter stress balance to restart from SSA velocities: if `uvel_sigma` and
   `vvel_sigma` are not present in the input file but `u_ssa` and `v_ssa` are, use the
   (vertically constant) SSA velocity as a depth-independent initial guess.
@@ -88,9 +89,6 @@ Changes since v2.3.0
   Implemented as `IPHuberMisfit2V` and wired into the TAO Tikhonov inversion path
   (`tikhonov_lmvm`, `tikhonov_blmvm`); it is not compatible with the Gauss-Newton
   SSA solver, which requires an inner-product functional.
-
-- Added a new surface coupler `-surface.models ismip7` derived from ISMIP6. This coupler
-  only uses direct forcing and forcing gradients, skipping anomalies.
 
 - Remove the `siple` inverse-problems library and the SSA inversion methods that
   depended on it. `inverse.stress_balance.method` (`-inv_method`) no longer accepts
