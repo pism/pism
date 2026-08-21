@@ -3,7 +3,24 @@
 Changes since v2.3.0
 ====================
 
-- Add a ISMP7 surface model that uses the gradients but not the anomalies, and adds runoff.
+- Add the `debm_enhanced` surface model: dEBM-simple with the insolation-driven melt
+  computed from a terrain-shaded surface-insolation field instead of the analytic
+  top-of-atmosphere parameterization. The terrain horizon and surface normals are computed
+  from the ice surface elevation and combined with PISM's analytic solar geometry to produce
+  the daily surface insolation. The horizon ray-casting is controlled by
+  `surface.debm_enhanced.horizon.*` (`n_directions`, `max_distance`, `step`, `ephemeris_dt`)
+  and, because it depends on the evolving geometry, is recomputed every
+  `surface.debm_enhanced.update_interval` (default 10 years). The insolation is split into a
+  direct-beam component (terrain-shaded) and an isotropic diffuse component reduced by the
+  sky-view factor (slope-corrected Dozier & Frew, 1990); the diffuse share is
+  `surface.debm_enhanced.diffuse_fraction` (default 0.2) and the whole sky-view treatment can
+  be disabled with `surface.debm_enhanced.use_sky_view_factor` (reverting to pure direct
+  beam). The `insolation` (daily-mean top-of-atmosphere rate, in `W m-2`), `horizon`, and
+  `sky_view_factor` diagnostics are available; `sky_view_factor` only when
+  `surface.debm_enhanced.use_sky_view_factor` is set. All other parameters are shared with
+  `surface.debm_simple.*`.
+- Add an `ismip7` surface model that uses the gradients but not the anomalies, and adds
+  runoff. It is exposed to Python as `PISM.SurfaceISMIP7`.
 - Allow the Blatter stress balance to restart from SSA velocities: if `uvel_sigma` and
   `vvel_sigma` are not present in the input file but `u_ssa` and `v_ssa` are, use the
   (vertically constant) SSA velocity as a depth-independent initial guess.
@@ -72,9 +89,6 @@ Changes since v2.3.0
   Implemented as `IPHuberMisfit2V` and wired into the TAO Tikhonov inversion path
   (`tikhonov_lmvm`, `tikhonov_blmvm`); it is not compatible with the Gauss-Newton
   SSA solver, which requires an inner-product functional.
-
-- Added a new surface coupler `-surface.models ismip7` derived from ISMIP6. This coupler
-  only uses direct forcing and forcing gradients, skipping anomalies.
 
 - Remove the `siple` inverse-problems library and the SSA inversion methods that
   depended on it. `inverse.stress_balance.method` (`-inv_method`) no longer accepts
