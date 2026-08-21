@@ -25,8 +25,8 @@ namespace terrain {
 
 /*!
  * Pure (PISM-free) kernels for the terrain-horizon and terrain-shaded insolation
- * computation ported from the Python "solshade" package. See
- * `examples/debm_enhanced/solstis.md` for the underlying math.
+ * computation ported from the Python "solshade" package. See the "dEBM-enhanced"
+ * section of the Climate Forcing manual for the underlying math.
  *
  * Conventions used throughout:
  *   - The global DEM is row-major with `i` the x-index (increasing eastward) and `j`
