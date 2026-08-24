@@ -21,6 +21,16 @@ Changes since v2.3.0
   `surface.debm_simple.*`.
 - Add an `ismip7` surface model that uses the gradients but not the anomalies, and adds
   runoff. It is exposed to Python as `PISM.SurfaceISMIP7`.
+- Re-run SWIG when a wrapped C++ header changes (`USE_SWIG_DEPENDENCIES`). Previously the
+  generated Python bindings depended on the `.i` files only, so header edits could leave a
+  stale `PISM.cpp` module in the build tree (e.g. Blatter-based classes wrapped as abstract,
+  with no constructor).
+- Make `pismi` abort the whole MPI job (via `MPI_Abort()`) when it hits a fatal error,
+  instead of letting the exception unwind into the collective `MPI_Finalize()` called by
+  petsc4py at interpreter shutdown. Previously a failure such as a missing `input.file`
+  could deadlock the run under some MPI implementations, so a batch job kept its nodes
+  until the wall-clock limit. The traceback is now printed once, by rank 0.
+- Add a ISMP7 surface model that uses the gradients but not the anomalies, and adds runoff.
 - Allow the Blatter stress balance to restart from SSA velocities: if `uvel_sigma` and
   `vvel_sigma` are not present in the input file but `u_ssa` and `v_ssa` are, use the
   (vertically constant) SSA velocity as a depth-independent initial guess.
