@@ -3,6 +3,10 @@
 Changes since v2.3.0
 ====================
 
+- Re-run SWIG when a wrapped C++ header changes (`USE_SWIG_DEPENDENCIES`). Previously the
+  generated Python bindings depended on the `.i` files only, so header edits could leave a
+  stale `PISM.cpp` module in the build tree (e.g. Blatter-based classes wrapped as abstract,
+  with no constructor).
 - Make `pismi` abort the whole MPI job (via `MPI_Abort()`) when it hits a fatal error,
   instead of letting the exception unwind into the collective `MPI_Finalize()` called by
   petsc4py at interpreter shutdown. Previously a failure such as a missing `input.file`
