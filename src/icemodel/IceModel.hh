@@ -248,8 +248,6 @@ protected:
   void init_final_output();
 
   virtual double step(bool do_mass_continuity, bool do_skip);
-  virtual void pre_step_hook();
-  virtual void post_step_hook();
 
   void reset_counters();
 
