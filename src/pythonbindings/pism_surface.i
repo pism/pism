@@ -17,6 +17,8 @@
 #include "coupler/surface/DEBMSimplePointwise.hh"
 %}
 
+%rename(SurfaceInputs) pism::surface::Inputs;
+
 %shared_ptr(pism::surface::SurfaceModel)
 %include "coupler/SurfaceModel.hh"
 

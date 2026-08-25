@@ -117,10 +117,10 @@ TemperatureIndex::TemperatureIndex(std::shared_ptr<const Grid> g,
   m_runoff       = allocate_runoff(g);
 }
 
-void TemperatureIndex::init_impl(const Geometry &geometry) {
+void TemperatureIndex::init_impl(const Inputs &inputs) {
 
   // call the default implementation (not the interface method init())
-  SurfaceModel::init_impl(geometry);
+  SurfaceModel::init_impl(inputs);
 
   // report user's modeling choices
   {
@@ -246,14 +246,14 @@ double TemperatureIndex::compute_next_balance_year_start(double time) {
   return this->time().increment_date(balance_year_start, 1);
 }
 
-void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt) {
+void TemperatureIndex::update_impl(const Inputs &inputs, double t, double dt) {
 
   // make a copy of the pointer to convince clang static analyzer that its value does not
   // change during the call
   FaustoGrevePDDObject *fausto_greve = m_faustogreve.get();
 
   // update to ensure that temperature and precipitation time series are correct:
-  m_atmosphere->update(geometry, t, dt);
+  m_atmosphere->update(*inputs.geometry, t, dt);
 
   m_temperature->copy_from(m_atmosphere->air_temperature());
 
@@ -272,8 +272,8 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
     m_air_temp_sd->init_interpolation(ts);
   }
 
-  const auto &mask = geometry.cell_type;
-  const auto &H    = geometry.ice_thickness;
+  const auto &mask = inputs.geometry->cell_type;
+  const auto &H    = inputs.geometry->ice_thickness;
 
   array::AccessScope list{ &mask,
                            &H,
@@ -300,7 +300,7 @@ void TemperatureIndex::update_impl(const Geometry &geometry, double t, double dt
   if (fausto_greve != nullptr) {
     const array::Scalar
       &longitude        = m_grid->longitude(),
-      &surface_altitude = geometry.ice_surface_elevation;
+      &surface_altitude = inputs.geometry->ice_surface_elevation;
 
     fausto_greve->update_temp_mj(surface_altitude, *latitude, longitude);
   }

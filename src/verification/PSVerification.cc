@@ -54,11 +54,11 @@ Verification::Verification(std::shared_ptr<const Grid> g,
   // empty
 }
 
-void Verification::init_impl(const Geometry &geometry) {
+void Verification::init_impl(const Inputs &inputs) {
   // Make sure that ice surface temperature and climatic mass balance
   // get initialized at the beginning of the run (as far as I can tell
   // this affects zero-length runs only).
-  update(geometry, time().current(), 0);
+  update(inputs, time().current(), 0);
 }
 
 std::set<VariableMetadata> Verification::state_impl() const {
@@ -131,9 +131,7 @@ void Verification::update_V() {
   m_mass_flux->set(0.0);
 }
 
-void Verification::update_impl(const Geometry &geometry, double t, double dt) {
-  (void) geometry;
-  (void) dt;
+void Verification::update_impl(const Inputs &/*inputs*/, double t, double /*dt*/) {
 
   switch (m_testname) {
   case 'A':

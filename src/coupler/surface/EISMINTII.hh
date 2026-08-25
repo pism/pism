@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2021, 2023 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2021, 2023, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -33,9 +33,10 @@ public:
   EISMINTII(std::shared_ptr<const Grid> g, int experiment);
   ~EISMINTII() = default;
 protected:
-  void init_impl(const Geometry &geometry);
+  void init_impl(const Inputs &inputs);
+  void update_impl(const Inputs &inputs, double t, double dt);
+
   virtual MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
-  void update_impl(const Geometry &geometry, double t, double dt);
   void initialize_using_formulas();
   int m_experiment;
   double m_M_max, m_R_el, m_S_T, m_S_b, m_T_min;

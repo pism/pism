@@ -57,7 +57,7 @@ public:
   virtual ~DEBMEnhanced();
 
 protected:
-  void init_impl(const Geometry &geometry) override;
+  void init_impl(const Inputs &inputs) override;
 
   void update_insolation_input(double t, double dt,
                                const std::vector<double> &ts,

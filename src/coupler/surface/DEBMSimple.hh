@@ -115,7 +115,7 @@ protected:
   // insolation field for the analytic dEBM-simple insolation. The base-class
   // implementations reproduce standard dEBM-simple behavior.
 
-  virtual void init_impl(const Geometry &geometry);
+  virtual void init_impl(const Inputs &inputs);
 
   //! Hook called once per update, before the per-cell loop. The base class does nothing;
   //! dEBM-enhanced updates its insolation forcing and registers it for access.
@@ -136,7 +136,7 @@ protected:
   virtual DiagnosticList spatial_diagnostics_impl() const;
 
 private:
-  virtual void update_impl(const Geometry &geometry, double t, double dt);
+  virtual void update_impl(const Inputs &inputs, double t, double dt);
   virtual MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 
   virtual std::set<VariableMetadata> state_impl() const;

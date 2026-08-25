@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023, 2024, 2025 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2021, 2023, 2024, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -42,15 +42,15 @@ Delta_T::~Delta_T() {
   // empty
 }
 
-void Delta_T::init_impl(const Geometry &geometry) {
-  m_input_model->init(geometry);
+void Delta_T::init_impl(const Inputs &inputs) {
+  m_input_model->init(inputs);
 
   m_log->message(2,
                  "* Initializing ice-surface temperature forcing using scalar offsets...\n");
 }
 
-void Delta_T::update_impl(const Geometry &geometry, double t, double dt) {
-  m_input_model->update(geometry, t, dt);
+void Delta_T::update_impl(const Inputs &inputs, double t, double dt) {
+  m_input_model->update(inputs, t, dt);
 
   m_temperature->copy_from(m_input_model->temperature());
   m_temperature->shift(m_forcing->value(t + 0.5 * dt));

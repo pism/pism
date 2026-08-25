@@ -168,10 +168,10 @@ DEBMSimple::DEBMSimple(std::shared_ptr<const Grid> g,
   m_transmissivity.set(0.0);
 }
 
-void DEBMSimple::init_impl(const Geometry &geometry) {
+void DEBMSimple::init_impl(const Inputs &inputs) {
 
   // call the default implementation (not the interface method init())
-  SurfaceModel::init_impl(geometry);
+  SurfaceModel::init_impl(inputs);
 
   {
     m_log->message(2,
@@ -274,12 +274,12 @@ double DEBMSimple::snow_accumulation(double T, double P) const {
 }
 
 
-void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
+void DEBMSimple::update_impl(const Inputs &inputs, double t, double dt) {
 
   const double melting_point = 273.15;
 
   // update to ensure that temperature and precipitation time series are correct:
-  m_atmosphere->update(geometry, t, dt);
+  m_atmosphere->update(*inputs.geometry, t, dt);
 
   // Use near-surface air temperature as the top-of-the-ice temperature:
   m_temperature->copy_from(m_atmosphere->air_temperature());
@@ -303,9 +303,9 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
   m_air_temp_sd->update(t, dt);
   m_air_temp_sd->init_interpolation(ts);
 
-  const auto &mask             = geometry.cell_type;
-  const auto &H                = geometry.ice_thickness;
-  const auto &surface_altitude = geometry.ice_surface_elevation;
+  const auto &mask             = inputs.geometry->cell_type;
+  const auto &H                = inputs.geometry->ice_thickness;
+  const auto &surface_altitude = inputs.geometry->ice_surface_elevation;
 
   const auto &latitude = m_grid->latitude();
 
@@ -334,7 +334,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
   }
 
   // Let derived classes (dEBM-enhanced) update and register a prescribed insolation field.
-  this->update_insolation_input(t, dt, ts, geometry.ice_surface_elevation, list);
+  this->update_insolation_input(t, dt, ts, inputs.geometry->ice_surface_elevation, list);
 
   double
     ice_density    = m_config->get_number("constants.ice.density"),

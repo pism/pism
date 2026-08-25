@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2022, 2025 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2022, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -41,8 +41,8 @@ class InitializationHelper : public SurfaceModel {
 public:
   InitializationHelper(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> in);
 protected:
-  void init_impl(const Geometry &geometry);
-  void update_impl(const Geometry &geometry, double t, double dt);
+  void init_impl(const Inputs &inputs);
+  void update_impl(const Inputs &inputs, double t, double dt);
 
   const array::Scalar &layer_mass_impl() const;
   const array::Scalar &liquid_water_fraction_impl() const;

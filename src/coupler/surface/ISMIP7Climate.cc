@@ -142,8 +142,7 @@ ISMIP7::ISMIP7(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
   }
 }
 
-void ISMIP7::init_impl(const Geometry &geometry) {
-  (void) geometry;
+void ISMIP7::init_impl(const Inputs &/*inputs*/) {
 
   m_log->message(2, "* Initializing the ISMIP7 surface model...\n");
 
@@ -177,10 +176,10 @@ void ISMIP7::init_impl(const Geometry &geometry) {
   }
 }
 
-void ISMIP7::update_impl(const Geometry &geometry, double t, double dt) {
+void ISMIP7::update_impl(const Inputs &inputs, double t, double dt) {
 
   // inputs
-  const array::Scalar &h       = geometry.ice_surface_elevation;
+  const array::Scalar &h       = inputs.geometry->ice_surface_elevation;
   const array::Scalar &h_ref   = m_surface_reference;
 
   array::Forcing &T_ref   = *m_temperature_reference;

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2022, 2023, 2025 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2022, 2023, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -32,9 +32,9 @@ Simple::Simple(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere::Atmosp
   m_mass_flux   = allocate_mass_flux(g);
 }
 
-void Simple::init_impl(const Geometry &geometry) {
+void Simple::init_impl(const Inputs &inputs) {
 
-  m_atmosphere->init(geometry);
+  m_atmosphere->init(*inputs.geometry);
 
   m_log->message(2,
              "* Initializing the simplest PISM surface (snow) processes model Simple.\n"
@@ -43,9 +43,9 @@ void Simple::init_impl(const Geometry &geometry) {
              "    ice upper surface temperature := 2m air temperature.\n");
 }
 
-void Simple::update_impl(const Geometry &geometry, double t, double dt) {
+void Simple::update_impl(const Inputs &inputs, double t, double dt) {
   if (m_atmosphere) {
-    m_atmosphere->update(geometry, t, dt);
+    m_atmosphere->update(*inputs.geometry, t, dt);
   }
 
   m_mass_flux->copy_from(m_atmosphere->precipitation());

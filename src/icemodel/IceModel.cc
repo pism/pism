@@ -645,9 +645,12 @@ double IceModel::step(bool do_mass_continuity,
   enforce_consistency_of_geometry(DONT_REMOVE_ICEBERGS);
 
   //! \li Update surface and ocean models.
-  profiling.begin("surface");
-  m_surface->update(m_geometry, current_time, dt);
-  profiling.end("surface");
+  {
+    profiling.begin("surface");
+    surface::Inputs inputs{&m_geometry};
+    m_surface->update(inputs, current_time, dt);
+    profiling.end("surface");
+  }
 
 
   if (do_mass_continuity) {

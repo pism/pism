@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2023, 2025 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2023, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -31,8 +31,8 @@ public:
   IBSurfaceModel(std::shared_ptr<const pism::Grid> grid);
 
 protected:
-  void init_impl(const Geometry &geometry);
-  void update_impl(const Geometry &geometry, double my_t, double my_dt);
+  void init_impl(const surface::Inputs &inputs);
+  void update_impl(const surface::Inputs &inputs, double my_t, double my_dt);
 
   const array::Scalar& accumulation_impl() const;
   const array::Scalar& liquid_water_fraction_impl() const;

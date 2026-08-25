@@ -60,9 +60,9 @@ DEBMEnhanced::DEBMEnhanced(std::shared_ptr<const Grid> g,
 // forward-declared TerrainInsolation, whose complete type is needed by the deleter.
 DEBMEnhanced::~DEBMEnhanced() = default;
 
-void DEBMEnhanced::init_impl(const Geometry &geometry) {
+void DEBMEnhanced::init_impl(const Inputs &inputs) {
   // initialize the dEBM-simple machinery first
-  DEBMSimple::init_impl(geometry);
+  DEBMSimple::init_impl(inputs);
 
   m_log->message(2,
                  "* dEBM-enhanced: the insolation-driven melt uses terrain-shaded surface\n"
@@ -72,7 +72,7 @@ void DEBMEnhanced::init_impl(const Geometry &geometry) {
   // Build the initial horizon map and surface normals. The horizon is recomputed from the
   // (evolving) surface elevation every surface.debm_enhanced.update_interval (see
   // update_insolation_input).
-  m_terrain->update_horizon_map(geometry.ice_surface_elevation);
+  m_terrain->update_horizon_map(inputs.geometry->ice_surface_elevation);
   m_t_last_horizon = m_grid->ctx()->time()->current();
 }
 

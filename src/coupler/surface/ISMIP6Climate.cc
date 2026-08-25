@@ -124,8 +124,7 @@ ISMIP6::ISMIP6(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
   }
 }
 
-void ISMIP6::init_impl(const Geometry &geometry) {
-  (void) geometry;
+void ISMIP6::init_impl(const Inputs &/*inputs*/) {
 
   m_log->message(2, "* Initializing the ISMIP6 surface model...\n");
 
@@ -150,10 +149,10 @@ void ISMIP6::init_impl(const Geometry &geometry) {
   }
 }
 
-void ISMIP6::update_impl(const Geometry &geometry, double t, double dt) {
+void ISMIP6::update_impl(const Inputs &inputs, double t, double dt) {
 
   // inputs
-  const array::Scalar &h       = geometry.ice_surface_elevation;
+  const array::Scalar &h       = inputs.geometry->ice_surface_elevation;
   const array::Scalar &h_ref   = m_surface_reference;
   const array::Scalar &T_ref   = m_temperature_reference;
   const array::Scalar &SMB_ref = m_mass_flux_reference;

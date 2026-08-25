@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2025 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -33,8 +33,8 @@ public:
   ForceThickness(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> input);
   virtual ~ForceThickness() = default;
 protected:
-  void init_impl(const Geometry &geometry);
-  void update_impl(const Geometry &geometry, double t, double dt);
+  void init_impl(const Inputs &inputs);
+  void update_impl(const Inputs &inputs, double t, double dt);
 
   std::set<VariableMetadata> state_impl() const;
   void write_state_impl(const OutputFile &output) const;

@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2025 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -70,10 +70,10 @@ ElevationChange::ElevationChange(std::shared_ptr<const Grid> g, std::shared_ptr<
   m_runoff       = allocate_runoff(g);
 }
 
-void ElevationChange::init_impl(const Geometry &geometry) {
+void ElevationChange::init_impl(const Inputs &inputs) {
   using units::convert;
 
-  m_input_model->init(geometry);
+  m_input_model->init(inputs);
 
   m_log->message(2,
                  "  [using temperature and mass balance lapse corrections]\n");
@@ -97,14 +97,14 @@ void ElevationChange::init_impl(const Geometry &geometry) {
   m_reference_surface->init(opt.filename, opt.periodic);
 }
 
-void ElevationChange::update_impl(const Geometry &geometry, double t, double dt) {
+void ElevationChange::update_impl(const Inputs &inputs, double t, double dt) {
 
-  m_input_model->update(geometry, t, dt);
+  m_input_model->update(inputs, t, dt);
 
   m_reference_surface->update(t, dt);
   m_reference_surface->interp(t + 0.5*dt);
 
-  const array::Scalar &surface = geometry.ice_surface_elevation;
+  const array::Scalar &surface = inputs.geometry->ice_surface_elevation;
 
   m_temperature->copy_from(m_input_model->temperature());
   lapse_rate_correction(surface, *m_reference_surface,
