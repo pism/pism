@@ -435,14 +435,14 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
           DEBMSimpleMelt melt_info{};
           if (not mask::ice_free_ocean(cell_type)) {
 
-            melt_info = m_model.melt(orbital[k].solar_declination,
-                                     orbital[k].distance_factor,
-                                     dtseries,
-                                     S[k],
-                                     T[k],
-                                     surfelev,
-                                     lat,
-                                     (bool)m_input_albedo ? Alb[k] : albedo);
+            melt_info = m_model.melt_from_insolation(orbital[k].solar_declination,
+                                                     lat,
+                                                     E[k],
+                                                     dtseries,
+                                                     S[k],
+                                                     T[k],
+                                                     surfelev,
+                                                     (bool)m_input_albedo ? Alb[k] : albedo);
           }
 
           auto changes = m_model.step(ice_thickness,
