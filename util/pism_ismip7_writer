@@ -27,6 +27,7 @@ import json
 from enum import Enum
 import traceback
 from pyproj import Proj
+import cftime
 
 import mpi4py
 # Disable thread support: this way "from mpi4py import MPI" will call MPI_Init() instead
@@ -907,8 +908,19 @@ def main(compression_level, output_grid=None):
                     for field in fields_in_file:
                         F = get_file(file_name, field)
                         logger.debug(f"writing {F.nc_dataset.filepath()}:time")
+
+                        cal = F.nc_dataset.variables["time"].calendar
+                        units = F.nc_dataset.variables["time"].units
+                        T = metadata["time"]
+                        pism_date = cftime.num2date(T, units, cal)
+                        ismip7_date = pism_date
+                        # if the date is in July, reset it to July 1 to conform to ISMIP7 requirements
+                        if pism_date.month == 7:
+                            ismip7_date = cftime.datetime(pism_date.year, pism_date.month, 1,
+                                                          calendar=cal)
                         # ISMIP7 requirement: time is saved in "days"
-                        F.append_time(metadata["time"] / 86400)
+                        F.append_time(cftime.date2num(ismip7_date, units.replace("seconds", "days"),
+                                                      cal))
 
                     continue
 
