@@ -3558,18 +3558,31 @@ BasalShearStressMagnitude::BasalShearStressMagnitude(const IceModel *m) : Diag<I
 
   m_vars = { { m_sys, ismip ? "strbasemag" : "taub_mag", *m_grid } };
   m_vars[0]
-      .long_name("magnitude of the basal shear stress at the base of ice")
-      .standard_name("land_ice_basal_drag") // ISMIP "standard" name
-      .units("Pa");
-  m_vars[0]["comment"] = "this field is purely diagnostic (not used by the model)";
+    .long_name("magnitude of the basal shear stress at the base of ice")
+    .standard_name("land_ice_basal_drag") // ISMIP "standard" name
+    .units("Pa")
+    .set_string("comment", "this field is purely diagnostic (not used by the model)")
+    .set_number("_FillValue", fill_value());
 }
 
 std::shared_ptr<array::Array> BasalShearStressMagnitude::compute_impl(const Geometry &geometry) const {
   auto result = allocate<array::Scalar>("taub_mag");
+  auto grid = result->grid();
 
   auto taub = array::cast<array::Vector>(BasalShearStress(model).compute(geometry));
 
-  compute_magnitude(*taub, *result);
+  auto fill = fill_value();
+
+  array::AccessScope list{result.get(), taub.get(), &geometry.cell_type};
+  for (auto p : grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    if (geometry.cell_type.icy(i, j)) {
+      (*result)(i, j) = (*taub)(i, j).magnitude();
+    } else {
+      (*result)(i, j) = fill;
+    }
+  }
 
   return result;
 }
