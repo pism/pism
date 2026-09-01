@@ -909,18 +909,27 @@ def main(compression_level, output_grid=None):
                         F = get_file(file_name, field)
                         logger.debug(f"writing {F.nc_dataset.filepath()}:time")
 
-                        cal = F.nc_dataset.variables["time"].calendar
-                        units = F.nc_dataset.variables["time"].units
-                        T = metadata["time"]
-                        pism_date = cftime.num2date(T, units, cal)
-                        ismip7_date = pism_date
-                        # if the date is in July, reset it to July 1 to conform to ISMIP7 requirements
-                        if pism_date.month == 7:
-                            ismip7_date = cftime.datetime(pism_date.year, pism_date.month, 1,
-                                                          calendar=cal)
                         # ISMIP7 requirement: time is saved in "days"
-                        F.append_time(cftime.date2num(ismip7_date, units.replace("seconds", "days"),
-                                                      cal))
+                        T = metadata["time"] / 86400.0
+                        if field not in FL:
+                            # use time from PISM
+                            F.append_time(T)
+                        else:
+                            # "flux" variables: check if this is supposed to by July 1 and
+                            # fix the time value before writing
+
+                            cal = F.nc_dataset.variables["time"].calendar
+                            units = F.nc_dataset.variables["time"].units  # already in days
+
+                            pism_date = cftime.num2date(T, units, cal)
+                            ismip7_date = pism_date
+                            if pism_date.month == 7:
+                                # if the date is in July, reset it to July 1 to conform to
+                                # ISMIP7 requirements
+                                ismip7_date = cftime.datetime(pism_date.year, 7, 1,
+                                                              calendar=cal)
+
+                            F.append_time(cftime.date2num(ismip7_date, units, cal))
 
                     continue
 
