@@ -5135,10 +5135,13 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
     result["litempbotgr"] = f(new TemperatureBasal(this, GROUNDED));
     result["lithk"]       = result["thk"];
     result["orog"]        = result["usurf"];
-    result["strbasemag"]  = result["taub_mag"];
     result["velmean"]     = result["velbar"];
     result["zvelbase"]    = result["wvelbase"];
     result["zvelsurf"]    = result["wvelsurf"];
+
+    if (result.find("taub_mag") != result.cend()) {
+      result["strbasemag"] = result["taub_mag"];
+    }
   }
 
   return result;
