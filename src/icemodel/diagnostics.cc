@@ -4086,12 +4086,14 @@ StressBalanceVelbar::StressBalanceVelbar(const IceModel *m)
       .long_name("vertical mean of horizontal ice velocity in the Y direction")
       .standard_name("land_ice_vertical_mean_y_velocity")
       .units("m s^-1")
-      .output_units("m year^-1");
+      .output_units("m year^-1")
+      .set_number("_FillValue", fill_value());
 }
 
 std::shared_ptr<array::Array> StressBalanceVelbar::compute_impl(const Geometry &geometry) const {
   // get the thickness
-  const array::Scalar& thickness = geometry.ice_thickness;
+  const array::Scalar &thickness   = geometry.ice_thickness;
+  const array::CellType &cell_type = geometry.cell_type;
 
   // Compute the vertically-integrated horizontal ice flux:
   auto result = array::cast<array::Vector>(StressBalanceFlux(model).compute(geometry));
@@ -4100,7 +4102,9 @@ std::shared_ptr<array::Array> StressBalanceVelbar::compute_impl(const Geometry &
   result->metadata(0) = m_vars[0];
   result->metadata(1) = m_vars[1];
 
-  array::AccessScope list{&thickness, result.get()};
+  auto fill = fill_value();
+
+  array::AccessScope list{&thickness, &cell_type, result.get()};
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
@@ -4108,10 +4112,10 @@ std::shared_ptr<array::Array> StressBalanceVelbar::compute_impl(const Geometry &
 
     // Ice flux is masked already, but we need to check for division
     // by zero anyway.
-    if (thk > 0.0) {
+    if (cell_type.icy(i, j)) {
       (*result)(i,j) /= thk;
     } else {
-      (*result)(i,j) = 0.0;
+      (*result)(i,j) = fill;
     }
   }
 
