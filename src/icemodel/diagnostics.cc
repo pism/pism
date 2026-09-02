@@ -914,17 +914,13 @@ public:
         m_kind(flag) {
     assert(flag != BOTH);
 
-    auto ismip = m_config->get_flag("output.ISMIP");
-
-    std::string name, description, standard_name;
+    std::string name, description;
     if (m_kind == GROUNDED) {
-      name          = ismip ? "libmassbfgr" : "basal_mass_flux_grounded";
+      name          = "basal_mass_flux_grounded";
       description   = "average basal mass flux over the reporting interval (grounded areas)";
-      standard_name = ismip ? "land_ice_basal_specific_mass_balance_flux" : "";
     } else {
-      name          = ismip ? "libmassbffl" : "basal_mass_flux_floating";
+      name          = "basal_mass_flux_floating";
       description   = "average basal mass flux over the reporting interval (floating areas)";
-      standard_name = ismip ? "land_ice_basal_specific_mass_balance_flux" : "";
     }
 
     m_accumulator.metadata()["units"] = "kg m^-2";
@@ -932,12 +928,11 @@ public:
     m_vars = { { m_sys, name, *m_grid } };
     m_vars[0]
         .long_name(description)
-        .standard_name(standard_name)
         .units("kg m^-2 s^-1")
-        .output_units("kg m^-2 year^-1");
-    m_vars[0]["cell_methods"] = "time: mean";
-    m_vars[0]["_FillValue"]   = { fill_value() };
-    m_vars[0]["comment"]      = "positive flux corresponds to ice gain";
+        .output_units("kg m^-2 year^-1")
+        .set_string("cell_methods", "time: mean")
+        .set_string("comment", "positive flux corresponds to ice gain")
+        .set_number("_FillValue", fill_value());
   }
 
 protected:
@@ -967,6 +962,54 @@ protected:
     }
 
     m_interval_length += dt;
+  }
+};
+
+/*!
+ * ISMIP7 versions of "basal_mass_flux_grounded" and "basal_mass_flux_floating"
+ */
+class BMBSplitISMIP7 : public BMBSplit {
+public:
+  BMBSplitISMIP7(const IceModel *m, AreaType flag)
+    : BMBSplit(m, flag) {
+    std::string name, standard_name;
+    if (m_kind == GROUNDED) {
+      name          = "libmassbfgr";
+      standard_name = "land_ice_basal_specific_mass_balance_flux";
+    } else {
+      name          = "libmassbffl";
+      standard_name = "land_ice_basal_specific_mass_balance_flux";
+    }
+
+    m_vars[0].set_name(name).standard_name(standard_name);
+  }
+
+private:
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const {
+
+    // compute basal mass balance flux "the PISM way":
+    auto result = array::cast<array::Scalar>(BMBSplit::compute_impl(geometry));
+
+    auto fill = fill_value();
+
+    array::AccessScope list{result.get(), &geometry.cell_type};
+
+    // mask out areas that are not "grounded ice" or not "floating ice" to satisfy ISMIP7
+    // requirements
+    for (auto p : m_grid->points()) {
+      const int i = p.i(), j = p.j();
+
+      if (m_kind == GROUNDED) {
+        if (not geometry.cell_type.grounded_ice(i, j)) {
+          (*result)(i, j) = fill;
+        }
+      } else {                  // m_kind == FLOATING
+        if (not geometry.cell_type.floating_ice(i, j)) {
+          (*result)(i, j) = fill;
+        }
+      }
+    }
+    return result;
   }
 };
 
@@ -5143,8 +5186,8 @@ std::map<std::string, Diagnostic::Ptr> IceModel::allocate_spatial_diagnostics() 
     result["base"]        = result["ice_base_elevation"];
     result["dlithkdt"]    = result["dHdt"];
     result["hfgeoubed"]   = result["heat_flux_from_bedrock"];
-    result["libmassbffl"] = result["basal_mass_flux_floating"];
-    result["libmassbfgr"] = result["basal_mass_flux_grounded"];
+    result["libmassbffl"] = f(new BMBSplitISMIP7(this, SHELF));
+    result["libmassbfgr"] = f(new BMBSplitISMIP7(this, GROUNDED));
     result["licalvf"]     = result["tendency_of_ice_amount_due_to_calving"];
     result["lifmassbf"]   = result["tendency_of_ice_amount_due_to_discharge"];
     result["ligroundf"]   = result["grounding_line_flux"];
