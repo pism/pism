@@ -160,7 +160,7 @@ DiagnosticList DebrisModel::spatial_diagnostics_impl() const {
   using namespace diagnostics;
 
   DiagnosticList result = {
-    {"debris_thickness__snapshot",       Diagnostic::Ptr(new DebrisSnapshot(this))},
+    {"debris_thickness_snapshot",       Diagnostic::Ptr(new DebrisSnapshot(this))},
     {"effective_debris_thickness",      Diagnostic::Ptr(new Debris(this))},
   };
 

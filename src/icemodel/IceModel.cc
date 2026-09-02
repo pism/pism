@@ -33,6 +33,7 @@
 #include "pism/util/Config.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/coupler/SeaLevel.hh"
+#include "pism/coupler/DebrisModel.hh"
 #include "pism/coupler/OceanModel.hh"
 #include "pism/coupler/SurfaceModel.hh"
 #include "pism/earth/BedDef.hh"
@@ -92,6 +93,7 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
   m_surface = nullptr;
   m_ocean   = nullptr;
   m_beddef  = nullptr;
+  m_debris =  nullptr;
 
   m_btu = nullptr;
   m_energy_model = nullptr;

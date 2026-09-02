@@ -20,6 +20,7 @@ add_library (boundary OBJECT
   ./atmosphere/Factory.cc
   ./atmosphere/Uniform.cc
   ./debris/DebrisModel.cc
+  ./debris/Factory.cc
   ./debris/GivenDebris.cc
   ./debris/IceMeltEnhancement.cc
   ./frontalmelt/FrontalMelt.cc

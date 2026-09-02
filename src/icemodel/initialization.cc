@@ -40,9 +40,11 @@
 #include "pism/util/Config.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
+#include "pism/coupler/DebrisModel.hh"
 #include "pism/coupler/OceanModel.hh"
 #include "pism/coupler/SurfaceModel.hh"
 #include "pism/coupler/atmosphere/Factory.hh"
+#include "pism/coupler/debris/Factory.hh"
 #include "pism/coupler/ocean/Factory.hh"
 #include "pism/coupler/ocean/Initialization.hh"
 #include "pism/coupler/ocean/sea_level/Factory.hh"
@@ -282,6 +284,8 @@ void IceModel::model_state_setup(InputOptions input_options) {
     }
   }
 
+  m_debris->init(m_geometry);
+  
   // miscellaneous steps
   {
     reset_counters();
@@ -688,6 +692,17 @@ void IceModel::allocate_couplers() {
     m_submodels["surface process model"] = m_surface.get();
   }
 
+  if (not m_debris) {
+
+    m_log->message(2, "# Allocating a debris process model or coupler...\n");
+
+    using namespace debris;
+
+    m_debris = std::make_shared<InitializationHelper>(m_grid, Factory(m_grid).create());
+
+    m_submodels["debris process model"] = m_debris.get();
+  }
+  
   if (not m_sea_level) {
     m_log->message(2, "# Allocating sea level forcing...\n");
 
