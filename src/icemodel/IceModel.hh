@@ -195,6 +195,7 @@ protected:
   virtual void model_state_setup(InputOptions input_options);
   virtual void misc_setup(InputOptions input_options, DiagnosticReport report_type);
   virtual void init_calving();
+  virtual void init_debris();
   virtual void init_frontal_melt();
   virtual void init_front_retreat();
   virtual void update_diagnostics(double t, double dt);

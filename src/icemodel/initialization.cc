@@ -284,7 +284,6 @@ void IceModel::model_state_setup(InputOptions input_options) {
     }
   }
 
-  m_debris->init(m_geometry);
   
   // miscellaneous steps
   {
@@ -691,17 +690,6 @@ void IceModel::allocate_couplers() {
 
     m_submodels["surface process model"] = m_surface.get();
   }
-
-  if (not m_debris) {
-
-    m_log->message(2, "# Allocating a debris process model or coupler...\n");
-
-    using namespace debris;
-
-    m_debris = std::make_shared<InitializationHelper>(m_grid, Factory(m_grid).create());
-
-    m_submodels["debris process model"] = m_debris.get();
-  }
   
   if (not m_sea_level) {
     m_log->message(2, "# Allocating sea level forcing...\n");
@@ -779,6 +767,7 @@ void IceModel::misc_setup(InputOptions input_options, DiagnosticReport report_ty
   init_calving();
   init_frontal_melt();
   init_front_retreat();
+  init_debris();
 
   // initialize outputs
   init_outputs(input_options, report_type);
@@ -839,6 +828,20 @@ void IceModel::init_frontal_melt() {
     if (not m_front_retreat) {
       m_front_retreat = std::make_shared<FrontRetreat>(m_grid);
     }
+  }
+}
+
+void IceModel::init_debris() {
+
+  auto debris_model = m_config->get_string("debris.models");
+
+  if (not debris_model.empty()) {
+
+    m_debris = debris::Factory(m_grid).create(debris_model);
+
+    m_debris->init(m_geometry);
+
+    m_submodels["debris model"] = m_debris.get();
   }
 }
 

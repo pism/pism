@@ -801,11 +801,10 @@ netcdf pism_config {
     pism_config:debris.ice_melt_enhancement.periodic_doc = "If true, interpret forcing data as periodic in time";
     pism_config:debris.ice_melt_enhancement.periodic_type = "flag";
 
-    pism_config:debris.model = "none";
-    pism_config:debris.model_choices = "none,given";
-    pism_config:debris.model_doc = "Choose the debris model. ``none``: no supraglacial debris. ``given``: read the debris thickness from ``debris.given.file``.";
-    pism_config:debris.model_option = "debris";
-    pism_config:debris.model_type = "keyword";
+    pism_config:debris.models = "";
+    pism_config:debris.models_doc = "Comma-separated list of supraglacial debris models and modifiers. ``given``: read the debris thickness from ``debris.given.file``. (Leave empty to disable.)";
+    pism_config:debris.models_option = "debris";
+    pism_config:debris.models_type = "string";
 
     pism_config:energy.allow_temperature_above_melting = "no";
     pism_config:energy.allow_temperature_above_melting_doc = "If set to \"yes\", allow temperatures above the pressure-malting point in the cold mode temperature code. Used by some verifiaction tests.";
