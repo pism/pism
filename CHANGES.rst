@@ -5,6 +5,12 @@ Changes since v2.3.0
 
 - Add a supraglacial debris coupler (`debris::DebrisModel`). Select it with
   `debris.model`: `none`, or `given` to read `debris_thickness` from `debris.given.file`.
+- Add `debris::IceMeltEnhancement`, supplying the factor multiplying the clean-ice melt
+  rate over a supraglacial debris cover. Select it with
+  `debris.ice_melt_enhancement.model`: `none` (the factor is 1 everywhere), `given` (read
+  `debris_melt_factor` from `debris.ice_melt_enhancement.file`), or `verhaegen` (apply
+  equation (14) of :cite:`VerhaegenHuybrechts2026` to the debris thickness supplied by the
+  debris model). The factor is reported as the `ice_melt_enhancement` diagnostic.
 - Re-run SWIG when a wrapped C++ header changes (`USE_SWIG_DEPENDENCIES`). Previously the
   generated Python bindings depended on the `.i` files only, so header edits could leave a
   stale `PISM.cpp` module in the build tree (e.g. Blatter-based classes wrapped as abstract,

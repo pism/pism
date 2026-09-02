@@ -21,6 +21,7 @@ add_library (boundary OBJECT
   ./atmosphere/Uniform.cc
   ./debris/DebrisModel.cc
   ./debris/GivenDebris.cc
+  ./debris/IceMeltEnhancement.cc
   ./frontalmelt/FrontalMelt.cc
   ./frontalmelt/Constant.cc
   ./frontalmelt/DischargeGiven.cc

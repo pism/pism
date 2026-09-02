@@ -409,6 +409,8 @@ pism_class(pism::ScalarForcing, "pism/util/ScalarForcing.hh")
 
 %include pism_frontalmelt.i
 
+%include pism_debris.i
+
 /* surface models use atmosphere models as inputs so we need to define atmosphere models first */
 %include pism_atmosphere.i
 

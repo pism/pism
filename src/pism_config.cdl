@@ -786,6 +786,21 @@ netcdf pism_config {
     pism_config:debris.given.periodic_doc = "If true, interpret forcing data as periodic in time";
     pism_config:debris.given.periodic_type = "flag";
 
+    pism_config:debris.ice_melt_enhancement.file = "";
+    pism_config:debris.ice_melt_enhancement.file_doc = "Name of the file containing the ``debris_melt_factor`` field.";
+    pism_config:debris.ice_melt_enhancement.file_option = "debris_ice_melt_enhancement_file";
+    pism_config:debris.ice_melt_enhancement.file_type = "string";
+
+    pism_config:debris.ice_melt_enhancement.model = "none";
+    pism_config:debris.ice_melt_enhancement.model_choices = "none,given,verhaegen";
+    pism_config:debris.ice_melt_enhancement.model_doc = "Choose the ice melt enhancement model. ``none``: debris melt enhancement is off (the factor is 1 everywhere). ``given``: read the factor from the ``debris_melt_factor`` variable in ``debris.ice_melt_enhancement.file``. ``verhaegen``: compute the factor from the debris thickness provided by the debris model using equation (14) of :cite:`VerhaegenHuybrechts2026`.";
+    pism_config:debris.ice_melt_enhancement.model_option = "debris_melt_enhancement";
+    pism_config:debris.ice_melt_enhancement.model_type = "keyword";
+
+    pism_config:debris.ice_melt_enhancement.periodic = "no";
+    pism_config:debris.ice_melt_enhancement.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:debris.ice_melt_enhancement.periodic_type = "flag";
+
     pism_config:debris.model = "none";
     pism_config:debris.model_choices = "none,given";
     pism_config:debris.model_doc = "Choose the debris model. ``none``: no supraglacial debris. ``given``: read the debris thickness from ``debris.given.file``.";
