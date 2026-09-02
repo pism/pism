@@ -1,4 +1,4 @@
-# Boundary models (surface, atmosphere, ocean, frontalmelt).
+# Boundary models (surface, atmosphere, ocean, frontalmelt, debris).
 add_library (boundary OBJECT
   ./util/options.cc
   ./util/lapse_rates.cc
@@ -19,6 +19,8 @@ add_library (boundary OBJECT
   ./atmosphere/OrographicPrecipitationSerial.cc
   ./atmosphere/Factory.cc
   ./atmosphere/Uniform.cc
+  ./debris/DebrisModel.cc
+  ./debris/GivenDebris.cc
   ./frontalmelt/FrontalMelt.cc
   ./frontalmelt/Constant.cc
   ./frontalmelt/DischargeGiven.cc

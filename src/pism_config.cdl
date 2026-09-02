@@ -777,6 +777,21 @@ netcdf pism_config {
     pism_config:constants.standard_gravity_type = "number";
     pism_config:constants.standard_gravity_units = "meter second^-2";
 
+    pism_config:debris.given.file = "";
+    pism_config:debris.given.file_doc = "Name of the file containing the debris thickness field.";
+    pism_config:debris.given.file_option = "debris_given_file";
+    pism_config:debris.given.file_type = "string";
+
+    pism_config:debris.given.periodic = "no";
+    pism_config:debris.given.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:debris.given.periodic_type = "flag";
+
+    pism_config:debris.model = "none";
+    pism_config:debris.model_choices = "none,given";
+    pism_config:debris.model_doc = "Choose the debris model. ``none``: no supraglacial debris. ``given``: read the debris thickness from ``debris.given.file``.";
+    pism_config:debris.model_option = "debris";
+    pism_config:debris.model_type = "keyword";
+
     pism_config:energy.allow_temperature_above_melting = "no";
     pism_config:energy.allow_temperature_above_melting_doc = "If set to \"yes\", allow temperatures above the pressure-malting point in the cold mode temperature code. Used by some verifiaction tests.";
     pism_config:energy.allow_temperature_above_melting_type = "flag";
