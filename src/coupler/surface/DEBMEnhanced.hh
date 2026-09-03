@@ -79,9 +79,6 @@ private:
   //! daily surface insolation energy (J m-2) computed for the current update
   std::shared_ptr<array::Scalar> m_computed_insolation;
 
-  //! per-cell latitude (degrees north), cached from the geometry at initialization
-  const array::Scalar *m_latitude;
-
   //! ice surface elevation, cached from the geometry at initialization (the horizon is
   //! recomputed from this evolving field every m_update_interval)
   const array::Scalar *m_surface_elevation;
