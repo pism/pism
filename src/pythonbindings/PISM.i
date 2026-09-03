@@ -308,10 +308,12 @@ pism_class(pism::Time, "pism/util/Time.hh")
 %shared_ptr(pism::RegionalGeometryEvolution)
 %include "geometry/GeometryEvolution.hh"
 
-#if (Pism_DEBUG==1)
 pism_class(pism::MPDATA2, "pism/geometry/MPDATA2.hh")
 pism_class(pism::UNO, "pism/geometry/UNO.hh")
-#endif
+%shared_ptr(pism::TransportScheme2D)
+%shared_ptr(pism::TransportScheme3D)
+%include "geometry/TransportScheme.hh"
+pism_class(pism::MPDATA3, "pism/geometry/MPDATA3.hh")
 
 %include "basalstrength/basal_resistance.hh"
 

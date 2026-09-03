@@ -59,6 +59,10 @@ add_library (libpism
   energy/utilities.cc
   geometry/Geometry.cc
   geometry/GeometryEvolution.cc
+  geometry/MPDATA2.cc
+  geometry/MPDATA3.cc
+  geometry/TransportScheme2D.cc
+  geometry/UNO.cc
   geometry/grounded_cell_fraction.cc
   geometry/flux_limiter.cc
   geometry/part_grid_threshold_thickness.cc
@@ -112,14 +116,6 @@ target_link_libraries (libpism
 )
 
 add_dependencies (libpism pism_config)
-
-if (Pism_DEBUG)
-  target_sources(libpism
-    PRIVATE
-    geometry/MPDATA2.cc
-    geometry/UNO.cc
-  )
-endif()
 
 if (Pism_USE_PROJ)
   target_link_libraries(libpism PkgConfig::PROJ)

@@ -20,6 +20,7 @@
 #include <cmath>
 
 #include "pism/geometry/MPDATA2.hh"
+#include "pism/geometry/mpdata_helpers.hh"
 
 #include "pism/util/array/CellType.hh"
 
@@ -37,15 +38,8 @@
 namespace pism {
 
 namespace fct {
-// positive part
-static double pp(double x) {
-  return std::max(x, 0.0);
-}
-
-// negative part
-static double np(double x) {
-  return std::min(x, 0.0);
-}
+using mpdata::np;
+using mpdata::pp;
 
 static double maximum(const stencils::Star<double> &psi) {
   using std::max;
