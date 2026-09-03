@@ -23,6 +23,14 @@ add_library (boundary OBJECT
   ./debris/Factory.cc
   ./debris/GivenDebris.cc
   ./debris/IceMeltEnhancement.cc
+  ./debris/column_kernels.cc
+  ./debris/terminus_kernels.cc
+  ./debris/DebrisInput.cc
+  ./debris/EnglacialTransport.cc
+  ./debris/SupraglacialTransport.cc
+  ./debris/GravitationalTransport.cc
+  ./debris/TerminusRemoval.cc
+  ./debris/DebrisTransport.cc
   ./frontalmelt/FrontalMelt.cc
   ./frontalmelt/Constant.cc
   ./frontalmelt/DischargeGiven.cc
@@ -77,3 +85,5 @@ add_library (boundary OBJECT
   ./surface/DEBMSimple.cc
   ./surface/DEBMSimplePointwise.cc
   )
+
+add_subdirectory (debris/tests)

@@ -65,6 +65,7 @@ class SeaLevel;
 
 namespace debris {
 class DebrisModel;
+class IceMeltEnhancement;
 }
 
 namespace surface {
@@ -334,6 +335,7 @@ protected:
   std::shared_ptr<FrontRetreat> m_front_retreat;
 
   std::shared_ptr<debris::DebrisModel>      m_debris;
+  std::shared_ptr<debris::IceMeltEnhancement> m_debris_melt_enhancement;
   std::shared_ptr<surface::SurfaceModel>      m_surface;
   std::shared_ptr<ocean::OceanModel>          m_ocean;
   std::shared_ptr<frontalmelt::FrontalMelt>   m_frontal_melt;

@@ -51,8 +51,9 @@ public:
   };
 
   /*!
-   * `debris_model` is required by (and used only by) the "verhaegen" model,
-   * which takes ownership of it: init() and update() are forwarded to it.
+   * `debris_model` is required by (and used only by) the "verhaegen" model. It is *not*
+   * initialized or updated here: its owner (e.g. IceModel) does that, and this component
+   * computes the factor from its current debris thickness.
    */
   IceMeltEnhancement(std::shared_ptr<const Grid> grid);
   IceMeltEnhancement(std::shared_ptr<const Grid> grid,

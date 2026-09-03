@@ -66,12 +66,14 @@ void Given::init_impl(const Geometry &geometry) {
 
   // read time-independent data right away:
   if (m_debris_thickness->buffer_size() == 1) {
-    update(geometry, time().current(), 0); // dt is irrelevant
+    Inputs inputs;
+    inputs.geometry = &geometry;
+    update(inputs, time().current(), 0); // dt is irrelevant
   }
 }
 
-void Given::update_impl(const Geometry &geometry, double t, double dt) {
-  (void) geometry;
+void Given::update_impl(const Inputs &inputs, double t, double dt) {
+  (void) inputs;
 
   m_debris_thickness->update(t, dt);
 

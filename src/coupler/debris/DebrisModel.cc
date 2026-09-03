@@ -54,8 +54,47 @@ void DebrisModel::init(const Geometry &geometry) {
   this->init_impl(geometry);
 }
 
-void DebrisModel::update(const Geometry &geometry, double t, double dt) {
-  this->update_impl(geometry, t, dt);
+Inputs::Inputs()
+  : geometry(nullptr),
+    u3(nullptr), v3(nullptr), w3(nullptr),
+    top_surface_mass_balance(nullptr),
+    bottom_surface_mass_balance(nullptr),
+    no_model_mask(nullptr) {
+  // empty
+}
+
+void Inputs::check() const {
+  if (geometry == nullptr) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "debris::Inputs: geometry is not set");
+  }
+}
+
+void Inputs::check_transport() const {
+  check();
+
+  const char *missing = nullptr;
+  if (u3 == nullptr) {
+    missing = "u3";
+  } else if (v3 == nullptr) {
+    missing = "v3";
+  } else if (w3 == nullptr) {
+    missing = "w3";
+  } else if (top_surface_mass_balance == nullptr) {
+    missing = "top_surface_mass_balance";
+  } else if (bottom_surface_mass_balance == nullptr) {
+    missing = "bottom_surface_mass_balance";
+  }
+
+  if (missing != nullptr) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "debris::Inputs: '%s' is required by the debris transport model"
+                                  " but is not set", missing);
+  }
+}
+
+void DebrisModel::update(const Inputs &inputs, double t, double dt) {
+  inputs.check();
+  this->update_impl(inputs, t, dt);
 }
 
 const array::Scalar& DebrisModel::debris() const {
@@ -143,9 +182,9 @@ protected:
 
 } // end of namespace diagnostics
 
-void DebrisModel::update_impl(const Geometry &geometry, double t, double dt) {
+void DebrisModel::update_impl(const Inputs &inputs, double t, double dt) {
   if (m_input_model) {
-    m_input_model->update_impl(geometry, t, dt);
+    m_input_model->update(inputs, t, dt);
   }
 }
 

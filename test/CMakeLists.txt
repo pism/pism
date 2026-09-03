@@ -18,6 +18,10 @@ add_test(NAME "Config:parameters_are_sorted"
 set_tests_properties("Config:parameters_are_sorted" PROPERTIES
   FIXTURES_REQUIRED config)
 
+# PETSc- and MPI-free unit tests of the debris column and terminus kernels
+add_test(NAME "debris:kernels"
+  COMMAND pism_test_debris_kernels)
+
 if (Pism_BUILD_PYTHON_BINDINGS)
   macro(pism_add_unittest name executable)
     string(CONCAT test_name "Python:unittest:" ${name})
@@ -44,6 +48,9 @@ if (Pism_BUILD_PYTHON_BINDINGS)
   pism_add_unittest("debris" regression/debris_models.py)
   pism_add_unittest("Verification:debris:transport_2d" debris_transport_2d.py)
   pism_add_unittest("Verification:debris:transport_3d" debris_transport_3d.py)
+  pism_add_unittest("Verification:debris:englacial" debris_englacial.py)
+  pism_add_unittest("Verification:debris:gravity" debris_gravity.py)
+  pism_add_unittest("debris:terminus" debris_terminus.py)
   pism_add_unittest("iceberg_remover" regression/iceberg_remover.py)
   pism_add_unittest("Verification:blatter" blatter_verification.py)
   pism_add_unittest("grounded_cell_fraction" grounded_cell_fraction.py)

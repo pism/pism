@@ -3,8 +3,26 @@
 Changes since v2.3.0
 ====================
 
-- Add a supraglacial debris coupler (`debris::DebrisModel`). Select it with
-  `debris.model`: `none`, or `given` to read `debris_thickness` from `debris.given.file`.
+- Add the prognostic debris transport model `debris::DebrisTransport` (`-debris transport`)
+  of Verhaegen and Huybrechts (2026): burial of debris in the accumulation zone, 3D
+  englacial advection, melt-out, advection by the surface velocity, gravitational
+  redistribution, and removal at the glacier margin. Configured with `debris.transport.*`;
+  the debris input rate is read from `debris.transport.input.file`. The state
+  (`debris_thickness`, `englacial_debris_concentration`) is saved and restored on restart;
+  the mass budget is available as scalar time series (`total_debris_mass`,
+  `debris_input_mass_flux`, `debris_output_mass_flux`, `debris_mass_conservation_error`,
+  ...). See `examples/debris/` and `doc/sphinx/climate_forcing/debris.rst`.
+- Add the advection scheme interfaces `TransportScheme2D` (first-order upwinding, MPDATA,
+  UNO2, UNO3) and `TransportScheme3D` (first-order upwinding, MPDATA) and the
+  three-dimensional MPDATA implementation `MPDATA3`. `MPDATA2` and `UNO` are now built in
+  all configurations (previously only with `Pism_DEBUG`).
+- Debris models take a `debris::Inputs` structure (geometry, 3D velocity, applied surface
+  mass balance) in `update()`; `IceModel` updates the debris model after the mass fluxes
+  are applied and creates the melt enhancement component alongside it, so
+  `ice_melt_enhancement` is available as a diagnostic in runs with `-debris`.
+- Add a supraglacial debris coupler (`debris::DebrisModel`). Select models with the
+  comma-separated `debris.models` (`-debris`); `given` reads `debris_thickness` from
+  `debris.given.file`.
 - Add `debris::IceMeltEnhancement`, supplying the factor multiplying the clean-ice melt
   rate over a supraglacial debris cover. Select it with
   `debris.ice_melt_enhancement.model`: `none` (the factor is 1 everywhere), `given` (read

@@ -45,6 +45,7 @@
 #include "pism/coupler/SurfaceModel.hh"
 #include "pism/coupler/atmosphere/Factory.hh"
 #include "pism/coupler/debris/Factory.hh"
+#include "pism/coupler/debris/IceMeltEnhancement.hh"
 #include "pism/coupler/ocean/Factory.hh"
 #include "pism/coupler/ocean/Initialization.hh"
 #include "pism/coupler/ocean/sea_level/Factory.hh"
@@ -841,7 +842,16 @@ void IceModel::init_debris() {
 
     m_debris->init(m_geometry);
 
+    m_grid->variables().add(m_debris->debris());
+
     m_submodels["debris model"] = m_debris.get();
+
+    // The effect of the debris cover on melt (not yet used by the surface models, but
+    // available as the diagnostic 'ice_melt_enhancement').
+    m_debris_melt_enhancement = std::make_shared<debris::IceMeltEnhancement>(m_grid, m_debris);
+    m_debris_melt_enhancement->init(m_geometry);
+
+    m_submodels["debris melt enhancement"] = m_debris_melt_enhancement.get();
   }
 }
 

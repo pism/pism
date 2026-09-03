@@ -34,6 +34,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/coupler/SeaLevel.hh"
 #include "pism/coupler/DebrisModel.hh"
+#include "pism/coupler/debris/IceMeltEnhancement.hh"
 #include "pism/coupler/OceanModel.hh"
 #include "pism/coupler/SurfaceModel.hh"
 #include "pism/earth/BedDef.hh"
@@ -671,6 +672,25 @@ double IceModel::step(bool do_mass_continuity,
                          m_geometry.ice_thickness,
                          m_geometry_evolution->top_surface_mass_balance(),
                          m_geometry_evolution->bottom_surface_mass_balance());
+  }
+
+  //! \li update the debris model. Like the age model, it uses the 3D velocity computed the
+  //! last time the stress balance was updated "at depth".
+  if (m_debris) {
+    profiling.begin("debris");
+    debris::Inputs inputs;
+    inputs.geometry                    = &m_geometry;
+    inputs.u3                          = &m_stress_balance.modifier->velocity_u();
+    inputs.v3                          = &m_stress_balance.modifier->velocity_v();
+    inputs.w3                          = &m_vertical_velocity;
+    inputs.top_surface_mass_balance    = &m_geometry_evolution->top_surface_mass_balance();
+    inputs.bottom_surface_mass_balance = &m_geometry_evolution->bottom_surface_mass_balance();
+    inputs.no_model_mask               = nullptr;
+    m_debris->update(inputs, current_time, dt);
+    if (m_debris_melt_enhancement) {
+      m_debris_melt_enhancement->update(m_geometry, current_time, dt);
+    }
+    profiling.end("debris");
   }
 
   //! \li update the state variables in the subglacial hydrology model (typically

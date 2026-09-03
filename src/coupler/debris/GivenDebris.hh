@@ -30,7 +30,7 @@ public:
   virtual ~Given() = default;
 protected:
   void init_impl(const Geometry &geometry);
-  void update_impl(const Geometry &geometry, double t, double dt);
+  void update_impl(const Inputs &inputs, double t, double dt);
 
   const array::Scalar &debris_impl() const;
 

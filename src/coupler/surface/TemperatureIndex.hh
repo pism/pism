@@ -23,7 +23,6 @@
 
 #include "pism/coupler/SurfaceModel.hh"
 #include "pism/coupler/surface/localMassBalance.hh"
-#include "pism/coupler/DebrisModel.hh"
 
 namespace pism {
 namespace surface {

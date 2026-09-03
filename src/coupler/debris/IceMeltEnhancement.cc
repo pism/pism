@@ -139,8 +139,8 @@ void IceMeltEnhancement::init(const Geometry &geometry) {
                    "* Initializing the debris ice melt enhancement model using\n"
                    "  equation (14) of Verhaegen and Huybrechts (2026)...\n");
 
-    m_debris_model->init(geometry);
-    // the debris thickness may be time-independent, so compute the factor right away:
+    // The owner of the debris model initializes and updates it; compute the factor from
+    // its current state.
     update(geometry, time().current(), 0);
     break;
   }
@@ -160,7 +160,7 @@ void IceMeltEnhancement::update(const Geometry &geometry, double t, double dt) {
     break;
   case VERHAEGEN:
     {
-      m_debris_model->update(geometry, t, dt);
+      (void) geometry;
 
       const array::Scalar &debris_thickness = m_debris_model->debris();
 
@@ -231,9 +231,9 @@ MaxTimestep IceMeltEnhancement::max_timestep_impl(double t, const CFLData *cfl_d
   case GIVEN:
     return m_melt_factor->max_timestep(t);
   case VERHAEGEN:
-    return m_debris_model->max_timestep(t, cfl_data);
   case NONE:
   default:
+    (void) cfl_data;
     return MaxTimestep("debris ice melt enhancement");
   }
 }
@@ -268,10 +268,6 @@ DiagnosticList IceMeltEnhancement::spatial_diagnostics_impl() const {
   DiagnosticList result = {
     { "ice_melt_enhancement", Diagnostic::Ptr(new MeltEnhancement(this)) },
   };
-
-  if (m_debris_model) {
-    result = combine(result, m_debris_model->spatial_diagnostics());
-  }
 
   return result;
 }

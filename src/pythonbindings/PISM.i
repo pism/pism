@@ -411,6 +411,9 @@ pism_class(pism::ScalarForcing, "pism/util/ScalarForcing.hh")
 
 %include pism_frontalmelt.i
 
+%shared_ptr(pism::PCFactory<pism::debris::DebrisModel>)
+%template(_DebrisFactoryBase) pism::PCFactory<pism::debris::DebrisModel>;
+
 %include pism_debris.i
 
 /* surface models use atmosphere models as inputs so we need to define atmosphere models first */

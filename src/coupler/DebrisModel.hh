@@ -25,9 +25,41 @@
 
 namespace pism {
 
-//! @brief Debris models and modifiers: provide precipitation and
-//! temperature to a surface::SurfaceModel below
+//! @brief Supraglacial debris models and modifiers: provide the debris thickness
+//! (and, through debris::IceMeltEnhancement, its effect on melt).
 namespace debris {
+
+//! Inputs of a debris model.
+/*!
+  Only `geometry` is required by every model; the prognostic transport model also needs
+  the 3D velocity field and the surface mass balance applied during the current step.
+*/
+struct Inputs {
+  Inputs();
+
+  const Geometry *geometry;
+
+  //! horizontal velocity components on the vertical grid (ghosted)
+  const array::Array3D *u3;
+  const array::Array3D *v3;
+  //! vertical velocity relative to the bed
+  const array::Array3D *w3;
+
+  //! ice thickness change due to the surface mass balance during this step (m ice, positive
+  //! = gain), as applied by GeometryEvolution
+  const array::Scalar *top_surface_mass_balance;
+  //! ice thickness change due to the basal mass balance during this step (m ice)
+  const array::Scalar *bottom_surface_mass_balance;
+
+  //! may be null
+  const array::Scalar1 *no_model_mask;
+
+  //! Throw if `geometry` is missing.
+  void check() const;
+  //! Throw if any of the fields needed by a transport model is missing.
+  void check_transport() const;
+};
+
 //! A purely virtual class defining the interface of a PISM Debris Model.
 class DebrisModel : public Component {
 public:
@@ -37,7 +69,7 @@ public:
 
   void init(const Geometry &geometry);
 
-  void update(const Geometry &geometry, double t, double dt);
+  void update(const Inputs &inputs, double t, double dt);
 
   //! @brief Sets result to the mean debris, in "m".
   const array::Scalar& debris() const;
@@ -54,7 +86,7 @@ public:
 
 protected:
   virtual void init_impl(const Geometry &geometry) = 0;
-  virtual void update_impl(const Geometry &geometry, double t, double dt) = 0;
+  virtual void update_impl(const Inputs &inputs, double t, double dt) = 0;
 
   virtual std::set<VariableMetadata> state_impl() const;
 

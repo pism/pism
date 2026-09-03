@@ -802,9 +802,80 @@ netcdf pism_config {
     pism_config:debris.ice_melt_enhancement.periodic_type = "flag";
 
     pism_config:debris.models = "";
-    pism_config:debris.models_doc = "Comma-separated list of supraglacial debris models and modifiers. ``given``: read the debris thickness from ``debris.given.file``. (Leave empty to disable.)";
+    pism_config:debris.models_doc = "Comma-separated list of supraglacial debris models and modifiers. ``given``: read the debris thickness from ``debris.given.file``. ``transport``: prognostic englacial and supraglacial debris transport :cite:`VerhaegenHuybrechts2026`. (Leave empty to disable.)";
     pism_config:debris.models_option = "debris";
     pism_config:debris.models_type = "string";
+
+    pism_config:debris.transport.cover_fraction_coefficient = 20.0;
+    pism_config:debris.transport.cover_fraction_coefficient_doc = "Coefficient :math:`C` in the debris-covered area fraction :math:`1 - \\exp(-C h_d)` (Reid and Brock, 2010).";
+    pism_config:debris.transport.cover_fraction_coefficient_type = "number";
+    pism_config:debris.transport.cover_fraction_coefficient_units = "m-1";
+
+    pism_config:debris.transport.density = 2650.0;
+    pism_config:debris.transport.density_doc = "Density of the debris (rock) material.";
+    pism_config:debris.transport.density_type = "number";
+    pism_config:debris.transport.density_units = "kg m-3";
+
+    pism_config:debris.transport.diffusion_cfl_ratio = 0.25;
+    pism_config:debris.transport.diffusion_cfl_ratio_doc = "Fraction of the explicit stability limit used for sub-steps of the gravitational (diffusive) transport of supraglacial debris.";
+    pism_config:debris.transport.diffusion_cfl_ratio_type = "number";
+    pism_config:debris.transport.diffusion_cfl_ratio_units = "1";
+
+    pism_config:debris.transport.englacial.scheme = "mpdata";
+    pism_config:debris.transport.englacial.scheme_choices = "upwind,mpdata";
+    pism_config:debris.transport.englacial.scheme_doc = "Advection scheme used for englacial debris. ``upwind``: first-order upwinding. ``mpdata``: MPDATA (Smolarkiewicz, 1983) with ``debris.transport.mpdata.iterations`` passes.";
+    pism_config:debris.transport.englacial.scheme_type = "keyword";
+
+    pism_config:debris.transport.gravitational_transport = "yes";
+    pism_config:debris.transport.gravitational_transport_doc = "If set, supraglacial debris moves down the slope of the debris surface (equations 21 and 22 in :cite:`VerhaegenHuybrechts2026`).";
+    pism_config:debris.transport.gravitational_transport_type = "flag";
+
+    pism_config:debris.transport.input.file = "";
+    pism_config:debris.transport.input.file_doc = "Name of the file containing the debris input rate ``debris_input_rate`` (thickness of solid debris per unit time).";
+    pism_config:debris.transport.input.file_option = "debris_input_file";
+    pism_config:debris.transport.input.file_type = "string";
+
+    pism_config:debris.transport.input.periodic = "no";
+    pism_config:debris.transport.input.periodic_doc = "If true, interpret the debris input rate as periodic in time";
+    pism_config:debris.transport.input.periodic_type = "flag";
+
+    pism_config:debris.transport.marginal_length_scale = 25.0;
+    pism_config:debris.transport.marginal_length_scale_doc = "Length scale :math:`\\Gamma` converting the gravitational debris flux at the glacier margin into a debris thickness loss rate (equation 23 in :cite:`VerhaegenHuybrechts2026`). If larger than the grid spacing, the debris thickness and surface slope are averaged over :math:`\\lceil \\Gamma / \\Delta x \\rceil - 1` cells up-glacier of the margin (at most 2).";
+    pism_config:debris.transport.marginal_length_scale_type = "number";
+    pism_config:debris.transport.marginal_length_scale_units = "m";
+
+    pism_config:debris.transport.mobility = 1e-4;
+    pism_config:debris.transport.mobility_doc = "Efficiency :math:`\\mu_d` of the gravitational transport of supraglacial debris (equation 22 in :cite:`VerhaegenHuybrechts2026`).";
+    pism_config:debris.transport.mobility_type = "number";
+    pism_config:debris.transport.mobility_units = "Pa-1 m2 year-1";
+
+    pism_config:debris.transport.mpdata.iterations = 2;
+    pism_config:debris.transport.mpdata.iterations_doc = "Number of MPDATA passes (1 is first-order upwinding; each further pass applies an anti-diffusive correction).";
+    pism_config:debris.transport.mpdata.iterations_type = "integer";
+    pism_config:debris.transport.mpdata.iterations_units = "count";
+
+    pism_config:debris.transport.mpdata.nonoscillatory = "yes";
+    pism_config:debris.transport.mpdata.nonoscillatory_doc = "If set, use the flux-corrected-transport limiter (Smolarkiewicz and Grabowski, 1990) in the anti-diffusive MPDATA passes.";
+    pism_config:debris.transport.mpdata.nonoscillatory_type = "flag";
+
+    pism_config:debris.transport.porosity = 0.3;
+    pism_config:debris.transport.porosity_doc = "Porosity of the supraglacial debris cover.";
+    pism_config:debris.transport.porosity_type = "number";
+    pism_config:debris.transport.porosity_units = "1";
+
+    pism_config:debris.transport.supraglacial.scheme = "mpdata";
+    pism_config:debris.transport.supraglacial.scheme_choices = "upwind,mpdata,uno2,uno3";
+    pism_config:debris.transport.supraglacial.scheme_doc = "Advection scheme used for supraglacial debris. ``upwind``: first-order upwinding. ``mpdata``: MPDATA (Smolarkiewicz, 1983). ``uno2``, ``uno3``: upstream non-oscillatory schemes (Li, 2008).";
+    pism_config:debris.transport.supraglacial.scheme_type = "keyword";
+
+    pism_config:debris.transport.terminus_removal = "yes";
+    pism_config:debris.transport.terminus_removal_doc = "If set, supraglacial debris is removed from glacier-margin cells that slope into the ice-free foreland (equation 23 in :cite:`VerhaegenHuybrechts2026`).";
+    pism_config:debris.transport.terminus_removal_type = "flag";
+
+    pism_config:debris.transport.vertical_cfl_ratio = 0.5;
+    pism_config:debris.transport.vertical_cfl_ratio_doc = "Fraction of the explicit vertical CFL limit (smallest vertical grid spacing divided by the largest vertical velocity) the debris transport model allows as the time step.";
+    pism_config:debris.transport.vertical_cfl_ratio_type = "number";
+    pism_config:debris.transport.vertical_cfl_ratio_units = "1";
 
     pism_config:energy.allow_temperature_above_melting = "no";
     pism_config:energy.allow_temperature_above_melting_doc = "If set to \"yes\", allow temperatures above the pressure-malting point in the cold mode temperature code. Used by some verifiaction tests.";

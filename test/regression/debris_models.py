@@ -44,6 +44,13 @@ def create_grid():
     return PISM.Grid(ctx.ctx, params)
 
 
+def create_inputs(geometry):
+    "Inputs of a debris model that needs the geometry only."
+    inputs = PISM.DebrisInputs()
+    inputs.geometry = geometry
+    return inputs
+
+
 def create_geometry(grid):
     geometry = PISM.Geometry(grid)
 
@@ -153,6 +160,9 @@ class IceMeltEnhancement(TestCase):
         config.set_string("debris.ice_melt_enhancement.model", "verhaegen")
 
         debris = PISM.DebrisGiven(self.grid)
+        debris.init(self.geometry)
+        debris.update(create_inputs(self.geometry), 0, 1)
+
         model = PISM.IceMeltEnhancement(self.grid, debris)
         model.init(self.geometry)
         model.update(self.geometry, 0, 1)
@@ -161,6 +171,28 @@ class IceMeltEnhancement(TestCase):
         numpy.testing.assert_almost_equal(
             sample(model.ice_melt_enhancement()),
             PISM.IceMeltEnhancement.verhaegen_melt_factor(self.thickness))
+
+    def test_given_debris_model(self):
+        "Model DebrisGiven: read 'debris_thickness' from a file and update it directly"
+
+        debris = PISM.DebrisGiven(self.grid)
+        debris.init(self.geometry)
+        debris.update(create_inputs(self.geometry), 0, 1)
+
+        numpy.testing.assert_almost_equal(sample(debris.debris()), self.thickness)
+
+    def test_inputs_check(self):
+        "DebrisInputs.check() requires the geometry"
+
+        debris = PISM.DebrisGiven(self.grid)
+        debris.init(self.geometry)
+
+        with self.assertRaises(RuntimeError):
+            debris.update(PISM.DebrisInputs(), 0, 1)
+
+        inputs = create_inputs(self.geometry)
+        with self.assertRaises(RuntimeError):
+            inputs.check_transport()
 
     def test_verhaegen_requires_a_debris_model(self):
         "Model 'verhaegen' fails without a debris model"

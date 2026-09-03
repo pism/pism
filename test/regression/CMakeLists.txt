@@ -60,6 +60,7 @@ endmacro()
 
 # Tests themselves:
 pism_test (pism_testing_tools test_regression_tools.py)
+pism_python_test (Debris:transport test_debris_transport.sh)
 
 pism_test (pism_exact_restartability_SIA_only test_01.sh)
 

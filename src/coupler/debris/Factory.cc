@@ -20,6 +20,7 @@
 #include "pism/coupler/debris/Factory.hh"
 
 // debris models:
+#include "pism/coupler/debris/DebrisTransport.hh"
 #include "pism/coupler/debris/GivenDebris.hh"
 
 namespace pism {
@@ -29,6 +30,7 @@ Factory::Factory(std::shared_ptr<const Grid> g)
   : PCFactory<DebrisModel>(g, "debris.models") {
 
   add_model<Given>("given");
+  add_model<DebrisTransport>("transport");
 }
 
 } // end of namespace debris
