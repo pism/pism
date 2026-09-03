@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2025 PISM Authors
+// Copyright (C) 2010--2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -19,7 +19,6 @@
 #include "pism/earth/LingleClark.hh"
 
 #include "BedDef.hh"
-#include "pism/util/io/File.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/error_handling.hh"

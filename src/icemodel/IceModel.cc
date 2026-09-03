@@ -416,9 +416,6 @@ double IceModel::step(bool do_mass_continuity,
 
   double current_time = m_time->current();
 
-  //! \li call pre_step_hook() to let derived classes do more
-  pre_step_hook();
-
   //! \li update the velocity field; in some cases the whole three-dimensional
   //! field is updated and in some cases just the vertically-averaged
   //! horizontal velocity is updated
@@ -706,9 +703,6 @@ double IceModel::step(bool do_mass_continuity,
     m_stdout_flags += " ";
   }
 
-  //! \li call post_step_hook() to let derived classes do more
-  post_step_hook();
-
   // Done with the step; now adopt the new time. Note that this has to happen before we
   // update m_t_TempAge below.
   m_time->step(dt);
@@ -765,16 +759,6 @@ void IceModel::hydrology_step(double t, double dt) {
   }
 
   m_subglacial_hydrology->update(t, dt, inputs);
-}
-
-//! Virtual.  Does nothing in `IceModel`.  Derived classes can do more computation in each time step.
-void IceModel::pre_step_hook() {
-  // empty
-}
-
-//! Virtual.  Does nothing in `IceModel`.  Derived classes can do more computation in each time step.
-void IceModel::post_step_hook() {
-  // empty
 }
 
 /**

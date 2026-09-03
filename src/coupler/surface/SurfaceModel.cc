@@ -481,13 +481,27 @@ PS_ice_surface_temp::PS_ice_surface_temp(const SurfaceModel *m) : Diag<SurfaceMo
   m_vars[0]
       .long_name("ice temperature at the top ice surface")
       .standard_name("temperature_at_top_of_ice_sheet_model")
-      .units("kelvin");
+      .units("kelvin")
+      .set_number("_FillValue", fill_value());
 }
 
-std::shared_ptr<array::Array> PS_ice_surface_temp::compute_impl(const Geometry &/*geometry*/) const {
+std::shared_ptr<array::Array> PS_ice_surface_temp::compute_impl(const Geometry &geometry) const {
   auto result = allocate<array::Scalar>("ice_surface_temp");
 
-  result->copy_from(model->temperature());
+  const auto &temp = model->temperature();
+
+  auto fill = fill_value();
+
+  array::AccessScope scope{result.get(), &geometry.cell_type, &temp};
+
+  for (auto p : m_grid->points()) {
+    const int i = p.i(), j = p.j();
+    if (geometry.cell_type.icy(i, j)) {
+      (*result)(i, j) = temp(i, j);
+    } else {
+      (*result)(i, j) = fill;
+    }
+  }
 
   return result;
 }

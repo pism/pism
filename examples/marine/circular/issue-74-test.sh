@@ -14,7 +14,7 @@
 set -x
 set -e
 
-N=4
+N=8
 xx=101
 yy=$xx
 length=50
@@ -25,11 +25,11 @@ infile="circular_noshelf.nc"
 
 grid="-Mx $xx -My $yy -Mz 31 -Mbz 1 -Lz 1500 -Lbz 0"
 
-pismopts="-i $infile -bootstrap $grid -stress_balance ssa -ssa_dirichlet_bc -o_order zyx -energy none -ssa_method fd -cfbc -part_grid"
+pismopts="-i $infile -bootstrap $grid -stress_balance ssa -ssa_dirichlet_bc -energy none -ssa_method fd -cfbc -part_grid"
 
 doit="mpiexec -n $N pism $pismopts"
 
-spatial_output="-spatial_times 1 -spatial_vars thk,mask,velbar_mag,ice_area_specific_volume,velbar,usurf,mass_fluxes -spatial_file issue-74_ex.nc"
+spatial_output="-spatial_times 1 -spatial_vars thk,mask,velbar_mag,ice_area_specific_volume,velbar,usurf,mass_fluxes,basal_mass_flux_floating,basal_mass_flux_grounded,shelfbmassflux -spatial_file issue-74_spatial.nc"
 scalar_output="-scalar_file issue-74_scalar.nc -scalar_times 1"
 
 $doit -y $length -o issue-74_o.nc $spatial_output $scalar_output -calving float_kill
