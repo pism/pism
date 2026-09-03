@@ -180,13 +180,18 @@ std::array<double, 2> flux_limiter(const stencils::Star<double> &Q_c,
   double X_n = pp(x_n - eps);
 
   // limit total amounts (see equation (10) in [Smolarkiewicz1989])
+  //
+  // The limiter cannot fix values that are negative on input (e.g. tiny undershoots of a
+  // higher-order scheme in the tails of a smooth profile): it zeros the flux out of such
+  // cells and leaves them as they are, so we check that a cell does not get *more*
+  // negative than it already is.
   double F_e_limited = flux_limiter(F_e, F_out, F_out_e, X_c, X_e);
-  assert(x_c - F_e_limited >= 0);
-  assert(x_e + F_e_limited >= 0);
+  assert(x_c - F_e_limited >= std::min(x_c, 0.0));
+  assert(x_e + F_e_limited >= std::min(x_e, 0.0));
 
   double F_n_limited = flux_limiter(F_n, F_out, F_out_n, X_c, X_n);
-  assert(x_c - F_n_limited >= 0);
-  assert(x_n + F_n_limited >= 0);
+  assert(x_c - F_n_limited >= std::min(x_c, 0.0));
+  assert(x_n + F_n_limited >= std::min(x_n, 0.0));
 
   // convert back to fluxes and return:
   return { F_e_limited * dx / dt, F_n_limited * dy / dt };
