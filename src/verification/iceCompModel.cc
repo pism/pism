@@ -587,12 +587,15 @@ void IceCompModel::computeGeometryErrors(double &gvolexact, double &gareaexact,
   centerHerr = fabs(gdomeH - gdomeHexact);
 }
 
-void IceCompModel::post_step_hook() {
+double IceCompModel::step(bool do_mass_continuity, bool do_skip) {
+  auto dt = IceModel::step(do_mass_continuity, do_skip);
+
   if (m_testname == 'A') {
     reset_thickness_test_A();
   }
-}
 
+  return dt;
+}
 
 void IceCompModel::print_summary(bool /* tempAndAge */, double dt) {
   //   we always show a summary at every step
