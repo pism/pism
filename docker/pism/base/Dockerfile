@@ -73,7 +73,7 @@ RUN <<EOF
     echo "Install additional Python packages"
     set -eux
     . /opt/pism/bin/activate
-    python3 -m pip install "mpi4py>=4.0.0" numpy netCDF4 pyproj geopandas rioxarray
+    python3 -m pip install "mpi4py>=4.0.0" numpy netCDF4 pyproj geopandas rioxarray cftime
 EOF
 
 # "Activate" the virtual environment in /opt/pism.

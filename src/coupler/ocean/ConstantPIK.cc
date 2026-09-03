@@ -131,10 +131,7 @@ void PIK::mass_flux(const array::Scalar &ice_thickness, array::Scalar &result) c
     // positive, if T_oc > T_ice ==> heat flux FROM ocean TO ice
     double ocean_heat_flux = melt_factor * sea_water_density * c_p_ocean * gamma_T * (T_ocean - T_f); // in W/m^2
 
-    // TODO: T_ocean -> field!
-
-    // shelfbmassflux is positive if ice is freezing on; here it is always negative:
-    // same sign as ocean_heat_flux (positive if massflux FROM ice TO ocean)
+    // positive mass flux corresponds to ice loss from a shelf info the ocean
     result(i,j) = ocean_heat_flux / (L * ice_density); // m s-1
 
     // convert from [m s-1] to [kg m-2 s-1]:
