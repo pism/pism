@@ -395,7 +395,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
 
       // insolation energy reaching the surface during each sub-step (analytic in
       // dEBM-simple; a prescribed field in dEBM-enhanced)
-      this->insolation_energy_series(i, j, orbital, ts, dtseries, lat, E);
+      this->insolation_energy_series(i, j, orbital, dtseries, lat, E);
 
       {
         double next_snow_depth_reset = m_next_balance_year_start;
@@ -523,17 +523,11 @@ void DEBMSimple::update_insolation_input(double t, double dt,
   (void)list;
 }
 
-void DEBMSimple::insolation_energy_series(int i, int j,
+void DEBMSimple::insolation_energy_series(int /*i*/, int /*j*/,
                                           const std::vector<DEBMSimpleOrbitalParameters> &orbital,
-                                          const std::vector<double> &ts,
                                           double dt_sub,
                                           double latitude,
                                           std::vector<double> &result) const {
-  // analytic top-of-atmosphere insolation energy per sub-step (depends on time and
-  // latitude, not on the prescribed field); identical to the original dEBM-simple behavior.
-  (void)i;
-  (void)j;
-  (void)ts;
   for (size_t k = 0; k < orbital.size(); ++k) {
     result[k] = m_model.insolation_energy(orbital[k].solar_declination,
                                           orbital[k].distance_factor,

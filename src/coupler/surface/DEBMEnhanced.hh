@@ -65,7 +65,6 @@ protected:
 
   void insolation_energy_series(int i, int j,
                                 const std::vector<DEBMSimpleOrbitalParameters> &orbital,
-                                const std::vector<double> &ts,
                                 double dt_sub,
                                 double latitude,
                                 std::vector<double> &result) const override;

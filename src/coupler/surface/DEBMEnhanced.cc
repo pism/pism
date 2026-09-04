@@ -121,13 +121,9 @@ void DEBMEnhanced::update_insolation_input(double t, double dt,
 
 void DEBMEnhanced::insolation_energy_series(int i, int j,
                                             const std::vector<DEBMSimpleOrbitalParameters> &orbital,
-                                            const std::vector<double> &ts,
                                             double dt_sub,
-                                            double latitude,
+                                            double /*latitude*/,
                                             std::vector<double> &result) const {
-  (void)ts;       // sampling times are already set via init_interpolation()
-  (void)latitude; // spatial variability is encoded in the computed field
-
   // the daily-mean insolation rate (W m^-2) at this cell was computed in
   // update_insolation_input; the energy reaching the surface during a sub-step of length
   // dt_sub (seconds) is rate * dt_sub

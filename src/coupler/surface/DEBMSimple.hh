@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2022, 2023, 2025 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2022, 2023, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -85,7 +85,6 @@ protected:
   //! dEBM-enhanced interpolates a prescribed daily field.
   virtual void insolation_energy_series(int i, int j,
                                         const std::vector<DEBMSimpleOrbitalParameters> &orbital,
-                                        const std::vector<double> &ts,
                                         double dt_sub,
                                         double latitude,
                                         std::vector<double> &result) const;
