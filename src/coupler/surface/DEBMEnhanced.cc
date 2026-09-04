@@ -63,8 +63,8 @@ DEBMEnhanced::DEBMEnhanced(std::shared_ptr<const Grid> g,
   m_update_interval =
       m_config->get_number("surface.debm_enhanced.update_interval", "seconds");
 
-  m_computed_insolation = std::make_shared<array::Scalar>(m_grid, "insolation");
-  m_computed_insolation->metadata(0)
+  m_insolation = std::make_shared<array::Scalar>(m_grid, "insolation");
+  m_insolation->metadata(0)
       .long_name("daily mean terrain-shaded surface insolation")
       .units("W m^-2");
 }
@@ -115,8 +115,8 @@ void DEBMEnhanced::update_insolation_input(double t, double dt,
   double distance_factor = DEBMSimplePointwise::distance_factor_present_day(year_fraction);
 
   m_terrain->daily_insolation(declination, distance_factor, m_grid->latitude(),
-                              *m_computed_insolation);
-  list.add(*m_computed_insolation);
+                              *m_insolation);
+  list.add(*m_insolation);
 }
 
 void DEBMEnhanced::insolation_energy_series(int i, int j,
@@ -131,7 +131,7 @@ void DEBMEnhanced::insolation_energy_series(int i, int j,
   // the daily-mean insolation rate (W m^-2) at this cell was computed in
   // update_insolation_input; the energy reaching the surface during a sub-step of length
   // dt_sub (seconds) is rate * dt_sub
-  double rate = (*m_computed_insolation)(i, j);
+  double rate = (*m_insolation)(i, j);
   for (size_t k = 0; k < orbital.size(); ++k) {
     result[k] = rate * dt_sub;
   }
@@ -141,7 +141,7 @@ DiagnosticList DEBMEnhanced::spatial_diagnostics_impl() const {
   DiagnosticList result = DEBMSimple::spatial_diagnostics_impl();
   // expose the insolation actually driving the melt, replacing the analytic dEBM-simple
   // "insolation" diagnostic (which dEBM-enhanced does not use)
-  result["insolation"] = Diagnostic::wrap(*m_computed_insolation);
+  result["insolation"] = Diagnostic::wrap(*m_insolation);
   // and the terrain horizon map (azimuth, y, x) and sky-view factor (y, x)
   result["horizon"] = Diagnostic::wrap(m_terrain->horizon());
   if (m_terrain->sky_view_enabled()) {

@@ -77,7 +77,7 @@ private:
   std::unique_ptr<TerrainInsolation> m_terrain;
 
   //! daily surface insolation energy (J m-2) computed for the current update
-  std::shared_ptr<array::Scalar> m_computed_insolation;
+  std::shared_ptr<array::Scalar> m_insolation;
 
   //! ice surface elevation, cached from the geometry at initialization (the horizon is
   //! recomputed from this evolving field every m_update_interval)
