@@ -766,11 +766,9 @@ parameters.
 .. note::
 
    The terrain-shading algorithms (ray-traced horizon, surface normals, direct-beam flux)
-   are re-implementations of the ``solshade`` package by A. Chokshi (Chokshi et al.,
-   *Journal of Open Source Software*, doi:`10.21105/joss.09944
-   <https://doi.org/10.21105/joss.09944>`_); the sky-view factor follows Dozier and Frew
-   (1990), doi:`10.1109/36.58986 <https://doi.org/10.1109/36.58986>`_. The solar position
-   uses PISM's own dEBM-simple analytic present-day orbit, not an external ephemeris.
+   are re-implementations of the ``solshade`` package by A. Chokshi :cite:`Chokshi2026`;
+   the sky-view factor follows Dozier and Frew (1990), :cite:`Dozier1990`. The solar is
+   computed orbital parameters as in :ref:`dEBM-simple <sec-surface-debm-simple>`.
 
 All angles below are in radians. The local reference frame is East--North--Up (ENU) and
 **azimuth is measured clockwise from north** (`0` = north, `\pi/2` = east), so a horizontal
@@ -785,30 +783,27 @@ For a surface `z(E, N)` the upward unit normal in ENU components is
 .. math::
    :label: eq-debm-enhanced-normal
 
-   \hat{\mathbf n} = \frac{1}{\sqrt{(\partial z/\partial E)^2 + (\partial z/\partial N)^2 + 1}}
-   \begin{pmatrix} -\,\partial z/\partial E \\ -\,\partial z/\partial N \\ 1 \end{pmatrix},
+   \hat{\mathbf n} = \left| \left( -\diff{z}{E}, -\diff{z}{N}, 1 \right) \right|,
 
-evaluated from centred differences of the ice surface elevation (one-sided at the domain
-edge). A flat cell gives `\hat{\mathbf n} = (0, 0, 1)`.
+evaluated using centred differences of the ice surface elevation (one-sided at the domain
+edge). Where `z` is constant this gives `\hat{\mathbf n} = (0, 0, 1)`.
 
-The **terrain horizon** `H(A, y, x)` is the elevation angle of the local skyline in azimuth
+The *terrain horizon* `H(A, x, y)` is the elevation angle of the local skyline in azimuth
 direction `A`. For each of :config:`surface.debm_enhanced.horizon.n_directions` azimuths
 `A_k = 2\pi k / N_{\text{dir}}` a ray is marched outward from the cell in steps of
 :config:`surface.debm_enhanced.horizon.step` up to
-:config:`surface.debm_enhanced.horizon.max_distance`, sampling the elevation `z(d)` by
-bilinear interpolation at the horizontal offsets `\Delta i = \sin A_k\, d / \Delta x`,
-`\Delta j = \cos A_k\, d / \Delta y`. The horizon is the largest elevation angle along the
+:config:`surface.debm_enhanced.horizon.max_distance`, sampling the surface elevation
+`z(d)` using bilinear interpolation. The horizon is the largest elevation angle along the
 ray,
 
 .. math::
    :label: eq-debm-enhanced-horizon
 
-   H(A_k, y, x) = \max_{d}\ \operatorname{atan2}\big(z(d) - z_0,\ d\big),
+   H(A_k, x, y) = \max_{d}\ \arctan\left(\frac{z(d) - z(x, y)}{d}\right),
 
-with rays stopped at the domain boundary. The horizon (an `(\text{azimuth}, y, x)` field) is
-recomputed every :config:`surface.debm_enhanced.update_interval` 365-day years as the
-geometry evolves (set it to `0` to recompute every time step), and is available as the
-``horizon`` diagnostic.
+with rays stopped at the domain boundary. The horizon field is recomputed every
+:config:`surface.debm_enhanced.update_interval` as the geometry evolves (set it to `0` to
+recompute every time step), and is available as the ``horizon`` diagnostic.
 
 Sun position
 ============
