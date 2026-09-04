@@ -86,9 +86,6 @@ private:
   bool m_use_sky_view;
   double m_diffuse_fraction;
 
-  // azimuth sample directions (radians, clockwise from north), used as Array3D levels
-  std::vector<double> m_azimuth;
-
   // the global DEM, replicated on every rank, row-major dem[j * Mx + i]
   std::vector<double> m_dem;
 

@@ -20,6 +20,7 @@
 #include "pism/coupler/surface/terrain_insolation_kernel.hh"
 
 #include <cmath>
+#include <vector>
 
 #include "pism/util/Config.hh"
 #include "pism/util/Context.hh"
@@ -52,13 +53,13 @@ TerrainInsolation::TerrainInsolation(std::shared_ptr<const Grid> grid)
   }
 
   // azimuth sample directions (radians), clockwise from north
-  m_azimuth.resize(m_n_directions);
+  std::vector<double> azimuth(m_n_directions);
   for (int k = 0; k < m_n_directions; ++k) {
-    m_azimuth[k] = 2.0 * M_PI * k / m_n_directions;
+    azimuth[k] = 2.0 * M_PI * k / m_n_directions;
   }
 
   m_horizon = std::make_shared<array::Array3D>(m_grid, "horizon", array::WITHOUT_GHOSTS,
-                                               m_azimuth);
+                                               azimuth);
   m_horizon->metadata(0)
       .long_name("terrain horizon elevation angle as a function of azimuth")
       .units("radian");
@@ -127,12 +128,11 @@ void TerrainInsolation::init(const array::Scalar &surface_elevation) {
   PISM_CHK(ierr, "MPI_Bcast");
   profiling.end("surface.debm_enhanced.gather_dem");
 
-  // Compute surface normals (centred differences on the global DEM, one-sided at the
+  // Compute surface normals (centered differences on the global DEM, one-sided at the
   // domain boundary) and the horizon map (the dominant cost) for every owned cell.
   profiling.begin("surface.debm_enhanced.horizon");
-  const double *dem = m_dem.data();
 
-  std::vector<double> column(m_n_directions);
+  const auto &azimuth = m_horizon->levels();
 
   array::AccessScope scope{ m_normal_e.get(), m_normal_n.get(), m_normal_u.get(),
                             m_horizon.get() };
@@ -143,13 +143,14 @@ void TerrainInsolation::init(const array::Scalar &surface_elevation) {
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
+    double *column = m_horizon->get_column(i, j);
     int ip = i < Mx - 1 ? i + 1 : i;
     int im = i > 0 ? i - 1 : i;
     int jp = j < My - 1 ? j + 1 : j;
     int jm = j > 0 ? j - 1 : j;
 
-    double dzdE = (dem[j * Mx + ip] - dem[j * Mx + im]) / ((ip - im) * dx);
-    double dzdN = (dem[jp * Mx + i] - dem[jm * Mx + i]) / ((jp - jm) * dy);
+    double dzdE = (m_dem[j * Mx + ip] - m_dem[j * Mx + im]) / ((ip - im) * dx);
+    double dzdN = (m_dem[jp * Mx + i] - m_dem[jm * Mx + i]) / ((jp - jm) * dy);
 
     double nE = 0.0, nN = 0.0, nU = 1.0;
     terrain::surface_normal(dzdE, dzdN, nE, nN, nU);
@@ -158,10 +159,9 @@ void TerrainInsolation::init(const array::Scalar &surface_elevation) {
     (*m_normal_u)(i, j) = nU;
 
     for (int k = 0; k < m_n_directions; ++k) {
-      column[k] = terrain::ray_horizon(dem, Mx, My, dx, dy, i, j, m_azimuth[k], m_step,
+      column[k] = terrain::ray_horizon(m_dem.data(), Mx, My, dx, dy, i, j, azimuth[k], m_step,
                                        m_max_distance);
     }
-    m_horizon->set_column(i, j, column.data());
 
     // sky-view factor from the horizon and the surface slope/aspect (the latter recovered
     // from the unit normal: slope = acos(nU), aspect = atan2(nE, nN), clockwise from north)
@@ -169,7 +169,7 @@ void TerrainInsolation::init(const array::Scalar &surface_elevation) {
       double slope = std::acos(nU < -1.0 ? -1.0 : (nU > 1.0 ? 1.0 : nU));
       double aspect = std::atan2(nE, nN);
       (*m_sky_view)(i, j) =
-          terrain::sky_view_factor(column.data(), m_azimuth.data(), m_n_directions, slope,
+          terrain::sky_view_factor(column, azimuth.data(), m_n_directions, slope,
                                    aspect);
     }
   }
