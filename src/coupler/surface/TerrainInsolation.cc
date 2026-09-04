@@ -81,6 +81,9 @@ const array::Array3D &TerrainInsolation::horizon() const {
 }
 
 const array::Scalar &TerrainInsolation::sky_view() const {
+  if (not m_use_sky_view) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "sky view factor is not available");
+  }
   return *m_sky_view;
 }
 
