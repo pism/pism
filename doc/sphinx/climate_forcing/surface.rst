@@ -833,7 +833,7 @@ Terrain-shaded daily insolation
 
 The surface insolation that replaces `\bar S_{\Phi}` is the daily mean of a direct and a
 diffuse component. The hour angle is swept over a full day (so the result is independent of
-longitude), sampled at steps of :config:`surface.debm_enhanced.horizon.ephemeris_dt`:
+longitude), sampled at steps of :config:`surface.debm_enhanced.insolation_dt`:
 
 .. math::
    :label: eq-debm-enhanced-insolation

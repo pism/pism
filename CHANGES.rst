@@ -8,7 +8,7 @@ Changes since v2.3.0
   top-of-atmosphere parameterization. The terrain horizon and surface normals are computed
   from the ice surface elevation and combined with PISM's analytic solar geometry to produce
   the daily surface insolation. The horizon ray-casting is controlled by
-  `surface.debm_enhanced.horizon.*` (`n_directions`, `max_distance`, `step`, `ephemeris_dt`)
+  `surface.debm_enhanced.horizon.*` (`n_directions`, `max_distance`, `step`)
   and, because it depends on the evolving geometry, is recomputed every
   `surface.debm_enhanced.update_interval` (default 10 years). The insolation is split into a
   direct-beam component (terrain-shaded) and an isotropic diffuse component reduced by the

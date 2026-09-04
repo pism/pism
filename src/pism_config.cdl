@@ -2444,11 +2444,6 @@ netcdf pism_config {
     pism_config:surface.debm_enhanced.diffuse_fraction_valid_max = 1.0;
     pism_config:surface.debm_enhanced.diffuse_fraction_valid_min = 0.0;
 
-    pism_config:surface.debm_enhanced.horizon.insolation_dt = 600;
-    pism_config:surface.debm_enhanced.horizon.insolation_dt_doc = "Sub-daily time step used to sample and trapezoidally integrate the terrain-shaded surface insolation over each day.";
-    pism_config:surface.debm_enhanced.horizon.insolation_dt_type = "number";
-    pism_config:surface.debm_enhanced.horizon.insolation_dt_units = "seconds";
-
     pism_config:surface.debm_enhanced.horizon.max_distance = 5000;
     pism_config:surface.debm_enhanced.horizon.max_distance_doc = "Maximum ray-march distance for the terrain-horizon computation used by the internally-computed ``debm_enhanced`` insolation.";
     pism_config:surface.debm_enhanced.horizon.max_distance_type = "number";
@@ -2463,6 +2458,11 @@ netcdf pism_config {
     pism_config:surface.debm_enhanced.horizon.step_doc = "Ray-march step length for the terrain-horizon computation used by the internally-computed ``debm_enhanced`` insolation.";
     pism_config:surface.debm_enhanced.horizon.step_type = "number";
     pism_config:surface.debm_enhanced.horizon.step_units = "m";
+
+    pism_config:surface.debm_enhanced.insolation_dt = 600;
+    pism_config:surface.debm_enhanced.insolation_dt_doc = "Sub-daily time step used to sample and trapezoidally integrate the terrain-shaded surface insolation over each day.";
+    pism_config:surface.debm_enhanced.insolation_dt_type = "number";
+    pism_config:surface.debm_enhanced.insolation_dt_units = "seconds";
 
     pism_config:surface.debm_enhanced.update_interval = 10.0;
     pism_config:surface.debm_enhanced.update_interval_doc = "Interval between recomputations of the terrain horizon, which depends on the (evolving) ice surface elevation. Set to zero to recompute the horizon at every time step.";
