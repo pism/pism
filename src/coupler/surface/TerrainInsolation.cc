@@ -42,7 +42,7 @@ TerrainInsolation::TerrainInsolation(std::shared_ptr<const Grid> grid)
   m_n_directions  = static_cast<int>(config->get_number("surface.debm_enhanced.horizon.n_directions"));
   m_max_distance  = config->get_number("surface.debm_enhanced.horizon.max_distance");
   m_step          = config->get_number("surface.debm_enhanced.horizon.step");
-  m_ephemeris_dt  = config->get_number("surface.debm_enhanced.horizon.ephemeris_dt");
+  m_insolation_dt  = config->get_number("surface.debm_enhanced.horizon.insolation_dt");
   m_solar_constant = config->get_number("surface.debm_simple.solar_constant");
   m_use_sky_view  = config->get_flag("surface.debm_enhanced.use_sky_view_factor");
   m_diffuse_fraction = config->get_number("surface.debm_enhanced.diffuse_fraction");
@@ -204,7 +204,7 @@ void TerrainInsolation::daily_insolation(double declination, double distance_fac
   const double seconds_per_day = 86400.0;
 
   // number of sub-daily samples used to integrate the diurnal cycle
-  int M = static_cast<int>(std::lround(seconds_per_day / m_ephemeris_dt));
+  int M = static_cast<int>(std::lround(seconds_per_day / m_insolation_dt));
   if (M < 1) {
     M = 1;
   }

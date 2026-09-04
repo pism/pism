@@ -81,7 +81,7 @@ private:
   int m_n_directions;
   double m_max_distance;
   double m_step;
-  double m_ephemeris_dt;
+  double m_insolation_dt;
   double m_solar_constant;
   bool m_use_sky_view;
   double m_diffuse_fraction;
