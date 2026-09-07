@@ -534,20 +534,30 @@ void IceModel::allocate_label_hole() {
     return;
   }
 
-  m_log->message(2,
-		 "# Allocating hole labeling in ice-free areas and floating ice (related to calving)...\n");
-
+  // NOTE: allocate unconditionally, i.e. also when geometry.label_holes is
+  // false. This submodel owns the bc_open_ocean_mask and enclosed_ocean_mask
+  // diagnostics, and PISM aborts if a name listed in -extra_vars is not
+  // available. Allocating always lets a fixed -extra_vars list mention them
+  // without forcing every run to set -label_floating_holes. The labeling itself
+  // stays gated: front_retreat_step() calls it only when the flag is set, so
+  // with the flag off both masks keep the zeros set in the constructor.
   if (m_config->get_flag("geometry.label_holes")) {
-
-    // this will throw an exception on failure
-    m_label_hole.reset(new calving::LabelHoleIce(m_grid));
-
-    // Ice shelf hole does not have a state, so it is OK to
-    // initialize here.
-    m_label_hole->init();
-
-    m_submodels["label holes in floating ice"] = m_label_hole.get();
+    m_log->message(2,
+		   "# Allocating hole labeling in ice-free areas and floating ice (related to calving)...\n");
+  } else {
+    m_log->message(2,
+		   "# Allocating hole labeling diagnostics only; geometry.label_holes is not set,"
+		   " so no labeling is done and both masks stay zero...\n");
   }
+
+  // this will throw an exception on failure
+  m_label_hole.reset(new calving::LabelHoleIce(m_grid));
+
+  // Ice shelf hole does not have a state, so it is OK to
+  // initialize here.
+  m_label_hole->init();
+
+  m_submodels["label holes in floating ice"] = m_label_hole.get();
 }
 
 void IceModel::allocate_age_model() {
@@ -674,12 +684,9 @@ void IceModel::allocate_submodels() {
   allocate_geometry_evolution();
 
   allocate_iceberg_remover();
-  if (m_config->get_flag("geometry.label_holes")) {
-    allocate_label_hole();
-  } else if (m_config->get_flag("geometry.remove_icebergs")) {
-    m_log->message(2,
-		   "# Skip allocating hole labeling in ice-free areas and floating ice ...\n");
-  }
+  // Always allocated, whether or not hole labeling is switched on: it owns
+  // diagnostics that -extra_vars may name either way. See allocate_label_hole().
+  allocate_label_hole();
 
 
   allocate_stressbalance();
