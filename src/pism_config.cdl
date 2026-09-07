@@ -1482,7 +1482,7 @@ netcdf pism_config {
     pism_config:inverse.adjoint.method_type = "keyword";
 
     pism_config:inverse.alternating_cycles = 0;
-    pism_config:inverse.alternating_cycles_doc = "Number of (tauc->hardav) alternation cycles in pismi.py; 0 = single-design-var run. (Parsed but not yet wired; the loop body is implemented alongside Blatter-hardav forward-problem Jacobian math.)";
+    pism_config:inverse.alternating_cycles_doc = "Number of tauc->hardav alternation cycles run by pismi.py in one invocation; 0 = single-design-variable run selected by -inv_design. Each cycle inverts for tauc (with hardav fixed), then for hardav (with tauc fixed); phases hand results to each other through the output file. Requires a Blatter or SSA forward problem that supports both design variables.";
     pism_config:inverse.alternating_cycles_type = "integer";
     pism_config:inverse.alternating_cycles_units = "count";
 
@@ -1515,6 +1515,16 @@ netcdf pism_config {
     pism_config:inverse.design.param_option = "inv_design_param";
     pism_config:inverse.design.param_type = "keyword";
 
+    pism_config:inverse.design.param_hardav_eps = 1e5;
+    pism_config:inverse.design.param_hardav_eps_doc = "tiny ice hardness used as a substitute for 0 in some hardav parameterizations";
+    pism_config:inverse.design.param_hardav_eps_type = "number";
+    pism_config:inverse.design.param_hardav_eps_units = "Pascal second^(1/3)";
+
+    pism_config:inverse.design.param_hardav_scale = 1e8;
+    pism_config:inverse.design.param_hardav_scale_doc = "typical size of vertically-averaged ice hardness B = A^(-1/n) (about 7e7 Pa s^(1/3) for the default isothermal softness)";
+    pism_config:inverse.design.param_hardav_scale_type = "number";
+    pism_config:inverse.design.param_hardav_scale_units = "Pascal second^(1/3)";
+
     pism_config:inverse.design.param_tauc_eps = 100;
     pism_config:inverse.design.param_tauc_eps_doc = "tiny yield stress used as a substitute for 0 in some tauc parameterizations";
     pism_config:inverse.design.param_tauc_eps_type = "number";
@@ -1524,6 +1534,11 @@ netcdf pism_config {
     pism_config:inverse.design.param_tauc_scale_doc = "typical size of yield stresses";
     pism_config:inverse.design.param_tauc_scale_type = "number";
     pism_config:inverse.design.param_tauc_scale_units = "Pascal";
+
+    pism_config:inverse.design.param_trunc_hardav0 = 1e6;
+    pism_config:inverse.design.param_trunc_hardav0_doc = "transition point of change to linear behaviour for the ``trunc`` parameterization of hardav";
+    pism_config:inverse.design.param_trunc_hardav0_type = "number";
+    pism_config:inverse.design.param_trunc_hardav0_units = "Pascal second^(1/3)";
 
     pism_config:inverse.design.param_trunc_tauc0 = 1000;
     pism_config:inverse.design.param_trunc_tauc0_doc = "transition point of change to linear behaviour for design variable parameterization type ``trunc``";
@@ -2145,6 +2160,11 @@ netcdf pism_config {
 
     pism_config:stress_balance.blatter.Glen_exponent_units = "pure number";
     pism_config:stress_balance.blatter.Glen_exponent_type = "number";
+    pism_config:stress_balance.averaged_hardness.enabled = "no";
+    pism_config:stress_balance.averaged_hardness.enabled_doc = "Use the prescribed 2D field ``hardav`` (vertically-averaged ice hardness B = A^(-1/n), e.g. from a ``pismi -inv_design hardav`` inversion) instead of the hardness derived from enthalpy. ``hardav`` is a model state variable: it is read from the input file, can be regridded with ``-input.regrid.vars hardav``, and is written to output files. Supported by the Blatter stress balance only.";
+    pism_config:stress_balance.averaged_hardness.enabled_option = "use_averaged_hardness";
+    pism_config:stress_balance.averaged_hardness.enabled_type = "flag";
+
     pism_config:stress_balance.blatter.Glen_exponent = 3.0;
     pism_config:stress_balance.blatter.Glen_exponent_doc = "Glen exponent in ice flow law for the Blatter stress balance solver";
 
