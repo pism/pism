@@ -77,7 +77,12 @@ namespace mask {
   //!        such as holes in ice shelves).
   inline bool ice_free_open_ocean(int M, bool do_consider_holes = false) {
     if (do_consider_holes) {
-      return not ice_free_enclosed_ocean(M);
+      // The cell must still BE ice-free ocean: "not enclosed" on its own is
+      // also true for grounded ice, floating ice and ice-free bedrock, none of
+      // which are open ocean. Note ice_free_ocean() is true for both
+      // MASK_ICE_FREE_OCEAN and MASK_ICE_FREE_ENCLOSED_OCEAN, so the second
+      // test is what actually excludes holes.
+      return ice_free_ocean(M) and not ice_free_enclosed_ocean(M, do_consider_holes);
     } else {
       return ice_free_ocean(M);
     }
