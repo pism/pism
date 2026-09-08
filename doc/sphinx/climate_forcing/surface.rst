@@ -750,43 +750,42 @@ Diurnal Energy Balance Model "dEBM-enhanced"
 :|variables|: :var:`surface_albedo`
 :|implementation|: ``pism::surface::DEBMEnhanced``
 
-``debm_enhanced`` is :ref:`dEBM-simple <sec-surface-debm-simple>` with one change: the mean
-insolation `\bar S_{\Phi}` that drives the insolation-driven melt contribution
-(:eq:`eq-debm-insolation-melt`) is replaced by a **terrain-shaded surface insolation**
-computed internally from the (evolving) ice surface elevation, instead of the smooth
-top-of-the-atmosphere value of :eq:`eq-debm-toa-insolation`. This accounts for cast shadows
-from the surrounding topography, the orientation (slope and aspect) of each grid cell, and
-an isotropic diffuse-sky contribution.
+``debm_enhanced`` is :ref:`dEBM-simple <sec-surface-debm-simple>` with one change: the
+mean insolation `\bar S_{\Phi}` :eq:`eq-debm-toa-insolation` that drives the
+insolation-driven melt contribution :eq:`eq-debm-insolation-melt` is replaced by
+*terrain-shaded surface insolation* computed using the evolving ice surface elevation.
+This accounts for cast shadows from the surrounding topography, the surface slope and
+aspect at each grid point, and an isotropic diffuse-sky contribution.
 
-Everything else --- the temperature-driven melt and melt offset, albedo, refreezing, snow
-bookkeeping, the atmospheric transmissivity, and the empirical melt factors --- is inherited
-unchanged from dEBM-simple and is still controlled by the ``surface.debm_simple.*``
-parameters.
+Everything else (the temperature-driven melt and melt offset, albedo, refreezing, snow
+bookkeeping, the atmospheric transmissivity, and the empirical melt factors) is inherited
+unchanged from dEBM-simple and controlled by parameters with the prefix ``surface.debm_simple``.
 
 .. note::
 
    The terrain-shading algorithms (ray-traced horizon, surface normals, direct-beam flux)
    are re-implementations of the ``solshade`` package by A. Chokshi :cite:`Chokshi2026`;
-   the sky-view factor follows Dozier and Frew (1990), :cite:`Dozier1990`. The solar is
-   computed orbital parameters as in :ref:`dEBM-simple <sec-surface-debm-simple>`.
+   the sky-view factor approximation follows :cite:`Dozier1990`. The present day orbital
+   parameters are as in :ref:`dEBM-simple <sec-surface-debm-simple>`.
 
 All angles below are in radians. The local reference frame is East--North--Up (ENU) and
-**azimuth is measured clockwise from north** (`0` = north, `\pi/2` = east), so a horizontal
+*azimuth is measured clockwise from north* (`0` = north, `\frac{\pi}2` = east), so a horizontal
 direction is `(\text{East}, \text{North}) = (\sin A, \cos A)`. The same convention is used
 for the terrain horizon and for the Sun, which keeps the shadow test self-consistent.
 
 Terrain geometry
 ================
 
-For a surface `z(E, N)` the upward unit normal in ENU components is
+For a surface `z(E, N)` the upward unit normal `\hat{\mathbf n}` in ENU components is
 
 .. math::
    :label: eq-debm-enhanced-normal
 
-   \hat{\mathbf n} = \left| \left( -\diff{z}{E}, -\diff{z}{N}, 1 \right) \right|,
+   \mathbf{n} &= \left( -\diff{z}{E}, -\diff{z}{N}, 1 \right),\\
+   \hat{\mathbf n} &= \frac{\mathbf{n}}{\left|  \mathbf{n} \right|},
 
-evaluated using centred differences of the ice surface elevation (one-sided at the domain
-edge). Where `z` is constant this gives `\hat{\mathbf n} = (0, 0, 1)`.
+approximated using centred differences of the ice surface elevation (one-sided at the domain
+edge).
 
 The *terrain horizon* `H(A, x, y)` is the elevation angle of the local skyline in azimuth
 direction `A`. For each of :config:`surface.debm_enhanced.horizon.n_directions` azimuths
