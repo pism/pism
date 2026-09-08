@@ -51,7 +51,7 @@ ST = {"lithk", "orog", "topg", "base",
       "tfbase", "deltag"}
 # ISMIP7 "flux" variables
 FL = {"hfgeoubed", "acabf", "libmassbfgr", "libmassbffl",
-      "dlithkdt", "licalvf", "libgroundf", "lifmassbf"}
+      "dlithkdt", "licalvf", "ligroundf", "lifmassbf"}
 
 fill_value = netCDF4.default_fillvals["f4"]
 
