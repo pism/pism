@@ -21,6 +21,34 @@ Changes since v2.3.0
   `surface.debm_simple.*`.
 - Add an `ismip7` surface model that uses the gradients but not the anomalies, and adds
   runoff. It is exposed to Python as `PISM.SurfaceISMIP7`.
+- Implement the Blatter hardness inversion (`pismi -stress_balance.model blatter -inv_design
+  hardav`): `IP_BlatterHardavForwardProblem` now provides the volume design Jacobian (and
+  its column-integrated transpose) for the vertically-averaged ice hardness, exploiting the
+  linearity of the effective viscosity in `B`; the hardness is passed to the Blatter solver
+  through `Inputs::averaged_hardness`. The design-variable-agnostic parts of the Blatter
+  inverse forward problems (forward solve, surface extraction, adjoint solve) were moved
+  to a shared base class `IP_BlatterForwardProblem`; the state Jacobian is now
+  re-assembled at the converged solution before adjoint solves, and a failed forward
+  solve during the minimization is reported to TAO instead of aborting the run. Added
+  the missing configuration parameters `inverse.design.param_hardav_{scale,eps}` and
+  `inverse.design.param_trunc_hardav0` (needed by any `hardav` inversion, SSA included),
+  `examples/inverse/blatter_inverse_checks.py` (adjoint and finite-difference gradient
+  checks) and a `-design hardav` mode in `examples/inverse/ismiphom_twin.py`.
+- Wire up `inverse.alternating_cycles` in `pismi`: alternate `tauc` and `hardav`
+  inversions (Blatter only) in one invocation, handing results between phases through the
+  output file (`tauc`, `hardav`, `zeta_inv_<var>`, `hardav_prior`, per-phase iteration
+  histories) with early stopping controlled by `inverse.alternating_misfit_tol` and
+  restart support via `-inv_restart`. The Blatter `tauc` forward problem uses a `hardav`
+  field as column-constant hardness when one is available.
+- Add `stress_balance.averaged_hardness.enabled` (`-use_averaged_hardness`): forward runs
+  with the Blatter stress balance use the prescribed vertically-averaged hardness `hardav`
+  (e.g. from a `pismi` hardness or alternating inversion) instead of the enthalpy-derived
+  hardness. `hardav` becomes a model state variable (read on restart, regriddable with
+  `-input.regrid.vars hardav`, written to output); the `hardav` diagnostic reports it.
+- Skip the units conversion when reading a variable whose units string in the file is
+  identical to the internal one, and when reporting ranges with identical `units` and
+  `output_units`. This makes it possible to read back fields whose units are not valid
+  UDUNITS expressions, such as the ice hardness `hardav` ("Pa s^(1/n)").
 - Re-run SWIG when a wrapped C++ header changes (`USE_SWIG_DEPENDENCIES`). Previously the
   generated Python bindings depended on the `.i` files only, so header edits could leave a
   stale `PISM.cpp` module in the build tree (e.g. Blatter-based classes wrapped as abstract,
