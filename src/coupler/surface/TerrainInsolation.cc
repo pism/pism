@@ -152,11 +152,22 @@ void TerrainInsolation::init(const array::Scalar &surface_elevation) {
     double dzdE = (m_dem[j * Mx + ip] - m_dem[j * Mx + im]) / ((ip - im) * dx);
     double dzdN = (m_dem[jp * Mx + i] - m_dem[jm * Mx + i]) / ((jp - jm) * dy);
 
-    double nE = 0.0, nN = 0.0, nU = 1.0;
-    terrain::surface_normal(dzdE, dzdN, nE, nN, nU);
-    (*m_normal_e)(i, j) = nE;
-    (*m_normal_n)(i, j) = nN;
-    (*m_normal_u)(i, j) = nU;
+    // Compute the upward-pointing normal to the surface:
+    double nE = -dzdE, nN = -dzdN, nU = 1.0;
+
+    // Scale to get the unit normal and save:
+    {
+      // Note that norm != 0.0 because nU == 1
+      double norm = std::sqrt(nE * nE + nN * nN + nU * nU);
+
+      nE /= norm;
+      nN /= norm;
+      nU /= norm;
+
+      (*m_normal_e)(i, j) = nE;
+      (*m_normal_n)(i, j) = nN;
+      (*m_normal_u)(i, j) = nU;
+    }
 
     for (int k = 0; k < m_n_directions; ++k) {
       column[k] = terrain::ray_horizon(m_dem.data(), Mx, My, dx, dy, i, j, azimuth[k], m_step,

@@ -198,36 +198,6 @@ void test_ray_horizon_boundary() {
               1e-12);
 }
 
-void test_surface_normal() {
-  double nE = 0.0, nN = 0.0, nU = 0.0;
-
-  // A horizontal surface has a straight-up normal.
-  surface_normal(0.0, 0.0, nE, nN, nU);
-  check_close("flat surface normal, East", nE, 0.0, 1e-15);
-  check_close("flat surface normal, North", nN, 0.0, 1e-15);
-  check_close("flat surface normal, Up", nU, 1.0, 1e-15);
-
-  // A 45-degree slope rising toward the east: the upward normal leans west.
-  surface_normal(1.0, 0.0, nE, nN, nU);
-  check_close("45-degree east slope, East", nE, -1.0 / std::sqrt(2.0), 1e-15);
-  check_close("45-degree east slope, North", nN, 0.0, 1e-15);
-  check_close("45-degree east slope, Up", nU, 1.0 / std::sqrt(2.0), 1e-15);
-
-  // The normal is always a unit vector pointing up, and it leans opposite the gradient.
-  const double gradients[5] = { -2.0, -0.5, 0.0, 0.25, 3.0 };
-  for (double dzdE : gradients) {
-    for (double dzdN : gradients) {
-      surface_normal(dzdE, dzdN, nE, nN, nU);
-
-      check_close("surface normal is a unit vector",
-                  std::sqrt(nE * nE + nN * nN + nU * nU), 1.0, 1e-14);
-      check_true("surface normal points up", nU > 0.0);
-      check_true("surface normal leans away from the gradient",
-                 nE * dzdE <= 0.0 and nN * dzdN <= 0.0);
-    }
-  }
-}
-
 void test_sun_position() {
   double altitude = 0.0, azimuth = 0.0;
 
@@ -395,7 +365,6 @@ int main() {
   test_ray_horizon_constant_slope();
   test_ray_horizon_wall();
   test_ray_horizon_boundary();
-  test_surface_normal();
   test_sun_position();
   test_sky_view_factor();
 

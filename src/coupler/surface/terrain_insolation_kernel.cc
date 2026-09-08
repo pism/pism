@@ -96,17 +96,6 @@ double ray_horizon(const double *dem, int Mx, int My, double dx, double dy,
   return std::isfinite(best) ? best : 0.0;
 }
 
-// Adapted from solshade's compute_slope_aspect_normals (solshade/terrain.py): equivalent to
-// its slope/aspect -> ENU normal, written directly in terms of the gradients. See the
-// per-file credits at the top of this file.
-void surface_normal(double dzdE, double dzdN, double &nE, double &nN, double &nU) {
-  // Upward normal to the surface z = f(E, N) is proportional to (-f_E, -f_N, 1).
-  double norm = std::sqrt(dzdE * dzdE + dzdN * dzdN + 1.0);
-  nE = -dzdE / norm;
-  nN = -dzdN / norm;
-  nU = 1.0 / norm;
-}
-
 // Standard topocentric solar geometry (textbook spherical astronomy). The ENU sun-vector
 // convention (E = cos(alt) sin(az), N = cos(alt) cos(az), U = sin(alt)) matches solshade's
 // solar.py; the altitude/azimuth formulas themselves are standard.

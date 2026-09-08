@@ -51,10 +51,6 @@ double sample_bilinear(const double *dem, int Mx, int My, double fi, double fj);
 double ray_horizon(const double *dem, int Mx, int My, double dx, double dy,
                    int i0, int j0, double azimuth, double step, double max_distance);
 
-//! Upward unit surface normal in East-North-Up components from the surface-elevation
-//! gradients `dzdE = dz/dEast` and `dzdN = dz/dNorth` (both m/m).
-void surface_normal(double dzdE, double dzdN, double &nE, double &nN, double &nU);
-
 //! Sun altitude and azimuth (radians) from `latitude`, solar `declination`, and
 //! `hour_angle` (all radians; hour angle measured from solar noon, positive in the
 //! afternoon). `altitude` is in [-pi/2, pi/2]; `azimuth` is clockwise from north in
