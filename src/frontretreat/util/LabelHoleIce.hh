@@ -78,6 +78,10 @@ public:
 
 
 protected:
+  //! Expose the seed mask and the labelling result as diagnostics, so that both
+  //! stages can be inspected via -extra_vars. See LabelHoleIce.cc.
+  virtual DiagnosticList diagnostics_impl() const;
+
   IceModelVec2Int m_bc_open_ocean_mask;
   IceModelVec2S m_enclosed_ocean_mask;
   petsc::Vec::Ptr m_mask_enclose_ocean_p0;

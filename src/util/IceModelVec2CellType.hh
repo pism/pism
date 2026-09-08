@@ -77,7 +77,7 @@ public:
   //! \brief Ocean point (area) is entirely surrounded by ice (e.g., hole in ice shelf); fallback ocean point
   inline bool ice_free_enclosed_ocean(int i, int j, bool do_consider_holes = false) const {
     if (do_consider_holes) {
-      return mask::ice_free_enclosed_ocean(as_int(i, j));
+      return mask::ice_free_enclosed_ocean(as_int(i, j), do_consider_holes);
     } else {
       return mask::ice_free_ocean(as_int(i, j));
     }
@@ -86,7 +86,7 @@ public:
   //! \brief Ocean point belongs to the open ocean (e.g., not enclosed by ice); fallback ocean point
   inline bool ice_free_open_ocean(int i, int j, bool do_consider_holes = false) const {
     if (do_consider_holes) {
-      return mask::ice_free_open_ocean(as_int(i, j));
+      return mask::ice_free_open_ocean(as_int(i, j), do_consider_holes);
     } else {
       return mask::ice_free_ocean(as_int(i, j));
     }
