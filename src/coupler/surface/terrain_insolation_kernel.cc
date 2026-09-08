@@ -142,6 +142,9 @@ void sun_position(double latitude, double declination, double hour_angle,
 double sky_view_factor(const double *horizon, const double *azimuth, int n_dir,
                        double slope, double aspect) {
 
+  double cos_slope = std::cos(slope);
+  double sin_slope = std::sin(slope);
+
   double acc = 0.0;
   for (int k = 0; k < n_dir; ++k) {
     // Dozier & Frew use the horizon measured from the zenith. A terrain horizon below the
@@ -149,9 +152,10 @@ double sky_view_factor(const double *horizon, const double *azimuth, int n_dir,
     // horizontal.
     double h = horizon[k] > 0.0 ? horizon[k] : 0.0;
     double Hz = 0.5 * M_PI - h; // zenith angle of the visible-sky edge
+    double sin_Hz = std::sin(Hz);
 
-    acc += std::cos(slope) * std::sin(Hz) * std::sin(Hz) +
-           std::sin(slope) * std::cos(azimuth[k] - aspect) * (Hz - std::sin(Hz) * std::cos(Hz));
+    acc += cos_slope * sin_Hz * sin_Hz +
+           sin_slope * std::cos(azimuth[k] - aspect) * (Hz - sin_Hz * std::cos(Hz));
   }
 
   double svf = acc / n_dir; // (1/2pi) * integral, with d(azimuth) = 2pi/n_dir
