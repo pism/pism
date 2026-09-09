@@ -80,7 +80,7 @@ private:
 
   //! ice surface elevation, cached from the geometry at initialization (the horizon is
   //! recomputed from this evolving field every m_update_interval)
-  const array::Scalar *m_surface_elevation;
+  const array::Scalar1 *m_surface_elevation;
 
   //! interval (seconds) between recomputations of the terrain horizon
   double m_update_interval;

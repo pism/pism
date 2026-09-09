@@ -115,6 +115,7 @@ void DEBMEnhanced::update_insolation_input(double t, double dt,
   double distance_factor = DEBMSimplePointwise::distance_factor_present_day(year_fraction);
 
   m_terrain->daily_insolation(declination, distance_factor, m_grid->latitude(),
+                              *m_surface_elevation,
                               *m_insolation);
   list.add(*m_insolation);
 }

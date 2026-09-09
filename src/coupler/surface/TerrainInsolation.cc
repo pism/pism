@@ -20,6 +20,7 @@
 #include "pism/coupler/surface/terrain_insolation_kernel.hh"
 
 #include <cmath>
+#include <math.h>
 #include <vector>
 
 #include "pism/util/Config.hh"
@@ -70,10 +71,6 @@ TerrainInsolation::TerrainInsolation(std::shared_ptr<const Grid> grid)
   m_horizon->metadata(0)
       .long_name("terrain horizon elevation angle as a function of azimuth")
       .units("radian");
-
-  m_normal_e = std::make_shared<array::Scalar>(m_grid, "surface_normal_e");
-  m_normal_n = std::make_shared<array::Scalar>(m_grid, "surface_normal_n");
-  m_normal_u = std::make_shared<array::Scalar>(m_grid, "surface_normal_u");
 
   if (m_use_sky_view) {
     m_sky_view = std::make_shared<array::Scalar>(m_grid, "sky_view_factor");
@@ -146,28 +143,38 @@ void TerrainInsolation::init(const array::Scalar &surface_elevation) {
 
   const auto &azimuth = m_horizon->levels();
 
-  array::AccessScope scope{ m_normal_e.get(), m_normal_n.get(), m_normal_u.get(),
-                            m_horizon.get() };
+  array::AccessScope scope{ &surface_elevation, m_horizon.get() };
   if (m_use_sky_view) {
     scope.add(*m_sky_view);
   }
+
+  auto diff_x = [Mx, dx](const array::Scalar &F, int i, int j) {
+    // use one-sided finite differences at domain boundaries:
+    int ip = i < Mx - 1 ? i + 1 : i;
+    int im = i > 0 ? i - 1 : i;
+
+    return (F(ip, j) - F(im, j)) / ((ip - im) * dx);
+  };
+
+  auto diff_y = [My, dy](const array::Scalar &F, int i, int j) {
+    // use one-sided finite differences at domain boundaries:
+    int jp = j < My - 1 ? j + 1 : j;
+    int jm = j > 0 ? j - 1 : j;
+
+    return (F(i, jp) - F(i, jm)) / ((jp - jm) * dy);
+  };
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     double *column = m_horizon->get_column(i, j);
-    int ip = i < Mx - 1 ? i + 1 : i;
-    int im = i > 0 ? i - 1 : i;
-    int jp = j < My - 1 ? j + 1 : j;
-    int jm = j > 0 ? j - 1 : j;
-
-    double dzdE = (m_dem[j * Mx + ip] - m_dem[j * Mx + im]) / ((ip - im) * dx);
-    double dzdN = (m_dem[jp * Mx + i] - m_dem[jm * Mx + i]) / ((jp - jm) * dy);
 
     // Compute the upward-pointing normal to the surface:
-    double nE = -dzdE, nN = -dzdN, nU = 1.0;
+    double nE = -diff_x(surface_elevation, i, j);
+    double nN = -diff_y(surface_elevation, i, j);
+    double nU = 1.0;
 
-    // Scale to get the unit normal and save:
+    // Scale to get the unit normal:
     {
       // Note that norm != 0.0 because nU == 1
       double norm = std::sqrt(nE * nE + nN * nN + nU * nU);
@@ -175,10 +182,6 @@ void TerrainInsolation::init(const array::Scalar &surface_elevation) {
       nE /= norm;
       nN /= norm;
       nU /= norm;
-
-      (*m_normal_e)(i, j) = nE;
-      (*m_normal_n)(i, j) = nN;
-      (*m_normal_u)(i, j) = nU;
     }
 
     for (int k = 0; k < m_n_directions; ++k) {
@@ -225,6 +228,7 @@ double TerrainInsolation::horizon_at(const double *column, double azimuth) const
 // distance factor come from PISM's own DEBMSimplePointwise instead of an ephemeris.
 void TerrainInsolation::daily_insolation(double declination, double distance_factor,
                                          const array::Scalar &latitude,
+                                         const array::Scalar1 &surface_elevation,
                                          array::Scalar &result) const {
   const double seconds_per_day = 86400.0;
 
@@ -238,19 +242,52 @@ void TerrainInsolation::daily_insolation(double declination, double distance_fac
   const auto &profiling = m_grid->ctx()->profiling();
   profiling.begin("surface.debm_enhanced.daily_insolation");
 
-  array::AccessScope scope{ &latitude, &result, m_normal_e.get(), m_normal_n.get(),
-                            m_normal_u.get(), m_horizon.get() };
+  array::AccessScope scope{ &latitude, &result, &surface_elevation, m_horizon.get() };
   if (m_use_sky_view) {
     scope.add(*m_sky_view);
   }
+
+  int Mx = (int)m_grid->Mx();
+  int My = (int)m_grid->My();
+  double dx = m_grid->dx();
+  double dy = m_grid->dy();
+
+  auto diff_x = [Mx, dx](const array::Scalar &F, int i, int j) {
+    // use one-sided finite differences at domain boundaries:
+    int ip = i < Mx - 1 ? i + 1 : i;
+    int im = i > 0 ? i - 1 : i;
+
+    return (F(ip, j) - F(im, j)) / ((ip - im) * dx);
+  };
+
+  auto diff_y = [My, dy](const array::Scalar &F, int i, int j) {
+    // use one-sided finite differences at domain boundaries:
+    int jp = j < My - 1 ? j + 1 : j;
+    int jm = j > 0 ? j - 1 : j;
+
+    return (F(i, jp) - F(i, jm)) / ((jp - jm) * dy);
+  };
+
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     const double lat = latitude(i, j) * (M_PI / 180.0); // degrees north -> radians
-    const double nE = (*m_normal_e)(i, j);
-    const double nN = (*m_normal_n)(i, j);
-    const double nU = (*m_normal_u)(i, j);
+
+    // Compute the upward-pointing unit surface normal:
+    double nE = -diff_x(surface_elevation, i, j);
+    double nN = -diff_y(surface_elevation, i, j);
+    double nU = 1.0;
+    // Scale to get the unit normal:
+    {
+      // Note that norm != 0.0 because nU == 1
+      double norm = std::sqrt(nE * nE + nN * nN + nU * nU);
+
+      nE /= norm;
+      nN /= norm;
+      nU /= norm;
+    }
+
     const double *column = m_horizon->get_column(i, j);
 
     // Split into a direct-beam fraction (terrain-shaded) and an isotropic diffuse fraction

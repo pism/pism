@@ -28,6 +28,7 @@ class Grid;
 
 namespace array {
 class Scalar;
+class Scalar1;
 class Array3D;
 } // namespace array
 
@@ -61,7 +62,9 @@ public:
   //! insolation integral divided by the length of the day. `latitude` is the per-cell
   //! latitude field (degrees north); `result` is overwritten.
   void daily_insolation(double declination, double distance_factor,
-                        const array::Scalar &latitude, array::Scalar &result) const;
+                        const array::Scalar &latitude,
+                        const array::Scalar1 &surface_elevation,
+                        array::Scalar &result) const;
 
   //! Terrain horizon map (azimuth, y, x), elevation angle in radians.
   const array::Array3D &horizon() const;
@@ -90,9 +93,6 @@ private:
   std::vector<double> m_dem;
 
   std::shared_ptr<array::Array3D> m_horizon;      // (azimuth, y, x), radians
-  std::shared_ptr<array::Scalar> m_normal_e;      // east component of surface normal
-  std::shared_ptr<array::Scalar> m_normal_n;      // north component
-  std::shared_ptr<array::Scalar> m_normal_u;      // up component
   std::shared_ptr<array::Scalar> m_sky_view;      // sky-view factor, in [0, 1]
 
   double horizon_at(const double *column, double azimuth) const;
