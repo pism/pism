@@ -330,7 +330,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
   }
 
   // Let derived classes (dEBM-enhanced) update and register a prescribed insolation field.
-  this->update_insolation_input(t, dt, ts, list);
+  this->update_insolation_input(t, dt, ts, geometry.ice_surface_elevation, list);
 
   double
     ice_density    = m_config->get_number("constants.ice.density"),
@@ -515,11 +515,13 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
 
 void DEBMSimple::update_insolation_input(double t, double dt,
                                          const std::vector<double> &ts,
+                                         const array::Scalar1 &surface_elevation,
                                          array::AccessScope &list) {
   // dEBM-simple computes insolation analytically and needs no prescribed input field.
   (void)t;
   (void)dt;
   (void)ts;
+  (void)surface_elevation;
   (void)list;
 }
 

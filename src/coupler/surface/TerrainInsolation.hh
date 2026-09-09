@@ -55,7 +55,7 @@ public:
   TerrainInsolation(std::shared_ptr<const Grid> grid);
 
   //! Gather the DEM and compute the horizon map and surface normals (one-time).
-  void init(const array::Scalar &surface_elevation);
+  void init(const array::Scalar1 &surface_elevation);
 
   //! Daily-mean terrain-shaded surface insolation rate (W m-2) for a day with the given
   //! solar `declination` (radians) and `distance_factor` (= (d_bar/d)^2): the diurnal

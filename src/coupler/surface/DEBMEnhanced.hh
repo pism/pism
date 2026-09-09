@@ -61,6 +61,7 @@ protected:
 
   void update_insolation_input(double t, double dt,
                                const std::vector<double> &ts,
+                               const array::Scalar1 &surface_elevation,
                                array::AccessScope &list) override;
 
   void insolation_energy_series(int i, int j,
@@ -77,10 +78,6 @@ private:
 
   //! daily surface insolation energy (J m-2) computed for the current update
   std::shared_ptr<array::Scalar> m_insolation;
-
-  //! ice surface elevation, cached from the geometry at initialization (the horizon is
-  //! recomputed from this evolving field every m_update_interval)
-  const array::Scalar1 *m_surface_elevation;
 
   //! interval (seconds) between recomputations of the terrain horizon
   double m_update_interval;

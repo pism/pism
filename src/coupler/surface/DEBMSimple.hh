@@ -78,6 +78,7 @@ protected:
   //! dEBM-enhanced updates its insolation forcing and registers it for access.
   virtual void update_insolation_input(double t, double dt,
                                        const std::vector<double> &ts,
+                                       const array::Scalar1 &surface_elevation,
                                        array::AccessScope &list);
 
   //! Insolation *energy* (J m^-2) reaching the surface during each sub-step at the cell

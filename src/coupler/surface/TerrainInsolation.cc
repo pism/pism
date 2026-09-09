@@ -96,7 +96,7 @@ bool TerrainInsolation::sky_view_enabled() const {
   return m_use_sky_view;
 }
 
-void TerrainInsolation::init(const array::Scalar &surface_elevation) {
+void TerrainInsolation::init(const array::Scalar1 &surface_elevation) {
   auto log = m_grid->ctx()->log();
 
   log->message(2, "* Updating the horizon map...\n");
@@ -148,7 +148,7 @@ void TerrainInsolation::init(const array::Scalar &surface_elevation) {
     scope.add(*m_sky_view);
   }
 
-  auto diff_x = [Mx, dx](const array::Scalar &F, int i, int j) {
+  auto diff_x = [Mx, dx](const array::Scalar1 &F, int i, int j) {
     // use one-sided finite differences at domain boundaries:
     int ip = i < Mx - 1 ? i + 1 : i;
     int im = i > 0 ? i - 1 : i;
@@ -156,7 +156,7 @@ void TerrainInsolation::init(const array::Scalar &surface_elevation) {
     return (F(ip, j) - F(im, j)) / ((ip - im) * dx);
   };
 
-  auto diff_y = [My, dy](const array::Scalar &F, int i, int j) {
+  auto diff_y = [My, dy](const array::Scalar1 &F, int i, int j) {
     // use one-sided finite differences at domain boundaries:
     int jp = j < My - 1 ? j + 1 : j;
     int jm = j > 0 ? j - 1 : j;
@@ -252,7 +252,7 @@ void TerrainInsolation::daily_insolation(double declination, double distance_fac
   double dx = m_grid->dx();
   double dy = m_grid->dy();
 
-  auto diff_x = [Mx, dx](const array::Scalar &F, int i, int j) {
+  auto diff_x = [Mx, dx](const array::Scalar1 &F, int i, int j) {
     // use one-sided finite differences at domain boundaries:
     int ip = i < Mx - 1 ? i + 1 : i;
     int im = i > 0 ? i - 1 : i;
@@ -260,7 +260,7 @@ void TerrainInsolation::daily_insolation(double declination, double distance_fac
     return (F(ip, j) - F(im, j)) / ((ip - im) * dx);
   };
 
-  auto diff_y = [My, dy](const array::Scalar &F, int i, int j) {
+  auto diff_y = [My, dy](const array::Scalar1 &F, int i, int j) {
     // use one-sided finite differences at domain boundaries:
     int jp = j < My - 1 ? j + 1 : j;
     int jm = j > 0 ? j - 1 : j;
