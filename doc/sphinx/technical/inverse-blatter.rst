@@ -177,8 +177,8 @@ where the sum is over basal face quadrature points `q`, and `\lambda_q`,
 Ice hardness as the design variable
 -----------------------------------
 
-With ``-inv_design hardav`` the design variable is the vertically-averaged
-ice hardness `B(x,y) = g(\zeta)`. As in the SSA case the hardness is a
+With ``inverse.design.variable = hardav`` (``-inv_design hardav``) the design
+variable is the vertically-averaged ice hardness `B(x,y) = g(\zeta)`. As in the SSA case the hardness is a
 single value per column; the Blatter solver replicates it over the sigma
 grid (``Blatter::init_averaged_ice_hardness``, selected by
 ``stressbalance::Inputs::averaged_hardness``) instead of deriving the

@@ -1545,6 +1545,12 @@ netcdf pism_config {
     pism_config:inverse.design.param_trunc_tauc0_type = "number";
     pism_config:inverse.design.param_trunc_tauc0_units = "Pascal";
 
+    pism_config:inverse.design.variable = "tauc";
+    pism_config:inverse.design.variable_choices = "tauc,hardav";
+    pism_config:inverse.design.variable_doc = "Design variable of a pismi inversion: basal yield stress ``tauc`` or vertically-averaged ice hardness ``hardav``. Ignored when ``inverse.alternating_cycles`` is positive (both are inverted in turn).";
+    pism_config:inverse.design.variable_option = "inv_design";
+    pism_config:inverse.design.variable_type = "keyword";
+
     pism_config:inverse.file = "";
     pism_config:inverse.file_doc = "Input file name for observations";
     pism_config:inverse.file_option = "inv_data";
