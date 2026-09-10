@@ -16,6 +16,11 @@ Changes since v2.3.0
   `inverse.design.param_trunc_hardav0` (needed by any `hardav` inversion, SSA included),
   `examples/inverse/blatter_inverse_checks.py` (adjoint and finite-difference gradient
   checks) and a `-design hardav` mode in `examples/inverse/ismiphom_twin.py`.
+- Make Blatter inversions robust to adjoint solver failures: the `approximate` adjoint
+  now reuses the forward solver's multigrid KSP (the standalone GMRES + Jacobi solve
+  could stall after hundreds of iterations on large 3D systems), a failed `exact` or
+  `incomplete` adjoint solve falls back to it, and `pismi` recovers the last accepted
+  iterate and writes the phase's results if TAO fails anyway.
 - Add the configuration parameter `inverse.design.variable` (`tauc` or `hardav`, short
   option `-inv_design`) selecting the design variable of a `pismi` inversion.
 - Wire up `inverse.alternating_cycles` in `pismi`: alternate `tauc` and `hardav`

@@ -282,7 +282,9 @@ proceeds in three steps:
      forward Newton Jacobian is symmetrized by the upper-triangle mirror
      in ``compute_jacobian``, so ``KSPSolve`` is a good approximation to
      ``KSPSolveTranspose``. Fast — reuses the existing matrix, no
-     reassembly. Use GMRES (``-inv_adj_ksp_type gmres``).
+     reassembly, and it reuses the forward solver's KSP and multigrid
+     preconditioner (``bp_`` options), exactly like the forward
+     linearization; the ``inv_adj_`` options are not used.
 
    - **incomplete**: ``KSPSolve`` on a separately assembled Picard
      Jacobian (drops viscosity derivative terms via ``compute_picard_jacobian``).
@@ -294,8 +296,15 @@ proceeds in three steps:
      transpose-compatible preconditioner (``-inv_adj_pc_type jacobi``);
      SOR and GAMG do not support transpose.
 
-   All three methods use a standalone KSP (prefix ``inv_adj_``) rather than
-   the SNES's multigrid KSP, avoiding MG hierarchy issues.
+   The **incomplete** and **exact** methods use a standalone KSP (prefix
+   ``inv_adj_``) rather than the SNES's multigrid KSP, because they need a
+   different matrix or a transpose solve. If that standalone solve does not
+   converge (e.g. GMRES with a Jacobi preconditioner stalling on a large 3D
+   system), PISM logs a warning and falls back to the approximate adjoint
+   with the forward KSP instead of aborting the inversion. Should the
+   fallback fail too, ``pismi`` recovers the last accepted iterate saved as
+   ``zeta_inv`` (or ``zeta_inv_<var>``), computes its velocities and writes
+   the phase's results, so an alternating run continues with the next phase.
 
 3. **Design Jacobian transpose**: compute
 
@@ -359,7 +368,8 @@ PISM provides three adjoint methods via the configuration parameter
    * - ``approximate``
      - ``KSPSolve``
      - SNES Jacobian (Newton, symmetrized by upper-triangle mirror)
-     - Default. Fastest — reuses existing matrix. Use GMRES + GAMG.
+     - Default. Fastest — reuses the existing matrix and the forward
+       multigrid KSP.
    * - ``incomplete``
      - ``KSPSolve``
      - Separate Picard Jacobian (assembled via ``compute_picard_jacobian``)
@@ -515,7 +525,7 @@ The Blatter forward solve is configured via PETSc command-line options with the
    The forward SNES can always use any MG smoother (including SOR). The adjoint
    solve uses a separate KSP (``inv_adj_`` prefix). Recommended adjoint settings:
 
-   - ``approximate`` (default): ``-inv_adj_ksp_type gmres -inv_adj_pc_type gamg``
+   - ``approximate`` (default): uses the forward ``-bp_ksp_*`` / ``-bp_pc_*`` settings
    - ``incomplete``: ``-inv_adj_ksp_type cg -inv_adj_pc_type gamg``
    - ``exact``: ``-inv_adj_ksp_type gmres -inv_adj_pc_type jacobi``
 
@@ -533,11 +543,12 @@ transposes accumulate into owned 2D nodes only. The state Jacobian is
 re-assembled at the converged solution before it is used for linearizations
 and adjoint solves.
 
-The adjoint solve uses a standalone KSP (prefix ``inv_adj_``) operating on the
-SNES Jacobian that was already assembled during the forward solve. This avoids
-reusing the SNES's multigrid KSP (swapping operators on the MG KSP triggers
-``PCSetUp_MG`` issues). Configure via ``-inv_adj_ksp_type``,
-``-inv_adj_pc_type``, etc.
+The ``approximate`` adjoint solve reuses the SNES's KSP on the Jacobian
+re-assembled at the converged solution. The ``incomplete`` and ``exact``
+adjoint solves use a standalone KSP (prefix ``inv_adj_``): swapping the
+Picard matrix into the SNES's multigrid KSP triggers ``PCSetUp_MG`` issues,
+and a transpose solve needs a transpose-capable preconditioner. Configure
+via ``-inv_adj_ksp_type``, ``-inv_adj_pc_type``, etc.
 
 Key files
 ^^^^^^^^^
