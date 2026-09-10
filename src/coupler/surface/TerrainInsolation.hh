@@ -22,6 +22,9 @@
 #include <memory>
 #include <vector>
 
+#include "pism/util/petscwrappers/VecScatter.hh"
+#include "pism/util/petscwrappers/Vec.hh"
+
 namespace pism {
 
 class Grid;
@@ -89,9 +92,10 @@ private:
   bool m_use_sky_view;
   double m_diffuse_fraction;
 
-  // the global DEM, replicated on every rank, row-major dem[j * Mx + i]
-  std::vector<double> m_dem;
-
+  petsc::VecScatter m_scatter;
+  // the global DEM, replicated on every rank
+  petsc::Vec m_dem_local;
+  
   std::shared_ptr<array::Array3D> m_horizon;      // (azimuth, y, x), radians
   std::shared_ptr<array::Scalar> m_sky_view;      // sky-view factor, in [0, 1]
 

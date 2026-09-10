@@ -20,7 +20,10 @@
 #include "pism/coupler/surface/terrain_insolation_kernel.hh"
 
 #include <cmath>
-#include <math.h>
+#include <petscdm.h>
+#include <petscdmda.h>
+#include <petscsystypes.h>
+#include <petscvec.h>
 #include <vector>
 
 #include "pism/util/Config.hh"
@@ -33,6 +36,7 @@
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/pism_utilities.hh"
+#include "pism/util/petscwrappers/DM.hh"
 
 namespace pism {
 namespace surface {
@@ -79,6 +83,16 @@ TerrainInsolation::TerrainInsolation(std::shared_ptr<const Grid> grid)
                    "from the terrain-shaded, tilted surface)")
         .units("1");
   }
+
+  // Allocate the scatter to all ranks and the vector that will hold local copies of the
+  // DEM:
+  PetscErrorCode ierr;
+  ierr = DMDAGlobalToNaturalAllCreate(*m_grid->get_dm(1, 0), m_scatter.rawptr());
+  PISM_CHK(ierr, "DMDAGlobalToNaturalAllCreate");
+
+  ierr = VecCreateSeq(PETSC_COMM_SELF, static_cast<PetscInt>(m_grid->Mx() * m_grid->My()),
+                      m_dem_local.rawptr());
+  PISM_CHK(ierr, "VecCreateSeq");
 }
 
 const array::Array3D &TerrainInsolation::horizon() const {
@@ -109,45 +123,6 @@ void TerrainInsolation::init(const array::Scalar1 &surface_elevation) {
   const double dx = m_grid->dx();
   const double dy = m_grid->dy();
 
-  // Gather the full DEM onto rank 0, then broadcast it to every rank. The result is a
-  // contiguous, row-major (dem[j * Mx + i]) copy of the global surface elevation that lets
-  // each rank ray-march its owned cells without any ghost communication.
-  profiling.begin("surface.debm_enhanced.gather_dem");
-  m_dem.resize(static_cast<size_t>(Mx) * static_cast<size_t>(My));
-
-  auto work0 = surface_elevation.allocate_proc0_copy();
-  surface_elevation.put_on_proc0(*work0);
-
-  ParallelSection rank0(m_grid->com);
-  try {
-    if (m_grid->rank() == 0) {
-      petsc::VecArray array(*work0);
-      const double *a = array.get();
-      for (size_t k = 0; k < m_dem.size(); ++k) {
-        m_dem[k] = a[k];
-      }
-    }
-  } catch (...) {
-    rank0.failed();
-  }
-  rank0.check();
-
-  int ierr = MPI_Bcast(m_dem.data(), static_cast<int>(m_dem.size()), MPI_DOUBLE, 0,
-                       m_grid->com);
-  PISM_CHK(ierr, "MPI_Bcast");
-  profiling.end("surface.debm_enhanced.gather_dem");
-
-  // Compute surface normals (centered differences on the global DEM, one-sided at the
-  // domain boundary) and the horizon map (the dominant cost) for every owned cell.
-  profiling.begin("surface.debm_enhanced.horizon");
-
-  const auto &azimuth = m_horizon->levels();
-
-  array::AccessScope scope{ &surface_elevation, m_horizon.get() };
-  if (m_use_sky_view) {
-    scope.add(*m_sky_view);
-  }
-
   auto diff_x = [Mx, dx](const array::Scalar1 &F, int i, int j) {
     // use one-sided finite differences at domain boundaries:
     int ip = i < Mx - 1 ? i + 1 : i;
@@ -163,6 +138,37 @@ void TerrainInsolation::init(const array::Scalar1 &surface_elevation) {
 
     return (F(i, jp) - F(i, jm)) / ((jp - jm) * dy);
   };
+
+  // Scatter the full DEM to every rank. After this block each rank has a copy of the
+  // global surface elevation that lets it compute shading at its owned cells without
+  // ghost communication.
+  {
+    profiling.begin("surface.debm_enhanced.scatter_dem");
+    PetscErrorCode ierr;
+    auto dm = surface_elevation.dm();
+    petsc::TemporaryGlobalVec dem_global(dm);
+    // Note: we use DMLocalToGlobal because surface_elevation is ghosted (local)
+    ierr = DMLocalToGlobal(*dm, surface_elevation.vec(), INSERT_VALUES, dem_global);
+    PISM_CHK(ierr, "DMLocalToGlobal");
+
+    ierr = VecScatterBegin(m_scatter, dem_global, m_dem_local, INSERT_VALUES, SCATTER_FORWARD);
+    PISM_CHK(ierr, "VecScatterBegin");
+    ierr = VecScatterEnd(m_scatter, dem_global, m_dem_local, INSERT_VALUES, SCATTER_FORWARD);
+    PISM_CHK(ierr, "VecScatterEnd");
+    profiling.end("surface.debm_enhanced.scatter_dem");
+  }
+
+  // Compute surface normals (centered differences on the global DEM, one-sided at the
+  // domain boundary) and the horizon map (the dominant cost) for every owned cell.
+  profiling.begin("surface.debm_enhanced.horizon");
+
+  const auto &azimuth = m_horizon->levels();
+
+  petsc::VecArray dem(m_dem_local);
+  array::AccessScope scope{ &surface_elevation, m_horizon.get() };
+  if (m_use_sky_view) {
+    scope.add(*m_sky_view);
+  }
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
@@ -185,7 +191,7 @@ void TerrainInsolation::init(const array::Scalar1 &surface_elevation) {
     }
 
     for (int k = 0; k < m_n_directions; ++k) {
-      column[k] = terrain::ray_horizon(m_dem.data(), Mx, My, dx, dy, i, j, azimuth[k], m_step,
+      column[k] = terrain::ray_horizon(dem.get(), Mx, My, dx, dy, i, j, azimuth[k], m_step,
                                        m_max_distance);
     }
 
