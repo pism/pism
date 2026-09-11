@@ -49,6 +49,11 @@ TerrainInsolation::TerrainInsolation(std::shared_ptr<const Grid> grid)
   m_use_sky_view  = config->get_flag("surface.debm_enhanced.use_sky_view_factor");
   m_diffuse_fraction = config->get_number("surface.debm_enhanced.diffuse_fraction");
 
+  if (not (m_step > 0.0)) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "surface.debm_enhanced.horizon.step must be positive");
+  }
+
   if (m_n_directions < 1) {
     throw RuntimeError(PISM_ERROR_LOCATION,
                        "surface.debm_enhanced.horizon.n_directions must be positive");

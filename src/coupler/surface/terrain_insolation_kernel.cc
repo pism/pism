@@ -18,6 +18,7 @@
 
 #include "pism/coupler/surface/terrain_insolation_kernel.hh"
 
+#include <cassert>
 #include <cmath>
 #include <limits>
 
@@ -71,6 +72,8 @@ double ray_horizon(const double *dem, int Mx, int My, double dx, double dy,
                    int i0, int j0, double azimuth, double step, double max_distance) {
   const double z0 = dem[j0 * Mx + i0];
 
+  assert(step > 0.0);
+
   // Azimuth clockwise from north: horizontal direction (East, North) = (sin, cos).
   const double sE = std::sin(azimuth);
   const double cN = std::cos(azimuth);
@@ -87,13 +90,11 @@ double ray_horizon(const double *dem, int Mx, int My, double dx, double dy,
     }
 
     double z = sample_bilinear(dem, Mx, My, fi, fj);
-    double angle = std::atan2(z - z0, d);
-    if (angle > best) {
-      best = angle;
-    }
+
+    best = std::fmax(best, (z - z0) / d);
   }
 
-  return std::isfinite(best) ? best : 0.0;
+  return std::isfinite(best) ? std::atan(best) : 0.0;
 }
 
 // Standard topocentric solar geometry (textbook spherical astronomy). The ENU sun-vector
