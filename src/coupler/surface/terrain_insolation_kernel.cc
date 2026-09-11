@@ -97,32 +97,46 @@ double ray_horizon(const double *dem, int Mx, int My, double dx, double dy,
   return std::isfinite(best) ? std::atan(best) : 0.0;
 }
 
+SunPosition::SunPosition(double declination) {
+  m_sin_decl = std::sin(declination);
+  m_cos_decl = std::cos(declination);
+}
+
+void SunPosition::set_latitude(double latitude_radians) {
+  m_sin_lat = std::sin(latitude_radians);
+  m_cos_lat = std::cos(latitude_radians);
+}
+
 // Standard topocentric solar geometry (textbook spherical astronomy). The ENU sun-vector
 // convention (E = cos(alt) sin(az), N = cos(alt) cos(az), U = sin(alt)) matches solshade's
 // solar.py; the altitude/azimuth formulas themselves are standard.
-void sun_position(double latitude, double declination, double hour_angle,
-                  double &altitude, double &azimuth) {
-  const double sl = std::sin(latitude), cl = std::cos(latitude);
-  const double sd = std::sin(declination), cd = std::cos(declination);
-  const double sH = std::sin(hour_angle), cH = std::cos(hour_angle);
+void SunPosition::compute(double hour_angle, double &altitude, double &azimuth) const {
+  double sin_alt =
+      clip(m_sin_lat * m_sin_decl + m_cos_lat * m_cos_decl * std::cos(hour_angle), -1.0, 1.0);
 
-  double sin_alt = clip(sl * sd + cl * cd * cH, -1.0, 1.0);
   altitude = std::asin(sin_alt);
 
-  double cos_alt = std::cos(altitude);
-
-  // Degenerate geometry: sun at the zenith, or observer at a geographic pole. Azimuth is
-  // undefined; return 0 (irrelevant for the cosine projection at the zenith, and PISM
-  // domains are not located exactly at a pole).
-  if (cos_alt < 1e-8 || cl < 1e-8) {
+  // Azimuth is irrelevant if the run is below the horizon.
+  if (altitude < 0.0) {
     azimuth = 0.0;
     return;
   }
 
-  double sinA = -cd * sH / cos_alt;
-  double cosA = (sd - sl * sin_alt) / (cl * cos_alt);
+  double cos_altitude = std::cos(altitude);
+
+  // Degenerate geometry: sun at the zenith, or observer at a geographic pole. Azimuth is
+  // undefined; return 0 (irrelevant for the cosine projection at the zenith, and PISM
+  // domains are not located exactly at a pole).
+  if (cos_altitude < 1e-8 || m_cos_lat < 1e-8) {
+    azimuth = 0.0;
+    return;
+  }
+
+  double sinA = -m_cos_decl * std::sin(hour_angle) / cos_altitude;
+  double cosA = (m_sin_decl - m_sin_lat * sin_alt) / (m_cos_lat * cos_altitude);
 
   double A = std::atan2(sinA, cosA); // clockwise from north, in (-pi, pi]
+
   if (A < 0.0) {
     A += 2.0 * M_PI;
     // A tiny negative angle (e.g. at hour_angle = pi, where sin(hour_angle) is not
@@ -133,6 +147,16 @@ void sun_position(double latitude, double declination, double hour_angle,
     }
   }
   azimuth = A;
+}
+
+// Standard topocentric solar geometry (textbook spherical astronomy). The ENU sun-vector
+// convention (E = cos(alt) sin(az), N = cos(alt) cos(az), U = sin(alt)) matches solshade's
+// solar.py; the altitude/azimuth formulas themselves are standard.
+void sun_position(double latitude, double declination, double hour_angle,
+                  double &altitude, double &azimuth) {
+  SunPosition sp(declination);
+  sp.set_latitude(latitude);
+  sp.compute(hour_angle, altitude, azimuth);
 }
 
 // Implements the slope-corrected sky-view factor of Dozier & Frew (1990), "Rapid

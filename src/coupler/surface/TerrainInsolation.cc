@@ -300,6 +300,8 @@ void TerrainInsolation::daily_insolation(double declination, double distance_fac
                                          array::Scalar &result) const {
   const double seconds_per_day = 86400.0;
 
+  terrain::SunPosition sun_position(declination);
+
   // number of sub-daily samples used to integrate the diurnal cycle
   int M = static_cast<int>(std::lround(seconds_per_day / m_insolation_dt));
   if (M < 1) {
@@ -342,7 +344,7 @@ void TerrainInsolation::daily_insolation(double declination, double distance_fac
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
-    const double lat = latitude(i, j) * (M_PI / 180.0); // degrees north -> radians
+    sun_position.set_latitude(latitude(i, j) * (M_PI / 180.0));
 
     // Compute the upward-pointing unit surface normal:
     double nE = -diff_x(surface_elevation, i, j);
@@ -358,7 +360,7 @@ void TerrainInsolation::daily_insolation(double declination, double distance_fac
       nU /= norm;
     }
 
-    const double *column = m_horizon->get_column(i, j);
+    const double *horizon = m_horizon->get_column(i, j);
 
     // Split into a direct-beam fraction (terrain-shaded) and an isotropic diffuse fraction
     // (reduced by the sky-view factor). With the sky-view factor disabled the diffuse term
@@ -372,7 +374,7 @@ void TerrainInsolation::daily_insolation(double declination, double distance_fac
       double H = -M_PI + 2.0 * M_PI * (m + 0.5) / M;
 
       double altitude = 0.0, azimuth = 0.0;
-      terrain::sun_position(lat, declination, H, altitude, azimuth);
+      sun_position.compute(H, altitude, azimuth);
 
       if (altitude <= 0.0) {
         continue; // Sun below the astronomical horizon: no direct and no diffuse
@@ -385,7 +387,7 @@ void TerrainInsolation::daily_insolation(double declination, double distance_fac
       energy += f_diff * toa_horizontal * svf * dt;
 
       // direct beam: only when the Sun clears the local horizon and lights the surface
-      if (altitude > horizon_at(column, azimuth)) {
+      if (altitude > horizon_at(horizon, azimuth)) {
         double cos_alt = std::cos(altitude);
         double sE = cos_alt * std::sin(azimuth);
         double sN = cos_alt * std::cos(azimuth);
