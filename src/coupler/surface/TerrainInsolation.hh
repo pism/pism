@@ -89,7 +89,6 @@ private:
   double m_step;
   double m_insolation_dt;
   double m_solar_constant;
-  bool m_use_sky_view;
   double m_diffuse_fraction;
 
   petsc::VecScatter m_scatter;

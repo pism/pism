@@ -58,7 +58,6 @@ TerrainInsolation::TerrainInsolation(std::shared_ptr<const Grid> grid)
   m_step          = config->get_number("surface.debm_enhanced.horizon.step");
   m_insolation_dt  = config->get_number("surface.debm_enhanced.insolation_dt");
   m_solar_constant = config->get_number("surface.debm_simple.solar_constant");
-  m_use_sky_view  = config->get_flag("surface.debm_enhanced.use_sky_view_factor");
   m_diffuse_fraction = config->get_number("surface.debm_enhanced.diffuse_fraction");
 
   if (not (m_step > 0.0)) {
@@ -83,7 +82,8 @@ TerrainInsolation::TerrainInsolation(std::shared_ptr<const Grid> grid)
       .long_name("terrain horizon elevation angle as a function of azimuth")
       .units("radian");
 
-  if (m_use_sky_view) {
+  bool use_sky_view  = config->get_flag("surface.debm_enhanced.use_sky_view_factor");
+  if (use_sky_view) {
     m_sky_view = std::make_shared<array::Scalar>(m_grid, "sky_view_factor");
     m_sky_view->metadata(0)
         .long_name("sky-view factor (fraction of the diffuse sky hemisphere visible "
@@ -107,14 +107,14 @@ const array::Array3D &TerrainInsolation::horizon() const {
 }
 
 const array::Scalar &TerrainInsolation::sky_view() const {
-  if (not m_use_sky_view) {
+  if (not sky_view_enabled()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "sky view factor is not available");
   }
   return *m_sky_view;
 }
 
 bool TerrainInsolation::sky_view_enabled() const {
-  return m_use_sky_view;
+  return m_sky_view != nullptr;
 }
 
 /*!
@@ -226,7 +226,9 @@ void TerrainInsolation::init(const array::Scalar1 &surface_elevation) {
 
   petsc::VecArray dem(m_dem_local);
   array::AccessScope scope{ &surface_elevation, m_horizon.get() };
-  if (m_use_sky_view) {
+
+  bool use_sky_view = sky_view_enabled();
+  if (use_sky_view) {
     scope.add(*m_sky_view);
   }
 
@@ -257,7 +259,7 @@ void TerrainInsolation::init(const array::Scalar1 &surface_elevation) {
 
     // sky-view factor from the horizon and the surface slope/aspect (the latter recovered
     // from the unit normal: slope = acos(nU), aspect = atan2(nE, nN), clockwise from north)
-    if (m_use_sky_view) {
+    if (use_sky_view) {
       double slope = std::acos(nU < -1.0 ? -1.0 : (nU > 1.0 ? 1.0 : nU));
       double aspect = std::atan2(nE, nN);
       (*m_sky_view)(i, j) =
@@ -309,7 +311,9 @@ void TerrainInsolation::daily_insolation(double declination, double distance_fac
   profiling.begin("surface.debm_enhanced.daily_insolation");
 
   array::AccessScope scope{ &latitude, &result, &surface_elevation, m_horizon.get() };
-  if (m_use_sky_view) {
+
+  bool use_sky_view = sky_view_enabled();
+  if (use_sky_view) {
     scope.add(*m_sky_view);
   }
 
@@ -359,8 +363,8 @@ void TerrainInsolation::daily_insolation(double declination, double distance_fac
     // Split into a direct-beam fraction (terrain-shaded) and an isotropic diffuse fraction
     // (reduced by the sky-view factor). With the sky-view factor disabled the diffuse term
     // is dropped and the result is pure direct beam.
-    const double f_diff = m_use_sky_view ? m_diffuse_fraction : 0.0;
-    const double svf = m_use_sky_view ? (*m_sky_view)(i, j) : 0.0;
+    const double f_diff = use_sky_view ? m_diffuse_fraction : 0.0;
+    const double svf = use_sky_view ? (*m_sky_view)(i, j) : 0.0;
 
     double energy = 0.0;
     for (int m = 0; m < M; ++m) {
