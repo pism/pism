@@ -61,6 +61,14 @@ struct DEBMSimpleOrbitalParameters {
   double distance_factor;
 };
 
+class DEBMSimpleAtmosphereTransmissivity {
+public:
+  DEBMSimpleAtmosphereTransmissivity(const Config &config);
+  double operator()(double surface_elevation) const;
+private:
+  double m_slope, m_intercept;
+};
+
 //! A dEBM-simple implementation
 /*!
  * This class implements dEBM-simple, the simple diurnal energy balance model described in
@@ -151,10 +159,6 @@ private:
   //! slope used in the linear parameterization of the albedo as a function of melt
   double m_albedo_slope;
 
-  //! slope used in the linear parameterization of transmissivity
-  double m_transmissivity_slope;
-  double m_transmissivity_intercept;
-
   // tuning parameters of the melt equation
   double m_melt_c1;
   double m_melt_c2;
@@ -181,6 +185,9 @@ private:
   double m_constant_obliquity;
 
   std::shared_ptr<const Time> m_time;
+
+  // atmosphere transmissivity model
+  DEBMSimpleAtmosphereTransmissivity m_transmissivity;
 };
 
 } // end of namespace surface

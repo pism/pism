@@ -299,7 +299,7 @@ DEBMSimpleMelt::DEBMSimpleMelt() {
   total_melt       = 0.0;
 }
 
-DEBMSimplePointwise::DEBMSimplePointwise(const Context &ctx) {
+DEBMSimplePointwise::DEBMSimplePointwise(const Context &ctx) : m_transmissivity(*ctx.config()) {
 
   const Config &config = *ctx.config();
 
@@ -322,8 +322,6 @@ DEBMSimplePointwise::DEBMSimplePointwise(const Context &ctx) {
   m_refreeze_fraction              = config.get_number("surface.debm_simple.refreeze");
   m_refreeze_ice_melt              = config.get_flag("surface.debm_simple.refreeze_ice_melt");
   m_solar_constant                 = config.get_number("surface.debm_simple.solar_constant");
-  m_transmissivity_intercept       = config.get_number("surface.debm_simple.tau_a_intercept");
-  m_transmissivity_slope           = config.get_number("surface.debm_simple.tau_a_slope");
 
   m_ice_density   = config.get_number("constants.ice.density");
   m_water_density = config.get_number("constants.fresh_water.density");
@@ -372,7 +370,7 @@ double DEBMSimplePointwise::albedo(double melt_rate, MaskValue cell_type) const 
  * @param[in] elevation elevation above the geoid (meters)
  */
 double DEBMSimplePointwise::atmosphere_transmissivity(double elevation) const {
-  return m_transmissivity_intercept + m_transmissivity_slope * elevation;
+  return m_transmissivity(elevation);
 }
 
 DEBMSimpleOrbitalParameters DEBMSimplePointwise::orbital_parameters(double time) const {
@@ -638,6 +636,22 @@ double DEBMSimplePointwise::perihelion_longitude(double time) const {
     return L_p;
   }
   return m_constant_perihelion_longitude;
+}
+
+DEBMSimpleAtmosphereTransmissivity::DEBMSimpleAtmosphereTransmissivity(const Config &config) {
+  m_slope = config.get_number("surface.debm_simple.tau_a_slope");
+  m_intercept = config.get_number("surface.debm_simple.tau_a_intercept");
+}
+
+/*! Atmosphere transmissivity (no units; acts as a scaling factor)
+ *
+ * See appendix A2 in Zeitz et al 2021.
+ *
+ * @param[in] surface_elevation elevation above the geoid (meters)
+ */
+double DEBMSimpleAtmosphereTransmissivity::operator()(double surface_elevation) const {
+  return m_intercept + m_slope * surface_elevation;
+
 }
 
 } // end of namespace surface
