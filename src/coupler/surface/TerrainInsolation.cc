@@ -30,6 +30,8 @@
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/petscwrappers/Vec.hh"
+#include "pism/util/Logger.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace surface {
@@ -93,6 +95,11 @@ bool TerrainInsolation::sky_view_enabled() const {
 }
 
 void TerrainInsolation::init(const array::Scalar &surface_elevation) {
+  auto log = m_grid->ctx()->log();
+
+  log->message(2, "* Updating the horizon map...\n");
+  double start = get_time(m_grid->com);
+
   const auto &profiling = m_grid->ctx()->profiling();
 
   const int Mx = static_cast<int>(m_grid->Mx());
@@ -185,6 +192,8 @@ void TerrainInsolation::init(const array::Scalar &surface_elevation) {
     }
   }
   profiling.end("surface.debm_enhanced.horizon");
+  double end = get_time(m_grid->com);
+  log->message(2, "* Updated the horizon map in %f s.\n", end - start);
 }
 
 //! Periodic linear interpolation of a horizon column at the given azimuth (radians).
