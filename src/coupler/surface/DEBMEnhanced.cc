@@ -58,7 +58,8 @@ DEBMEnhanced::DEBMEnhanced(std::shared_ptr<const Grid> g,
                  "  dEBM-enhanced: the terrain-shaded surface insolation is computed\n"
                  "  internally from the ice surface elevation.\n");
 
-  m_terrain.reset(new TerrainInsolation(m_grid));
+  DEBMSimpleAtmosphereTransmissivity transmissivity(*m_config);
+  m_terrain.reset(new TerrainInsolation(m_grid, transmissivity));
 
   m_update_interval =
       m_config->get_number("surface.debm_enhanced.update_interval", "seconds");

@@ -19,6 +19,7 @@
 #ifndef PISM_TERRAIN_INSOLATION_H
 #define PISM_TERRAIN_INSOLATION_H
 
+#include <functional>
 #include <memory>
 #include <vector>
 
@@ -55,7 +56,8 @@ namespace surface {
  */
 class TerrainInsolation {
 public:
-  TerrainInsolation(std::shared_ptr<const Grid> grid);
+  TerrainInsolation(std::shared_ptr<const Grid> grid,
+                    std::function<double(double)> atmosphere_transmissivity);
 
   //! Gather the DEM and compute the horizon map and surface normals (one-time).
   void init(const array::Scalar1 &surface_elevation);
@@ -99,6 +101,8 @@ private:
   std::shared_ptr<array::Scalar> m_sky_view;      // sky-view factor, in [0, 1]
 
   double horizon_at(const double *column, double azimuth) const;
+
+  std::function<double(double)> m_transmissivity;
 };
 
 } // end of namespace surface
