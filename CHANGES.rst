@@ -23,6 +23,9 @@ Changes since v2.3.0
   runoff. It is exposed to Python as `PISM.SurfaceISMIP7`.
 - Implement the Blatter hardness inversion (`pismi -stress_balance.model blatter -inv_design
   hardav`): `IP_BlatterHardavForwardProblem` now provides the volume design Jacobian (and
+- Implement the Blatter hardness inversion (`pismi -stress_balance.model blatter
+  -inverse.design.variable hardav`, short option `-inv_design`): `IP_BlatterHardavForwardProblem`
+  now provides the volume design Jacobian (and
   its column-integrated transpose) for the vertically-averaged ice hardness, exploiting the
   linearity of the effective viscosity in `B`; the hardness is passed to the Blatter solver
   through `Inputs::averaged_hardness`. The design-variable-agnostic parts of the Blatter
@@ -34,6 +37,13 @@ Changes since v2.3.0
   `inverse.design.param_trunc_hardav0` (needed by any `hardav` inversion, SSA included),
   `examples/inverse/blatter_inverse_checks.py` (adjoint and finite-difference gradient
   checks) and a `-design hardav` mode in `examples/inverse/ismiphom_twin.py`.
+- Make Blatter inversions robust to adjoint solver failures: the `approximate` adjoint
+  now reuses the forward solver's multigrid KSP (the standalone GMRES + Jacobi solve
+  could stall after hundreds of iterations on large 3D systems), a failed `exact` or
+  `incomplete` adjoint solve falls back to it, and `pismi` recovers the last accepted
+  iterate and writes the phase's results if TAO fails anyway.
+- Add the configuration parameter `inverse.design.variable` (`tauc` or `hardav`, short
+  option `-inv_design`) selecting the design variable of a `pismi` inversion.
 - Wire up `inverse.alternating_cycles` in `pismi`: alternate `tauc` and `hardav`
   inversions (Blatter only) in one invocation, handing results between phases through the
   output file (`tauc`, `hardav`, `zeta_inv_<var>`, `hardav_prior`, per-phase iteration

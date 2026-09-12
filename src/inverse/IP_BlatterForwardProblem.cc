@@ -389,93 +389,116 @@ void IP_BlatterForwardProblem::apply_linearization_transpose(
     PISM_CHK(ierr, "DMDAVecRestoreArray");
   }
 
-  // Standalone adjoint KSP (not the SNES's MG KSP).
-  // Configure via -inv_adj_ksp_type, -inv_adj_pc_type, etc.
-  if (m_ksp.get() == nullptr) {
-    ierr = KSPCreate(m_grid->com, m_ksp.rawptr());
-    PISM_CHK(ierr, "KSPCreate");
-
-    ierr = KSPSetOptionsPrefix(m_ksp, "inv_adj_");
-    PISM_CHK(ierr, "KSPSetOptionsPrefix");
-
-    ierr = KSPSetType(m_ksp, KSPGMRES);
-    PISM_CHK(ierr, "KSPSetType");
-
-    ierr = KSPSetTolerances(m_ksp, 1e-5, PETSC_DEFAULT, PETSC_DEFAULT, 10000);
-    PISM_CHK(ierr, "KSPSetTolerances");
-
-    ierr = KSPSetFromOptions(m_ksp);
-    PISM_CHK(ierr, "KSPSetFromOptions");
-  }
-
   std::string adjoint_method = m_config->get_string("inverse.adjoint.method");
 
-  if (adjoint_method == "incomplete") {
-    // Incomplete (Picard) adjoint: assemble a separate Picard Jacobian
-    // (drops viscosity derivative terms), then KSPSolve. The matrix is
-    // truly symmetric, so CG + any preconditioner works.
-    m_log->message(2, "Blatter inverse: adjoint solve (incomplete/Picard, KSPSolve)...\n");
+  // The "approximate" adjoint solves with the (symmetrized) Newton Jacobian
+  // itself, so it can reuse the forward SNES's KSP and its multigrid
+  // preconditioner exactly as apply_linearization() does; a standalone KSP
+  // (prefix "inv_adj_") is used for the other two methods, which need a
+  // different matrix (incomplete) or a transpose solve (exact).
+  KSPConvergedReason reason = KSP_CONVERGED_ITERATING;
+  PetscInt ksp_its = 0;
 
-    if (m_J_picard.get() == nullptr) {
-      Mat J_snes;
-      ierr = SNESGetJacobian(m_snes, &J_snes, NULL, NULL, NULL);
-      PISM_CHK(ierr, "SNESGetJacobian");
+  auto solve_with_snes_ksp = [&]() {
+    KSP ksp;
+    ierr = SNESGetKSP(m_snes, &ksp);
+    PISM_CHK(ierr, "SNESGetKSP");
 
-      ierr = MatDuplicate(J_snes, MAT_DO_NOT_COPY_VALUES, m_J_picard.rawptr());
-      PISM_CHK(ierr, "MatDuplicate");
+    Mat J;
+    ierr = SNESGetJacobian(m_snes, &J, NULL, NULL, NULL);
+    PISM_CHK(ierr, "SNESGetJacobian");
 
-      ierr = MatSetDM(m_J_picard, m_da);
-      PISM_CHK(ierr, "MatSetDM");
+    ierr = KSPSetOperators(ksp, J, J);
+    PISM_CHK(ierr, "KSPSetOperators");
+
+    ierr = KSPSolve(ksp, rhs_3d, lambda_3d);
+    PISM_CHK(ierr, "KSPSolve");
+
+    ierr = KSPGetConvergedReason(ksp, &reason);
+    PISM_CHK(ierr, "KSPGetConvergedReason");
+    ierr = KSPGetIterationNumber(ksp, &ksp_its);
+    PISM_CHK(ierr, "KSPGetIterationNumber");
+  };
+
+  if (adjoint_method == "approximate") {
+    m_log->message(2, "Blatter inverse: adjoint solve (approximate, KSPSolve with the forward KSP)...\n");
+    solve_with_snes_ksp();
+  } else {
+    // Standalone adjoint KSP. Configure via -inv_adj_ksp_type, -inv_adj_pc_type, etc.
+    if (m_ksp.get() == nullptr) {
+      ierr = KSPCreate(m_grid->com, m_ksp.rawptr());
+      PISM_CHK(ierr, "KSPCreate");
+
+      ierr = KSPSetOptionsPrefix(m_ksp, "inv_adj_");
+      PISM_CHK(ierr, "KSPSetOptionsPrefix");
+
+      ierr = KSPSetType(m_ksp, KSPGMRES);
+      PISM_CHK(ierr, "KSPSetType");
+
+      ierr = KSPSetTolerances(m_ksp, 1e-5, PETSC_DEFAULT, PETSC_DEFAULT, 10000);
+      PISM_CHK(ierr, "KSPSetTolerances");
+
+      ierr = KSPSetFromOptions(m_ksp);
+      PISM_CHK(ierr, "KSPSetFromOptions");
     }
 
-    this->compute_picard_jacobian(m_J_picard);
+    if (adjoint_method == "incomplete") {
+      // Incomplete (Picard) adjoint: assemble a separate Picard Jacobian
+      // (drops viscosity derivative terms), then KSPSolve. The matrix is
+      // truly symmetric, so CG + any preconditioner works.
+      m_log->message(2, "Blatter inverse: adjoint solve (incomplete/Picard, KSPSolve)...\n");
 
-    ierr = KSPSetOperators(m_ksp, m_J_picard, m_J_picard);
-    PISM_CHK(ierr, "KSPSetOperators");
+      if (m_J_picard.get() == nullptr) {
+        Mat J_snes;
+        ierr = SNESGetJacobian(m_snes, &J_snes, NULL, NULL, NULL);
+        PISM_CHK(ierr, "SNESGetJacobian");
 
-    ierr = KSPSolve(m_ksp, rhs_3d, lambda_3d);
-    PISM_CHK(ierr, "KSPSolve");
+        ierr = MatDuplicate(J_snes, MAT_DO_NOT_COPY_VALUES, m_J_picard.rawptr());
+        PISM_CHK(ierr, "MatDuplicate");
 
-  } else if (adjoint_method == "approximate") {
-    // Approximate adjoint: KSPSolve on the SNES Jacobian (symmetrized
-    // by the upper-triangle mirror in compute_jacobian). Fast — reuses
-    // the existing matrix, no reassembly. Any preconditioner works if
-    // the matrix is approximately symmetric (GMRES recommended).
-    m_log->message(2, "Blatter inverse: adjoint solve (approximate, KSPSolve)...\n");
+        ierr = MatSetDM(m_J_picard, m_da);
+        PISM_CHK(ierr, "MatSetDM");
+      }
 
-    Mat J;
-    ierr = SNESGetJacobian(m_snes, &J, NULL, NULL, NULL);
-    PISM_CHK(ierr, "SNESGetJacobian");
+      this->compute_picard_jacobian(m_J_picard);
 
-    ierr = KSPSetOperators(m_ksp, J, J);
-    PISM_CHK(ierr, "KSPSetOperators");
+      ierr = KSPSetOperators(m_ksp, m_J_picard, m_J_picard);
+      PISM_CHK(ierr, "KSPSetOperators");
 
-    ierr = KSPSolve(m_ksp, rhs_3d, lambda_3d);
-    PISM_CHK(ierr, "KSPSolve");
+      ierr = KSPSolve(m_ksp, rhs_3d, lambda_3d);
+      PISM_CHK(ierr, "KSPSolve");
+    } else {
+      // Exact adjoint: KSPSolveTranspose on the Newton Jacobian.
+      // Requires transpose-compatible preconditioner (e.g., -inv_adj_pc_type jacobi).
+      m_log->message(2, "Blatter inverse: adjoint solve (exact, KSPSolveTranspose)...\n");
 
-  } else {
-    // Exact adjoint: KSPSolveTranspose on the Newton Jacobian.
-    // Requires transpose-compatible preconditioner (e.g., -inv_adj_pc_type jacobi).
-    m_log->message(2, "Blatter inverse: adjoint solve (exact, KSPSolveTranspose)...\n");
+      Mat J;
+      ierr = SNESGetJacobian(m_snes, &J, NULL, NULL, NULL);
+      PISM_CHK(ierr, "SNESGetJacobian");
 
-    Mat J;
-    ierr = SNESGetJacobian(m_snes, &J, NULL, NULL, NULL);
-    PISM_CHK(ierr, "SNESGetJacobian");
+      ierr = KSPSetOperators(m_ksp, J, J);
+      PISM_CHK(ierr, "KSPSetOperators");
 
-    ierr = KSPSetOperators(m_ksp, J, J);
-    PISM_CHK(ierr, "KSPSetOperators");
+      ierr = KSPSolveTranspose(m_ksp, rhs_3d, lambda_3d);
+      PISM_CHK(ierr, "KSPSolveTranspose");
+    }
 
-    ierr = KSPSolveTranspose(m_ksp, rhs_3d, lambda_3d);
-    PISM_CHK(ierr, "KSPSolveTranspose");
+    ierr = KSPGetConvergedReason(m_ksp, &reason);
+    PISM_CHK(ierr, "KSPGetConvergedReason");
+    ierr = KSPGetIterationNumber(m_ksp, &ksp_its);
+    PISM_CHK(ierr, "KSPGetIterationNumber");
+
+    if (reason < 0) {
+      // Do not give up on the whole inversion because the standalone KSP
+      // stalled (typically GMRES + Jacobi on a large 3D system): fall back to
+      // the approximate adjoint with the forward multigrid KSP.
+      m_log->message(1,
+                     "Blatter inverse: WARNING: %s adjoint KSP failed after %d iterations (%s);\n"
+                     "  falling back to the approximate adjoint using the forward KSP.\n",
+                     adjoint_method.c_str(), (int)ksp_its, KSPConvergedReasons[reason]);
+      solve_with_snes_ksp();
+    }
   }
-
-  KSPConvergedReason reason;
-  ierr = KSPGetConvergedReason(m_ksp, &reason);
-  PISM_CHK(ierr, "KSPGetConvergedReason");
-
-  PetscInt ksp_its;
-  ierr = KSPGetIterationNumber(m_ksp, &ksp_its);
-  PISM_CHK(ierr, "KSPGetIterationNumber");
 
   m_log->message(2, "  Adjoint KSP: %d iterations, reason: %s\n",
                  (int)ksp_its, KSPConvergedReasons[reason]);
