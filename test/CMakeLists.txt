@@ -18,6 +18,11 @@ add_test(NAME "Config:parameters_are_sorted"
 set_tests_properties("Config:parameters_are_sorted" PROPERTIES
   FIXTURES_REQUIRED config)
 
+# Unit tests for the terrain-horizon and sky-view kernels used by "dEBM-enhanced". These
+# do not need PETSc, MPI, or the Python bindings.
+add_test(NAME "surface:terrain_insolation_kernel"
+  COMMAND pism_test_terrain_insolation_kernel)
+
 if (Pism_BUILD_PYTHON_BINDINGS)
   macro(pism_add_unittest name executable)
     string(CONCAT test_name "Python:unittest:" ${name})

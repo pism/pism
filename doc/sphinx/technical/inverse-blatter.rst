@@ -17,9 +17,10 @@ Introduction
 This section documents the inverse modeling framework for the Blatter
 (higher-order) stress balance solver (:ref:`sec-blatter-details`). Like the
 SSA inversion (:ref:`sec-inverse-ssa`), it estimates basal yield stress
-`\tau_c` from observed surface velocities. The key difference is that the
-forward model solves the full 3D Blatter-Pattyn equations instead of the
-depth-integrated SSA.
+`\tau_c` or vertically-averaged ice hardness `B` from observed surface
+velocities, and the two can be alternated (:ref:`sec-inv-blatter-alternating`).
+The key difference is that the forward model solves the full 3D
+Blatter-Pattyn equations instead of the depth-integrated SSA.
 
 Because the Blatter solver produces a 3D velocity field while observations are
 2D surface velocities, the forward map includes an explicit **surface
@@ -33,8 +34,11 @@ means ``KSPSolve`` and ``KSPSolveTranspose`` are equivalent, any preconditioner
 works (including SOR), and the adjoint gradient is nearly identical to the exact
 Newton adjoint. See :ref:`sec-inv-blatter-picard`.
 
-The implementation lives in ``src/inverse/IP_BlatterTaucForwardProblem.{hh,cc}``.
-The user-facing driver is ``examples/inverse/pismi.py``.
+The implementation lives in ``src/inverse/IP_BlatterForwardProblem.{hh,cc}``
+(design-variable-agnostic part: forward solve, surface extraction, adjoint
+solve) and its two derived classes ``IP_BlatterTaucForwardProblem`` and
+``IP_BlatterHardavForwardProblem`` (design Jacobians). The user-facing driver
+is ``pismi`` (``site-packages/PISM/pismi.py``).
 
 .. _sec-inv-blatter-notation:
 
@@ -47,6 +51,9 @@ Notation
      - parameterized design variable (same as SSA, :ref:`sec-inv-ssa-notation`)
    * - `\tau_c`
      - basal yield stress: `\tau_c = g(\zeta)`
+   * - `B`
+     - vertically-averaged ice hardness (``hardav``, `B = A^{-1/n}`):
+       `B = g(\zeta)`, column-constant
    * - `\uu_{3D}`
      - 3D Blatter velocity: `\uu_{3D} = (u(x,y,z),\, v(x,y,z))`
    * - `\uu_s`
@@ -67,6 +74,9 @@ Notation
      - basal resistance coefficient: `\beta = \beta(\tau_c, |\uu|)`
    * - `\psi`
      - 3D finite-element test function (Q1 hexahedron basis)
+   * - `\eta`
+     - effective viscosity `\eta = E\, \frac12 B\, (\epsilon + \gamma)^{(1-n)/(2n)}`
+       (`\gamma` the second invariant of the strain rate, `E` the enhancement factor)
 
 .. _sec-inv-blatter-forward:
 
@@ -162,6 +172,76 @@ The transpose `J_{\text{Design}}^T` maps a 3D adjoint variable `\lambda` to a
 where the sum is over basal face quadrature points `q`, and `\lambda_q`,
 `\uu_q` are the adjoint and velocity fields evaluated at those points.
 
+.. _sec-inv-blatter-hardav:
+
+Ice hardness as the design variable
+-----------------------------------
+
+With ``inverse.design.variable = hardav`` (``-inv_design hardav``) the design
+variable is the vertically-averaged ice hardness `B(x,y) = g(\zeta)`. As in the SSA case the hardness is a
+single value per column; the Blatter solver replicates it over the sigma
+grid (``Blatter::init_averaged_ice_hardness``, selected by
+``stressbalance::Inputs::averaged_hardness``) instead of deriving the
+hardness from enthalpy.
+
+The hardness enters the residual only through the effective viscosity in the
+**volume** term (``Blatter::residual_f``),
+
+.. math::
+   :label: eq-inv-blatter-Rf
+
+   \mathcal{R}_{f}^{(t)} = \int_\Omega \eta(B, \gamma)\,
+   \begin{pmatrix}
+   \psi_{t,x}(4u_x + 2v_y) + \psi_{t,y}(u_y + v_x) + \psi_{t,z} u_z \\
+   \psi_{t,x}(u_y + v_x) + \psi_{t,y}(2u_x + 4v_y) + \psi_{t,z} v_z
+   \end{pmatrix} dV
+   \equiv \int_\Omega \eta\, F(\uu, \psi_t)\, dV,
+
+so, unlike `\tau_c`, it couples to *every* element of the ice column.
+Because `\eta` is linear in `B`, the design Jacobian needs no new flow-law
+derivative:
+
+.. math::
+   :label: eq-inv-blatter-Jdesign-B
+
+   J_{\text{Design}}\, d\zeta = \int_\Omega \eta(dB, \gamma)\, F(\uu, \psi_t)\, dV,
+   \qquad dB = g'(\zeta)\, d\zeta,
+
+i.e. the viscous residual evaluated with `B` replaced by `dB` (this is the
+same trick ``IP_SSAHardavForwardProblem`` uses). Its transpose maps the 3D
+adjoint `\lambda = (\lambda_u, \lambda_v)` to the 2D design space by
+**integrating over the whole ice column**:
+
+.. math::
+   :label: eq-inv-blatter-Jdesign-B-T
+
+   (J_{\text{Design}}^T \lambda)_k
+   = g'(\zeta_k) \sum_{\text{elements in column } k}\ \sum_q W_q\,
+     \frac{\eta_q}{B_q}\,
+     \Bigl[\lambda_{u,x}(4u_x + 2v_y) + \lambda_{u,y}(u_y + v_x) + \lambda_{u,z} u_z
+     + \lambda_{v,x}(u_y + v_x) + \lambda_{v,y}(2u_x + 4v_y) + \lambda_{v,z} v_z\Bigr]_q
+     \chi_k(q),
+
+where `\lambda_{u,x} = \sum_t \lambda_{u,t}\, \psi_{t,x}` etc. are the
+gradients of the interpolated adjoint field, `\eta_q / B_q = E\,\frac12
+(\epsilon + \gamma_q)^{(1-n)/(2n)}`, and all eight nodes of every element
+contribute to the 2D node of their column (``apply_jacobian_design_transpose_3d``
+in ``IP_BlatterHardavForwardProblem.cc``). The surface extraction, adjoint
+solve and reduced gradient are exactly as for `\tau_c` (next section).
+
+The parameterization `g` uses ``inverse.design.param_hardav_scale`` (default
+`10^8` Pa s\ :sup:`1/3`) and ``inverse.design.param_hardav_eps``; bound
+constraints (``tikhonov_blmvm``) use ``inverse.stress_balance.hardav_min`` and
+``hardav_max``. The ``exp`` parameterization is recommended: it keeps `B > 0`,
+which the Blatter SNES requires. The ``zeta_fixed_mask`` computed by ``pismi``
+frees the hardness on all icy cells (including floating ice, where it is the
+only control on the velocity).
+
+``examples/inverse/blatter_inverse_checks.py`` verifies the implementation with
+an adjoint (dot-product) test `\langle DF\,\delta, w\rangle = \langle
+\delta, DF^T w\rangle` and a finite-difference gradient test, for both design
+variables and in parallel.
+
 .. _sec-inv-blatter-reduced:
 
 Reduced gradient and the 3D-to-2D adjoint
@@ -202,7 +282,9 @@ proceeds in three steps:
      forward Newton Jacobian is symmetrized by the upper-triangle mirror
      in ``compute_jacobian``, so ``KSPSolve`` is a good approximation to
      ``KSPSolveTranspose``. Fast — reuses the existing matrix, no
-     reassembly. Use GMRES (``-inv_adj_ksp_type gmres``).
+     reassembly, and it reuses the forward solver's KSP and multigrid
+     preconditioner (``bp_`` options), exactly like the forward
+     linearization; the ``inv_adj_`` options are not used.
 
    - **incomplete**: ``KSPSolve`` on a separately assembled Picard
      Jacobian (drops viscosity derivative terms via ``compute_picard_jacobian``).
@@ -214,8 +296,15 @@ proceeds in three steps:
      transpose-compatible preconditioner (``-inv_adj_pc_type jacobi``);
      SOR and GAMG do not support transpose.
 
-   All three methods use a standalone KSP (prefix ``inv_adj_``) rather than
-   the SNES's multigrid KSP, avoiding MG hierarchy issues.
+   The **incomplete** and **exact** methods use a standalone KSP (prefix
+   ``inv_adj_``) rather than the SNES's multigrid KSP, because they need a
+   different matrix or a transpose solve. If that standalone solve does not
+   converge (e.g. GMRES with a Jacobi preconditioner stalling on a large 3D
+   system), PISM logs a warning and falls back to the approximate adjoint
+   with the forward KSP instead of aborting the inversion. Should the
+   fallback fail too, ``pismi`` recovers the last accepted iterate saved as
+   ``zeta_inv`` (or ``zeta_inv_<var>``), computes its velocities and writes
+   the phase's results, so an alternating run continues with the next phase.
 
 3. **Design Jacobian transpose**: compute
 
@@ -279,7 +368,8 @@ PISM provides three adjoint methods via the configuration parameter
    * - ``approximate``
      - ``KSPSolve``
      - SNES Jacobian (Newton, symmetrized by upper-triangle mirror)
-     - Default. Fastest — reuses existing matrix. Use GMRES + GAMG.
+     - Default. Fastest — reuses the existing matrix and the forward
+       multigrid KSP.
    * - ``incomplete``
      - ``KSPSolve``
      - Separate Picard Jacobian (assembled via ``compute_picard_jacobian``)
@@ -324,6 +414,66 @@ with the only difference being that `F(\zeta)` now involves a 3D Blatter
 solve instead of a 2D SSA solve. The functionals `\mathcal{J}_{\text{state}}` and
 `\mathcal{J}_{\text{design}}` are the same 2D functionals described in
 :ref:`sec-inv-ssa-functionals`.
+
+.. _sec-inv-blatter-alternating:
+
+Alternating tauc / hardav inversion
+-----------------------------------
+
+Surface velocities constrain basal drag and ice stiffness jointly, so
+``pismi`` can alternate between the two design variables in one invocation:
+
+.. code-block:: none
+
+   pismi -i STATE.nc -inv_data OBS.nc -o OUT.nc -stress_balance.model blatter \
+         -inverse.alternating_cycles 3 -inverse.alternating_misfit_tol 0.01 ...
+
+Each cycle runs a `\tau_c` inversion with the current hardness held fixed,
+followed by a hardness inversion with the new `\tau_c` held fixed. The
+phases hand their results to each other through the output file:
+
+- The first (`\tau_c`) phase uses the column-constant hardness ``hardav``
+  from the input file if present, and otherwise computes it from enthalpy
+  (``rheology::averaged_hardness_vec``) so that both phases see the same
+  hardness model. That hardness is also saved as ``hardav_prior``.
+- Every phase writes the physical fields ``tauc`` and ``hardav`` and its
+  parameterized solution ``zeta_inv_tauc`` / ``zeta_inv_hardav``. The next
+  phase reads the *other* variable from the output file and starts its own
+  variable from the previous cycle's result; the Tikhonov priors
+  (``tauc_prior``, ``hardav_prior``) stay anchored to the original inputs.
+- Iteration histories are stored as ``inv_misfit_c<cycle>_<var>`` etc., the
+  final misfit of each phase as the global attribute ``pismi_misfit_c<cycle>_<var>``,
+  and the last completed phase as ``pismi_alternation_completed``.
+  ``-inv_restart`` resumes from that phase.
+
+The loop stops early when the relative misfit improvement over a full cycle
+drops below ``inverse.alternating_misfit_tol``. Alternation requires
+``stress_balance.model = blatter``: only the Blatter forward problems accept
+both design variables as inputs (``IP_BlatterTaucForwardProblem`` uses a
+``hardav`` field from ``Grid::variables()`` when available;
+``IP_BlatterHardavForwardProblem`` uses ``tauc``).
+
+Using the inverted hardness in forward runs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A forward ``pism`` run with the Blatter stress balance uses a prescribed
+column-constant hardness instead of the enthalpy-derived one when
+``stress_balance.averaged_hardness.enabled`` (``-use_averaged_hardness``) is
+set. The field ``hardav`` is then a model state variable: it is read from the
+input file on restart, can be regridded from an inversion output file, and is
+written to output files (the ``hardav`` diagnostic reports it as well). A
+typical forward leg following an alternating inversion is
+
+.. code-block:: none
+
+   pism -i STATE.nc -stress_balance.model blatter -use_averaged_hardness \
+        -input.regrid.file OUT.nc -input.regrid.vars tauc,hardav \
+        -basal_yield_stress.model constant ...
+
+If ``hardav`` is neither in the input file nor listed in ``-input.regrid.vars``
+the run stops with an error, and so does a run that sets the flag with a
+stress balance other than Blatter (the SSA solvers always derive hardness
+from enthalpy).
 
 .. _sec-inv-blatter-impl:
 
@@ -375,46 +525,58 @@ The Blatter forward solve is configured via PETSc command-line options with the
    The forward SNES can always use any MG smoother (including SOR). The adjoint
    solve uses a separate KSP (``inv_adj_`` prefix). Recommended adjoint settings:
 
-   - ``approximate`` (default): ``-inv_adj_ksp_type gmres -inv_adj_pc_type gamg``
+   - ``approximate`` (default): uses the forward ``-bp_ksp_*`` / ``-bp_pc_*`` settings
    - ``incomplete``: ``-inv_adj_ksp_type cg -inv_adj_pc_type gamg``
    - ``exact``: ``-inv_adj_ksp_type gmres -inv_adj_pc_type jacobi``
 
 Element assembly
 ^^^^^^^^^^^^^^^^
 
-The design Jacobian assembly loops only over **basal elements** (`k = 0` in
-the column loop), since `\tau_c` enters only through the basal boundary
-integral. This is implemented in ``apply_jacobian_design_3d`` and
-``apply_jacobian_design_transpose_3d``. These methods use local (ghosted)
-vectors for the 3D DMDA array assembly and scatter back to global using
-``DMLocalToGlobal`` with ``ADD_VALUES``.
+The `\tau_c` design Jacobian assembly loops only over **basal elements**
+(`k = 0` in the column loop), since `\tau_c` enters only through the basal
+boundary integral; the hardness design Jacobian loops over **all** elements
+of every column. Both are implemented in ``apply_jacobian_design_3d`` and
+``apply_jacobian_design_transpose_3d`` of the respective forward problem.
+These methods use local (ghosted) vectors for the 3D DMDA array assembly and
+scatter back to global using ``DMLocalToGlobal`` with ``ADD_VALUES``; the
+transposes accumulate into owned 2D nodes only. The state Jacobian is
+re-assembled at the converged solution before it is used for linearizations
+and adjoint solves.
 
-The adjoint solve uses a standalone KSP (prefix ``inv_adj_``) operating on the
-SNES Jacobian that was already assembled during the forward solve. This avoids
-reusing the SNES's multigrid KSP (swapping operators on the MG KSP triggers
-``PCSetUp_MG`` issues). Configure via ``-inv_adj_ksp_type``,
-``-inv_adj_pc_type``, etc.
+The ``approximate`` adjoint solve reuses the SNES's KSP on the Jacobian
+re-assembled at the converged solution. The ``incomplete`` and ``exact``
+adjoint solves use a standalone KSP (prefix ``inv_adj_``): swapping the
+Picard matrix into the SNES's multigrid KSP triggers ``PCSetUp_MG`` issues,
+and a transpose solve needs a transpose-capable preconditioner. Configure
+via ``-inv_adj_ksp_type``, ``-inv_adj_pc_type``, etc.
 
 Key files
 ^^^^^^^^^
 
-- ``include/pism/inverse/IP_BlatterTaucForwardProblem.hh`` — class definition
-- ``src/inverse/IP_BlatterTaucForwardProblem.cc`` — forward, adjoint, and
-  linearization implementation
-- ``include/pism/inverse/IP_BlatterTaucTaoTikhonovProblem.hh`` — Tikhonov
-  specialization with tauc bounds
+- ``src/inverse/IP_BlatterForwardProblem.{hh,cc}`` — shared base: forward
+  solve, surface extraction, adjoint solve, reduced linearization
+- ``src/inverse/IP_BlatterTaucForwardProblem.{hh,cc}`` — `\tau_c` design
+  Jacobian (basal face)
+- ``src/inverse/IP_BlatterHardavForwardProblem.{hh,cc}`` — hardness design
+  Jacobian (volume / column integral)
+- ``src/inverse/IP_Blatter{Tauc,Hardav}TaoTikhonovProblem.hh`` — Tikhonov
+  specializations with bounds
 - ``site-packages/PISM/invert/blatter.py`` — Python forward-run setup
 - ``site-packages/PISM/invert/blatter_tao.py`` — Python TAO solver wrapper
-- ``examples/inverse/pismi.py`` — unified inversion driver (SSA and Blatter)
+- ``site-packages/PISM/pismi.py`` — unified inversion driver (SSA and
+  Blatter; single design variable or alternation)
 - ``examples/inverse/ismiphom_twin.py`` — ISMIP-HOM twin experiment comparing
   incomplete vs exact adjoint
+- ``examples/inverse/blatter_inverse_checks.py`` — adjoint and gradient
+  consistency checks
 
 .. _sec-inv-blatter-limitations:
 
 Limitations
 -----------
 
-- **Design variable**: only `\tau_c` is currently supported (not hardness).
+- **Design variables**: `\tau_c` and column-constant hardness; a
+  depth-varying hardness is not supported.
 - **State space**: observations are matched against 2D surface velocity only,
   not depth-resolved velocity profiles.
 - **H1 regularization and periodic BCs**: the ``IPGroundedIceH1NormFunctional2S``

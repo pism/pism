@@ -3,6 +3,62 @@
 Changes since v2.3.0
 ====================
 
+- Add the `debm_enhanced` surface model: dEBM-simple with the insolation-driven melt
+  computed from a terrain-shaded surface-insolation field instead of the analytic
+  top-of-atmosphere parameterization. The terrain horizon and surface normals are computed
+  from the ice surface elevation and combined with PISM's analytic solar geometry to produce
+  the daily surface insolation. The horizon ray-casting is controlled by
+  `surface.debm_enhanced.horizon.*` (`n_directions`, `max_distance`, `step`)
+  and, because it depends on the evolving geometry, is recomputed every
+  `surface.debm_enhanced.update_interval` (default 10 years). The insolation is split into a
+  direct-beam component (terrain-shaded) and an isotropic diffuse component reduced by the
+  sky-view factor (slope-corrected Dozier & Frew, 1990); the diffuse share is
+  `surface.debm_enhanced.diffuse_fraction` (default 0.2) and the whole sky-view treatment can
+  be disabled with `surface.debm_enhanced.use_sky_view_factor` (reverting to pure direct
+  beam). The `insolation` (daily-mean top-of-atmosphere rate, in `W m-2`), `horizon`, and
+  `sky_view_factor` diagnostics are available; `sky_view_factor` only when
+  `surface.debm_enhanced.use_sky_view_factor` is set. All other parameters are shared with
+  `surface.debm_simple.*`.
+- Add an `ismip7` surface model that uses the gradients but not the anomalies, and adds
+  runoff. It is exposed to Python as `PISM.SurfaceISMIP7`.
+- Implement the Blatter hardness inversion (`pismi -stress_balance.model blatter -inv_design
+  hardav`): `IP_BlatterHardavForwardProblem` now provides the volume design Jacobian (and
+- Implement the Blatter hardness inversion (`pismi -stress_balance.model blatter
+  -inverse.design.variable hardav`, short option `-inv_design`): `IP_BlatterHardavForwardProblem`
+  now provides the volume design Jacobian (and
+  its column-integrated transpose) for the vertically-averaged ice hardness, exploiting the
+  linearity of the effective viscosity in `B`; the hardness is passed to the Blatter solver
+  through `Inputs::averaged_hardness`. The design-variable-agnostic parts of the Blatter
+  inverse forward problems (forward solve, surface extraction, adjoint solve) were moved
+  to a shared base class `IP_BlatterForwardProblem`; the state Jacobian is now
+  re-assembled at the converged solution before adjoint solves, and a failed forward
+  solve during the minimization is reported to TAO instead of aborting the run. Added
+  the missing configuration parameters `inverse.design.param_hardav_{scale,eps}` and
+  `inverse.design.param_trunc_hardav0` (needed by any `hardav` inversion, SSA included),
+  `examples/inverse/blatter_inverse_checks.py` (adjoint and finite-difference gradient
+  checks) and a `-design hardav` mode in `examples/inverse/ismiphom_twin.py`.
+- Make Blatter inversions robust to adjoint solver failures: the `approximate` adjoint
+  now reuses the forward solver's multigrid KSP (the standalone GMRES + Jacobi solve
+  could stall after hundreds of iterations on large 3D systems), a failed `exact` or
+  `incomplete` adjoint solve falls back to it, and `pismi` recovers the last accepted
+  iterate and writes the phase's results if TAO fails anyway.
+- Add the configuration parameter `inverse.design.variable` (`tauc` or `hardav`, short
+  option `-inv_design`) selecting the design variable of a `pismi` inversion.
+- Wire up `inverse.alternating_cycles` in `pismi`: alternate `tauc` and `hardav`
+  inversions (Blatter only) in one invocation, handing results between phases through the
+  output file (`tauc`, `hardav`, `zeta_inv_<var>`, `hardav_prior`, per-phase iteration
+  histories) with early stopping controlled by `inverse.alternating_misfit_tol` and
+  restart support via `-inv_restart`. The Blatter `tauc` forward problem uses a `hardav`
+  field as column-constant hardness when one is available.
+- Add `stress_balance.averaged_hardness.enabled` (`-use_averaged_hardness`): forward runs
+  with the Blatter stress balance use the prescribed vertically-averaged hardness `hardav`
+  (e.g. from a `pismi` hardness or alternating inversion) instead of the enthalpy-derived
+  hardness. `hardav` becomes a model state variable (read on restart, regriddable with
+  `-input.regrid.vars hardav`, written to output); the `hardav` diagnostic reports it.
+- Skip the units conversion when reading a variable whose units string in the file is
+  identical to the internal one, and when reporting ranges with identical `units` and
+  `output_units`. This makes it possible to read back fields whose units are not valid
+  UDUNITS expressions, such as the ice hardness `hardav` ("Pa s^(1/n)").
 - Re-run SWIG when a wrapped C++ header changes (`USE_SWIG_DEPENDENCIES`). Previously the
   generated Python bindings depended on the `.i` files only, so header edits could leave a
   stale `PISM.cpp` module in the build tree (e.g. Blatter-based classes wrapped as abstract,
@@ -81,9 +137,6 @@ Changes since v2.3.0
   Implemented as `IPHuberMisfit2V` and wired into the TAO Tikhonov inversion path
   (`tikhonov_lmvm`, `tikhonov_blmvm`); it is not compatible with the Gauss-Newton
   SSA solver, which requires an inner-product functional.
-
-- Added a new surface coupler `-surface.models ismip7` derived from ISMIP6. This coupler
-  only uses direct forcing and forcing gradients, skipping anomalies.
 
 - Remove the `siple` inverse-problems library and the SSA inversion methods that
   depended on it. `inverse.stress_balance.method` (`-inv_method`) no longer accepts

@@ -1482,7 +1482,7 @@ netcdf pism_config {
     pism_config:inverse.adjoint.method_type = "keyword";
 
     pism_config:inverse.alternating_cycles = 0;
-    pism_config:inverse.alternating_cycles_doc = "Number of (tauc->hardav) alternation cycles in pismi.py; 0 = single-design-var run. (Parsed but not yet wired; the loop body is implemented alongside Blatter-hardav forward-problem Jacobian math.)";
+    pism_config:inverse.alternating_cycles_doc = "Number of tauc->hardav alternation cycles run by pismi.py in one invocation; 0 = single-design-variable run selected by -inv_design. Each cycle inverts for tauc (with hardav fixed), then for hardav (with tauc fixed); phases hand results to each other through the output file. Requires a Blatter or SSA forward problem that supports both design variables.";
     pism_config:inverse.alternating_cycles_type = "integer";
     pism_config:inverse.alternating_cycles_units = "count";
 
@@ -1515,6 +1515,16 @@ netcdf pism_config {
     pism_config:inverse.design.param_option = "inv_design_param";
     pism_config:inverse.design.param_type = "keyword";
 
+    pism_config:inverse.design.param_hardav_eps = 1e5;
+    pism_config:inverse.design.param_hardav_eps_doc = "tiny ice hardness used as a substitute for 0 in some hardav parameterizations";
+    pism_config:inverse.design.param_hardav_eps_type = "number";
+    pism_config:inverse.design.param_hardav_eps_units = "Pascal second^(1/3)";
+
+    pism_config:inverse.design.param_hardav_scale = 1e8;
+    pism_config:inverse.design.param_hardav_scale_doc = "typical size of vertically-averaged ice hardness B = A^(-1/n) (about 7e7 Pa s^(1/3) for the default isothermal softness)";
+    pism_config:inverse.design.param_hardav_scale_type = "number";
+    pism_config:inverse.design.param_hardav_scale_units = "Pascal second^(1/3)";
+
     pism_config:inverse.design.param_tauc_eps = 100;
     pism_config:inverse.design.param_tauc_eps_doc = "tiny yield stress used as a substitute for 0 in some tauc parameterizations";
     pism_config:inverse.design.param_tauc_eps_type = "number";
@@ -1525,10 +1535,21 @@ netcdf pism_config {
     pism_config:inverse.design.param_tauc_scale_type = "number";
     pism_config:inverse.design.param_tauc_scale_units = "Pascal";
 
+    pism_config:inverse.design.param_trunc_hardav0 = 1e6;
+    pism_config:inverse.design.param_trunc_hardav0_doc = "transition point of change to linear behaviour for the ``trunc`` parameterization of hardav";
+    pism_config:inverse.design.param_trunc_hardav0_type = "number";
+    pism_config:inverse.design.param_trunc_hardav0_units = "Pascal second^(1/3)";
+
     pism_config:inverse.design.param_trunc_tauc0 = 1000;
     pism_config:inverse.design.param_trunc_tauc0_doc = "transition point of change to linear behaviour for design variable parameterization type ``trunc``";
     pism_config:inverse.design.param_trunc_tauc0_type = "number";
     pism_config:inverse.design.param_trunc_tauc0_units = "Pascal";
+
+    pism_config:inverse.design.variable = "tauc";
+    pism_config:inverse.design.variable_choices = "tauc,hardav";
+    pism_config:inverse.design.variable_doc = "Design variable of a pismi inversion: basal yield stress ``tauc`` or vertically-averaged ice hardness ``hardav``. Ignored when ``inverse.alternating_cycles`` is positive (both are inverted in turn).";
+    pism_config:inverse.design.variable_option = "inv_design";
+    pism_config:inverse.design.variable_type = "keyword";
 
     pism_config:inverse.file = "";
     pism_config:inverse.file_doc = "Input file name for observations";
@@ -2145,6 +2166,11 @@ netcdf pism_config {
 
     pism_config:stress_balance.blatter.Glen_exponent_units = "pure number";
     pism_config:stress_balance.blatter.Glen_exponent_type = "number";
+    pism_config:stress_balance.averaged_hardness.enabled = "no";
+    pism_config:stress_balance.averaged_hardness.enabled_doc = "Use the prescribed 2D field ``hardav`` (vertically-averaged ice hardness B = A^(-1/n), e.g. from a ``pismi -inv_design hardav`` inversion) instead of the hardness derived from enthalpy. ``hardav`` is a model state variable: it is read from the input file, can be regridded with ``-input.regrid.vars hardav``, and is written to output files. Supported by the Blatter stress balance only.";
+    pism_config:stress_balance.averaged_hardness.enabled_option = "use_averaged_hardness";
+    pism_config:stress_balance.averaged_hardness.enabled_type = "flag";
+
     pism_config:stress_balance.blatter.Glen_exponent = 3.0;
     pism_config:stress_balance.blatter.Glen_exponent_doc = "Glen exponent in ice flow law for the Blatter stress balance solver";
 
@@ -2416,6 +2442,43 @@ netcdf pism_config {
     pism_config:surface.cache.update_interval_doc = "Update interval (in 365-day years) for the ``-surface cache`` modifier.";
     pism_config:surface.cache.update_interval_type = "integer";
     pism_config:surface.cache.update_interval_units = "365days";
+
+    pism_config:surface.debm_enhanced.diffuse_fraction = 0.2;
+    pism_config:surface.debm_enhanced.diffuse_fraction_doc = "Fraction of the internally-computed ``debm_enhanced`` surface insolation treated as isotropic diffuse sky radiation (scaled by the sky-view factor); the remainder is direct beam subject to terrain shading. Applies only when ``surface.debm_enhanced.use_sky_view_factor`` is true.";
+    pism_config:surface.debm_enhanced.diffuse_fraction_type = "number";
+    pism_config:surface.debm_enhanced.diffuse_fraction_units = "1";
+    pism_config:surface.debm_enhanced.diffuse_fraction_valid_max = 1.0;
+    pism_config:surface.debm_enhanced.diffuse_fraction_valid_min = 0.0;
+
+    pism_config:surface.debm_enhanced.horizon.max_distance = 5000;
+    pism_config:surface.debm_enhanced.horizon.max_distance_doc = "Maximum ray-march distance for the terrain-horizon computation used by the internally-computed ``debm_enhanced`` insolation.";
+    pism_config:surface.debm_enhanced.horizon.max_distance_type = "number";
+    pism_config:surface.debm_enhanced.horizon.max_distance_units = "m";
+
+    pism_config:surface.debm_enhanced.horizon.n_directions = 360;
+    pism_config:surface.debm_enhanced.horizon.n_directions_doc = "Number of azimuth directions (clockwise from north) sampled by the terrain-horizon computation used by the internally-computed ``debm_enhanced`` insolation.";
+    pism_config:surface.debm_enhanced.horizon.n_directions_type = "integer";
+    pism_config:surface.debm_enhanced.horizon.n_directions_units = "count";
+
+    pism_config:surface.debm_enhanced.horizon.step = 100;
+    pism_config:surface.debm_enhanced.horizon.step_doc = "Ray-march step length for the terrain-horizon computation used by the internally-computed ``debm_enhanced`` insolation.";
+    pism_config:surface.debm_enhanced.horizon.step_type = "number";
+    pism_config:surface.debm_enhanced.horizon.step_units = "m";
+
+    pism_config:surface.debm_enhanced.insolation_dt = 600;
+    pism_config:surface.debm_enhanced.insolation_dt_doc = "Sub-daily time step used to sample and trapezoidally integrate the terrain-shaded surface insolation over each day.";
+    pism_config:surface.debm_enhanced.insolation_dt_type = "number";
+    pism_config:surface.debm_enhanced.insolation_dt_units = "seconds";
+
+    pism_config:surface.debm_enhanced.update_interval = 10.0;
+    pism_config:surface.debm_enhanced.update_interval_doc = "Interval between recomputations of the terrain horizon, which depends on the (evolving) ice surface elevation. Set to zero to recompute the horizon at every time step.";
+    pism_config:surface.debm_enhanced.update_interval_type = "number";
+    pism_config:surface.debm_enhanced.update_interval_units = "365days";
+    pism_config:surface.debm_enhanced.update_interval_valid_min = 0.0;
+
+    pism_config:surface.debm_enhanced.use_sky_view_factor = "yes";
+    pism_config:surface.debm_enhanced.use_sky_view_factor_doc = "If true, compute the terrain sky-view factor (Dozier & Frew, 1990), expose it as the ``sky_view_factor`` diagnostic, and split the internally-computed ``debm_enhanced`` insolation into a terrain-shaded direct beam plus an isotropic diffuse component (a fraction ``surface.debm_enhanced.diffuse_fraction`` of the horizontal top-of-atmosphere flux, scaled by the sky-view factor). If false, the diffuse fraction is forced to zero and the insolation is pure terrain-shaded direct beam.";
+    pism_config:surface.debm_enhanced.use_sky_view_factor_type = "flag";
 
     pism_config:surface.debm_simple.air_temp_all_precip_as_rain = 275.15;
     pism_config:surface.debm_simple.air_temp_all_precip_as_rain_doc = "Threshold temperature above which all precipitation is interpreted as rain; must exceed :config:`surface.debm_simple.air_temp_all_precip_as_snow`";
