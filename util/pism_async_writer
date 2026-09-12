@@ -448,7 +448,7 @@ class OutputFile:
         self.nc_dataset.close()
 
 
-def main(compression_level):
+def main(compression_level, single_precision):
     """Receive and process "action" messages from PISM."""
     yac_wrapper = YacWrapper()
     files = {}
@@ -530,6 +530,8 @@ def main(compression_level):
 
             case ServerActions.DEFINE_VARIABLE.value:
                 logger.debug(f"DEFINE_VARIABLE {metadata['variable_name']} in {file_name}")
+                if len(metadata["dimensions"]) > 1 and single_precision:
+                    metadata["dtype"] = "f4"
                 get_file(file_name).define_variable(metadata)
 
             case ServerActions.SEND_GRIDDED_VARIABLE.value:
@@ -567,6 +569,14 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "-f",
+        "--float",
+        dest="single_precision",
+        action="store_true",
+        help="save diagnostics in single precision",
+    )
+
+    parser.add_argument(
         "-c",
         "--compression",
         dest="compression",
@@ -582,7 +592,7 @@ if __name__ == "__main__":
         logger = logging.getLogger("pism_output")
 
     try:
-        main(options.compression)
+        main(options.compression, options.single_precision)
     except Exception as e:
         logger.critical(f"ERROR: {e}")
         traceback.print_exc()
