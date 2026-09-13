@@ -1482,7 +1482,7 @@ netcdf pism_config {
     pism_config:inverse.adjoint.method_type = "keyword";
 
     pism_config:inverse.alternating_cycles = 0;
-    pism_config:inverse.alternating_cycles_doc = "Number of tauc->hardav alternation cycles run by pismi.py in one invocation; 0 = single-design-variable run selected by -inv_design. Each cycle inverts for tauc (with hardav fixed), then for hardav (with tauc fixed); phases hand results to each other through the output file. Requires a Blatter or SSA forward problem that supports both design variables.";
+    pism_config:inverse.alternating_cycles_doc = "Number of alternation cycles run by pismi.py in one invocation when ``inverse.design.variable`` is a pair (``tauc_hardav``, ``hardav_tauc``); a pair runs at least one cycle. Each cycle inverts for the two variables in that order, each with the other held fixed at its latest value; phases hand results to each other through the output file. A positive value with a single design variable keeps the legacy meaning: alternate, starting with that variable. 0 with a single variable is a plain single-variable inversion.";
     pism_config:inverse.alternating_cycles_type = "integer";
     pism_config:inverse.alternating_cycles_units = "count";
 
@@ -1546,8 +1546,8 @@ netcdf pism_config {
     pism_config:inverse.design.param_trunc_tauc0_units = "Pascal";
 
     pism_config:inverse.design.variable = "tauc";
-    pism_config:inverse.design.variable_choices = "tauc,hardav";
-    pism_config:inverse.design.variable_doc = "Design variable of a pismi inversion: basal yield stress ``tauc`` or vertically-averaged ice hardness ``hardav``. Ignored when ``inverse.alternating_cycles`` is positive (both are inverted in turn).";
+    pism_config:inverse.design.variable_choices = "tauc,hardav,tauc_hardav,hardav_tauc";
+    pism_config:inverse.design.variable_doc = "Design variable of a pismi inversion: basal yield stress ``tauc``, vertically-averaged ice hardness ``hardav``, or a pair (``tauc_hardav``, ``hardav_tauc``) to alternate between the two in that order for ``inverse.alternating_cycles`` cycles (at least one), each phase holding the other variable fixed at its latest value. Alternation requires ``stress_balance.model = blatter``.";
     pism_config:inverse.design.variable_option = "inv_design";
     pism_config:inverse.design.variable_type = "keyword";
 

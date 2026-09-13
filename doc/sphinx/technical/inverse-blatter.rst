@@ -426,16 +426,25 @@ Surface velocities constrain basal drag and ice stiffness jointly, so
 .. code-block:: none
 
    pismi -i STATE.nc -inv_data OBS.nc -o OUT.nc -stress_balance.model blatter \
-         -inverse.alternating_cycles 3 -inverse.alternating_misfit_tol 0.01 ...
+         -inverse.design.variable tauc_hardav \
+         -inverse.alternating_cycles 1 -inverse.alternating_misfit_tol 0.01 ...
 
-Each cycle runs a `\tau_c` inversion with the current hardness held fixed,
-followed by a hardness inversion with the new `\tau_c` held fixed. The
-phases hand their results to each other through the output file:
+The pair value of ``inverse.design.variable`` sets the order: ``tauc_hardav``
+runs a `\tau_c` inversion with the current hardness held fixed, followed by a
+hardness inversion with the new `\tau_c` held fixed; ``hardav_tauc`` inverts
+for the hardness first. ``inverse.alternating_cycles`` repeats the pair (a
+pair always runs at least one cycle), which makes the four values ``tauc``,
+``hardav``, ``tauc_hardav`` and ``hardav_tauc`` interchangeable choices of one
+parameter, for instance for an ensemble that samples the inversion strategy.
+A positive cycle count with a single variable keeps its legacy meaning of
+alternating, starting with that variable. The phases hand their results to
+each other through the output file:
 
-- The first (`\tau_c`) phase uses the column-constant hardness ``hardav``
-  from the input file if present, and otherwise computes it from enthalpy
-  (``rheology::averaged_hardness_vec``) so that both phases see the same
-  hardness model. That hardness is also saved as ``hardav_prior``.
+- A `\tau_c` phase uses the column-constant hardness ``hardav`` from the
+  output file (an earlier hardness phase), else from the input file, and
+  otherwise computes it from enthalpy (``rheology::averaged_hardness_vec``)
+  so that both phases see the same hardness model. A `\tau_c` phase that
+  runs before any hardness phase saves that hardness as ``hardav_prior``.
 - Every phase writes the physical fields ``tauc`` and ``hardav`` and its
   parameterized solution ``zeta_inv_tauc`` / ``zeta_inv_hardav``. The next
   phase reads the *other* variable from the output file and starts its own

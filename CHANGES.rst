@@ -3,6 +3,13 @@
 Changes since v2.3.0
 ====================
 
+- `inverse.design.variable` accepts the pairs `tauc_hardav` and `hardav_tauc`: `pismi` then
+  alternates between the two design variables in that order for `inverse.alternating_cycles`
+  cycles (a pair always runs at least one), stopping early below
+  `inverse.alternating_misfit_tol`. The four values `tauc`, `hardav`, `tauc_hardav` and
+  `hardav_tauc` are thus interchangeable choices of one parameter, e.g. for an ensemble that
+  samples the inversion strategy. A positive cycle count with a single variable keeps its
+  legacy meaning (alternate, starting with that variable).
 - Implement the Blatter hardness inversion (`pismi -stress_balance.model blatter
   -inverse.design.variable hardav`, short option `-inv_design`): `IP_BlatterHardavForwardProblem` now provides the volume design Jacobian (and
   its column-integrated transpose) for the vertically-averaged ice hardness, exploiting the
