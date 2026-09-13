@@ -28,8 +28,9 @@ Changes since v2.3.0
   cycles (a pair always runs at least one), stopping early below
   `inverse.alternating_misfit_tol`. The four values `tauc`, `hardav`, `tauc_hardav` and
   `hardav_tauc` are thus interchangeable choices of one parameter, e.g. for an ensemble that
-  samples the inversion strategy. A positive cycle count with a single variable keeps its
-  legacy meaning (alternate, starting with that variable).
+  samples the inversion strategy; the cycle count and the tolerance are ignored for a single
+  variable. Alternation is no longer requested by a positive `inverse.alternating_cycles`
+  alone: name the pair.
 - Implement the Blatter hardness inversion (`pismi -stress_balance.model blatter
   -inverse.design.variable hardav`, short option `-inv_design`): `IP_BlatterHardavForwardProblem`
   now provides the volume design Jacobian (and

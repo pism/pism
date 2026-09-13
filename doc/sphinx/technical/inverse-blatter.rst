@@ -435,10 +435,10 @@ hardness inversion with the new `\tau_c` held fixed; ``hardav_tauc`` inverts
 for the hardness first. ``inverse.alternating_cycles`` repeats the pair (a
 pair always runs at least one cycle), which makes the four values ``tauc``,
 ``hardav``, ``tauc_hardav`` and ``hardav_tauc`` interchangeable choices of one
-parameter, for instance for an ensemble that samples the inversion strategy.
-A positive cycle count with a single variable keeps its legacy meaning of
-alternating, starting with that variable. The phases hand their results to
-each other through the output file:
+parameter, for instance for an ensemble that samples the inversion strategy;
+the cycle count and the tolerance are ignored for a single variable, so a
+config can carry them and switch strategy by changing the variable alone.
+The phases hand their results to each other through the output file:
 
 - A `\tau_c` phase uses the column-constant hardness ``hardav`` from the
   output file (an earlier hardness phase), else from the input file, and
