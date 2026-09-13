@@ -255,9 +255,15 @@ std::vector<DimensionMetadata> DimensionMetadata::dimensions_impl() const {
 void VariableMetadata::report_range(const Logger &log, double min, double max) const {
 
   // units::Converter constructor will make sure that units are compatible.
-  units::Converter c(unit_system(), get_string("units"), get_string("output_units"));
-  min = c(min);
-  max = c(max);
+  // Identical units strings need no conversion; skipping it also allows
+  // reporting ranges of variables whose units are not valid UDUNITS
+  // expressions (e.g. the ice hardness "Pa s^(1/n)").
+  std::string from_units = get_string("units"), to_units = get_string("output_units");
+  if (from_units != to_units) {
+    units::Converter c(unit_system(), from_units, to_units);
+    min = c(min);
+    max = c(max);
+  }
 
   std::string name = get_name();
   std::string spacer(name.size(), ' ');

@@ -70,6 +70,8 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
       m_geometry(m_grid),
       m_new_bed_elevation(true),
       m_basal_yield_stress(m_grid, "tauc"),
+      m_averaged_hardness(m_grid, "hardav"),
+      m_use_averaged_hardness(m_config->get_flag("stress_balance.averaged_hardness.enabled")),
       m_basal_melt_rate(m_grid, "bmelt"),
       m_bedtoptemp(m_grid, "bedtoptemp"),
       m_vertical_velocity(m_grid, "wvel_rel", array::WITHOUT_GHOSTS, m_grid->z()),
@@ -290,12 +292,28 @@ void IceModel::allocate_storage() {
     m_ice_thickness_bc_mask.set(0.0);
   }
 
+  // Prescribed vertically-averaged ice hardness (same metadata as the "hardav"
+  // diagnostic so that inversion output can be read back directly).
+  {
+    m_averaged_hardness.metadata(0)
+        .long_name("vertically-averaged ice hardness (prescribed)")
+        .set_units_without_validation("Pa s^(1/n)");
+    m_averaged_hardness.metadata()["valid_min"] = { 0.0 };
+    m_averaged_hardness.metadata()["comment"] =
+        "units depend on the Glen exponent used by the flow law";
+  }
+
   // Add some variables to the list of "model state" fields.
   m_model_state = { &m_velocity_bc_mask,
                     &m_velocity_bc_values,
                     &m_ice_thickness_bc_mask,
                     &m_geometry.ice_thickness,
                     &m_geometry.ice_area_specific_volume };
+
+  if (m_use_averaged_hardness) {
+    m_model_state.insert(&m_averaged_hardness);
+    m_grid->variables().add(m_averaged_hardness);
+  }
 }
 
 //! Update the surface elevation and the flow-type mask when the geometry has changed.
@@ -355,6 +373,9 @@ stressbalance::Inputs IceModel::stress_balance_inputs() {
   result.geometry           = &m_geometry;
   result.new_bed_elevation  = m_new_bed_elevation;
   result.enthalpy           = &m_energy_model->enthalpy();
+  if (m_use_averaged_hardness) {
+    result.averaged_hardness = &m_averaged_hardness;
+  }
   result.age                = m_age_model ? &m_age_model->age() : nullptr;
 
   result.water_column_pressure = &m_ocean->average_water_column_pressure();
@@ -935,6 +956,10 @@ void IceModel::init(DiagnosticReport report_type) {
 
 const Geometry& IceModel::geometry() const {
   return m_geometry;
+}
+
+const array::Scalar& IceModel::averaged_hardness() const {
+  return m_averaged_hardness;
 }
 
 const GeometryEvolution& IceModel::geometry_evolution() const {

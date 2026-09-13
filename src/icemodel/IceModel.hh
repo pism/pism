@@ -162,6 +162,10 @@ public:
   const Geometry& geometry() const;
   const GeometryEvolution& geometry_evolution() const;
 
+  //! Prescribed vertically-averaged ice hardness (see
+  //! `stress_balance.averaged_hardness.enabled`).
+  const array::Scalar& averaged_hardness() const;
+
   double dt() const;
 
   CFLData max_timestep_cfl_3d() const;
@@ -171,6 +175,7 @@ public:
 protected:
   virtual void allocate_submodels();
   virtual void allocate_stressbalance();
+  bool will_be_regridded(const std::string &name) const;
   virtual void allocate_age_model();
   virtual void allocate_isochrones();
   virtual void allocate_bed_deformation();
@@ -341,6 +346,11 @@ protected:
 
   //! ghosted
   array::Scalar2 m_basal_yield_stress;
+  //! prescribed vertically-averaged ice hardness ("hardav"); used instead of the
+  //! enthalpy-derived hardness if `stress_balance.averaged_hardness.enabled` is set
+  array::Scalar m_averaged_hardness;
+  //! true if the prescribed hardness above is used
+  bool m_use_averaged_hardness;
   //! rate of production of basal meltwater (ice-equivalent); no ghosts
   array::Scalar m_basal_melt_rate;
   //! temperature at the top surface of the bedrock thermal layer

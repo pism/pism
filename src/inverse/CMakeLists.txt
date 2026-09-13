@@ -1,6 +1,7 @@
 add_library (inverse OBJECT
   IPDesignVariableParameterization.cc
   IPTwoBlockVec.cc
+  IP_BlatterForwardProblem.cc
   IP_BlatterHardavForwardProblem.cc
   IP_BlatterHardavTaoTikhonovProblem.cc
   IP_BlatterTaucForwardProblem.cc

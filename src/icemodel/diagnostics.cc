@@ -1038,6 +1038,15 @@ HardnessAverage::HardnessAverage(const IceModel *m) : Diag<IceModel>(m) {
 //! \brief Computes vertically-averaged ice hardness.
 std::shared_ptr<array::Array> HardnessAverage::compute_impl(const Geometry &geometry) const {
 
+  if (m_config->get_flag("stress_balance.averaged_hardness.enabled")) {
+    // Report the prescribed hardness (masked to icy cells).
+    auto result        = std::make_shared<array::Scalar>(m_grid, "hardav");
+    result->metadata() = m_vars[0];
+    result->copy_from(model->averaged_hardness());
+    apply_mask(geometry.ice_thickness, fill_value(), *result);
+    return result;
+  }
+
   const rheology::FlowLaw *flow_law = model->stress_balance()->shallow->flow_law().get();
   if (flow_law == NULL) {
     flow_law = model->stress_balance()->modifier->flow_law().get();
