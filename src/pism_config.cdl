@@ -1482,7 +1482,7 @@ netcdf pism_config {
     pism_config:inverse.adjoint.method_type = "keyword";
 
     pism_config:inverse.alternating_cycles = 0;
-    pism_config:inverse.alternating_cycles_doc = "Number of alternation cycles run by pismi.py in one invocation when ``inverse.design.variable`` is a pair (``tauc_hardav``, ``hardav_tauc``); a pair runs at least one cycle. Each cycle inverts for the two variables in that order, each with the other held fixed at its latest value; phases hand results to each other through the output file. A positive value with a single design variable keeps the legacy meaning: alternate, starting with that variable. 0 with a single variable is a plain single-variable inversion.";
+    pism_config:inverse.alternating_cycles_doc = "Number of alternation cycles run by pismi.py in one invocation when ``inverse.design.variable`` is a pair (``tauc_hardav``, ``hardav_tauc``); a pair runs at least one cycle. Each cycle inverts for the two variables in that order, each with the other held fixed at its latest value; phases hand results to each other through the output file. Ignored for a single design variable, which is always a plain inversion.";
     pism_config:inverse.alternating_cycles_type = "integer";
     pism_config:inverse.alternating_cycles_units = "count";
 
