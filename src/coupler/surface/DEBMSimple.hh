@@ -67,6 +67,8 @@ public:
 
   const DEBMSimplePointwise& pointwise_model() const;
 
+  const OrbitalParameters &orbital_parameters() const;
+
 protected:
   // Overridable seams used by dEBM-enhanced (DEBMEnhanced) to substitute a prescribed
   // insolation field for the analytic dEBM-simple insolation. The base-class
@@ -109,6 +111,8 @@ private:
   unsigned int timeseries_length(double dt) const;
 
   DEBMSimplePointwise m_model;
+
+  OrbitalParameters m_orbital_parameters;
 
   double m_next_balance_year_start;
 

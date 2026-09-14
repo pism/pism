@@ -69,6 +69,39 @@ private:
   double m_slope, m_intercept;
 };
 
+class OrbitalParameters {
+public:
+  OrbitalParameters(const Context &ctx);
+
+  DEBMSimpleOrbitalParameters compute(double time) const;
+
+  static double solar_longitude(double year_fraction, double eccentricity,
+                                double perihelion_longitude);
+  static double distance_factor_present_day(double year_fraction);
+  static double distance_factor_paleo(double eccentricity, double true_anomaly);
+  static double solar_declination_present_day(double year_fraction);
+  static double solar_declination_paleo(double obliquity,
+                                        double solar_longitude);
+
+  double eccentricity(double time) const;
+  double obliquity(double time) const;
+  double perihelion_longitude(double time) const;
+
+private:
+
+  std::unique_ptr<ScalarForcing> m_eccentricity;
+  std::unique_ptr<ScalarForcing> m_obliquity;
+  std::unique_ptr<ScalarForcing> m_perihelion_longitude;
+
+  std::shared_ptr<const Time> m_time;
+
+  bool m_paleo;
+
+  double m_constant_eccentricity;
+  double m_constant_perihelion_longitude;
+  double m_constant_obliquity;
+};
+
 //! A dEBM-simple implementation
 /*!
  * This class implements dEBM-simple, the simple diurnal energy balance model described in
@@ -82,8 +115,6 @@ public:
   DEBMSimplePointwise(const Context &ctx);
 
   double albedo(double melt_rate, MaskValue cell_type) const;
-
-  DEBMSimpleOrbitalParameters orbital_parameters(double time) const;
 
   DEBMSimpleMelt melt(double declination,
                       double distance_factor,
@@ -127,19 +158,8 @@ public:
   // implementation details (exposed as "public" methods for testing)
   static double CalovGreveIntegrand(double sigma, double temperature);
   static double hour_angle(double phi, double latitude, double declination);
-  static double solar_longitude(double year_fraction, double eccentricity,
-                                double perihelion_longitude);
-  static double distance_factor_present_day(double year_fraction);
-  static double distance_factor_paleo(double eccentricity, double true_anomaly);
-  static double solar_declination_present_day(double year_fraction);
-  static double solar_declination_paleo(double obliquity,
-                                        double solar_longitude);
   static double insolation(double solar_constant, double distance_factor, double hour_angle,
                            double latitude, double declination);
-
-  double eccentricity(double time) const;
-  double obliquity(double time) const;
-  double perihelion_longitude(double time) const;
 
 private:
   //! refreeze melted ice
@@ -173,18 +193,6 @@ private:
 
   //! minimum solar elevation angle above which melt is possible
   double m_phi;
-
-  std::unique_ptr<ScalarForcing> m_eccentricity;
-  std::unique_ptr<ScalarForcing> m_obliquity;
-  std::unique_ptr<ScalarForcing> m_perihelion_longitude;
-
-  bool m_paleo;
-
-  double m_constant_eccentricity;
-  double m_constant_perihelion_longitude;
-  double m_constant_obliquity;
-
-  std::shared_ptr<const Time> m_time;
 
   // atmosphere transmissivity model
   DEBMSimpleAtmosphereTransmissivity m_transmissivity;

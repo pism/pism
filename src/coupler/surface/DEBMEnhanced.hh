@@ -22,6 +22,7 @@
 #include <memory>
 #include <vector>
 
+#include "pism/coupler/surface/DEBMSimplePointwise.hh"
 #include "pism/coupler/surface/DEBMSimple.hh"
 
 namespace pism {
@@ -84,6 +85,8 @@ private:
 
   //! model time (seconds) of the most recent horizon computation
   double m_t_last_horizon;
+
+  OrbitalParameters m_orbital_parameters;
 };
 
 } // end of namespace surface

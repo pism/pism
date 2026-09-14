@@ -99,8 +99,8 @@ double DEBMSimplePointwise::hour_angle(double phi, double latitude, double decli
  * Implements equation A2 in Zeitz et al. or equivalent equations in Berger1978 (section
  * 3).
  */
-double DEBMSimplePointwise::solar_longitude(double year_fraction, double eccentricity,
-                                            double perihelion_longitude) {
+double OrbitalParameters::solar_longitude(double year_fraction, double eccentricity,
+                                          double perihelion_longitude) {
 
   // Shortcuts to make formulas below easier to read:
   double E   = eccentricity;
@@ -139,7 +139,7 @@ double DEBMSimplePointwise::solar_longitude(double year_fraction, double eccentr
  * This quantity is equal to `1 / R^2`, where R is the sun-earth distance in units of the
  * semi-major axis of the earth's orbit.
  */
-double DEBMSimplePointwise::distance_factor_present_day(double year_fraction) {
+double OrbitalParameters::distance_factor_present_day(double year_fraction) {
   // These coefficients come from Table 2.2 in Liou 2002
   double
     a0 = 1.000110,
@@ -171,7 +171,7 @@ double DEBMSimplePointwise::distance_factor_present_day(double year_fraction) {
  * @param[in] eccentricity eccentricity of the earth's orbit
  * @param[in] true_anomaly true anomaly of the earth in the heliocentric ecliptic coordinate system
  */
-double DEBMSimplePointwise::distance_factor_paleo(double eccentricity, double true_anomaly) {
+double OrbitalParameters::distance_factor_paleo(double eccentricity, double true_anomaly) {
   double E = eccentricity;
 
   if (E == 1.0) {
@@ -188,7 +188,7 @@ double DEBMSimplePointwise::distance_factor_paleo(double eccentricity, double tr
  *
  * Implements equation 2.2.10 from Liou (2002)
  */
-double DEBMSimplePointwise::solar_declination_present_day(double year_fraction) {
+double OrbitalParameters::solar_declination_present_day(double year_fraction) {
   // These coefficients come from Table 2.2 in Liou 2002
    double
      a0 = 0.006918,
@@ -218,8 +218,8 @@ double DEBMSimplePointwise::solar_declination_present_day(double year_fraction) 
  *
  * See also equation 2.2.4 of Liou (2002).
  */
-double DEBMSimplePointwise::solar_declination_paleo(double obliquity,
-                                                    double solar_longitude) {
+double OrbitalParameters::solar_declination_paleo(double obliquity,
+                                                  double solar_longitude) {
   return asin(sin(obliquity) * sin(solar_longitude));
 }
 
@@ -272,8 +272,9 @@ double DEBMSimplePointwise::solar_declination_paleo(double obliquity,
  * @param[in] declination declination (radians)
  *
  */
-double DEBMSimplePointwise::insolation(double solar_constant, double distance_factor,
-                                       double hour_angle, double latitude, double declination) {
+double DEBMSimplePointwise::insolation_rate(double solar_constant, double distance_factor,
+                                            double hour_angle, double latitude,
+                                            double declination) {
   if (hour_angle == 0) {
     return 0.0;
   }
@@ -303,8 +304,6 @@ DEBMSimplePointwise::DEBMSimplePointwise(const Context &ctx) : m_transmissivity(
 
   const Config &config = *ctx.config();
 
-  m_time = ctx.time();
-
   m_L                              = config.get_number("constants.fresh_water.latent_heat_of_fusion");
   m_albedo_min                     = config.get_number("surface.debm_simple.albedo_min");
   m_albedo_ocean                   = config.get_number("surface.debm_simple.albedo_ocean");
@@ -313,10 +312,6 @@ DEBMSimplePointwise::DEBMSimplePointwise(const Context &ctx) : m_transmissivity(
   m_melt_threshold_temp            = config.get_number("surface.debm_simple.melting_threshold_temp");
   m_melt_c1                        = config.get_number("surface.debm_simple.c1");
   m_melt_c2                        = config.get_number("surface.debm_simple.c2");
-  m_constant_eccentricity          = config.get_number("surface.debm_simple.paleo.eccentricity");
-  m_constant_obliquity             = config.get_number("surface.debm_simple.paleo.obliquity", "radian");
-  m_constant_perihelion_longitude  = config.get_number("surface.debm_simple.paleo.perihelion_longitude", "radian");
-  m_paleo                          = config.get_flag("surface.debm_simple.paleo.enabled");
   m_phi                            = config.get_number("surface.debm_simple.phi", "radian");
   m_positive_threshold_temperature = config.get_number("surface.debm_simple.positive_threshold_temp");
   m_refreeze_fraction              = config.get_number("surface.debm_simple.refreeze");
@@ -329,20 +324,6 @@ DEBMSimplePointwise::DEBMSimplePointwise(const Context &ctx) : m_transmissivity(
   assert(m_albedo_slope < 0.0);
   assert(m_ice_density > 0.0);
 
-  std::string paleo_file = config.get_string("surface.debm_simple.paleo.file");
-
-  if (not paleo_file.empty()) {
-    m_eccentricity.reset(new ScalarForcing(ctx, "surface.debm_simple.paleo", "eccentricity", "1",
-                                           "1", "eccentricity of the earth"));
-
-    m_obliquity.reset(new ScalarForcing(ctx, "surface.debm_simple.paleo", "obliquity", "radian",
-                                        "degree", "obliquity of the earth"));
-
-    m_perihelion_longitude.reset(
-        new ScalarForcing(ctx, "surface.debm_simple.paleo", "perihelion_longitude", "radian",
-                          "degree", "longitude of the perihelion relative to the vernal equinox, "
-                          "in the geocentric ecliptic coordinate system"));
-  }
 }
 
 /*! Albedo parameterized as a function of the melt rate
@@ -373,7 +354,33 @@ double DEBMSimplePointwise::atmosphere_transmissivity(double elevation) const {
   return m_transmissivity(elevation);
 }
 
-DEBMSimpleOrbitalParameters DEBMSimplePointwise::orbital_parameters(double time) const {
+OrbitalParameters::OrbitalParameters(const Context &ctx) {
+  const auto &config = *ctx.config();
+
+  m_time = ctx.time();
+
+  m_constant_eccentricity          = config.get_number("surface.debm_simple.paleo.eccentricity");
+  m_constant_obliquity             = config.get_number("surface.debm_simple.paleo.obliquity", "radian");
+  m_constant_perihelion_longitude  = config.get_number("surface.debm_simple.paleo.perihelion_longitude", "radian");
+  m_paleo                          = config.get_flag("surface.debm_simple.paleo.enabled");
+
+  std::string paleo_file = config.get_string("surface.debm_simple.paleo.file");
+
+  if (not paleo_file.empty()) {
+    m_eccentricity.reset(new ScalarForcing(ctx, "surface.debm_simple.paleo", "eccentricity", "1",
+                                           "1", "eccentricity of the earth"));
+
+    m_obliquity.reset(new ScalarForcing(ctx, "surface.debm_simple.paleo", "obliquity", "radian",
+                                        "degree", "obliquity of the earth"));
+
+    m_perihelion_longitude.reset(
+        new ScalarForcing(ctx, "surface.debm_simple.paleo", "perihelion_longitude", "radian",
+                          "degree", "longitude of the perihelion relative to the vernal equinox, "
+                          "in the geocentric ecliptic coordinate system"));
+  }
+}
+
+DEBMSimpleOrbitalParameters OrbitalParameters::compute(double time) const {
   double solar_declination = 0.0;
   double distance_factor   = 0.0;
 
@@ -606,7 +613,7 @@ DEBMSimpleChanges DEBMSimplePointwise::step(double ice_thickness, double max_mel
 /*!
  * Eccentricity of the earth’s orbit (no units).
  */
-double DEBMSimplePointwise::eccentricity(double time) const {
+double OrbitalParameters::eccentricity(double time) const {
   if (m_eccentricity != nullptr) {
     return m_eccentricity->value(time);
   }
@@ -616,7 +623,7 @@ double DEBMSimplePointwise::eccentricity(double time) const {
 /*!
  * Returns the obliquity of the ecliptic in radians.
  */
-double DEBMSimplePointwise::obliquity(double time) const {
+double OrbitalParameters::obliquity(double time) const {
   if (m_obliquity != nullptr) {
     return m_obliquity->value(time);
   }
@@ -627,7 +634,7 @@ double DEBMSimplePointwise::obliquity(double time) const {
  * Returns the longitude of the perihelion (radians) in the geocentric ecliptic coordinate
  * system.
  */
-double DEBMSimplePointwise::perihelion_longitude(double time) const {
+double OrbitalParameters::perihelion_longitude(double time) const {
   if (m_perihelion_longitude != nullptr) {
     double L_p = remainder(m_perihelion_longitude->value(time), 2.0 * M_PI);
     if (L_p < 0.0) {

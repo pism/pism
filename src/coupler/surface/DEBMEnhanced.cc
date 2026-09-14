@@ -32,7 +32,6 @@
 #include "pism/util/array/Array.hh"
 #include "pism/util/array/Array3D.hh"
 #include "pism/util/array/Scalar.hh"
-#include "pism/util/error_handling.hh"
 
 namespace pism {
 namespace surface {
@@ -42,17 +41,10 @@ namespace surface {
 
 DEBMEnhanced::DEBMEnhanced(std::shared_ptr<const Grid> g,
                            std::shared_ptr<atmosphere::AtmosphereModel> input)
-  : DEBMSimple(g, std::move(input)),
-    m_update_interval(0.0), m_t_last_horizon(0.0) {
-
-  // dEBM-enhanced reuses the analytic orbit only for the temperature/offset melt-period
-  // weighting. The insolation is computed for a fixed (present-day) orbit, so it is
-  // inconsistent with the paleo orbit parameterization.
-  if (m_config->get_flag("surface.debm_simple.paleo.enabled")) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "the 'debm_enhanced' surface model is incompatible with "
-                                  "surface.debm_simple.paleo.enabled");
-  }
+    : DEBMSimple(g, std::move(input)),
+      m_update_interval(0.0),
+      m_t_last_horizon(0.0),
+      m_orbital_parameters(*g->ctx()) {
 
   m_log->message(2,
                  "  dEBM-enhanced: the terrain-shaded surface insolation is computed\n"
@@ -108,16 +100,13 @@ void DEBMEnhanced::update_insolation_input(double t, double dt,
   // Recompute the daily terrain-shaded insolation field for a representative day at the
   // midpoint of the update interval. The diurnal integral is independent of longitude, so
   // only the day's solar declination and Sun-Earth distance factor are needed (plus the
-  // static horizon and normals). Using the midpoint declination for the whole interval is
+  // pre-computed horizon map). Using the midpoint declination for the whole interval is
   // an approximation that is accurate for the sub-monthly time steps used in practice.
   double t_mid = t + 0.5 * dt;
-  double year_fraction = m_grid->ctx()->time()->year_fraction(t_mid);
-  double declination = DEBMSimplePointwise::solar_declination_present_day(year_fraction);
-  double distance_factor = DEBMSimplePointwise::distance_factor_present_day(year_fraction);
+  auto orbital = m_orbital_parameters.compute(t_mid);
 
-  m_terrain->daily_insolation(declination, distance_factor, m_grid->latitude(),
-                              surface_elevation,
-                              *m_insolation);
+  m_terrain->daily_insolation(orbital.solar_declination, orbital.distance_factor,
+                              m_grid->latitude(), surface_elevation, *m_insolation);
   list.add(*m_insolation);
 }
 

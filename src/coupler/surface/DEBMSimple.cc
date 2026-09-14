@@ -40,9 +40,11 @@ namespace surface {
 
 ///// PISM surface model implementing a dEBM-Simple scheme.
 
-DEBMSimple::DEBMSimple(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere::AtmosphereModel> input)
-  : SurfaceModel(g, std::move(input)),
+DEBMSimple::DEBMSimple(std::shared_ptr<const Grid> g,
+                       std::shared_ptr<atmosphere::AtmosphereModel> input)
+    : SurfaceModel(g, std::move(input)),
       m_model(*g->ctx()),
+      m_orbital_parameters(*g->ctx()),
       m_mass_flux(m_grid, "climatic_mass_balance"),
       m_snow_depth(m_grid, "snow_depth"),
       m_temperature_driven_melt(m_grid, "debm_temperature_driven_melt_flux"),
@@ -292,7 +294,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
 
     // pre-compute orbital parameters which depend on time and *not* on the map-plane
     // location
-    orbital[k] = m_model.orbital_parameters(ts[k]);
+    orbital[k] = m_orbital_parameters.compute(ts[k]);
   }
 
   // update standard deviation time series
@@ -600,6 +602,10 @@ const DEBMSimplePointwise& DEBMSimple::pointwise_model() const {
   return m_model;
 }
 
+const OrbitalParameters &DEBMSimple::orbital_parameters() const {
+  return m_orbital_parameters;
+}
+
 namespace diagnostics {
 
 /*! @brief Report mean top of atmosphere insolation */
@@ -627,7 +633,7 @@ protected:
     {
       const auto& M = model->pointwise_model();
 
-      auto orbital = M.orbital_parameters(ctx->time()->current());
+      auto orbital = model->orbital_parameters().compute(ctx->time()->current());
 
       array::AccessScope list{&latitude, result.get()};
 
