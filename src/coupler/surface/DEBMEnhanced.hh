@@ -77,9 +77,6 @@ private:
   //! terrain-horizon + shaded-insolation engine
   std::unique_ptr<TerrainInsolation> m_terrain;
 
-  //! daily surface insolation energy (J m-2) computed for the current update
-  std::shared_ptr<array::Scalar> m_insolation;
-
   //! interval (seconds) between recomputations of the terrain horizon
   double m_update_interval;
 

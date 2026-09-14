@@ -25,6 +25,7 @@
 
 #include "pism/util/petscwrappers/VecScatter.hh"
 #include "pism/util/petscwrappers/Vec.hh"
+#include "pism/util/array/Scalar.hh"
 
 namespace pism {
 
@@ -66,10 +67,11 @@ public:
   //! solar `declination` (radians) and `distance_factor` (= (d_bar/d)^2): the diurnal
   //! insolation integral divided by the length of the day. `latitude` is the per-cell
   //! latitude field (degrees north); `result` is overwritten.
-  void daily_insolation(double declination, double distance_factor,
-                        const array::Scalar &latitude,
-                        const array::Scalar1 &surface_elevation,
-                        array::Scalar &result) const;
+  void update_daily_insolation(double declination, double distance_factor,
+                               const array::Scalar &latitude,
+                               const array::Scalar1 &surface_elevation);
+
+  const array::Scalar& insolation() const;
 
   //! Terrain horizon map (azimuth, y, x), elevation angle in radians.
   const array::Array3D &horizon() const;
@@ -102,6 +104,9 @@ private:
   std::shared_ptr<array::Array3D> m_horizon;      // (azimuth, y, x), radians
   std::shared_ptr<array::Scalar> m_sky_view;      // sky-view factor, in [0, 1]
 
+  //! daily surface insolation energy (J m-2) computed for the current update
+  array::Scalar m_insolation;
+  
   double horizon_at(const double *column, double azimuth) const;
 
   std::function<double(double)> m_transmissivity;

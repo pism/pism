@@ -58,9 +58,11 @@ namespace surface {
 
 TerrainInsolation::TerrainInsolation(std::shared_ptr<const Grid> grid,
                                      std::function<double(double)> atmosphere_transmissivity)
-  : m_grid(grid) {
+    : m_grid(grid), m_insolation(grid, "insolation"), m_transmissivity(atmosphere_transmissivity) {
 
-  m_transmissivity = atmosphere_transmissivity;
+  m_insolation.metadata(0)
+      .long_name("daily mean terrain-shaded surface insolation")
+      .units("W m^-2");
 
   auto config = m_grid->ctx()->config();
 
@@ -111,6 +113,10 @@ TerrainInsolation::TerrainInsolation(std::shared_ptr<const Grid> grid,
   ierr = VecCreateSeq(PETSC_COMM_SELF, static_cast<PetscInt>(m_grid->Mx() * m_grid->My()),
                       m_dem_local.rawptr());
   PISM_CHK(ierr, "VecCreateSeq");
+}
+
+const array::Scalar& TerrainInsolation::insolation() const {
+  return m_insolation;
 }
 
 const array::Array3D &TerrainInsolation::horizon() const {
@@ -229,10 +235,6 @@ void TerrainInsolation::init(const array::Scalar1 &surface_elevation) {
   // domain boundary) and the horizon map (the dominant cost) for every owned cell.
   profiling.begin("surface.debm_enhanced.horizon");
 
-  // array::Scalar A(m_grid, "A");
-  // compute_azimuth(A);
-  // A.dump("A.nc");
-
   const auto &azimuth = m_horizon->levels();
 
   petsc::VecArray dem(m_dem_local);
@@ -304,10 +306,9 @@ double TerrainInsolation::horizon_at(const double *column, double azimuth) const
 // (solshade/irradiance.py).
 //
 // Here they are integrated over the diurnal cycle to compute daily energy.
-void TerrainInsolation::daily_insolation(double declination, double distance_factor,
-                                         const array::Scalar &latitude,
-                                         const array::Scalar1 &surface_elevation,
-                                         array::Scalar &result) const {
+void TerrainInsolation::update_daily_insolation(double declination, double distance_factor,
+                                                const array::Scalar &latitude,
+                                                const array::Scalar1 &surface_elevation) {
   const double seconds_per_day = 86400.0;
 
   terrain::SunPosition sun_position(declination);
@@ -333,7 +334,7 @@ void TerrainInsolation::daily_insolation(double declination, double distance_fac
   const auto &profiling = m_grid->ctx()->profiling();
   profiling.begin("surface.debm_enhanced.daily_insolation");
 
-  array::AccessScope scope{ &latitude, &result, &surface_elevation, m_horizon.get() };
+  array::AccessScope scope{ &latitude, &m_insolation, &surface_elevation, m_horizon.get() };
 
   bool use_sky_view = sky_view_enabled();
   if (use_sky_view) {
@@ -421,7 +422,7 @@ void TerrainInsolation::daily_insolation(double declination, double distance_fac
 
     // store the daily-mean insolation rate (W m-2), matching dEBM-simple's "insolation"
     // diagnostic units (the melt code multiplies this rate by the sub-step length)
-    result(i, j) = m_transmissivity(surface_elevation(i, j)) * energy / seconds_per_day;
+    m_insolation(i, j) = m_transmissivity(surface_elevation(i, j)) * energy / seconds_per_day;
   }
 
   profiling.end("surface.debm_enhanced.daily_insolation");
