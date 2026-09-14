@@ -417,7 +417,6 @@ DEBMSimpleOrbitalParameters OrbitalParameters::compute(double time) const {
   return { solar_declination, distance_factor };
 }
 
-
 /*!
  * Compute top of atmosphere insolation to report as a diagnostic quantity.
  *
@@ -431,7 +430,7 @@ double DEBMSimplePointwise::insolation_diagnostic(double declination, double dis
 
   double h_phi = hour_angle(m_phi, latitude_rad, declination);
 
-  return insolation(m_solar_constant, distance_factor, h_phi, latitude_rad, declination);
+  return insolation_rate(m_solar_constant, distance_factor, h_phi, latitude_rad, declination);
 }
 
 /* Melt amount (in m water equivalent) and its components over the time step `dt`
@@ -456,12 +455,12 @@ DEBMSimpleMelt DEBMSimplePointwise::melt(double declination,
                                          double surface_elevation,
                                          double latitude,
                                          double albedo) const {
-  // Compute the analytic top-of-atmosphere insolation energy reaching the surface over
-  // `dt`, then forward to the shared melt core. dEBM-enhanced replaces only the first step
-  // (the insolation energy) with a prescribed field.
-  double E = insolation_energy(declination, distance_factor, latitude, dt);
+  // Compute the top-of-atmosphere insolation energy reaching the surface over `dt`.
+  double E_toa = insolation_energy(declination, distance_factor, latitude, dt);
 
-  return melt_from_insolation(declination, latitude, E, dt, T_std_deviation, T,
+  double E_surface = atmosphere_transmissivity(surface_elevation) * E_toa;
+
+  return melt_from_insolation(declination, latitude, E_surface, dt, T_std_deviation, T,
                               surface_elevation, albedo);
 }
 
@@ -470,8 +469,12 @@ DEBMSimpleMelt DEBMSimplePointwise::melt(double declination,
  * time step `dt`.
  *
  * This is the average insolation rate S_Phi (W/m^2) during the daily melt period times the
- * length of that melt period within `dt`, i.e. `S_Phi * dt * (h_phi / pi)`. In dEBM-simple
- * this quantity is what the insolation-driven melt is proportional to.
+ * length of that melt period `dt`, i.e. `S_Phi * dt * (h_phi / pi)`.
+ *
+ * @param[in] declination solar declination (radians)
+ * @param[in] distance_factor square of the ratio of the mean sun-earth distance to the current sun-earth distance (no units)
+ * @param[in] latitude latitude (degrees)
+ * @param[in] dt time-step length (seconds)
  */
 double DEBMSimplePointwise::insolation_energy(double declination, double distance_factor,
                                               double latitude, double dt) const {
@@ -479,7 +482,7 @@ double DEBMSimplePointwise::insolation_energy(double declination, double distanc
   double latitude_rad = latitude * degrees_to_radians;
 
   double h_phi  = hour_angle(m_phi, latitude_rad, declination);
-  double S_phi  = insolation(m_solar_constant, distance_factor, h_phi, latitude_rad, declination);
+  double S_phi  = insolation_rate(m_solar_constant, distance_factor, h_phi, latitude_rad, declination);
 
   return S_phi * dt * (h_phi / M_PI);
 }
@@ -487,9 +490,7 @@ double DEBMSimplePointwise::insolation_energy(double declination, double distanc
 /* Melt amount (in m water equivalent) and its components over the time step `dt`, given the
  * insolation *energy* (J/m^2) reaching the surface.
  *
- * This is the shared melt core used by both dEBM-simple (which computes `insolation_energy`
- * analytically) and dEBM-enhanced (which reads it from a file). Implements equation (1) in
- * Zeitz et al; see also equation (6) in Krebs-Kanzow et al.
+ * Implements equation (1) in Zeitz et al; see also equation (6) in Krebs-Kanzow et al.
  *
  * @param[in] declination solar declination (radians), used for the daily melt-period length
  * @param[in] latitude latitude (degrees north)
@@ -513,7 +514,6 @@ DEBMSimpleMelt DEBMSimplePointwise::melt_from_insolation(double declination,
   const double degrees_to_radians = M_PI / 180.0;
   double latitude_rad = latitude * degrees_to_radians;
 
-  double transmissivity = atmosphere_transmissivity(surface_elevation);
   double h_phi          = hour_angle(m_phi, latitude_rad, declination);
 
   double Teff = CalovGreveIntegrand(T_std_deviation,
@@ -530,17 +530,16 @@ DEBMSimpleMelt DEBMSimplePointwise::melt_from_insolation(double declination,
 
   DEBMSimpleMelt result;
 
-  // insolation_energy is the (TOA-equivalent) energy reaching the surface over dt;
-  // transmissivity and albedo convert it to absorbed energy, and dividing by rho_w * L
-  // gives melt in meters of water equivalent. This is algebraically identical to
-  // A * transmissivity * (1 - albedo) * S_phi in dEBM-simple.
-  result.insolation_melt  = (transmissivity * (1.0 - albedo) * insolation_energy) /
+  // insolation_energy is the energy reaching the surface over dt; albedo converts it to
+  // absorbed energy, and dividing by rho_w * L gives melt in meters of water equivalent.
+  result.insolation_melt  = ((1.0 - albedo) * insolation_energy) /
                             (m_water_density * m_L);
   result.temperature_melt = A * m_melt_c1 * Teff;
   result.offset_melt      = A * m_melt_c2;
 
   double total_melt = (result.insolation_melt + result.temperature_melt +
                        result.offset_melt);
+
   // this model should not produce negative melt rates
   result.total_melt = std::max(total_melt, 0.0);
 

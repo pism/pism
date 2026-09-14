@@ -158,8 +158,8 @@ public:
   // implementation details (exposed as "public" methods for testing)
   static double CalovGreveIntegrand(double sigma, double temperature);
   static double hour_angle(double phi, double latitude, double declination);
-  static double insolation(double solar_constant, double distance_factor, double hour_angle,
-                           double latitude, double declination);
+  static double insolation_rate(double solar_constant, double distance_factor, double hour_angle,
+                                double latitude, double declination);
 
 private:
   //! refreeze melted ice
