@@ -45,6 +45,14 @@
 #endif
 #include <proj.h>
 
+/*!
+ * Reference:
+ *
+ * A. Chokshi, “Solshade: Terrain-aware Solar Illumination Modelling using Digital
+ * Elevation Models and Orbital Geometry,” Journal of Open Source Software, vol. 11, no.
+ * 122, p. 9944, Jun. 2026, doi: 10.21105/joss.09944.
+ */
+
 namespace pism {
 namespace surface {
 
@@ -293,10 +301,9 @@ double TerrainInsolation::horizon_at(const double *column, double azimuth) const
 
 // The per-timestep shadow test, Lambertian cosine projection (max(0, normal . sun)), and
 // inverse-square distance scaling are adapted from solshade's compute_flux_timeseries
-// (solshade/irradiance.py): https://github.com/amanchokshi/solshade (MIT License,
-// (c) 2025 Aman Chokshi; Chokshi et al., JOSS, doi:10.21105/joss.09944). Here they are
-// integrated over the diurnal cycle to a daily energy, and the solar position and
-// distance factor come from PISM's own DEBMSimplePointwise instead of an ephemeris.
+// (solshade/irradiance.py).
+//
+// Here they are integrated over the diurnal cycle to compute daily energy.
 void TerrainInsolation::daily_insolation(double declination, double distance_factor,
                                          const array::Scalar &latitude,
                                          const array::Scalar1 &surface_elevation,
@@ -310,6 +317,17 @@ void TerrainInsolation::daily_insolation(double declination, double distance_fac
   if (M < 1) {
     M = 1;
   }
+
+  // Pre-compute cos() and sin() of M hour angles:
+  {
+    std::vector<double> hour_angles(M);
+    for (int m = 0; m < M; ++m) {
+      // hour angle sweeps the full day, midpoint rule over [-pi, pi)
+      hour_angles[m] = -M_PI + 2.0 * M_PI * (m + 0.5) / M;
+    }
+    sun_position.set_hour_angles(hour_angles);
+  }
+
   const double dt = seconds_per_day / M;
 
   const auto &profiling = m_grid->ctx()->profiling();
@@ -349,7 +367,7 @@ void TerrainInsolation::daily_insolation(double declination, double distance_fac
 
     sun_position.set_latitude(latitude(i, j) * (M_PI / 180.0));
 
-    // Compute the upward-pointing unit surface normal:
+    // Compute the upward-pointing surface normal:
     double nE = -diff_x(surface_elevation, i, j);
     double nN = -diff_y(surface_elevation, i, j);
     double nU = 1.0;
@@ -372,15 +390,13 @@ void TerrainInsolation::daily_insolation(double declination, double distance_fac
     const double svf = use_sky_view ? (*m_sky_view)(i, j) : 0.0;
 
     double energy = 0.0;
-    for (int m = 0; m < M; ++m) {
-      // hour angle sweeps the full day, midpoint rule over [-pi, pi)
-      double H = -M_PI + 2.0 * M_PI * (m + 0.5) / M;
-
+    for (int hour_angle_idx = 0; hour_angle_idx < M; ++hour_angle_idx) {
       double altitude = 0.0, azimuth = 0.0;
-      sun_position.compute(H, altitude, azimuth);
+      sun_position.compute_at_set_hour_angle(hour_angle_idx, altitude, azimuth);
 
       if (altitude <= 0.0) {
-        continue; // Sun below the astronomical horizon: no direct and no diffuse
+        // Sun below the astronomical horizon: no direct and no diffuse contribution
+        continue;
       }
 
       // top-of-atmosphere horizontal irradiance, the basis for the diffuse component

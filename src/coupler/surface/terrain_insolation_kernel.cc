@@ -21,6 +21,7 @@
 #include <cassert>
 #include <cmath>
 #include <limits>
+#include <vector>
 
 // Credits
 // -------
@@ -102,21 +103,41 @@ SunPosition::SunPosition(double declination) {
   m_cos_decl = std::cos(declination);
 }
 
+void SunPosition::set_hour_angles(const std::vector<double> &hour_angle) {
+  auto N = hour_angle.size();
+  m_cos_hour_angle.resize(N);
+  m_sin_hour_angle.resize(N);
+  for (int k = 0; k < N; ++k) {
+    m_cos_hour_angle[k] = std::cos(hour_angle[k]);
+    m_sin_hour_angle[k] = std::sin(hour_angle[k]);
+  }
+}
+
+
 void SunPosition::set_latitude(double latitude_radians) {
   m_sin_lat = std::sin(latitude_radians);
   m_cos_lat = std::cos(latitude_radians);
 }
 
+void SunPosition::compute_at_set_hour_angle(int k, double &altitude, double &azimuth) const {
+  compute_impl(m_cos_hour_angle[k], m_sin_hour_angle[k], altitude, azimuth);
+}
+
+void SunPosition::compute(double hour_angle, double &altitude, double &azimuth) const {
+  compute_impl(std::cos(hour_angle), std::sin(hour_angle), altitude, azimuth);
+}
+
 // Standard topocentric solar geometry (textbook spherical astronomy). The ENU sun-vector
 // convention (E = cos(alt) sin(az), N = cos(alt) cos(az), U = sin(alt)) matches solshade's
 // solar.py; the altitude/azimuth formulas themselves are standard.
-void SunPosition::compute(double hour_angle, double &altitude, double &azimuth) const {
+void SunPosition::compute_impl(double cos_hour_angle, double sin_hour_angle, double &altitude,
+                               double &azimuth) const {
   double sin_alt =
-      clip(m_sin_lat * m_sin_decl + m_cos_lat * m_cos_decl * std::cos(hour_angle), -1.0, 1.0);
+      clip(m_sin_lat * m_sin_decl + m_cos_lat * m_cos_decl * cos_hour_angle, -1.0, 1.0);
 
   altitude = std::asin(sin_alt);
 
-  // Azimuth is irrelevant if the run is below the horizon.
+  // Azimuth is irrelevant if the sun is below the horizon.
   if (altitude < 0.0) {
     azimuth = 0.0;
     return;
@@ -132,7 +153,7 @@ void SunPosition::compute(double hour_angle, double &altitude, double &azimuth) 
     return;
   }
 
-  double sinA = -m_cos_decl * std::sin(hour_angle) / cos_altitude;
+  double sinA = -m_cos_decl * sin_hour_angle / cos_altitude;
   double cosA = (m_sin_decl - m_sin_lat * sin_alt) / (m_cos_lat * cos_altitude);
 
   double A = std::atan2(sinA, cosA); // clockwise from north, in (-pi, pi]

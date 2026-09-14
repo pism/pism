@@ -74,8 +74,10 @@ public:
   //! Terrain horizon map (azimuth, y, x), elevation angle in radians.
   const array::Array3D &horizon() const;
 
-  //! Sky-view factor (y, x), in [0, 1]: the fraction of the diffuse sky hemisphere visible
-  //! from each cell, accounting for the terrain horizon and the surface slope/aspect.
+  //! Sky-view factor: the fraction (between 0 and 1) of the diffuse sky hemisphere
+  //! visible from each cell, accounting for the terrain horizon and the surface
+  //! slope/aspect.
+  //!
   //! Only valid (computed) when sky_view_enabled() is true.
   const array::Scalar &sky_view() const;
 

@@ -19,6 +19,8 @@
 #ifndef PISM_TERRAIN_INSOLATION_KERNEL_H
 #define PISM_TERRAIN_INSOLATION_KERNEL_H
 
+#include <vector>
+
 namespace pism {
 namespace surface {
 namespace terrain {
@@ -91,11 +93,20 @@ public:
 
   void set_latitude(double latitude_radians);
 
+  void set_hour_angles(const std::vector<double> &hour_angle);
+  void compute_at_set_hour_angle(int k, double &altitude, double &azimuth) const;
+
   void compute(double hour_angle, double &altitude, double &azimuth) const;
 
 private:
   double m_sin_decl, m_cos_decl;
   double m_sin_lat, m_cos_lat;
+
+  void compute_impl(double cos_hour_angle, double sin_hour_angle, double &altitude,
+                    double &azimuth) const;
+
+  std::vector<double> m_sin_hour_angle;
+  std::vector<double> m_cos_hour_angle;
 };
 
 
