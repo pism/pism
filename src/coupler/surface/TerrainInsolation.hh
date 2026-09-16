@@ -26,6 +26,7 @@
 #include "pism/util/petscwrappers/VecScatter.hh"
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/array/Scalar.hh"
+#include "pism/util/OrbitalParameters.hh"
 
 namespace pism {
 
@@ -60,18 +61,18 @@ public:
   TerrainInsolation(std::shared_ptr<const Grid> grid,
                     std::function<double(double)> atmosphere_transmissivity);
 
-  //! Gather the DEM and compute the horizon map and surface normals (one-time).
-  void init(const array::Scalar1 &surface_elevation);
+  void update_horizon_map(const array::Scalar1 &surface_elevation);
 
-  //! Daily-mean terrain-shaded surface insolation rate (W m-2) for a day with the given
-  //! solar `declination` (radians) and `distance_factor` (= (d_bar/d)^2): the diurnal
-  //! insolation integral divided by the length of the day. `latitude` is the per-cell
-  //! latitude field (degrees north); `result` is overwritten.
-  void update_daily_insolation(double declination, double distance_factor,
-                               const array::Scalar &latitude,
-                               const array::Scalar1 &surface_elevation);
+  //! Daily-mean terrain-shaded surface insolation rate (W m-2) at time `time`: the
+  //! diurnal insolation integral divided by the length of the day.
+  void update_daily_insolation(double time, const array::Scalar1 &surface_elevation);
 
   const array::Scalar& insolation() const;
+
+  void insolation_energy_series(int i, int j,
+                                const std::vector<OrbitalParameters> &orbital,
+                                double dt_sub, double latitude,
+                                std::vector<double> &result) const;
 
   //! Terrain horizon map (azimuth, y, x), elevation angle in radians.
   const array::Array3D &horizon() const;
@@ -107,7 +108,9 @@ private:
   //! daily surface insolation energy (J m-2) computed for the current update
   array::Scalar m_insolation;
   
-  double horizon_at(const double *column, double azimuth) const;
+  static double interpolate(const double *column, int n, double azimuth);
+
+  OrbitalParameterCalculator m_orbital_parameters;
 
   std::function<double(double)> m_transmissivity;
 };

@@ -43,8 +43,7 @@ DEBMEnhanced::DEBMEnhanced(std::shared_ptr<const Grid> g,
                            std::shared_ptr<atmosphere::AtmosphereModel> input)
     : DEBMSimple(g, std::move(input)),
       m_update_interval(0.0),
-      m_t_last_horizon(0.0),
-      m_orbital_parameters(*g->ctx()) {
+      m_t_last_horizon(0.0) {
 
   m_log->message(2,
                  "  dEBM-enhanced: the terrain-shaded surface insolation is computed\n"
@@ -73,22 +72,21 @@ void DEBMEnhanced::init_impl(const Geometry &geometry) {
   // Build the initial horizon map and surface normals. The horizon is recomputed from the
   // (evolving) surface elevation every surface.debm_enhanced.update_interval (see
   // update_insolation_input).
-  m_terrain->init(geometry.ice_surface_elevation);
+  m_terrain->update_horizon_map(geometry.ice_surface_elevation);
   m_t_last_horizon = m_grid->ctx()->time()->current();
 }
 
 void DEBMEnhanced::update_insolation_input(double t, double dt,
-                                           const std::vector<double> &ts,
+                                           const std::vector<double> &/*ts*/,
                                            const array::Scalar1 &surface_elevation,
                                            array::AccessScope &list) {
-  (void)ts;
 
   // Recompute the terrain horizon from the current ice surface elevation once at least
   // m_update_interval has elapsed (a value of zero recomputes it every time step). The
   // horizon changes slowly as the geometry evolves, so this is much cheaper than redoing
   // the ray-marching every step.
   if (t >= m_t_last_horizon + m_update_interval) {
-    m_terrain->init(surface_elevation);
+    m_terrain->update_horizon_map(surface_elevation);
     m_t_last_horizon = t;
   }
 
@@ -98,15 +96,13 @@ void DEBMEnhanced::update_insolation_input(double t, double dt,
   // pre-computed horizon map). Using the midpoint declination for the whole interval is
   // an approximation that is accurate for the sub-monthly time steps used in practice.
   double t_mid = t + 0.5 * dt;
-  auto orbital = m_orbital_parameters.compute(t_mid);
 
-  m_terrain->update_daily_insolation(orbital.solar_declination, orbital.distance_factor,
-                                     m_grid->latitude(), surface_elevation);
+  m_terrain->update_daily_insolation(t_mid, surface_elevation);
   list.add(m_terrain->insolation());
 }
 
 void DEBMEnhanced::insolation_energy_series(int i, int j,
-                                            const std::vector<DEBMSimpleOrbitalParameters> &orbital,
+                                            const std::vector<OrbitalParameters> &orbital,
                                             double dt_sub,
                                             double /*latitude*/,
                                             std::vector<double> &result) const {

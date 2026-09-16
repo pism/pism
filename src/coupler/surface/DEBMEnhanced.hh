@@ -22,7 +22,6 @@
 #include <memory>
 #include <vector>
 
-#include "pism/coupler/surface/DEBMSimplePointwise.hh"
 #include "pism/coupler/surface/DEBMSimple.hh"
 
 namespace pism {
@@ -66,7 +65,7 @@ protected:
                                array::AccessScope &list) override;
 
   void insolation_energy_series(int i, int j,
-                                const std::vector<DEBMSimpleOrbitalParameters> &orbital,
+                                const std::vector<OrbitalParameters> &orbital,
                                 double dt_sub,
                                 double latitude,
                                 std::vector<double> &result) const override;
@@ -82,8 +81,6 @@ private:
 
   //! model time (seconds) of the most recent horizon computation
   double m_t_last_horizon;
-
-  OrbitalParameters m_orbital_parameters;
 };
 
 } // end of namespace surface

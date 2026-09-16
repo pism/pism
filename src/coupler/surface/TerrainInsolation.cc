@@ -58,7 +58,9 @@ namespace surface {
 
 TerrainInsolation::TerrainInsolation(std::shared_ptr<const Grid> grid,
                                      std::function<double(double)> atmosphere_transmissivity)
-    : m_grid(grid), m_insolation(grid, "insolation"), m_transmissivity(atmosphere_transmissivity) {
+    : m_grid(grid), m_insolation(grid, "insolation"),
+      m_orbital_parameters(*grid->ctx()),
+      m_transmissivity(atmosphere_transmissivity) {
 
   m_insolation.metadata(0)
       .long_name("daily mean terrain-shaded surface insolation")
@@ -183,7 +185,7 @@ void compute_azimuth(array::Scalar &output) {
   }
 }
 
-void TerrainInsolation::init(const array::Scalar1 &surface_elevation) {
+void TerrainInsolation::update_horizon_map(const array::Scalar1 &surface_elevation) {
   auto log = m_grid->ctx()->log();
 
   log->message(2, "* Updating the horizon map...\n");
@@ -251,18 +253,25 @@ void TerrainInsolation::init(const array::Scalar1 &surface_elevation) {
     double *column = m_horizon->get_column(i, j);
 
     // Compute the upward-pointing normal to the surface:
-    double nE = -diff_x(surface_elevation, i, j);
-    double nN = -diff_y(surface_elevation, i, j);
-    double nU = 1.0;
+    double s_x = diff_x(surface_elevation, i, j);
+    double s_y = diff_y(surface_elevation, i, j);
+
+    // FIXME: incorrect assumption!
+    double s_e = s_x;
+    double s_n = s_y;
+
+    double Ne = -s_e;
+    double Nn = -s_n;
+    double Nu = 1.0;
 
     // Scale to get the unit normal:
     {
-      // Note that norm != 0.0 because nU == 1
-      double norm = std::sqrt(nE * nE + nN * nN + nU * nU);
+      // Note that norm != 0.0 because Nu == 1
+      double norm = std::sqrt(Ne * Ne + Nn * Nn + Nu * Nu);
 
-      nE /= norm;
-      nN /= norm;
-      nU /= norm;
+      Ne /= norm;
+      Nn /= norm;
+      Nu /= norm;
     }
 
     for (int k = 0; k < m_n_directions; ++k) {
@@ -271,10 +280,10 @@ void TerrainInsolation::init(const array::Scalar1 &surface_elevation) {
     }
 
     // sky-view factor from the horizon and the surface slope/aspect (the latter recovered
-    // from the unit normal: slope = acos(nU), aspect = atan2(nE, nN), clockwise from north)
+    // from the unit normal: slope = acos(Nu), aspect = atan2(Ne, Nn), clockwise from north)
     if (use_sky_view) {
-      double slope = std::acos(nU < -1.0 ? -1.0 : (nU > 1.0 ? 1.0 : nU));
-      double aspect = std::atan2(nE, nN);
+      double slope = std::acos(Nu < -1.0 ? -1.0 : (Nu > 1.0 ? 1.0 : Nu));
+      double aspect = std::atan2(Ne, Nn);
       (*m_sky_view)(i, j) =
           terrain::sky_view_factor(column, azimuth.data(), m_n_directions, slope,
                                    aspect);
@@ -286,17 +295,17 @@ void TerrainInsolation::init(const array::Scalar1 &surface_elevation) {
 }
 
 //! Periodic linear interpolation of a horizon column at the given azimuth (radians).
-double TerrainInsolation::horizon_at(const double *column, double azimuth) const {
+double TerrainInsolation::interpolate(const double *column, int n, double azimuth) {
   const double two_pi = 2.0 * M_PI;
-  const double da = two_pi / m_n_directions;
+  const double da = two_pi / n;
 
   double a = azimuth - two_pi * std::floor(azimuth / two_pi); // wrap to [0, 2*pi)
   double x = a / da;
   int k = static_cast<int>(std::floor(x));
   double frac = x - k;
 
-  int k0 = k % m_n_directions;
-  int k1 = (k + 1) % m_n_directions;
+  int k0 = k % n;
+  int k1 = (k + 1) % n;
 
   return column[k0] * (1.0 - frac) + column[k1] * frac;
 }
@@ -306,9 +315,13 @@ double TerrainInsolation::horizon_at(const double *column, double azimuth) const
 // (solshade/irradiance.py).
 //
 // Here they are integrated over the diurnal cycle to compute daily energy.
-void TerrainInsolation::update_daily_insolation(double declination, double distance_factor,
-                                                const array::Scalar &latitude,
+void TerrainInsolation::update_daily_insolation(double time,
                                                 const array::Scalar1 &surface_elevation) {
+
+  auto p = m_orbital_parameters.compute(time);
+  double declination = p.solar_declination;
+  double distance_factor = p.distance_factor;
+
   const double seconds_per_day = 86400.0;
 
   terrain::SunPosition sun_position(declination);
@@ -333,6 +346,8 @@ void TerrainInsolation::update_daily_insolation(double declination, double dista
 
   const auto &profiling = m_grid->ctx()->profiling();
   profiling.begin("surface.debm_enhanced.daily_insolation");
+
+  const auto &latitude = m_grid->latitude();
 
   array::AccessScope scope{ &latitude, &m_insolation, &surface_elevation, m_horizon.get() };
 
@@ -362,24 +377,31 @@ void TerrainInsolation::update_daily_insolation(double declination, double dista
     return (F(i, jp) - F(i, jm)) / ((jp - jm) * dy);
   };
 
-
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     sun_position.set_latitude(latitude(i, j) * (M_PI / 180.0));
 
-    // Compute the upward-pointing surface normal:
-    double nE = -diff_x(surface_elevation, i, j);
-    double nN = -diff_y(surface_elevation, i, j);
-    double nU = 1.0;
+    // Compute the upward-pointing normal to the surface:
+    double s_x = diff_x(surface_elevation, i, j);
+    double s_y = diff_y(surface_elevation, i, j);
+
+    // FIXME: incorrect assumption!
+    double s_e = s_x;
+    double s_n = s_y;
+
+    double Ne = -s_e;
+    double Nn = -s_n;
+    double Nu = 1.0;
+
     // Scale to get the unit normal:
     {
-      // Note that norm != 0.0 because nU == 1
-      double norm = std::sqrt(nE * nE + nN * nN + nU * nU);
+      // Note that norm != 0.0 because Nu == 1
+      double norm = std::sqrt(Ne * Ne + Nn * Nn + Nu * Nu);
 
-      nE /= norm;
-      nN /= norm;
-      nU /= norm;
+      Ne /= norm;
+      Nn /= norm;
+      Nu /= norm;
     }
 
     const double *horizon = m_horizon->get_column(i, j);
@@ -391,7 +413,9 @@ void TerrainInsolation::update_daily_insolation(double declination, double dista
     const double svf = use_sky_view ? (*m_sky_view)(i, j) : 0.0;
 
     double energy = 0.0;
+    // loop over hour angles:
     for (int hour_angle_idx = 0; hour_angle_idx < M; ++hour_angle_idx) {
+
       double altitude = 0.0, azimuth = 0.0;
       sun_position.compute_at_set_hour_angle(hour_angle_idx, altitude, azimuth);
 
@@ -406,19 +430,21 @@ void TerrainInsolation::update_daily_insolation(double declination, double dista
       // diffuse: isotropic sky scaled by the sky-view factor; reaches shadowed cells too
       energy += f_diff * toa_horizontal * svf * dt;
 
-      // direct beam: only when the Sun clears the local horizon and lights the surface
-      if (altitude > horizon_at(horizon, azimuth)) {
-        double cos_alt = std::cos(altitude);
-        double sE = cos_alt * std::sin(azimuth);
-        double sN = cos_alt * std::cos(azimuth);
-        double sU = std::sin(altitude);
+      double min_altitude = interpolate(horizon, m_n_directions, azimuth);
 
-        double mu = nE * sE + nN * sN + nU * sU;
+      // direct beam: only when the Sun clears the local horizon and lights the surface
+      if (altitude > min_altitude) {
+        double cos_alt = std::cos(altitude);
+        double Se = cos_alt * std::sin(azimuth);
+        double Sn = cos_alt * std::cos(azimuth);
+        double Su = std::sin(altitude);
+
+        double mu = Ne * Se + Nn * Sn + Nu * Su;
         if (mu > 0.0) {
           energy += (1.0 - f_diff) * m_solar_constant * distance_factor * mu * dt;
         }
       }
-    }
+    } // end of the loop over hour angles
 
     // store the daily-mean insolation rate (W m-2), matching dEBM-simple's "insolation"
     // diagnostic units (the melt code multiplies this rate by the sub-step length)

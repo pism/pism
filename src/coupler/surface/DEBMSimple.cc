@@ -287,7 +287,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
 
   const double dtseries = dt / N;
   std::vector<double> ts(N), T(N), S(N), P(N), Alb(N), E(N);
-  std::vector<DEBMSimpleOrbitalParameters> orbital(N);
+  std::vector<OrbitalParameters> orbital(N);
 
   for (int k = 0; k < N; ++k) {
     ts[k] = t + k * dtseries;
@@ -528,7 +528,7 @@ void DEBMSimple::update_insolation_input(double t, double dt,
 }
 
 void DEBMSimple::insolation_energy_series(int /*i*/, int /*j*/,
-                                          const std::vector<DEBMSimpleOrbitalParameters> &orbital,
+                                          const std::vector<OrbitalParameters> &orbital,
                                           double dt_sub,
                                           double latitude,
                                           std::vector<double> &result) const {
@@ -602,7 +602,7 @@ const DEBMSimplePointwise& DEBMSimple::pointwise_model() const {
   return m_model;
 }
 
-const OrbitalParameters &DEBMSimple::orbital_parameters() const {
+const OrbitalParameterCalculator &DEBMSimple::orbital_parameters() const {
   return m_orbital_parameters;
 }
 

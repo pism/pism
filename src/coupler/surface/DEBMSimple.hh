@@ -24,6 +24,7 @@
 
 #include "pism/coupler/surface/DEBMSimplePointwise.hh"
 #include "pism/coupler/SurfaceModel.hh"
+#include "pism/util/OrbitalParameters.hh"
 
 namespace pism {
 
@@ -32,6 +33,46 @@ class AccessScope;
 }
 
 namespace surface {
+
+class Insolation : public Component {
+public:
+  Insolation(std::shared_ptr<const Grid> grid);
+
+  void update(double time, const array::Scalar1 &surface_elevation);
+
+  void begin_pointwise_access();
+  void end_pointwise_access();
+
+  const array::Scalar &insolation() const;
+
+  void insolation_energy_series(int i, int j,
+                                const std::vector<OrbitalParameters> &orbital,
+                                double dt_sub,
+                                std::vector<double> &result) const;
+protected:
+  virtual void update_impl(double time, const array::Scalar1 &surface_elevation);
+  virtual void begin_pointwise_access_impl();
+  virtual void end_pointwise_access_impl();
+  virtual const array::Scalar &insolation_impl() const;
+
+
+  virtual void
+  insolation_energy_series_impl(int i, int j,
+                                const std::vector<OrbitalParameters> &orbital,
+                                double dt_sub, std::vector<double> &result) const;
+};
+
+class DEBMSimpleInsolation : public Insolation {
+public:
+  DEBMSimpleInsolation(std::shared_ptr<const Grid> grid);
+private:
+};
+
+class TerrainShadedInsolation : public Insolation {
+public:
+    TerrainShadedInsolation(std::shared_ptr<const Grid> grid);
+private:
+};
 
 //! @brief A class implementing a temperature-index (positive degree-day) scheme
 //! to compute melt and runoff, and thus surface mass balance, from
@@ -67,7 +108,7 @@ public:
 
   const DEBMSimplePointwise& pointwise_model() const;
 
-  const OrbitalParameters &orbital_parameters() const;
+  const OrbitalParameterCalculator &orbital_parameters() const;
 
 protected:
   // Overridable seams used by dEBM-enhanced (DEBMEnhanced) to substitute a prescribed
@@ -87,7 +128,7 @@ protected:
   //! (i, j). The base class computes it from orbital parameters (analytic dEBM-simple);
   //! dEBM-enhanced interpolates a prescribed daily field.
   virtual void insolation_energy_series(int i, int j,
-                                        const std::vector<DEBMSimpleOrbitalParameters> &orbital,
+                                        const std::vector<OrbitalParameters> &orbital,
                                         double dt_sub,
                                         double latitude,
                                         std::vector<double> &result) const;
@@ -112,7 +153,7 @@ private:
 
   DEBMSimplePointwise m_model;
 
-  OrbitalParameters m_orbital_parameters;
+  OrbitalParameterCalculator m_orbital_parameters;
 
   double m_next_balance_year_start;
 
