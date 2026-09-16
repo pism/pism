@@ -206,6 +206,8 @@ private:
   double m_sd_param_a;
   double m_sd_param_b;
 
+  double m_albedo_ocean;
+
   //! interpret all the precipitation as snow (no rain)
   bool m_precip_as_snow;
   //! the temperature below which all precipitation is snow

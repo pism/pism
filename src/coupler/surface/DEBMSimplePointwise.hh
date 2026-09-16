@@ -22,12 +22,9 @@
 #include <memory>
 #include <array>
 
-#include "pism/util/Mask.hh"
-#include "pism/util/ScalarForcing.hh"
-
 namespace pism {
 
-class Context;
+class Config;
 class Time;
 
 namespace surface {
@@ -71,9 +68,9 @@ private:
 */
 class DEBMSimplePointwise {
 public:
-  DEBMSimplePointwise(const Context &ctx);
+  DEBMSimplePointwise(const Config &config);
 
-  double albedo(double melt_rate, MaskValue cell_type) const;
+  double albedo(double melt_rate) const;
 
   DEBMSimpleMelt melt(double declination,
                       double distance_factor,
@@ -133,7 +130,6 @@ private:
 
   double m_albedo_max;
   double m_albedo_min;
-  double m_albedo_ocean;
 
   //! slope used in the linear parameterization of the albedo as a function of melt
   double m_albedo_slope;

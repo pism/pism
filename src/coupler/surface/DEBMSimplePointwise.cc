@@ -166,13 +166,10 @@ DEBMSimpleMelt::DEBMSimpleMelt() {
   total_melt       = 0.0;
 }
 
-DEBMSimplePointwise::DEBMSimplePointwise(const Context &ctx) : m_transmissivity(*ctx.config()) {
-
-  const Config &config = *ctx.config();
+DEBMSimplePointwise::DEBMSimplePointwise(const Config &config) : m_transmissivity(config) {
 
   m_L                              = config.get_number("constants.fresh_water.latent_heat_of_fusion");
   m_albedo_min                     = config.get_number("surface.debm_simple.albedo_min");
-  m_albedo_ocean                   = config.get_number("surface.debm_simple.albedo_ocean");
   m_albedo_slope                   = config.get_number("surface.debm_simple.albedo_slope");
   m_albedo_max                     = config.get_number("surface.debm_simple.albedo_max");
   m_melt_threshold_temp            = config.get_number("surface.debm_simple.melting_threshold_temp");
@@ -197,13 +194,8 @@ DEBMSimplePointwise::DEBMSimplePointwise(const Context &ctx) : m_transmissivity(
  * See equation 7 in Zeitz et al.
  *
  * @param[in] melt_rate melt rate (meters (liquid water equivalent) per second)
- * @param[in] cell_type cell type mask (used to exclude ice free areas)
  */
-double DEBMSimplePointwise::albedo(double melt_rate, MaskValue cell_type) const {
-  if (cell_type == MASK_ICE_FREE_OCEAN) {
-    return m_albedo_ocean;
-  }
-
+double DEBMSimplePointwise::albedo(double melt_rate) const {
   assert(melt_rate >= 0.0);
 
   return std::max(m_albedo_max + m_albedo_slope * melt_rate * m_ice_density, //

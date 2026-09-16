@@ -43,7 +43,7 @@ namespace surface {
 DEBMSimple::DEBMSimple(std::shared_ptr<const Grid> g,
                        std::shared_ptr<atmosphere::AtmosphereModel> input)
     : SurfaceModel(g, std::move(input)),
-      m_model(*g->ctx()),
+      m_model(*g->ctx()->config()),
       m_orbital_parameters(*g->ctx()),
       m_mass_flux(m_grid, "climatic_mass_balance"),
       m_snow_depth(m_grid, "snow_depth"),
@@ -52,6 +52,8 @@ DEBMSimple::DEBMSimple(std::shared_ptr<const Grid> g,
       m_offset_melt(m_grid, "debm_offset_melt_flux"),
       m_surface_albedo(m_grid, "surface_albedo"),
       m_transmissivity(m_grid, "atmosphere_transmissivity") {
+
+  m_albedo_ocean = m_config->get_number("surface.debm_simple.albedo_ocean");
 
   m_sd_use_param = m_config->get_flag("surface.debm_simple.std_dev.param.enabled");
   m_sd_param_a   = m_config->get_number("surface.debm_simple.std_dev.param.a");
@@ -435,7 +437,8 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
           auto accumulation = P[k] * dtseries;
 
           DEBMSimpleMelt melt_info{};
-          if (not mask::ice_free_ocean(cell_type)) {
+          bool ice_free_ocean = mask::ice_free_ocean(cell_type);
+          if (not ice_free_ocean) {
 
             melt_info = m_model.melt_from_insolation(orbital[k].solar_declination,
                                                      lat,
@@ -454,8 +457,10 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
 
           if ((bool) m_input_albedo) {
             albedo = Alb[k];
+          } else if (ice_free_ocean) {
+            albedo = m_albedo_ocean;
           } else {
-            albedo = m_model.albedo(changes.melt / dtseries, cell_type);
+            albedo = m_model.albedo(changes.melt / dtseries);
           }
 
           // update ice thickness
