@@ -53,53 +53,12 @@ struct DEBMSimpleChanges {
   double smb;
 };
 
-struct DEBMSimpleOrbitalParameters {
-  // Solar declination, radians
-  double solar_declination;
-  // Square of the ratio of the mean sun-earth distance to the current sun-earth distance
-  // (d_bar / d)^2
-  double distance_factor;
-};
-
 class DEBMSimpleAtmosphereTransmissivity {
 public:
   DEBMSimpleAtmosphereTransmissivity(const Config &config);
   double operator()(double surface_elevation) const;
 private:
   double m_slope, m_intercept;
-};
-
-class OrbitalParameters {
-public:
-  OrbitalParameters(const Context &ctx);
-
-  DEBMSimpleOrbitalParameters compute(double time) const;
-
-  static double solar_longitude(double year_fraction, double eccentricity,
-                                double perihelion_longitude);
-  static double distance_factor_present_day(double year_fraction);
-  static double distance_factor_paleo(double eccentricity, double true_anomaly);
-  static double solar_declination_present_day(double year_fraction);
-  static double solar_declination_paleo(double obliquity,
-                                        double solar_longitude);
-
-  double eccentricity(double time) const;
-  double obliquity(double time) const;
-  double perihelion_longitude(double time) const;
-
-private:
-
-  std::unique_ptr<ScalarForcing> m_eccentricity;
-  std::unique_ptr<ScalarForcing> m_obliquity;
-  std::unique_ptr<ScalarForcing> m_perihelion_longitude;
-
-  std::shared_ptr<const Time> m_time;
-
-  bool m_paleo;
-
-  double m_constant_eccentricity;
-  double m_constant_perihelion_longitude;
-  double m_constant_obliquity;
 };
 
 //! A dEBM-simple implementation

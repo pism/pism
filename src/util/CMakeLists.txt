@@ -13,6 +13,7 @@ add_library (util OBJECT
   Mask.cc
   MaxTimestep.cc
   NetCDFConfig.cc
+  OrbitalParameters.cc
   Profiling.cc
   ScalarForcing.cc
   TerminationReason.cc
