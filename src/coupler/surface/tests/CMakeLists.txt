@@ -3,4 +3,5 @@
 # builds without the Python bindings.
 add_executable (pism_test_terrain_insolation_kernel
   terrain_insolation_kernel_test.cc
-  ../terrain_insolation_kernel.cc)
+  ${Pism_SOURCE_DIR}/src/coupler/surface/terrain_insolation_kernel.cc
+  ${Pism_SOURCE_DIR}/src/util/SunPosition.cc)

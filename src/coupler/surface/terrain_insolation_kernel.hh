@@ -60,55 +60,6 @@ double ray_horizon(const double *dem, int Mx, int My, double dx, double dy,
 void sun_position(double latitude, double declination, double hour_angle,
                   double &altitude, double &azimuth);
 
-/*!
- * Compute sun position (altitude and azimuth in radians) given declination, latitude, and
- * hour angle.
- *
- * Written in a way allowing us to avoid unnecessarily re-computing sin(declination),
- * cos(declination) more than once per time step (these depend only on time) and
- * sin(latitude) and cos(latitude) (these do not depend on hour angle or time, but we
- * re-compute them once per time step anyway).
- *
- * Call sequence:
- *
- * 1. Create an instance:
- *
- * SunPosition sun_position(declination);
- *
- * 2. Set latitude:
- *
- * sun_position.set_latitude(latitude);
- *
- * 3. Compute sun position in the sky given an hour angle:
- *
- * double altitude, azimuth;
- * sun_position.compute(hour_angle, altitude, azimuth);
- *
- * Azimuth is set to zero if altitude < 0, if the sun is at zenith, and if latitude is
- * +-90 degrees (at a pole).
- */
-class SunPosition {
-public:
-  SunPosition(double declination);
-
-  void set_latitude(double latitude_radians);
-
-  void set_hour_angles(const std::vector<double> &hour_angle);
-  void compute_at_set_hour_angle(int k, double &altitude, double &azimuth) const;
-
-  void compute(double hour_angle, double &altitude, double &azimuth) const;
-
-private:
-  double m_sin_decl, m_cos_decl;
-  double m_sin_lat, m_cos_lat;
-
-  void compute_impl(double cos_hour_angle, double sin_hour_angle, double &altitude,
-                    double &azimuth) const;
-
-  std::vector<double> m_sin_hour_angle;
-  std::vector<double> m_cos_hour_angle;
-};
-
 
 //! Sky-view factor: the fraction of isotropic diffuse sky irradiance received by a tilted,
 //! horizon-obstructed surface relative to an unobstructed horizontal surface, in [0, 1].

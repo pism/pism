@@ -14,6 +14,7 @@ add_library (util OBJECT
   MaxTimestep.cc
   NetCDFConfig.cc
   OrbitalParameters.cc
+  SunPosition.cc
   Profiling.cc
   ScalarForcing.cc
   TerminationReason.cc

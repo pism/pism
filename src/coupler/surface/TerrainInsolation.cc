@@ -39,6 +39,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/LonLatCalculator.hh"
+#include "pism/util/SunPosition.hh"
 
 #if (Pism_USE_PROJ == 0)
 #error "This code requires PROJ"
@@ -324,7 +325,7 @@ void TerrainInsolation::update_daily_insolation(double time,
 
   const double seconds_per_day = 86400.0;
 
-  terrain::SunPosition sun_position(declination);
+  SunPosition sun_position(declination);
 
   // number of sub-daily samples used to integrate the diurnal cycle
   int M = static_cast<int>(std::lround(seconds_per_day / m_insolation_dt));
