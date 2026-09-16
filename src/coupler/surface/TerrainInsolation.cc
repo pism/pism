@@ -425,20 +425,21 @@ void TerrainInsolation::update_daily_insolation(double time,
         continue;
       }
 
+      double sin_altitude = std::sin(altitude);
       // top-of-atmosphere horizontal irradiance, the basis for the diffuse component
-      double toa_horizontal = m_solar_constant * distance_factor * std::sin(altitude);
+      double toa_horizontal = m_solar_constant * distance_factor * sin_altitude;
 
       // diffuse: isotropic sky scaled by the sky-view factor; reaches shadowed cells too
       energy += f_diff * toa_horizontal * svf * dt;
 
-      double min_altitude = interpolate(horizon, m_n_directions, azimuth);
+      double altitude_threshold = interpolate(horizon, m_n_directions, azimuth);
 
       // direct beam: only when the Sun clears the local horizon and lights the surface
-      if (altitude > min_altitude) {
+      if (altitude > altitude_threshold) {
         double cos_alt = std::cos(altitude);
         double Se = cos_alt * std::sin(azimuth);
         double Sn = cos_alt * std::cos(azimuth);
-        double Su = std::sin(altitude);
+        double Su = sin_altitude;
 
         double mu = Ne * Se + Nn * Sn + Nu * Su;
         if (mu > 0.0) {
