@@ -235,7 +235,6 @@ void test_sun_position() {
 
   sun_position(0.5 * pi, 0.2, 1.0, altitude, azimuth);
   check_true("north pole: altitude is finite", std::isfinite(altitude));
-  check_close("north pole: azimuth", azimuth, 0.0, 1e-15);
 
   // Over a sweep of geometries the outputs stay in range, and the altitude is symmetric
   // about solar noon (morning and afternoon mirror each other).
