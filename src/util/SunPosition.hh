@@ -40,13 +40,17 @@ namespace pism {
  *
  * sun_position.set_latitude(latitude);
  *
- * 3. Compute sun position in the sky given an hour angle:
+ * 3. Set hour angles to pre-compute sin() and cos():
+ *
+ * sun_position.set_hour_angles(angles);
+ *
+ * 3. Compute sun position in the sky given an hour angle index:
  *
  * double altitude, azimuth;
- * sun_position.compute(hour_angle, altitude, azimuth);
+ * double solar_vector[3];
+ * sun_position.compute_at_set_hour_angle(k, altitude, azimuth, solar_vector);
  *
- * Azimuth is set to zero if altitude < 0, if the sun is at zenith, and if latitude is
- * +-90 degrees (at a pole).
+ * Azimuth is set to zero if altitude < 0.
  */
 class SunPosition {
 public:
@@ -55,16 +59,18 @@ public:
   void set_latitude(double latitude_radians);
 
   void set_hour_angles(const std::vector<double> &hour_angle);
-  void compute_at_set_hour_angle(int k, double &altitude, double &azimuth) const;
+  void compute_at_set_hour_angle(int k, double &altitude, double &azimuth,
+                                 double *solar_vector = nullptr) const;
 
-  void compute(double hour_angle, double &altitude, double &azimuth) const;
+  void compute(double hour_angle, double &altitude, double &azimuth,
+               double *solar_vector = nullptr) const;
 
 private:
   double m_sin_decl, m_cos_decl;
   double m_sin_lat, m_cos_lat;
 
   void compute_impl(double cos_hour_angle, double sin_hour_angle, double &altitude,
-                    double &azimuth) const;
+                    double &azimuth, double *solar_vector) const;
 
   std::vector<double> m_sin_hour_angle;
   std::vector<double> m_cos_hour_angle;
