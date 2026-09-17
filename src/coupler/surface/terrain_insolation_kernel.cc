@@ -17,6 +17,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/coupler/surface/terrain_insolation_kernel.hh"
+#include "pism/util/SunPosition.hh"
 
 #include <cassert>
 #include <cmath>
@@ -25,16 +26,16 @@
 
 // Credits
 // -------
-// ray_horizon() and surface_normal() are C++ re-implementations of algorithms from the
-// "solshade" package by Aman Chokshi (https://github.com/amanchokshi/solshade, MIT License,
-// (c) 2025 Aman Chokshi; Chokshi et al., Journal of Open Source Software,
-// doi:10.21105/joss.09944): compute_horizon_map / _compute_horizon and
-// compute_slope_aspect_normals (solshade/terrain.py).
+//
+// ray_horizon() is a C++ re-implementations of the algorithm from the "solshade" package
+// by Aman Chokshi (https://github.com/amanchokshi/solshade, MIT License, (c) 2025 Aman
+// Chokshi;
+//
+// Chokshi et al., Journal of Open Source Software, doi:10.21105/joss.09944):
+// compute_horizon_map / _compute_horizon and compute_slope_aspect_normals
+// (solshade/terrain.py).
 //
 // sky_view_factor() implements Dozier & Frew (1990)
-//
-// sun_position() is standard topocentric solar geometry; only the East-North-Up sun-vector
-// convention follows solshade (solshade/solar.py).
 
 namespace pism {
 namespace surface {
@@ -111,8 +112,7 @@ void sun_position(double latitude, double declination, double hour_angle,
 // Implements the slope-corrected sky-view factor of Dozier & Frew (1990), "Rapid
 // calculation of terrain parameters for radiation modeling from digital elevation data",
 // IEEE Trans. Geosci. Remote Sens. 28(5):963-969, doi:10.1109/36.58986. The same
-// formulation is used by TopoCalc (https://github.com/USDA-ARS-NWRC/topocalc). Not from
-// solshade.
+// formulation is used by TopoCalc (https://github.com/USDA-ARS-NWRC/topocalc).
 double sky_view_factor(const double *horizon, const double *azimuth, int n_dir,
                        double slope, double aspect) {
 
@@ -125,7 +125,7 @@ double sky_view_factor(const double *horizon, const double *azimuth, int n_dir,
     // horizontal (negative elevation, e.g. on a peak) adds no sky, so clamp at the
     // horizontal.
     double h = horizon[k] > 0.0 ? horizon[k] : 0.0;
-    double Hz = 0.5 * M_PI - h; // zenith angle of the visible-sky edge
+    double Hz = M_PI_2 - h; // zenith angle of the visible-sky edge
     double sin_Hz = std::sin(Hz);
 
     acc += cos_slope * sin_Hz * sin_Hz +
