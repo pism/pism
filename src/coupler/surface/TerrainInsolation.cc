@@ -283,7 +283,7 @@ void TerrainInsolation::update_horizon_map(const array::Scalar1 &surface_elevati
     // sky-view factor from the horizon and the surface slope/aspect (the latter recovered
     // from the unit normal: slope = acos(Nu), aspect = atan2(Ne, Nn), clockwise from north)
     if (use_sky_view) {
-      double slope = std::acos(Nu < -1.0 ? -1.0 : (Nu > 1.0 ? 1.0 : Nu));
+      double slope = std::acos(pism::clip(Nu, -1.0, 1.0));
       double aspect = std::atan2(Ne, Nn);
       (*m_sky_view)(i, j) =
           terrain::sky_view_factor(column, azimuth.data(), m_n_directions, slope,
@@ -418,14 +418,21 @@ void TerrainInsolation::update_daily_insolation(double time,
     for (int hour_angle_idx = 0; hour_angle_idx < M; ++hour_angle_idx) {
 
       double altitude = 0.0, azimuth = 0.0;
-      sun_position.compute_at_set_hour_angle(hour_angle_idx, altitude, azimuth);
+
+      // vector pointing toward the center of the sun in the east-north-up coordinate
+      // system:
+      double solar_vector[3] = {0.0, 0.0, 0.0};
+
+      sun_position.compute_at_set_hour_angle(hour_angle_idx, altitude, azimuth, solar_vector);
 
       if (altitude <= 0.0) {
         // Sun below the astronomical horizon: no direct and no diffuse contribution
         continue;
       }
 
-      double sin_altitude = std::sin(altitude);
+      // Note: from equation (13) in Sproul2007 sin(altitude) is equal to the Z ("up")
+      // component of the solar vector.
+      double sin_altitude = solar_vector[2];
       // top-of-atmosphere horizontal irradiance, the basis for the diffuse component
       double toa_horizontal = m_solar_constant * distance_factor * sin_altitude;
 
@@ -436,10 +443,9 @@ void TerrainInsolation::update_daily_insolation(double time,
 
       // direct beam: only when the Sun clears the local horizon and lights the surface
       if (altitude > altitude_threshold) {
-        double cos_alt = std::cos(altitude);
-        double Se = cos_alt * std::sin(azimuth);
-        double Sn = cos_alt * std::cos(azimuth);
-        double Su = sin_altitude;
+        double Se = solar_vector[0];
+        double Sn = solar_vector[1];
+        double Su = solar_vector[2];
 
         double mu = Ne * Se + Nn * Sn + Nu * Su;
         if (mu > 0.0) {
