@@ -41,20 +41,16 @@ class Array3D;
 namespace surface {
 
 /*!
- * Computes the terrain horizon map and terrain-shaded daily surface insolation from a
- * digital elevation model (DEM), porting the Python "solshade" algorithms into PISM. Used
- * by the `debm_enhanced` surface model when no precomputed insolation file is given.
+ * Computes the horizon map and terrain-shaded daily surface insolation from a surface
+ * elevation array.
  *
- * The terrain horizon ray-casting reaches several kilometres from each cell, crossing MPI
- * subdomain boundaries. Because the DEM is a single, small 2D field, `init()` gathers the
- * full global DEM onto every rank (proc0 gather + broadcast); each rank then ray-marches
- * only its owned cells against the shared global DEM with no ghost communication.
+ * The terrain horizon ray-casting reaches several grid points from a current point,
+ * crossing MPI subdomain boundaries. Because this computation requires a single 2D field,
+ * `update_shading()` scatters the surface elevation array onto every rank; each rank then
+ * processes only its owned cells using global surface elevation, without communication.
  *
- * The horizon (azimuth, y, x) and the surface normals are computed once in `init()`. The
- * daily insolation field is computed on demand by `daily_insolation()` from the analytic
- * solar declination and Sun-Earth distance factor for a given day; the daily integral over
- * the diurnal cycle is independent of longitude, so only latitude, declination, distance
- * factor, and the per-cell horizon and normal are needed.
+ * The horizon map and the sky view factor are computed by update_shading() . The daily
+ * insolation field is computed in `update_daily_insolation()`.
  */
 class TerrainInsolation {
 public:
@@ -99,22 +95,28 @@ private:
   double m_diffuse_fraction;
 
   petsc::VecScatter m_scatter;
-  // the global DEM, replicated on every rank
+  // the surface elevation array, replicated on every rank
   petsc::Vec m_dem_local;
-  
-  std::shared_ptr<array::Array3D> m_horizon;      // (azimuth, y, x), radians
-  std::shared_ptr<array::Scalar> m_sky_view;      // sky-view factor, in [0, 1]
+
+  //! (x, y, azimuth), radians
+  std::shared_ptr<array::Array3D> m_horizon;
+  //! sky-view factor, in [0, 1]
+  std::shared_ptr<array::Scalar> m_sky_view;
 
   //! daily surface insolation energy (J m-2) computed for the current update
   array::Scalar m_insolation;
 
-  //! azimuth of the Y direction on the grid:
+  //! azimuth of the Y direction on the grid
   array::Scalar m_y_azimuth;
-  
+
+  //! Evaluate the horizon altitude in direction `azimuth` at grid point `i`, `j`
   double horizon_altitude(int i, int j, double azimuth) const;
 
+  //! Orbital parameters (solar declination and the sun-earth distance factor) as a
+  //! function of time
   OrbitalParameterCalculator m_orbital_parameters;
 
+  //! Parameterization of the atmosphere transmissivity as a function of surface elevation
   std::function<double(double)> m_transmissivity;
 };
 
