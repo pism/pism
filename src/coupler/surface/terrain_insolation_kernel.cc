@@ -24,8 +24,8 @@
 #include <limits>
 #include <vector>
 
-// Credits
-// -------
+// References
+// ----------
 //
 // ray_horizon() is a C++ re-implementations of the algorithm from the "solshade" package
 // by Aman Chokshi (https://github.com/amanchokshi/solshade, MIT License, (c) 2025 Aman
@@ -35,7 +35,9 @@
 // compute_horizon_map / _compute_horizon and compute_slope_aspect_normals
 // (solshade/terrain.py).
 //
-// sky_view_factor() implements Dozier & Frew (1990)
+// J. Dozier and J. Frew, “Rapid calculation of terrain parameters for radiation modeling
+// from digital elevation data,” IEEE Transactions on Geoscience and Remote Sensing, vol.
+// 28, no. 5, pp. 963–969, 1990, doi: 10.1109/36.58986.
 
 namespace pism {
 namespace surface {
@@ -45,6 +47,10 @@ static inline double clip(double x, double lo, double hi) {
   return x < lo ? lo : (x > hi ? hi : x);
 }
 
+/*!
+ * Sample a row-major array `dem` with size `Mx` columns by `My` rows at location
+ * `fi`,`fj` ("fractional" indexes in X and Y directions) using bilinear interpolation.
+ */
 double sample_bilinear(const double *dem, int Mx, int My, double fi, double fj) {
   // Clamp to the valid index range (samples on or just outside the boundary fall back to
   // the edge value). This mirrors the clamping in Grid::compute_point_neighbors.
@@ -68,23 +74,41 @@ double sample_bilinear(const double *dem, int Mx, int My, double fi, double fj) 
          (1.0 - a) * b * z01 + a * b * z11;
 }
 
-// Adapted from solshade's compute_horizon_map / _compute_horizon (solshade/terrain.py).
-// See the per-file credits at the top of this file.
+/*!
+ * Compute the horizon map at a grid point.
+ *
+ * @param[in] dem row-major array containing the surface elevation DEM
+ * @param[in] Mx grid size in the X direction
+ * @param[in] My grid size in the Y direction
+ * @param[in] dx grid spacing in the X direction
+ * @param[in] dy grid spacing in the Y direction
+ * @param[in] i0 X-index of a grid point
+ * @param[in] j0 Y-index of a grid point
+ * @param[in] azimuth direction (clockwise from the direction of the Y axis) to consider
+ * @param[in] step step length (meters)
+ * @param[in] max_distance maximum distance to consider (meters)
+ *
+ * Returns the altitude angle of the horizon in direction corresponding to `azimuth`, in
+ * radian.
+ *
+ * Adapted from solshade's compute_horizon_map / _compute_horizon (solshade/terrain.py).
+ */
 double ray_horizon(const double *dem, int Mx, int My, double dx, double dy,
                    int i0, int j0, double azimuth, double step, double max_distance) {
   const double z0 = dem[j0 * Mx + i0];
 
   assert(step > 0.0);
 
-  // Azimuth clockwise from north: horizontal direction (East, North) = (sin, cos).
-  const double sE = std::sin(azimuth);
-  const double cN = std::cos(azimuth);
+  // Azimuth A is measured clockwise from the Y direction, so the (x,y) vector in the
+  // direction A has the form (x, y) = (sin(A), cos(A)).
+  const double v_x = std::sin(azimuth);
+  const double v_y = std::cos(azimuth);
 
-  double best = -std::numeric_limits<double>::infinity();
+  double max_slope = -std::numeric_limits<double>::infinity();
 
   for (double d = step; d <= max_distance; d += step) {
-    double fi = i0 + sE * d / dx;
-    double fj = j0 + cN * d / dy;
+    double fi = i0 + v_x * d / dx;
+    double fj = j0 + v_y * d / dy;
 
     // Stop the ray once it leaves the (non-periodic) physical domain.
     if (fi < 0.0 || fi > Mx - 1 || fj < 0.0 || fj > My - 1) {
@@ -93,10 +117,10 @@ double ray_horizon(const double *dem, int Mx, int My, double dx, double dy,
 
     double z = sample_bilinear(dem, Mx, My, fi, fj);
 
-    best = std::fmax(best, (z - z0) / d);
+    max_slope = std::fmax(max_slope, (z - z0) / d);
   }
 
-  return std::isfinite(best) ? std::atan(best) : 0.0;
+  return std::isfinite(max_slope) ? std::atan(max_slope) : 0.0;
 }
 
 void sun_position(double latitude, double declination, double hour_angle,
@@ -106,24 +130,31 @@ void sun_position(double latitude, double declination, double hour_angle,
   sp.compute(hour_angle, altitude, azimuth);
 }
 
-// Implements the slope-corrected sky-view factor of Dozier & Frew (1990), "Rapid
-// calculation of terrain parameters for radiation modeling from digital elevation data",
-// IEEE Trans. Geosci. Remote Sens. 28(5):963-969, doi:10.1109/36.58986. The same
-// formulation is used by TopoCalc (https://github.com/USDA-ARS-NWRC/topocalc).
+/*!
+ * Implements the slope-corrected sky-view factor of Dozier & Frew (1990).
+ *
+ * @param[in] horizon array of `n_dir` elements containing horizon altitudes in directions
+ *                    in `azimuth`, in radians
+ * @param[in] azimuth array of `n_dir` elements containing azimuth directions, in radians
+ * @param[in] n_dir lengths of arrays `horizon` and `azimuth`
+ * @param[in] slope slope at the current location
+ * @param[in] aspect aspect at the current location (radians, clockwise from the north)
+ *
+ * Returns the sky view factor between 0 and 1.
+ */
 double sky_view_factor(const double *horizon, const double *azimuth, int n_dir,
                        double slope, double aspect) {
 
   double cos_slope = std::cos(slope);
   double sin_slope = std::sin(slope);
 
-  // Note: the loop code below implements equation (7b) in Dozier and Frew.
+  // Note: this code implements equation (7b) in Dozier and Frew.
   double acc = 0.0;
   for (int k = 0; k < n_dir; ++k) {
     // Dozier & Frew use the horizon measured from the zenith. A terrain horizon below the
-    // horizontal (negative elevation, e.g. on a peak) adds no sky, so clamp at the
+    // horizontal (negative elevation, e.g. at a peak) adds no sky, so clamp at the
     // horizontal.
-    double h = horizon[k] > 0.0 ? horizon[k] : 0.0;
-    double Hz = M_PI_2 - h; // zenith angle of the visible-sky edge
+    double Hz = M_PI_2 - std::fmax(horizon[k], 0.0); // zenith angle of the visible-sky edge
     double sin_Hz = std::sin(Hz);
 
     acc += cos_slope * sin_Hz * sin_Hz +
