@@ -137,8 +137,9 @@ bool TerrainInsolation::sky_view_enabled() const {
 }
 
 /*!
- * Convert the gradient of a function `f` (vector (f_x, f_y)) to its gradient in the
- * east-north-up system given the azimuth of the Y axis.
+ * Given the azimuth of the Y axis, convert the gradient of a function `f` in the X-Y
+ * coordinate system (vector (f_x, f_y)) to its gradient in the east-north-up system (f_e,
+ * f_n).
  */
 static void xy_to_en(double y_azimuth, double f_x, double f_y, double &f_e, double &f_n) {
   // unit vector pointing north:
@@ -172,16 +173,14 @@ public:
     dy = dy_;
   }
 
-  double x(const array::Scalar1 &F, int i, int j) const {
-    // use one-sided finite differences at domain boundaries:
+  inline double x(const array::Scalar1 &F, int i, int j) const {
     int ip = i < Mx - 1 ? i + 1 : i;
     int im = i > 0 ? i - 1 : i;
 
     return (F(ip, j) - F(im, j)) / ((ip - im) * dx);
   }
 
-  double y(const array::Scalar1 &F, int i, int j) const {
-    // use one-sided finite differences at domain boundaries:
+  inline double y(const array::Scalar1 &F, int i, int j) const {
     int jp = j < My - 1 ? j + 1 : j;
     int jm = j > 0 ? j - 1 : j;
 
@@ -194,9 +193,10 @@ private:
 };
 
 /*!
- * Update the map of horizon altitude angles (in radians) at each grid point.
+ * Update the sky view factor and the map of horizon altitude angles (in radians) at each
+ * grid point.
  */
-void TerrainInsolation::update_horizon_map(const array::Scalar1 &surface_elevation) {
+void TerrainInsolation::update_shading(const array::Scalar1 &surface_elevation) {
   auto log = m_grid->ctx()->log();
 
   log->message(2, "* Updating the horizon map...\n");
@@ -234,8 +234,6 @@ void TerrainInsolation::update_horizon_map(const array::Scalar1 &surface_elevati
     profiling.end("surface.debm_enhanced.scatter_dem");
   }
 
-  // Compute surface normals (centered differences on the global DEM, one-sided at the
-  // domain boundary) and the horizon map (the dominant cost) for every owned cell.
   profiling.begin("surface.debm_enhanced.horizon");
 
   const auto &azimuth = m_horizon->levels();
@@ -254,6 +252,11 @@ void TerrainInsolation::update_horizon_map(const array::Scalar1 &surface_elevati
 
     double *horizon_altitude = m_horizon->get_column(i, j);
 
+    for (int k = 0; k < m_n_directions; ++k) {
+      horizon_altitude[k] = terrain::ray_horizon(dem.get(), Mx, My, dx, dy, i, j,
+                                                 azimuth[k] - y_azimuth, m_step, m_max_distance);
+    }
+
     // Surface elevation derivatives in the east and north directions:
     double s_e = 0.0, s_n = 0.0;
     xy_to_en(y_azimuth, diff.x(surface_elevation, i, j), diff.y(surface_elevation, i, j), s_e, s_n);
@@ -268,11 +271,6 @@ void TerrainInsolation::update_horizon_map(const array::Scalar1 &surface_elevati
       Ne /= norm;
       Nn /= norm;
       Nu /= norm;
-    }
-
-    for (int k = 0; k < m_n_directions; ++k) {
-      horizon_altitude[k] = terrain::ray_horizon(dem.get(), Mx, My, dx, dy, i, j,
-                                                 azimuth[k] - y_azimuth, m_step, m_max_distance);
     }
 
     // sky-view factor from the horizon and the surface slope/aspect (the latter recovered
@@ -291,7 +289,9 @@ void TerrainInsolation::update_horizon_map(const array::Scalar1 &surface_elevati
 }
 
 //! Periodic linear interpolation of a horizon column at the given azimuth (radians).
-double TerrainInsolation::interpolate(const double *column, int n, double azimuth) {
+double TerrainInsolation::horizon_altitude(int i, int j, double azimuth) const {
+  const double *column = m_horizon->get_column(i, j);
+  const int n = m_n_directions;
   const double two_pi = 2.0 * M_PI;
   const double da = two_pi / n;
 
@@ -353,20 +353,21 @@ void TerrainInsolation::update_daily_insolation(double time,
     scope.add(*m_sky_view);
   }
 
-  FD diff(m_grid->Mx(), m_grid->My(), m_grid->dx(), m_grid->dy());
+  FD diff((int)m_grid->Mx(), (int)m_grid->My(), m_grid->dx(), m_grid->dy());
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     sun_position.set_latitude(latitude(i, j) * (M_PI / 180.0));
 
+    // Surface elevation derivatives in the east and north directions:
     double s_e = 0.0, s_n = 0.0;
     xy_to_en(m_y_azimuth(i, j), diff.x(surface_elevation, i, j), diff.y(surface_elevation, i, j),
              s_e, s_n);
 
-    // Compute the upward-pointing normal to the surface and scale it to get the unit
-    // normal:
+    // Compute the upward-pointing normal to the surface in the east-north-up system:
     double Ne = -s_e, Nn = -s_n, Nu = 1.0;
+    // Scale it to get the unit normal:
     {
       // Note that norm != 0.0 because Nu == 1
       double norm = std::sqrt(Ne * Ne + Nn * Nn + Nu * Nu);
@@ -375,8 +376,6 @@ void TerrainInsolation::update_daily_insolation(double time,
       Nn /= norm;
       Nu /= norm;
     }
-
-    const double *horizon = m_horizon->get_column(i, j);
 
     // Split into a direct-beam fraction (terrain-shaded) and an isotropic diffuse fraction
     // (reduced by the sky-view factor). With the sky-view factor disabled the diffuse term
@@ -410,10 +409,8 @@ void TerrainInsolation::update_daily_insolation(double time,
       // diffuse: isotropic sky scaled by the sky-view factor; reaches shadowed cells too
       energy += f_diff * toa_horizontal * svf * dt;
 
-      double horizon_altitude = interpolate(horizon, m_n_directions, azimuth);
-
       // direct beam: only when the Sun clears the local horizon and lights the surface
-      if (altitude > horizon_altitude) {
+      if (altitude > horizon_altitude(i, j, azimuth)) {
         double Se = solar_vector[0];
         double Sn = solar_vector[1];
         double Su = solar_vector[2];
@@ -428,7 +425,7 @@ void TerrainInsolation::update_daily_insolation(double time,
     // store the daily-mean insolation rate (W m-2), matching dEBM-simple's "insolation"
     // diagnostic units (the melt code multiplies this rate by the sub-step length)
     m_insolation(i, j) = m_transmissivity(surface_elevation(i, j)) * energy / seconds_per_day;
-  }
+  } // end of the loop over grid points
 
   profiling.end("surface.debm_enhanced.daily_insolation");
 }
