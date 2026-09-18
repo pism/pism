@@ -20,7 +20,6 @@
 #include "pism/coupler/surface/terrain_insolation_kernel.hh"
 
 #include <cmath>
-#include <geodesic.h>
 #include <petscdm.h>
 #include <petscdmda.h>
 #include <petscsystypes.h>
@@ -38,13 +37,7 @@
 #include "pism/util/Logger.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/petscwrappers/DM.hh"
-#include "pism/util/LonLatCalculator.hh"
 #include "pism/util/SunPosition.hh"
-
-#if (Pism_USE_PROJ == 0)
-#error "This code requires PROJ"
-#endif
-#include <proj.h>
 
 /*!
  * Reference:
@@ -135,55 +128,6 @@ const array::Scalar &TerrainInsolation::sky_view() const {
 
 bool TerrainInsolation::sky_view_enabled() const {
   return m_sky_view != nullptr;
-}
-
-/*!
- * Compute the angle between the Y axis of the grid (vector (0, 1)) and the meridian
- * (vector pointing from the current point to the north pole), in radians.
- *
- * See https://proj.org/en/stable/geodesic.html
- */
-void compute_azimuth(array::Scalar &output) {
-  auto grid = output.grid();
-
-  std::string proj_string = grid->get_mapping_info()["proj_params"];
-
-  double a;
-  double invf;
-  // get ellipsoid information from PROJ:
-  {
-    PJ_CONTEXT *C = proj_context_create();
-    PJ *P         = proj_create(C, proj_string.c_str());
-    proj_ellipsoid_get_parameters(C, proj_get_ellipsoid(C, P), &a, 0, 0, &invf);
-    proj_destroy(P);
-    proj_context_destroy(C);
-  }
-
-  LonLatCalculator calc(proj_string);
-
-  geod_geodesic g;
-  geod_init(&g, a, invf != 0 ? 1 / invf : 0);
-
-  double dx = grid->dx();
-
-  array::AccessScope list{&output};
-  for (auto p : grid->points()) {
-    const int i = p.i(), j = p.j();
-
-    double x = grid->x(i);
-    double y = grid->y(j);
-
-    auto pt = calc.lonlat(x, y);
-    double lon1 = pt[0], lat1 = pt[1];
-
-    pt = calc.lonlat(x + dx, y);
-    double lon2 = pt[0], lat2 = pt[1];
-
-    double A = 0.0;
-    geod_inverse(&g, lat1, lon1, lat2, lon2, nullptr, &A, nullptr);
-
-    output(i, j) = proj_torad(90.0 - A);
-  }
 }
 
 void TerrainInsolation::update_horizon_map(const array::Scalar1 &surface_elevation) {
