@@ -61,7 +61,7 @@ public:
   TerrainInsolation(std::shared_ptr<const Grid> grid,
                     std::function<double(double)> atmosphere_transmissivity);
 
-  void update_horizon_map(const array::Scalar1 &surface_elevation);
+  void update_shading(const array::Scalar1 &surface_elevation);
 
   //! Daily-mean terrain-shaded surface insolation rate (W m-2) at time `time`: the
   //! diurnal insolation integral divided by the length of the day.
@@ -111,7 +111,7 @@ private:
   //! azimuth of the Y direction on the grid:
   array::Scalar m_y_azimuth;
   
-  static double interpolate(const double *column, int n, double azimuth);
+  double horizon_altitude(int i, int j, double azimuth) const;
 
   OrbitalParameterCalculator m_orbital_parameters;
 

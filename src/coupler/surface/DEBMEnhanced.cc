@@ -72,7 +72,7 @@ void DEBMEnhanced::init_impl(const Inputs &inputs) {
   // Build the initial horizon map and surface normals. The horizon is recomputed from the
   // (evolving) surface elevation every surface.debm_enhanced.update_interval (see
   // update_insolation_input).
-  m_terrain->update_horizon_map(inputs.geometry->ice_surface_elevation);
+  m_terrain->update_shading(inputs.geometry->ice_surface_elevation);
   m_t_last_horizon = m_grid->ctx()->time()->current();
 }
 
@@ -86,7 +86,7 @@ void DEBMEnhanced::update_insolation_input(double t, double dt,
   // horizon changes slowly as the geometry evolves, so this is much cheaper than redoing
   // the ray-marching every step.
   if (t >= m_t_last_horizon + m_update_interval) {
-    m_terrain->update_horizon_map(surface_elevation);
+    m_terrain->update_shading(surface_elevation);
     m_t_last_horizon = t;
   }
 
