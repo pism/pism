@@ -41,7 +41,7 @@ using namespace pism::surface::terrain;
 
 namespace {
 
-const double pi = 3.14159265358979323846;
+const double pi = M_PI;
 
 int failures = 0;
 
@@ -259,18 +259,12 @@ void test_sun_position() {
   }
 }
 
-// Equally spaced azimuths, clockwise from north, as used by TerrainInsolation.
-std::vector<double> azimuths(int n_dir) {
-  std::vector<double> result(n_dir);
-  for (int k = 0; k < n_dir; ++k) {
-    result[k] = 2.0 * pi * k / n_dir;
-  }
-  return result;
-}
-
 void test_sky_view_factor() {
   const int n_dir = 72;
-  auto azimuth = azimuths(n_dir);
+  std::vector<double> azimuth(n_dir);
+  for (int k = 0; k < n_dir; ++k) {
+    azimuth[k] = 2.0 * pi * k / n_dir;
+  }
 
   // A horizontal site with nothing blocking the sky sees all of it.
   {
