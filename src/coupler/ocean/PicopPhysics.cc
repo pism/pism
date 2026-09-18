@@ -48,6 +48,7 @@ PicopPhysics::PicopPhysics(const Config &config) {
     x0             = config.get_number("ocean.picop.dimensionless_scaling_factor");
     power_alpha    = config.get_number("ocean.picop.power_alpha");
     power_beta     = config.get_number("ocean.picop.power_beta");
+    length_scale_factor = config.get_number("ocean.picop.length_scale_factor");
     YT = CdT / sqrt(Cd);
 }
 
@@ -85,7 +86,12 @@ double PicopPhysics::length_scaling(const double t_a, const double t_f_gl, const
   const double L1 = (t_a - t_f_gl) / lambda3;
   const double L2 = x0 * CdTS  + E0 * sin(alpha);
   const double L3 =  x0 * (CdTS + E0 * sin(alpha));
-  return L1 * L2 / L3;
+  // L2 / L3 lies in [1, 1/x0], so l >= TF / lambda3 (~3 km at TF = 2 C) for any parameter
+  // choice. The Lazeroms curve peaks at X_hat = 0.18 and reaches zero at 0.56, so a cavity
+  // whose draft rises less than ~0.2 l never gets past the peak and melt cannot decay
+  // toward the ice front. Greenland fjord shelves (Petermann rises ~300 m over 70 km)
+  // need l ~ 0.5 km; the factor is the only way to get there, and 1 preserves Eq. 11.
+  return length_scale_factor * L1 * L2 / L3;
 }
 
 //! equation 8 in the PICOP paper.

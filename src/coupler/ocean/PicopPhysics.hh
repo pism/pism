@@ -70,6 +70,11 @@ private:
   // scaling coefficients
   double  x0;
 
+  //! multiplier on the plume length scale l (Eq. 11): l is bounded below by TF / lambda3,
+  //! which on shallow Greenland shelves keeps X_hat on the rising limb of the Lazeroms
+  //! melt curve; values < 1 let the melt peak and decay within the cavity
+  double length_scale_factor;
+
   //! exponent on the buoyancy flux (g q_sg delta_rho) in the discharge melt rate (Eq. 13)
   double power_alpha;
 

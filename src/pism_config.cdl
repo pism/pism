@@ -1885,6 +1885,11 @@ netcdf pism_config {
     pism_config:ocean.picop.heat_exchange_parameter_2_type = "number";
     pism_config:ocean.picop.heat_exchange_parameter_2_units = "m^-1";
 
+    pism_config:ocean.picop.length_scale_factor = 1.0;
+    pism_config:ocean.picop.length_scale_factor_doc = "Multiplier on the PICOP plume length scale `l` (:cite:`Pelle2019`, eqn. 11). Written as `l = TF / lambda_3 * f`, the factor `f` is bounded to `[1, 1 / x0]` by construction, so `l` cannot fall below `TF / lambda_3` (about 3 km at 2 C of thermal forcing) whatever the other parameters. The Lazeroms melt curve `M(X_hat)`, with `X_hat = (z_b - z_gl) / l`, peaks at 0.18 and reaches zero at 0.56; a cavity whose draft rises by less than 0.2 `l` therefore sits entirely on the rising limb, and melt increases toward the ice front instead of peaking near the grounding line and decaying, as observed. The curve was fitted to Antarctic cavities where the draft rises by about 1 km; Greenland fjord shelves rise by a few hundred metres (Petermann: about 300 m over 70 km, melt peaking 5 km from the grounding line per :cite:`Cai2017`) and need `l` of order 0.5 km, i.e. a factor near 0.15. The default 1 reproduces the published parameterization.";
+    pism_config:ocean.picop.length_scale_factor_option = "picop_length_scale_factor";
+    pism_config:ocean.picop.length_scale_factor_type = "number";
+    pism_config:ocean.picop.length_scale_factor_units = "1";
     pism_config:ocean.picop.melt_rate_parameter = 10;
     pism_config:ocean.picop.melt_rate_parameter_doc = "Sets the melt rate parameter.";
     pism_config:ocean.picop.melt_rate_parameter_option = "melt_rate_parameter";
