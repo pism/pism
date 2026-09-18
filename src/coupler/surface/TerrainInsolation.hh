@@ -107,6 +107,9 @@ private:
 
   //! daily surface insolation energy (J m-2) computed for the current update
   array::Scalar m_insolation;
+
+  //! azimuth of the Y direction on the grid:
+  array::Scalar m_y_azimuth;
   
   static double interpolate(const double *column, int n, double azimuth);
 

@@ -19,6 +19,7 @@
 #include "pism/coupler/surface/TerrainInsolation.hh"
 #include "pism/coupler/surface/terrain_insolation_kernel.hh"
 
+#include <cassert>
 #include <cmath>
 #include <petscdm.h>
 #include <petscdmda.h>
@@ -38,6 +39,7 @@
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/petscwrappers/DM.hh"
 #include "pism/util/SunPosition.hh"
+#include "pism/util/projection.hh"
 
 /*!
  * Reference:
@@ -54,6 +56,7 @@ TerrainInsolation::TerrainInsolation(std::shared_ptr<const Grid> grid,
                                      std::function<double(double)> atmosphere_transmissivity)
     : m_grid(grid), m_insolation(grid, "insolation"),
       m_orbital_parameters(*grid->ctx()),
+      m_y_azimuth(m_grid, "y_azimuth"),
       m_transmissivity(atmosphere_transmissivity) {
 
   m_insolation.metadata(0)
@@ -62,11 +65,12 @@ TerrainInsolation::TerrainInsolation(std::shared_ptr<const Grid> grid,
 
   auto config = m_grid->ctx()->config();
 
-  m_n_directions  = static_cast<int>(config->get_number("surface.debm_enhanced.horizon.n_directions"));
-  m_max_distance  = config->get_number("surface.debm_enhanced.horizon.max_distance");
-  m_step          = config->get_number("surface.debm_enhanced.horizon.step");
-  m_insolation_dt  = config->get_number("surface.debm_enhanced.insolation_dt");
-  m_solar_constant = config->get_number("surface.debm_simple.solar_constant");
+  m_n_directions =
+      static_cast<int>(config->get_number("surface.debm_enhanced.horizon.n_directions"));
+  m_max_distance     = config->get_number("surface.debm_enhanced.horizon.max_distance");
+  m_step             = config->get_number("surface.debm_enhanced.horizon.step");
+  m_insolation_dt    = config->get_number("surface.debm_enhanced.insolation_dt");
+  m_solar_constant   = config->get_number("surface.debm_simple.solar_constant");
   m_diffuse_fraction = config->get_number("surface.debm_enhanced.diffuse_fraction");
 
   if (not (m_step > 0.0)) {
@@ -91,8 +95,7 @@ TerrainInsolation::TerrainInsolation(std::shared_ptr<const Grid> grid,
       .long_name("terrain horizon elevation angle as a function of azimuth")
       .units("radian");
 
-  bool use_sky_view  = config->get_flag("surface.debm_enhanced.use_sky_view_factor");
-  if (use_sky_view) {
+  if (config->get_flag("surface.debm_enhanced.use_sky_view_factor")) {
     m_sky_view = std::make_shared<array::Scalar>(m_grid, "sky_view_factor");
     m_sky_view->metadata(0)
         .long_name("sky-view factor (fraction of the diffuse sky hemisphere visible "
@@ -109,6 +112,9 @@ TerrainInsolation::TerrainInsolation(std::shared_ptr<const Grid> grid,
   ierr = VecCreateSeq(PETSC_COMM_SELF, static_cast<PetscInt>(m_grid->Mx() * m_grid->My()),
                       m_dem_local.rawptr());
   PISM_CHK(ierr, "VecCreateSeq");
+
+  // use projection information to compute the azimuth of the Y axis of the grid:
+  compute_y_azimuth(m_y_azimuth);
 }
 
 const array::Scalar& TerrainInsolation::insolation() const {
@@ -130,6 +136,66 @@ bool TerrainInsolation::sky_view_enabled() const {
   return m_sky_view != nullptr;
 }
 
+/*!
+ * Convert the gradient of a function `f` (vector (f_x, f_y)) to its gradient in the
+ * east-north-up system given the azimuth of the Y axis.
+ */
+static void xy_to_en(double y_azimuth, double f_x, double f_y, double &f_e, double &f_n) {
+  // unit vector pointing north:
+  double north_x = std::sin(-y_azimuth);
+  double north_y = std::cos(-y_azimuth);
+  // unit vector pointing east (90 degrees from north, simplified using trigonometric
+  // identities):
+  double east_x = north_y;
+  double east_y = -north_x;
+
+  // f_e and f_n are directional derivatives of f computed as dot products between vectors
+  // pointing east and north and the gradient of f in the x-y coordinate system
+  //
+  // See https://en.wikipedia.org/wiki/Directional_derivative
+  f_e = east_x * f_x + east_y * f_y;
+  f_n = north_x * f_x + north_y * f_y;
+}
+
+/*!
+ * Finite difference approximations of partial derivatives of a gridded field.
+ *
+ * Uses centered differences in the interior and one-sided differences at domain
+ * boundaries.
+ */
+class FD {
+public:
+  FD(int Mx_, int My_, double dx_, double dy_) {
+    Mx = Mx_;
+    My = My_;
+    dx = dx_;
+    dy = dy_;
+  }
+
+  double x(const array::Scalar1 &F, int i, int j) const {
+    // use one-sided finite differences at domain boundaries:
+    int ip = i < Mx - 1 ? i + 1 : i;
+    int im = i > 0 ? i - 1 : i;
+
+    return (F(ip, j) - F(im, j)) / ((ip - im) * dx);
+  }
+
+  double y(const array::Scalar1 &F, int i, int j) const {
+    // use one-sided finite differences at domain boundaries:
+    int jp = j < My - 1 ? j + 1 : j;
+    int jm = j > 0 ? j - 1 : j;
+
+    return (F(i, jp) - F(i, jm)) / ((jp - jm) * dy);
+  }
+
+private:
+  int Mx, My;
+  double dx, dy;
+};
+
+/*!
+ * Update the map of horizon altitude angles (in radians) at each grid point.
+ */
 void TerrainInsolation::update_horizon_map(const array::Scalar1 &surface_elevation) {
   auto log = m_grid->ctx()->log();
 
@@ -143,21 +209,7 @@ void TerrainInsolation::update_horizon_map(const array::Scalar1 &surface_elevati
   const double dx = m_grid->dx();
   const double dy = m_grid->dy();
 
-  auto diff_x = [Mx, dx](const array::Scalar1 &F, int i, int j) {
-    // use one-sided finite differences at domain boundaries:
-    int ip = i < Mx - 1 ? i + 1 : i;
-    int im = i > 0 ? i - 1 : i;
-
-    return (F(ip, j) - F(im, j)) / ((ip - im) * dx);
-  };
-
-  auto diff_y = [My, dy](const array::Scalar1 &F, int i, int j) {
-    // use one-sided finite differences at domain boundaries:
-    int jp = j < My - 1 ? j + 1 : j;
-    int jm = j > 0 ? j - 1 : j;
-
-    return (F(i, jp) - F(i, jm)) / ((jp - jm) * dy);
-  };
+  FD diff(Mx, My, dx, dy);
 
   // Scatter the full DEM to every rank. After this block each rank has a copy of the
   // global surface elevation that lets it compute shading at its owned cells without
@@ -167,6 +219,10 @@ void TerrainInsolation::update_horizon_map(const array::Scalar1 &surface_elevati
     PetscErrorCode ierr;
     auto dm = surface_elevation.dm();
     petsc::TemporaryGlobalVec dem_global(dm);
+
+    // make sure surface_elevation is actually "local":
+    assert(surface_elevation.stencil_width() > 0);
+
     // Note: we use DMLocalToGlobal because surface_elevation is ghosted (local)
     ierr = DMLocalToGlobal(*dm, surface_elevation.vec(), INSERT_VALUES, dem_global);
     PISM_CHK(ierr, "DMLocalToGlobal");
@@ -185,31 +241,26 @@ void TerrainInsolation::update_horizon_map(const array::Scalar1 &surface_elevati
   const auto &azimuth = m_horizon->levels();
 
   petsc::VecArray dem(m_dem_local);
-  array::AccessScope scope{ &surface_elevation, m_horizon.get() };
+  array::AccessScope scope{ &surface_elevation, m_horizon.get(), &m_y_azimuth };
 
-  bool use_sky_view = sky_view_enabled();
-  if (use_sky_view) {
+  if (sky_view_enabled()) {
     scope.add(*m_sky_view);
   }
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
-    double *column = m_horizon->get_column(i, j);
+    double y_azimuth = m_y_azimuth(i, j);
 
-    // Compute the upward-pointing normal to the surface:
-    double s_x = diff_x(surface_elevation, i, j);
-    double s_y = diff_y(surface_elevation, i, j);
+    double *horizon_altitude = m_horizon->get_column(i, j);
 
-    // FIXME: incorrect assumption!
-    double s_e = s_x;
-    double s_n = s_y;
+    // Surface elevation derivatives in the east and north directions:
+    double s_e = 0.0, s_n = 0.0;
+    xy_to_en(y_azimuth, diff.x(surface_elevation, i, j), diff.y(surface_elevation, i, j), s_e, s_n);
 
-    double Ne = -s_e;
-    double Nn = -s_n;
-    double Nu = 1.0;
-
-    // Scale to get the unit normal:
+    // Compute the upward-pointing normal to the surface in the east-north-up system:
+    double Ne = -s_e, Nn = -s_n, Nu = 1.0;
+    // Scale it to get the unit normal:
     {
       // Note that norm != 0.0 because Nu == 1
       double norm = std::sqrt(Ne * Ne + Nn * Nn + Nu * Nu);
@@ -220,21 +271,21 @@ void TerrainInsolation::update_horizon_map(const array::Scalar1 &surface_elevati
     }
 
     for (int k = 0; k < m_n_directions; ++k) {
-      column[k] = terrain::ray_horizon(dem.get(), Mx, My, dx, dy, i, j, azimuth[k], m_step,
-                                       m_max_distance);
+      horizon_altitude[k] = terrain::ray_horizon(dem.get(), Mx, My, dx, dy, i, j,
+                                                 azimuth[k] - y_azimuth, m_step, m_max_distance);
     }
 
     // sky-view factor from the horizon and the surface slope/aspect (the latter recovered
     // from the unit normal: slope = acos(Nu), aspect = atan2(Ne, Nn), clockwise from north)
-    if (use_sky_view) {
+    if (sky_view_enabled()) {
       double slope = std::acos(pism::clip(Nu, -1.0, 1.0));
       double aspect = std::atan2(Ne, Nn);
       (*m_sky_view)(i, j) =
-          terrain::sky_view_factor(column, azimuth.data(), m_n_directions, slope,
-                                   aspect);
+          terrain::sky_view_factor(horizon_altitude, azimuth.data(), m_n_directions, slope, aspect);
     }
-  }
+  } // end of the loop over grid points
   profiling.end("surface.debm_enhanced.horizon");
+
   double end = get_time(m_grid->com);
   log->message(2, "* Updated the horizon map in %f s.\n", end - start);
 }
@@ -294,52 +345,28 @@ void TerrainInsolation::update_daily_insolation(double time,
 
   const auto &latitude = m_grid->latitude();
 
-  array::AccessScope scope{ &latitude, &m_insolation, &surface_elevation, m_horizon.get() };
+  array::AccessScope scope{ &latitude, &m_insolation, &surface_elevation, m_horizon.get(),
+                            &m_y_azimuth };
 
   bool use_sky_view = sky_view_enabled();
   if (use_sky_view) {
     scope.add(*m_sky_view);
   }
 
-  int Mx = (int)m_grid->Mx();
-  int My = (int)m_grid->My();
-  double dx = m_grid->dx();
-  double dy = m_grid->dy();
-
-  auto diff_x = [Mx, dx](const array::Scalar1 &F, int i, int j) {
-    // use one-sided finite differences at domain boundaries:
-    int ip = i < Mx - 1 ? i + 1 : i;
-    int im = i > 0 ? i - 1 : i;
-
-    return (F(ip, j) - F(im, j)) / ((ip - im) * dx);
-  };
-
-  auto diff_y = [My, dy](const array::Scalar1 &F, int i, int j) {
-    // use one-sided finite differences at domain boundaries:
-    int jp = j < My - 1 ? j + 1 : j;
-    int jm = j > 0 ? j - 1 : j;
-
-    return (F(i, jp) - F(i, jm)) / ((jp - jm) * dy);
-  };
+  FD diff(m_grid->Mx(), m_grid->My(), m_grid->dx(), m_grid->dy());
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
     sun_position.set_latitude(latitude(i, j) * (M_PI / 180.0));
 
-    // Compute the upward-pointing normal to the surface:
-    double s_x = diff_x(surface_elevation, i, j);
-    double s_y = diff_y(surface_elevation, i, j);
+    double s_e = 0.0, s_n = 0.0;
+    xy_to_en(m_y_azimuth(i, j), diff.x(surface_elevation, i, j), diff.y(surface_elevation, i, j),
+             s_e, s_n);
 
-    // FIXME: incorrect assumption!
-    double s_e = s_x;
-    double s_n = s_y;
-
-    double Ne = -s_e;
-    double Nn = -s_n;
-    double Nu = 1.0;
-
-    // Scale to get the unit normal:
+    // Compute the upward-pointing normal to the surface and scale it to get the unit
+    // normal:
+    double Ne = -s_e, Nn = -s_n, Nu = 1.0;
     {
       // Note that norm != 0.0 because Nu == 1
       double norm = std::sqrt(Ne * Ne + Nn * Nn + Nu * Nu);
@@ -383,10 +410,10 @@ void TerrainInsolation::update_daily_insolation(double time,
       // diffuse: isotropic sky scaled by the sky-view factor; reaches shadowed cells too
       energy += f_diff * toa_horizontal * svf * dt;
 
-      double altitude_threshold = interpolate(horizon, m_n_directions, azimuth);
+      double horizon_altitude = interpolate(horizon, m_n_directions, azimuth);
 
       // direct beam: only when the Sun clears the local horizon and lights the surface
-      if (altitude > altitude_threshold) {
+      if (altitude > horizon_altitude) {
         double Se = solar_vector[0];
         double Sn = solar_vector[1];
         double Su = solar_vector[2];
