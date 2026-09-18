@@ -99,9 +99,6 @@ double ray_horizon(const double *dem, int Mx, int My, double dx, double dy,
   return std::isfinite(best) ? std::atan(best) : 0.0;
 }
 
-// Standard topocentric solar geometry (textbook spherical astronomy). The ENU sun-vector
-// convention (E = cos(alt) sin(az), N = cos(alt) cos(az), U = sin(alt)) matches solshade's
-// solar.py; the altitude/azimuth formulas themselves are standard.
 void sun_position(double latitude, double declination, double hour_angle,
                   double &altitude, double &azimuth) {
   SunPosition sp(declination);
@@ -119,6 +116,7 @@ double sky_view_factor(const double *horizon, const double *azimuth, int n_dir,
   double cos_slope = std::cos(slope);
   double sin_slope = std::sin(slope);
 
+  // Note: the loop code below implements equation (7b) in Dozier and Frew.
   double acc = 0.0;
   for (int k = 0; k < n_dir; ++k) {
     // Dozier & Frew use the horizon measured from the zenith. A terrain horizon below the
