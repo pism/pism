@@ -30,25 +30,25 @@ namespace ocean {
 
 PlumePhysics::PlumePhysics(const Config &config) {
 
-    beta_S         = config.get_number("ocean.picop.haline_concentration_coefficient");
-    beta_T         = config.get_number("ocean.picop.thermal_expansion_coefficient");
-    E0             = config.get_number("ocean.picop.entrainment_coefficient");
+    beta_S         = config.get_number("ocean.plume.haline_concentration_coefficient");
+    beta_T         = config.get_number("ocean.plume.thermal_expansion_coefficient");
+    E0             = config.get_number("ocean.plume.entrainment_coefficient");
     c_p            = config.get_number("constants.fresh_water.specific_heat_capacity");
-    Cd             = config.get_number("ocean.picop.drag_coefficient");
-    CdT            = config.get_number("ocean.picop.turbulent_heat_exchange_coefficient");
-    CdTS0          = config.get_number("ocean.picop.heat_exchange_parameter");
+    Cd             = config.get_number("ocean.plume.drag_coefficient");
+    CdT            = config.get_number("ocean.plume.turbulent_heat_exchange_coefficient");
+    CdTS0          = config.get_number("ocean.plume.heat_exchange_parameter");
     g              = config.get_number("constants.standard_gravity");
-    gamma1         = config.get_number("ocean.picop.heat_exchange_parameter_1");
-    gamma2         = config.get_number("ocean.picop.heat_exchange_parameter_2");
-    lambda1        = config.get_number("ocean.picop.freezing_point_salinity_coefficient");
-    lambda2        = config.get_number("ocean.picop.freezing_point_offset", "kelvin");
-    lambda3        = config.get_number("ocean.picop.freezing_point_depth_coefficient");
+    gamma1         = config.get_number("ocean.plume.heat_exchange_parameter_1");
+    gamma2         = config.get_number("ocean.plume.heat_exchange_parameter_2");
+    lambda1        = config.get_number("ocean.plume.freezing_point_salinity_coefficient");
+    lambda2        = config.get_number("ocean.plume.freezing_point_offset", "kelvin");
+    lambda3        = config.get_number("ocean.plume.freezing_point_depth_coefficient");
     L_fw           = config.get_number("constants.fresh_water.latent_heat_of_fusion");
-    M0             = config.get_number("ocean.picop.melt_rate_parameter", "m s^-1 kelvin^-2");
-    x0             = config.get_number("ocean.picop.dimensionless_scaling_factor");
-    power_alpha    = config.get_number("ocean.picop.power_alpha");
-    power_beta     = config.get_number("ocean.picop.power_beta");
-    length_scale_factor = config.get_number("ocean.picop.length_scale_factor");
+    M0             = config.get_number("ocean.plume.melt_rate_parameter", "m s^-1 kelvin^-2");
+    x0             = config.get_number("ocean.plume.dimensionless_scaling_factor");
+    power_alpha    = config.get_number("ocean.plume.power_alpha");
+    power_beta     = config.get_number("ocean.plume.power_beta");
+    length_scale_factor = config.get_number("ocean.plume.length_scale_factor");
     YT = CdT / sqrt(Cd);
 }
 
@@ -133,7 +133,7 @@ double PlumePhysics::melt_rate(const double M, const double X_hat) const {
 //! equation 10 in the PICOP paper.
 double PlumePhysics::melt_function(const double t_a, const double t_f_gl, const double g_alpha) const {
   // M = M0 * g(alpha) * (T_a - T_f)^beta. The thermal-forcing exponent beta (Eq. 10 uses 2,
-  // the Antarctic plume value) is configurable via ocean.picop.power_beta; Cai et al. (2017)
+  // the Antarctic plume value) is configurable via ocean.plume.power_beta; Cai et al. (2017)
   // find beta ~ 1.2 for Petermann. Clamp the base at 0 so a non-integer exponent is safe (and
   // gives no melt when the ambient water is at/below the local freezing point).
   return M0 * g_alpha * pow(std::max(0.0, t_a - t_f_gl), power_beta);
@@ -172,7 +172,7 @@ double PlumePhysics::fresh_water_melt_rate(const double q_sg,
   //
   // The 1/3 power in Eqs. 13-14 is the plume-velocity exponent; it applies to the whole
   // buoyancy-and-geometry group G2 * (g q_sg delta_rho), which the paper (and Eq. 14) keeps
-  // under a single cube root. It is configurable via ocean.picop.power_alpha (default 1/3, at
+  // under a single cube root. It is configurable via ocean.plume.power_alpha (default 1/3, at
   // which pow(G2 * g q_sg delta_rho, 1/3) == cbrt(G2) * cbrt(g q_sg delta_rho), the original).
   //
   // pow() is safe: G2 = sqrt(...) >= 0, g > 0, and q_sg > 0 and delta_rho_i > 0 are guaranteed

@@ -32,9 +32,9 @@ stressbalance="-pik -stress_balance ssa+sia -ssa_method fd"
 surface="-atmosphere uniform -surface simple"
 
 max_melt() {
-# Prints the maximum of picop_basal_melt_rate in a spatial output file.
-ncwa -O -y max -v picop_basal_melt_rate $1 max.nc
-ncks -H -s "%g" -v picop_basal_melt_rate max.nc
+# Prints the maximum of plume_basal_melt_rate in a spatial output file.
+ncwa -O -y max -v plume_basal_melt_rate $1 max.nc
+ncks -H -s "%g" -v plume_basal_melt_rate max.nc
 }
 
 check() {
@@ -54,7 +54,7 @@ ${PISM_PATH}/pism -verbose 2 -i ${input_file} \
             $grid $stressbalance $surface \
             -ocean plume -ocean.plume.file ${input_file} \
             -y 0.001 -spatial_file ex_theta.nc -spatial_times 0.001 \
-            -spatial_vars picop_basal_melt_rate,picop_temperature \
+            -spatial_vars plume_basal_melt_rate,plume_temperature \
             -o o_theta.nc
 
 ${PISM_PATH}/pism -verbose 2 -i ${input_file} \
@@ -63,7 +63,7 @@ ${PISM_PATH}/pism -verbose 2 -i ${input_file} \
             -ocean plume -ocean.plume.file input_tf.nc \
             -ocean.plume.temperature_as_thermal_forcing \
             -y 0.001 -spatial_file ex_tf.nc -spatial_times 0.001 \
-            -spatial_vars picop_basal_melt_rate,picop_temperature \
+            -spatial_vars plume_basal_melt_rate,plume_temperature \
             -o o_tf.nc
 
 check ex_theta.nc

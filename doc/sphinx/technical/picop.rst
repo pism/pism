@@ -26,14 +26,15 @@ an extra source of buoyancy that locally enhances melt within a distance `5L'` o
 outflow. This note documents the equations and their implementation.
 
 Select the model with ``-ocean.models picop``. The implementation lives in
-``src/coupler/ocean/Picop.{cc,hh}`` (coupling, geometry, discharge field) and
-``src/coupler/ocean/PicopPhysics.{cc,hh}`` (the plume equations). Equation numbers below
+``src/coupler/ocean/Plume.{cc,hh}`` (geometry, discharge field, melt rate; shared by
+``-ocean plume`` and PICOP), ``src/coupler/ocean/PlumePhysics.{cc,hh}`` (the plume
+equations) and ``src/coupler/ocean/Picop.{cc,hh}`` (the coupling to PICO). Equation numbers below
 refer to :cite:`Pelle2023`.
 
-The plume machinery is also available without the PICO box model as ``-ocean.models
-plume`` (``src/coupler/ocean/Plume.{cc,hh}``), which reads `T_a` and `S_a` from a file at
-every floating cell; see :ref:`sec-plume`. Everything below except the source of `T_a`
-and `S_a` applies to both.
+The plume is also available without the PICO box model as ``-ocean.models plume``,
+which reads `T_a` and `S_a` from a file at every floating cell; see :ref:`sec-plume`.
+Everything below except the source of `T_a` and `S_a` applies to both, and all plume
+parameters are ``ocean.plume.*`` for both.
 
 .. note::
 
@@ -172,17 +173,17 @@ averages are formed with a single ``GlobalSum`` over a packed accumulator buffer
 Configuration and diagnostics
 -----------------------------
 
-The plume constants are configuration parameters under ``ocean.picop.*`` (e.g.
-``ocean.picop.entrainment_coefficient``, ``ocean.picop.heat_exchange_parameter``,
-``ocean.picop.drag_coefficient``); PICO parameters remain under ``ocean.pico.*``.
+The plume constants are configuration parameters under ``ocean.plume.*`` (e.g.
+``ocean.plume.entrainment_coefficient``, ``ocean.plume.heat_exchange_parameter``,
+``ocean.plume.drag_coefficient``); PICO parameters remain under ``ocean.pico.*``.
 
 Spatial diagnostics:
 
-* ``picop_basal_melt_rate`` --- total melt rate `m` (`\text{m}\,\text{s}^{-1}`);
-* ``picop_fresh_water_melt_rate`` --- discharge contribution `m_{fw}`;
-* ``picop_discharge_flux`` --- the constructed `q_{sg}(x,y)`
+* ``plume_basal_melt_rate`` --- total melt rate `m` (`\text{m}\,\text{s}^{-1}`);
+* ``plume_fresh_water_melt_rate`` --- discharge contribution `m_{fw}`;
+* ``plume_discharge_flux`` --- the constructed `q_{sg}(x,y)`
   (`\text{m}^2\,\text{s}^{-1}`);
-* ``picop_grounding_line_elevation``, ``picop_local_slope``.
+* ``plume_grounding_line_elevation``, ``plume_local_slope``.
 
 As a validation check, `q_{sg}` should be nonzero in a band `\sim 5L'` wide adjacent to
 the grounding line with a peak near the grounding-line water flux, and `m_{fw}` should

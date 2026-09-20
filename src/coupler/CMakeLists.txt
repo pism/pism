@@ -45,7 +45,7 @@ add_library (boundary OBJECT
   ./ocean/Pico.cc
   ./ocean/Picop.cc
   ./ocean/Plume.cc
-  ./ocean/PlumePhysics.cc
+  ./ocean/PicoPhysics.cc
   ./ocean/PlumePhysics.cc
   ./ocean/PicoGeometry.cc
   ./ocean/PyOceanModel.cc

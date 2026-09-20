@@ -238,12 +238,8 @@ where `l` is defined by Eqn 6--7 in :cite:`Pelle2019`. The melt rate `\dot m` is
 where `\hat M` is a dimensionless melt curve define in :cite:`Lazeroms2018` and `M` is given by Eqn 10
 in :cite:`Pelle2019`.
 
-.. rubric:: Parameters
-
-Prefix: ``ocean.picop.``
-
-.. pism-parameters::
-   :prefix: ocean.picop.
+PICOP has no parameters of its own: the box model is configured with ``ocean.pico.*``
+(see :ref:`sec-pico`) and the plume with ``ocean.plume.*`` (see :ref:`sec-plume`).
 
 .. _sec-plume:
 
@@ -271,11 +267,11 @@ the freezing point at the grounding-line depth (eqn. 4 in :cite:`Pelle2019`), so
 plume is driven by exactly the thermal forcing in the file. Otherwise :var:`theta_ocean`
 is used as `T_a` directly.
 
-The sub-shelf ice temperature is set to the freezing point at the shelf base. All plume
-parameters are shared with PICOP (prefix ``ocean.picop.``), including the
-subglacial-discharge extension, and the diagnostics use PICOP's names (``picop_*``), with
-:var:`picop_temperature` holding `T_a`. Like PICOP, this model requires the stress balance
-(ice velocities) to transport the grounding-line elevation.
+The sub-shelf ice temperature is set to the freezing point at the shelf base. The plume
+parameters below, including the subglacial-discharge extension, and the diagnostics
+(``plume_*``, with :var:`plume_temperature` holding `T_a`) are shared with PICOP. Like
+PICOP, this model requires the stress balance (ice velocities) to transport the
+grounding-line elevation.
 
 .. rubric:: Parameters
 

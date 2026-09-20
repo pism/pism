@@ -41,7 +41,7 @@ ncap2 -S script.txt -O input_01.nc input_01.nc
 grid="-bootstrap -Mx 120 -My 120 -Lz 6000 -Lbz 2000 -Mz 81 -Mbz 21 -grid.recompute_longitude_and_latitude false"
 
 stressbalance="-pik -stress_balance ssa+sia -ssa_method fd"
-pico="-ocean picop -ocean_picop_file $input_file -gamma_T 1.0e-5 -overturning_coeff 0.8e6 -exclude_icerises -continental_shelf_depth -2500"
+pico="-ocean picop -ocean_pico_file $input_file -gamma_T 1.0e-5 -overturning_coeff 0.8e6 -exclude_icerises -continental_shelf_depth -2500"
 surface="-atmosphere uniform -surface simple"   #"-surface pik"
 
 # Merge Amundsen Sea and Ross ice shelves

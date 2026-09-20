@@ -8,10 +8,15 @@ Changes since v2.3.0
   ocean temperature and salinity read from a file (`ocean.plume.file`) at every floating
   cell instead of by the PICO box model. Set `ocean.plume.temperature_as_thermal_forcing`
   to read thermal forcing; the plume is then driven by exactly the thermal forcing in the
-  file rather than by a basin average of it. Plume parameters and diagnostics are shared
-  with PICOP (`ocean.picop.*`, `picop_*`). Internally, the plume code now lives in a
-  `PlumeModel` base class that both `Picop` and `Plume` derive from; PICOP results are
-  unchanged.
+  file rather than by a basin average of it. The plume code lives in a `PlumeModel` base
+  class (`Plume.{hh,cc}`, `PlumePhysics.{hh,cc}`) that both `Plume` and `Picop` derive
+  from; PICOP results are unchanged.
+- **Breaking:** the plume parameters and diagnostics are shared by `plume` and `picop`
+  and are now named after the plume: every `ocean.picop.*` parameter is `ocean.plume.*`
+  (`ocean.plume.melt_rate_parameter`, `ocean.plume.power_beta`, ...; the command-line
+  options `-picop_*` are `-plume_*`), and the diagnostics `picop_*` are `plume_*`
+  (`plume_basal_melt_rate`, `plume_discharge_flux`, ...). `ocean.picop.file` is gone:
+  PICOP reads its forcing through PICO (`ocean.pico.file`).
 
 - Add `stress_balance.ssa.fem.dirichlet_scale` (default 1e9, unchanged), the scaling of the
   identity blocks `SSAFEM` puts into the Jacobian at Dirichlet nodes and, when
