@@ -19,7 +19,7 @@
 #include <algorithm>
 
 #include "pism/coupler/ocean/Plume.hh"
-#include "pism/coupler/ocean/PicopPhysics.hh"
+#include "pism/coupler/ocean/PlumePhysics.hh"
 #include "pism/coupler/util/options.hh"
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Config.hh"
@@ -36,8 +36,8 @@ namespace ocean {
 
 Plume::Plume(std::shared_ptr<const Grid> grid)
   : PlumeModel(grid),
-    m_ambient_temperature(grid, "picop_temperature"),
-    m_ambient_salinity(grid, "picop_salinity") {
+    m_ambient_temperature(grid, "plume_temperature"),
+    m_ambient_salinity(grid, "plume_salinity") {
 
   ForcingOptions opt(*m_grid->ctx(), "ocean.plume");
 
@@ -93,7 +93,7 @@ Plume::Plume(std::shared_ptr<const Grid> grid)
 void Plume::init_impl(const Geometry &geometry) {
 
   m_log->message(2,
-                 "* Initializing the buoyant plume ocean model (PICOP without the PICO box model),\n"
+                 "* Initializing the buoyant plume ocean model,\n"
                  "  reading ambient ocean temperature and salinity from a file...\n");
   m_log->message(2, "  Note: the plume model requires stress balance computation to be enabled.\n");
 
@@ -150,7 +150,7 @@ void Plume::update_impl(const Inputs &inputs, double t, double dt) {
 
   m_ambient_salinity.copy_from(*m_salinity_ocean);
 
-  PicopPhysics physics(*m_config);
+  PlumePhysics physics(*m_config);
 
   if (inputs.stress_balance == nullptr) {
     // No ice velocity to transport the grounding-line elevation with, e.g. during the
@@ -196,7 +196,7 @@ void Plume::update_impl(const Inputs &inputs, double t, double dt) {
  * temperature difference `T_a - T_f(S_a, z_gl)` is exactly the forcing read from the
  * file. `z_gl` is clamped to the local shelf base as in compute_melt_rate().
  */
-void Plume::compute_ambient_temperature(const PicopPhysics &physics, const Geometry &geometry,
+void Plume::compute_ambient_temperature(const PlumePhysics &physics, const Geometry &geometry,
                                         array::Scalar &result) const {
 
   const double T0 = m_config->get_number("constants.fresh_water.melting_point_temperature");
@@ -232,7 +232,7 @@ void Plume::compute_ambient_temperature(const PicopPhysics &physics, const Geome
 
 //! Sub-shelf ice temperature: the freezing point at the shelf base under floating ice,
 //! the fresh-water melting point elsewhere.
-void Plume::compute_shelf_base_temperature(const PicopPhysics &physics, const Geometry &geometry,
+void Plume::compute_shelf_base_temperature(const PlumePhysics &physics, const Geometry &geometry,
                                            array::Scalar &result) const {
 
   const double T0 = m_config->get_number("constants.fresh_water.melting_point_temperature");

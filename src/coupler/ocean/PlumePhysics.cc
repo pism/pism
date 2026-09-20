@@ -23,12 +23,12 @@
 #include <iostream>
 
 #include "pism/util/Config.hh"
-#include "pism/coupler/ocean/PicopPhysics.hh"
+#include "pism/coupler/ocean/PlumePhysics.hh"
 
 namespace pism {
 namespace ocean {
 
-PicopPhysics::PicopPhysics(const Config &config) {
+PlumePhysics::PlumePhysics(const Config &config) {
 
     beta_S         = config.get_number("ocean.picop.haline_concentration_coefficient");
     beta_T         = config.get_number("ocean.picop.thermal_expansion_coefficient");
@@ -54,24 +54,24 @@ PicopPhysics::PicopPhysics(const Config &config) {
 
 
 //! equation 4 in the PICOP paper.
-double PicopPhysics::characteristic_freezing_point(const double s_a, const double z) const {
+double PlumePhysics::characteristic_freezing_point(const double s_a, const double z) const {
   // in K * g /kg + K  + K / m
   return lambda1 * s_a + lambda2 + lambda3 * z;
 }
 
 //! equation 2 in the PICOP/q_sg paper.
-double PicopPhysics::freezing_point_depth(const double t_a, const double s_a, const double z) const {
+double PlumePhysics::freezing_point_depth(const double t_a, const double s_a, const double z) const {
   // in m
   return (t_a - lambda1 * s_a + lambda2 + lambda3 * z) / lambda3;
 }
 
 //! equation 5 in the PICOP paper.
-double PicopPhysics::effective_heat_exchange_coefficient(const double t_a, const double t_f_gl, const double alpha) const {
+double PlumePhysics::effective_heat_exchange_coefficient(const double t_a, const double t_f_gl, const double alpha) const {
 
   return YT * (gamma1 + gamma2 * (((t_a-t_f_gl) * E0 * sin(alpha)) / (lambda3 * (CdTS0 + E0 * sin(alpha)))));
 }
 
-double PicopPhysics::geometric_scaling(const double Gamma_TS, const double alpha) const {
+double PlumePhysics::geometric_scaling(const double Gamma_TS, const double alpha) const {
   const double CdTS = sqrt(Cd) * Gamma_TS;
   const double E0_sin_alpha = E0 * sin(alpha);
   const double G1 = sqrt(sin(alpha) / (Cd + E0_sin_alpha));
@@ -81,7 +81,7 @@ double PicopPhysics::geometric_scaling(const double Gamma_TS, const double alpha
 }
 
 //! equation 7 in the PICOP paper.
-double PicopPhysics::length_scaling(const double t_a, const double t_f_gl, const double Gamma_TS, const double alpha) const {
+double PlumePhysics::length_scaling(const double t_a, const double t_f_gl, const double Gamma_TS, const double alpha) const {
   const double CdTS = sqrt(Cd) * Gamma_TS;
   const double L1 = (t_a - t_f_gl) / lambda3;
   const double L2 = x0 * CdTS  + E0 * sin(alpha);
@@ -95,12 +95,12 @@ double PicopPhysics::length_scaling(const double t_a, const double t_f_gl, const
 }
 
 //! equation 8 in the PICOP paper.
-double PicopPhysics::dimensionless_coordinate(const double z_b, const double z_gl,const  double l) const {
+double PlumePhysics::dimensionless_coordinate(const double z_b, const double z_gl,const  double l) const {
   return (z_b - z_gl) / l;
 }
 
 //! equation in Corrigendum of Lazerome et al 2018
-double PicopPhysics::dimensionless_melt_curve(const double X_hat) const {
+double PlumePhysics::dimensionless_melt_curve(const double X_hat) const {
     const std::vector<double> ps = {
         1.371330075095435e-01,   // p0
         5.527656234709359e+01,   // p1
@@ -125,13 +125,13 @@ double PicopPhysics::dimensionless_melt_curve(const double X_hat) const {
 }
 
 //! equation 9 in the PICOP paper.
-double PicopPhysics::melt_rate(const double M, const double X_hat) const {
+double PlumePhysics::melt_rate(const double M, const double X_hat) const {
   // 1 * m s^-1
   return dimensionless_melt_curve(X_hat) * M;
 }
 
 //! equation 10 in the PICOP paper.
-double PicopPhysics::melt_function(const double t_a, const double t_f_gl, const double g_alpha) const {
+double PlumePhysics::melt_function(const double t_a, const double t_f_gl, const double g_alpha) const {
   // M = M0 * g(alpha) * (T_a - T_f)^beta. The thermal-forcing exponent beta (Eq. 10 uses 2,
   // the Antarctic plume value) is configurable via ocean.picop.power_beta; Cai et al. (2017)
   // find beta ~ 1.2 for Petermann. Clamp the base at 0 so a non-integer exponent is safe (and
@@ -140,7 +140,7 @@ double PicopPhysics::melt_function(const double t_a, const double t_f_gl, const 
 }
 
 //! Equation 13 in Pelle et al (2023)
-double PicopPhysics::fresh_water_melt_rate(const double q_sg,
+double PlumePhysics::fresh_water_melt_rate(const double q_sg,
                                            const double s_a,
                                            const double t_a,
                                            const double Gamma_TS,
@@ -191,7 +191,7 @@ double PicopPhysics::fresh_water_melt_rate(const double q_sg,
  * @param[in] q_sg subglacial discharge flux at the outflow (m^2 s^-1)
  * @param[in] m_fw discharge melt rate from fresh_water_melt_rate() (m s^-1)
  */
-double PicopPhysics::governing_length_scale(const double q_sg, const double m_fw) const {
+double PlumePhysics::governing_length_scale(const double q_sg, const double m_fw) const {
   if (m_fw <= 0.0) {
     return 0.0;
   }

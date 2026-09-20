@@ -53,7 +53,7 @@
 #include "pism/hydrology/Hydrology.hh"
 
 #include "pism/coupler/ocean/Picop.hh"
-#include "pism/coupler/ocean/PicopPhysics.hh"
+#include "pism/coupler/ocean/PlumePhysics.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/Profiling.hh"
 #include "pism/util/pism_utilities.hh"

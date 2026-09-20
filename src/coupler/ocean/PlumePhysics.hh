@@ -23,9 +23,9 @@ class Config;
 
 namespace ocean {
 
-class PicopPhysics {
+class PlumePhysics {
 public:
-  PicopPhysics(const Config &config);
+  PlumePhysics(const Config &config);
 
   double characteristic_freezing_point(const double s_a, const double z_gl) const;
 

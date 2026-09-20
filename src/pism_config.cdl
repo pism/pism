@@ -1809,120 +1809,120 @@ netcdf pism_config {
     pism_config:ocean.pico.temperature_as_thermal_forcing_option = "pico_temperature_as_thermal_forcing";
     pism_config:ocean.pico.temperature_as_thermal_forcing_type = "flag";
 
-    pism_config:ocean.picop.add_fresh_water_melt = "no";
-    pism_config:ocean.picop.add_fresh_water_melt_doc = "If set to \"yes\", include the subglacial-discharge (fresh water plume) melt contribution in the PICOP sub-shelf melt rate. If \"no\", the melt rate uses the ambient (PICO-style) contribution only.";
-    pism_config:ocean.picop.add_fresh_water_melt_option = "picop_add_fresh_water_melt";
-    pism_config:ocean.picop.add_fresh_water_melt_type = "flag";
+    pism_config:ocean.plume.add_fresh_water_melt = "no";
+    pism_config:ocean.plume.add_fresh_water_melt_doc = "If set to \"yes\", include the subglacial-discharge (fresh water plume) melt contribution in the PLUME sub-shelf melt rate. If \"no\", the melt rate uses the ambient (PICO-style) contribution only.";
+    pism_config:ocean.plume.add_fresh_water_melt_option = "plume_add_fresh_water_melt";
+    pism_config:ocean.plume.add_fresh_water_melt_type = "flag";
 
-    pism_config:ocean.picop.dimensionless_scaling_factor = 0.56;
-    pism_config:ocean.picop.dimensionless_scaling_factor_doc = "Sets the dimensionless scaling factor.";
-    pism_config:ocean.picop.dimensionless_scaling_factor_option = "dimensionless_scaling_factor";
-    pism_config:ocean.picop.dimensionless_scaling_factor_type = "number";
-    pism_config:ocean.picop.dimensionless_scaling_factor_units = "1";
+    pism_config:ocean.plume.dimensionless_scaling_factor = 0.56;
+    pism_config:ocean.plume.dimensionless_scaling_factor_doc = "Sets the dimensionless scaling factor.";
+    pism_config:ocean.plume.dimensionless_scaling_factor_option = "dimensionless_scaling_factor";
+    pism_config:ocean.plume.dimensionless_scaling_factor_type = "number";
+    pism_config:ocean.plume.dimensionless_scaling_factor_units = "1";
 
-    pism_config:ocean.picop.discharge_method = "along_flow";
-    pism_config:ocean.picop.discharge_method_choices = "isotropic,downstream_gate,along_flow";
-    pism_config:ocean.picop.discharge_method_doc = "How the subglacial-discharge plume q_sg(x,y) is distributed onto floating cells. \"isotropic\": paint an isotropic disk of radius 5L' around each grounding-line outflow with quadratic decay (original behavior). \"downstream_gate\": as isotropic, but paint only cells downstream of the outflow (positive dot product of the outflow-to-cell vector with the local ice-flow direction). \"along_flow\": transport the discharge downstream along the ice flow (semi-Lagrangian), with quadratic decay over 5L' measured in along-flow path distance.";
-    pism_config:ocean.picop.discharge_method_option = "picop_discharge_method";
-    pism_config:ocean.picop.discharge_method_type = "keyword";
+    pism_config:ocean.plume.discharge_method = "along_flow";
+    pism_config:ocean.plume.discharge_method_choices = "isotropic,downstream_gate,along_flow";
+    pism_config:ocean.plume.discharge_method_doc = "How the subglacial-discharge plume q_sg(x,y) is distributed onto floating cells. \"isotropic\": paint an isotropic disk of radius 5L' around each grounding-line outflow with quadratic decay (original behavior). \"downstream_gate\": as isotropic, but paint only cells downstream of the outflow (positive dot product of the outflow-to-cell vector with the local ice-flow direction). \"along_flow\": transport the discharge downstream along the ice flow (semi-Lagrangian), with quadratic decay over 5L' measured in along-flow path distance.";
+    pism_config:ocean.plume.discharge_method_option = "plume_discharge_method";
+    pism_config:ocean.plume.discharge_method_type = "keyword";
 
-    pism_config:ocean.picop.drag_coefficient = 2.5e-3;
-    pism_config:ocean.picop.drag_coefficient_doc = "Sets the drag coefficient.";
-    pism_config:ocean.picop.drag_coefficient_option = "drag_coefficient";
-    pism_config:ocean.picop.drag_coefficient_type = "number";
-    pism_config:ocean.picop.drag_coefficient_units = "1";
+    pism_config:ocean.plume.drag_coefficient = 2.5e-3;
+    pism_config:ocean.plume.drag_coefficient_doc = "Sets the drag coefficient.";
+    pism_config:ocean.plume.drag_coefficient_option = "drag_coefficient";
+    pism_config:ocean.plume.drag_coefficient_type = "number";
+    pism_config:ocean.plume.drag_coefficient_units = "1";
 
-    pism_config:ocean.picop.entrainment_coefficient = 3.6e-2;
-    pism_config:ocean.picop.entrainment_coefficient_doc = "Sets the entrainment coefficient.";
-    pism_config:ocean.picop.entrainment_coefficient_option = "entrainment_coefficient";
-    pism_config:ocean.picop.entrainment_coefficient_type = "number";
-    pism_config:ocean.picop.entrainment_coefficient_units = "1";
+    pism_config:ocean.plume.entrainment_coefficient = 3.6e-2;
+    pism_config:ocean.plume.entrainment_coefficient_doc = "Sets the entrainment coefficient.";
+    pism_config:ocean.plume.entrainment_coefficient_option = "entrainment_coefficient";
+    pism_config:ocean.plume.entrainment_coefficient_type = "number";
+    pism_config:ocean.plume.entrainment_coefficient_units = "1";
     
-    pism_config:ocean.picop.file = "";
-    pism_config:ocean.picop.file_doc = "Specifies the NetCDF file containing potential temperature (:var:`theta_ocean`), salinity (:var:`salinity_ocean`) and ocean basins (:var:`basins`).";
-    pism_config:ocean.picop.file_option = "ocean_pico_file";
-    pism_config:ocean.picop.file_type = "string";
+    pism_config:ocean.plume.file = "";
+    pism_config:ocean.plume.file_doc = "Specifies the NetCDF file containing potential temperature (:var:`theta_ocean`), salinity (:var:`salinity_ocean`) and ocean basins (:var:`basins`).";
+    pism_config:ocean.plume.file_option = "ocean_pico_file";
+    pism_config:ocean.plume.file_type = "string";
 
-    pism_config:ocean.picop.freezing_point_depth_coefficient = 7.61e-4;
-    pism_config:ocean.picop.freezing_point_depth_coefficient_doc = "Sets the freezing point depth coefficient.";
-    pism_config:ocean.picop.freezing_point_depth_coefficient_option = "freezing_point_depth_coefficient";
-    pism_config:ocean.picop.freezing_point_depth_coefficient_type = "number";
-    pism_config:ocean.picop.freezing_point_depth_coefficient_units = "kelvin m^-1";
+    pism_config:ocean.plume.freezing_point_depth_coefficient = 7.61e-4;
+    pism_config:ocean.plume.freezing_point_depth_coefficient_doc = "Sets the freezing point depth coefficient.";
+    pism_config:ocean.plume.freezing_point_depth_coefficient_option = "freezing_point_depth_coefficient";
+    pism_config:ocean.plume.freezing_point_depth_coefficient_type = "number";
+    pism_config:ocean.plume.freezing_point_depth_coefficient_units = "kelvin m^-1";
 
-    pism_config:ocean.picop.freezing_point_offset = 8.32e-2;
-    pism_config:ocean.picop.freezing_point_offset_doc = "Sets the freezing point offset.";
-    pism_config:ocean.picop.freezing_point_offset_option = "freezing_point_offset";
-    pism_config:ocean.picop.freezing_point_offset_type = "number";
-    pism_config:ocean.picop.freezing_point_offset_units = "celsius";
+    pism_config:ocean.plume.freezing_point_offset = 8.32e-2;
+    pism_config:ocean.plume.freezing_point_offset_doc = "Sets the freezing point offset.";
+    pism_config:ocean.plume.freezing_point_offset_option = "freezing_point_offset";
+    pism_config:ocean.plume.freezing_point_offset_type = "number";
+    pism_config:ocean.plume.freezing_point_offset_units = "celsius";
 
-    pism_config:ocean.picop.freezing_point_salinity_coefficient = -5.73e-2;
-    pism_config:ocean.picop.freezing_point_salinity_coefficient_doc = "Sets the freezing point salinity coefficient.";
-    pism_config:ocean.picop.freezing_point_salinity_coefficient_option = "freezing_point_salinity_coefficient";
-    pism_config:ocean.picop.freezing_point_salinity_coefficient_type = "number";
-    pism_config:ocean.picop.freezing_point_salinity_coefficient_units = "kelvin";
+    pism_config:ocean.plume.freezing_point_salinity_coefficient = -5.73e-2;
+    pism_config:ocean.plume.freezing_point_salinity_coefficient_doc = "Sets the freezing point salinity coefficient.";
+    pism_config:ocean.plume.freezing_point_salinity_coefficient_option = "freezing_point_salinity_coefficient";
+    pism_config:ocean.plume.freezing_point_salinity_coefficient_type = "number";
+    pism_config:ocean.plume.freezing_point_salinity_coefficient_units = "kelvin";
     
-    pism_config:ocean.picop.haline_concentration_coefficient = 7.86e-4;
-    pism_config:ocean.picop.haline_concentration_coefficient_doc = "Haline concentration coefficient (Jenkins, 2010)";
-    pism_config:ocean.picop.haline_concentration_coefficient_option = "";
-    pism_config:ocean.picop.haline_concentration_coefficient_type = "number";
-    pism_config:ocean.picop.haline_concentration_coefficient_units = "1";
+    pism_config:ocean.plume.haline_concentration_coefficient = 7.86e-4;
+    pism_config:ocean.plume.haline_concentration_coefficient_doc = "Haline concentration coefficient (Jenkins, 2010)";
+    pism_config:ocean.plume.haline_concentration_coefficient_option = "";
+    pism_config:ocean.plume.haline_concentration_coefficient_type = "number";
+    pism_config:ocean.plume.haline_concentration_coefficient_units = "1";
 
-    pism_config:ocean.picop.heat_exchange_parameter = 6.0e-4;
-    pism_config:ocean.picop.heat_exchange_parameter_doc = "Sets the heat exchange parameter.";
-    pism_config:ocean.picop.heat_exchange_parameter_option = "heat_exchange_parameter";
-    pism_config:ocean.picop.heat_exchange_parameter_type = "number";
-    pism_config:ocean.picop.heat_exchange_parameter_units = "1";
+    pism_config:ocean.plume.heat_exchange_parameter = 6.0e-4;
+    pism_config:ocean.plume.heat_exchange_parameter_doc = "Sets the heat exchange parameter.";
+    pism_config:ocean.plume.heat_exchange_parameter_option = "heat_exchange_parameter";
+    pism_config:ocean.plume.heat_exchange_parameter_type = "number";
+    pism_config:ocean.plume.heat_exchange_parameter_units = "1";
 
-    pism_config:ocean.picop.heat_exchange_parameter_1 = 0.545;
-    pism_config:ocean.picop.heat_exchange_parameter_1_doc = "Sets the heat exchange parameter 1.";
-    pism_config:ocean.picop.heat_exchange_parameter_1_option = "heat_exchange_parameter_1";
-    pism_config:ocean.picop.heat_exchange_parameter_1_type = "number";
-    pism_config:ocean.picop.heat_exchange_parameter_1_units = "1";
+    pism_config:ocean.plume.heat_exchange_parameter_1 = 0.545;
+    pism_config:ocean.plume.heat_exchange_parameter_1_doc = "Sets the heat exchange parameter 1.";
+    pism_config:ocean.plume.heat_exchange_parameter_1_option = "heat_exchange_parameter_1";
+    pism_config:ocean.plume.heat_exchange_parameter_1_type = "number";
+    pism_config:ocean.plume.heat_exchange_parameter_1_units = "1";
 
-    pism_config:ocean.picop.heat_exchange_parameter_2 = 3.5e-5;
-    pism_config:ocean.picop.heat_exchange_parameter_2_doc = "Sets the heat exchange parameter 2.";
-    pism_config:ocean.picop.heat_exchange_parameter_2_option = "heat_exchange_parameter_2";
-    pism_config:ocean.picop.heat_exchange_parameter_2_type = "number";
-    pism_config:ocean.picop.heat_exchange_parameter_2_units = "m^-1";
+    pism_config:ocean.plume.heat_exchange_parameter_2 = 3.5e-5;
+    pism_config:ocean.plume.heat_exchange_parameter_2_doc = "Sets the heat exchange parameter 2.";
+    pism_config:ocean.plume.heat_exchange_parameter_2_option = "heat_exchange_parameter_2";
+    pism_config:ocean.plume.heat_exchange_parameter_2_type = "number";
+    pism_config:ocean.plume.heat_exchange_parameter_2_units = "m^-1";
 
-    pism_config:ocean.picop.length_scale_factor = 1.0;
-    pism_config:ocean.picop.length_scale_factor_doc = "Multiplier on the PICOP plume length scale `l` (:cite:`Pelle2019`, eqn. 11). Written as `l = TF / lambda_3 * f`, the factor `f` is bounded to `[1, 1 / x0]` by construction, so `l` cannot fall below `TF / lambda_3` (about 3 km at 2 C of thermal forcing) whatever the other parameters. The Lazeroms melt curve `M(X_hat)`, with `X_hat = (z_b - z_gl) / l`, peaks at 0.18 and reaches zero at 0.56; a cavity whose draft rises by less than 0.2 `l` therefore sits entirely on the rising limb, and melt increases toward the ice front instead of peaking near the grounding line and decaying, as observed. The curve was fitted to Antarctic cavities where the draft rises by about 1 km; Greenland fjord shelves rise by a few hundred metres (Petermann: about 300 m over 70 km, melt peaking 5 km from the grounding line per :cite:`Cai2017`) and need `l` of order 0.5 km, i.e. a factor near 0.15. The default 1 reproduces the published parameterization.";
-    pism_config:ocean.picop.length_scale_factor_option = "picop_length_scale_factor";
-    pism_config:ocean.picop.length_scale_factor_type = "number";
-    pism_config:ocean.picop.length_scale_factor_units = "1";
-    pism_config:ocean.picop.melt_rate_parameter = 10;
-    pism_config:ocean.picop.melt_rate_parameter_doc = "Sets the melt rate parameter.";
-    pism_config:ocean.picop.melt_rate_parameter_option = "melt_rate_parameter";
-    pism_config:ocean.picop.melt_rate_parameter_type = "number";
-    pism_config:ocean.picop.melt_rate_parameter_units = "m yr^-1 kelvin^-2";
+    pism_config:ocean.plume.length_scale_factor = 1.0;
+    pism_config:ocean.plume.length_scale_factor_doc = "Multiplier on the PLUME plume length scale `l` (:cite:`Pelle2019`, eqn. 11). Written as `l = TF / lambda_3 * f`, the factor `f` is bounded to `[1, 1 / x0]` by construction, so `l` cannot fall below `TF / lambda_3` (about 3 km at 2 C of thermal forcing) whatever the other parameters. The Lazeroms melt curve `M(X_hat)`, with `X_hat = (z_b - z_gl) / l`, peaks at 0.18 and reaches zero at 0.56; a cavity whose draft rises by less than 0.2 `l` therefore sits entirely on the rising limb, and melt increases toward the ice front instead of peaking near the grounding line and decaying, as observed. The curve was fitted to Antarctic cavities where the draft rises by about 1 km; Greenland fjord shelves rise by a few hundred metres (Petermann: about 300 m over 70 km, melt peaking 5 km from the grounding line per :cite:`Cai2017`) and need `l` of order 0.5 km, i.e. a factor near 0.15. The default 1 reproduces the published parameterization.";
+    pism_config:ocean.plume.length_scale_factor_option = "plume_length_scale_factor";
+    pism_config:ocean.plume.length_scale_factor_type = "number";
+    pism_config:ocean.plume.length_scale_factor_units = "1";
+    pism_config:ocean.plume.melt_rate_parameter = 10;
+    pism_config:ocean.plume.melt_rate_parameter_doc = "Sets the melt rate parameter.";
+    pism_config:ocean.plume.melt_rate_parameter_option = "melt_rate_parameter";
+    pism_config:ocean.plume.melt_rate_parameter_type = "number";
+    pism_config:ocean.plume.melt_rate_parameter_units = "m yr^-1 kelvin^-2";
 
-    pism_config:ocean.picop.periodic = "no";
-    pism_config:ocean.picop.periodic_doc = "If true, interpret forcing data as periodic in time";
-    pism_config:ocean.picop.periodic_type = "flag";
+    pism_config:ocean.plume.periodic = "no";
+    pism_config:ocean.plume.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:ocean.plume.periodic_type = "flag";
 
-    pism_config:ocean.picop.power_alpha = 0.33333333;
-    pism_config:ocean.picop.power_alpha_doc = "Plume-velocity exponent applied to the buoyancy-and-geometry group `G2 (g q_sg delta_rho)` in the PICOP subglacial-discharge melt rate (:cite:`Pelle2023`, eqns. 13-14). The default 1/3 reproduces the published parameterization.";
-    pism_config:ocean.picop.power_alpha_option = "picop_power_alpha";
-    pism_config:ocean.picop.power_alpha_type = "number";
-    pism_config:ocean.picop.power_alpha_units = "1";
+    pism_config:ocean.plume.power_alpha = 0.33333333;
+    pism_config:ocean.plume.power_alpha_doc = "Plume-velocity exponent applied to the buoyancy-and-geometry group `G2 (g q_sg delta_rho)` in the PLUME subglacial-discharge melt rate (:cite:`Pelle2023`, eqns. 13-14). The default 1/3 reproduces the published parameterization.";
+    pism_config:ocean.plume.power_alpha_option = "plume_power_alpha";
+    pism_config:ocean.plume.power_alpha_type = "number";
+    pism_config:ocean.plume.power_alpha_units = "1";
 
-    pism_config:ocean.picop.power_beta = 2.0;
-    pism_config:ocean.picop.power_beta_doc = "Exponent on the thermal forcing `(T_a - T_f)` in the PICOP ambient melt function (:cite:`Pelle2019`, eqn. 10). The default 2 is the Antarctic plume value; :cite:`Cai2017` find approximately 1.2 for Petermann. Changing this from 2 alters the effective units of `ocean.picop.melt_rate_parameter`, which may then need re-tuning to match observed melt magnitudes.";
-    pism_config:ocean.picop.power_beta_option = "picop_power_beta";
-    pism_config:ocean.picop.power_beta_type = "number";
-    pism_config:ocean.picop.power_beta_units = "1";
+    pism_config:ocean.plume.power_beta = 2.0;
+    pism_config:ocean.plume.power_beta_doc = "Exponent on the thermal forcing `(T_a - T_f)` in the PLUME ambient melt function (:cite:`Pelle2019`, eqn. 10). The default 2 is the Antarctic plume value; :cite:`Cai2017` find approximately 1.2 for Petermann. Changing this from 2 alters the effective units of `ocean.plume.melt_rate_parameter`, which may then need re-tuning to match observed melt magnitudes.";
+    pism_config:ocean.plume.power_beta_option = "plume_power_beta";
+    pism_config:ocean.plume.power_beta_type = "number";
+    pism_config:ocean.plume.power_beta_units = "1";
 
-    pism_config:ocean.picop.thermal_expansion_coefficient = 3.87e-5;
-    pism_config:ocean.picop.thermal_expansion_coefficient_doc = "Haline concentration coefficient (Jenkins, 2010)";
-    pism_config:ocean.picop.thermal_expansion_coefficient_option = "";
-    pism_config:ocean.picop.thermal_expansion_coefficient_type = "number";
-    pism_config:ocean.picop.thermal_expansion_coefficient_units = "kelvin^-1";
+    pism_config:ocean.plume.thermal_expansion_coefficient = 3.87e-5;
+    pism_config:ocean.plume.thermal_expansion_coefficient_doc = "Haline concentration coefficient (Jenkins, 2010)";
+    pism_config:ocean.plume.thermal_expansion_coefficient_option = "";
+    pism_config:ocean.plume.thermal_expansion_coefficient_type = "number";
+    pism_config:ocean.plume.thermal_expansion_coefficient_units = "kelvin^-1";
 
-    pism_config:ocean.picop.turbulent_heat_exchange_coefficient = 1.1e-3;
-    pism_config:ocean.picop.turbulent_heat_exchange_coefficient_doc = "Sets the turbulent heat exchange coefficient.";
-    pism_config:ocean.picop.turbulent_heat_exchange_coefficient_option = "turbulent_heat_exchange_coefficient";
-    pism_config:ocean.picop.turbulent_heat_exchange_coefficient_type = "number";
-    pism_config:ocean.picop.turbulent_heat_exchange_coefficient_units = "1";
+    pism_config:ocean.plume.turbulent_heat_exchange_coefficient = 1.1e-3;
+    pism_config:ocean.plume.turbulent_heat_exchange_coefficient_doc = "Sets the turbulent heat exchange coefficient.";
+    pism_config:ocean.plume.turbulent_heat_exchange_coefficient_option = "turbulent_heat_exchange_coefficient";
+    pism_config:ocean.plume.turbulent_heat_exchange_coefficient_type = "number";
+    pism_config:ocean.plume.turbulent_heat_exchange_coefficient_units = "1";
 
     pism_config:ocean.pik_melt_factor = 5e-3;
     pism_config:ocean.pik_melt_factor_doc = "dimensionless tuning parameter in the ``-ocean pik`` ocean heat flux parameterization; see :cite:`Martinetal2011`";
