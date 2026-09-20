@@ -115,6 +115,8 @@ pism_test (PICO:Split-and-merge pico_split/run_pico.sh)
 
 pism_test (PICOP:Split-and-merge pico_split/run_picop.sh)
 
+pism_test (Plume:smoke pico_split/run_plume.sh)
+
 pism_test (Isochrones:restart test_isochrone_restart.sh)
 
 if (Pism_USE_PROJ)

@@ -3,6 +3,16 @@
 Changes since v2.3.0
 ====================
 
+- Add the `plume` ocean model (`-ocean plume`): PICOP's buoyant-plume melt rate
+  parameterization, including the subglacial-discharge extension, driven by ambient
+  ocean temperature and salinity read from a file (`ocean.plume.file`) at every floating
+  cell instead of by the PICO box model. Set `ocean.plume.temperature_as_thermal_forcing`
+  to read thermal forcing; the plume is then driven by exactly the thermal forcing in the
+  file rather than by a basin average of it. Plume parameters and diagnostics are shared
+  with PICOP (`ocean.picop.*`, `picop_*`). Internally, the plume code now lives in a
+  `PlumeModel` base class that both `Picop` and `Plume` derive from; PICOP results are
+  unchanged.
+
 - Add `stress_balance.ssa.fem.dirichlet_scale` (default 1e9, unchanged), the scaling of the
   identity blocks `SSAFEM` puts into the Jacobian at Dirichlet nodes and, when
   `stress_balance.calving_front_stress_bc` is set, at ice-free nodes. This was previously

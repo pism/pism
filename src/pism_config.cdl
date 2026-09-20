@@ -1930,6 +1930,20 @@ netcdf pism_config {
     pism_config:ocean.pik_melt_factor_type = "number";
     pism_config:ocean.pik_melt_factor_units = "1";
 
+    pism_config:ocean.plume.file = "";
+    pism_config:ocean.plume.file_doc = "Name of the file containing the ambient ocean temperature (:var:`theta_ocean`) and salinity (:var:`salinity_ocean`) for the plume model.";
+    pism_config:ocean.plume.file_option = "ocean_plume_file";
+    pism_config:ocean.plume.file_type = "string";
+
+    pism_config:ocean.plume.periodic = "no";
+    pism_config:ocean.plume.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:ocean.plume.periodic_type = "flag";
+
+    pism_config:ocean.plume.temperature_as_thermal_forcing = "no";
+    pism_config:ocean.plume.temperature_as_thermal_forcing_doc = "If set to \"yes\", interpret :var:`theta_ocean` as ocean thermal forcing (temperature above the freezing point, in degrees Celsius) rather than potential temperature. The plume's ambient temperature is then the freezing point at the grounding-line depth (:cite:`Pelle2019`, eqn. 4) plus the thermal forcing, so the plume is driven by exactly the thermal forcing read from the file.";
+    pism_config:ocean.plume.temperature_as_thermal_forcing_option = "plume_temperature_as_thermal_forcing";
+    pism_config:ocean.plume.temperature_as_thermal_forcing_type = "flag";
+
     pism_config:ocean.runoff_to_ocean_melt.b = 0.15;
     pism_config:ocean.runoff_to_ocean_melt.b_doc = "parameter B in eqn. 1 in :cite:`Aschwanden2019`";
     pism_config:ocean.runoff_to_ocean_melt.b_type = "number";

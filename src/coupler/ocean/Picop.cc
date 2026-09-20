@@ -62,9 +62,8 @@ namespace pism {
 
 namespace ocean {
 
-Picop::Picop(std::shared_ptr<const Grid> grid)
+PlumeModel::PlumeModel(std::shared_ptr<const Grid> grid)
   : CompleteOceanModel(grid, std::shared_ptr<OceanModel>()),
-    m_pico(std::make_shared<Pico>(grid)),
     m_basal_melt_rate(m_grid, "picop_basal_melt_rate"),
     m_grounding_line_elevation(grid, "picop_grounding_line_elevation"),
     m_shelf_base_elevation(grid, "picop_shelf_base_elevation"),
@@ -74,14 +73,10 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
     m_disch_q0(grid, "picop_disch_q0"),
     m_disch_L5(grid, "picop_disch_L5"),
     m_disch_s(grid, "picop_disch_s"),
-    m_theta_ocean(m_pico->get_temperature()),
-    m_salinity_ocean(m_pico->get_salinity()),
     m_flow_direction(grid, "ice_flow_direction"),
     m_work(grid, "temporary_storage"),
     m_zb_x(grid, "staggered slope x"),
     m_zb_y(grid, "staggered slope y") {
-
-  ForcingOptions opt(*m_grid->ctx(), "ocean.picop");
 
   m_add_fresh_water_melt = m_config->get_flag("ocean.picop.add_fresh_water_melt");
   {
@@ -135,6 +130,16 @@ Picop::Picop(std::shared_ptr<const Grid> grid)
   m_disch_s.set(0.0);
 
   m_shelf_base_temperature->metadata()["_FillValue"] = {0.0};
+}
+
+Picop::Picop(std::shared_ptr<const Grid> grid)
+  : PlumeModel(grid),
+    m_pico(std::make_shared<Pico>(grid)),
+    m_theta_ocean(m_pico->get_temperature()),
+    m_salinity_ocean(m_pico->get_salinity()) {
+
+  ForcingOptions opt(*m_grid->ctx(), "ocean.picop");
+  (void) opt;
 }
 
 void Picop::init_impl(const Geometry &geometry) {
@@ -219,8 +224,6 @@ void Picop::update_impl(const Inputs &inputs, double t, double dt) {
 
   m_pico->update(inputs, t, dt);
 
-  const auto &cell_type = inputs.geometry->cell_type;
-
   if (inputs.stress_balance == nullptr) {
     // Use outputs from PICO if the stress balance is not available
     m_log->message(3,
@@ -240,30 +243,41 @@ void Picop::update_impl(const Inputs &inputs, double t, double dt) {
   }
 
   m_log->message(3, "  PICOP: Computing plume-based melt rates...\n");
-  
+
   PicopPhysics picop_physics(*m_config);
+
+  update_geometry(inputs);
+
+  m_shelf_base_temperature->copy_from(m_pico->shelf_base_temperature());
+
+  update_melt_rate(inputs, picop_physics, m_theta_ocean, m_salinity_ocean);
+}
+
+void PlumeModel::update_geometry(const Inputs &inputs) {
 
   compute_shelf_base_elevation(inputs, m_shelf_base_elevation);
 
   profiling().begin("ocean.compute_grounding_line_elevation");
   compute_grounding_line_elevation(inputs, m_grounding_line_elevation);
   profiling().end("ocean.compute_grounding_line_elevation");
-  
+
   profiling().begin("ocean.compute_local_slope");
   compute_local_slope(inputs, m_local_slope);
   profiling().end("ocean.compute_local_slope");
-  
-  compute_melt_rate(inputs, picop_physics, m_theta_ocean, m_salinity_ocean,
-                    m_basal_melt_rate);
+}
 
-  extend_basal_melt_rates(cell_type, m_basal_melt_rate);
-    
+void PlumeModel::update_melt_rate(const Inputs &inputs, const PicopPhysics &physics,
+                                  const array::Scalar &T_a, const array::Scalar &S_a) {
+
+  compute_melt_rate(inputs, physics, T_a, S_a, m_basal_melt_rate);
+
+  extend_basal_melt_rates(inputs.geometry->cell_type, m_basal_melt_rate);
+
   double
     ice_density   = m_config->get_number("constants.ice.density"),
     water_density = m_config->get_number("constants.sea_water.density"),
     g             = m_config->get_number("constants.standard_gravity");
-  
-  m_shelf_base_temperature->copy_from(m_pico->shelf_base_temperature());
+
   m_shelf_base_mass_flux->copy_from(m_basal_melt_rate);
   m_shelf_base_mass_flux->scale(ice_density);
 
@@ -350,10 +364,10 @@ void transport_step_distance(const array::Scalar1 &U_old, const array::CellType 
  * (3) paint q_sg onto floating cells within 5L' with quadratic decay to zero at 5L',
  * taking the max where outflows overlap (Pelle et al. 2023, Defining q_sg(x,y)).
  */
-void Picop::build_discharge_field(const Inputs &inputs,
-                                  const PicopPhysics &physics,
-                                  const array::Scalar &T_a,
-                                  const array::Scalar &S_a) {
+void PlumeModel::build_discharge_field(const Inputs &inputs,
+                                       const PicopPhysics &physics,
+                                       const array::Scalar &T_a,
+                                       const array::Scalar &S_a) {
 
   // Averaging radius for outflow fields: Pelle et al. (2023) average alpha, z_gl, T_a,
   // S_a within 5 km of the discharge outflow before computing the length scale 5L'.
@@ -627,11 +641,11 @@ void Picop::build_discharge_field(const Inputs &inputs,
   }
 }
 
-void Picop::compute_melt_rate(const Inputs &inputs,
-                              const PicopPhysics &physics,
-                              const array::Scalar &T_a,
-                              const array::Scalar &S_a,
-                              array::Scalar1 &result)  {
+void PlumeModel::compute_melt_rate(const Inputs &inputs,
+                                   const PicopPhysics &physics,
+                                   const array::Scalar &T_a,
+                                   const array::Scalar &S_a,
+                                   array::Scalar1 &result)  {
 
   const auto &ice_surface_elevation = inputs.geometry->ice_surface_elevation;
   const auto &ice_thickness = inputs.geometry->ice_thickness;
@@ -886,8 +900,8 @@ void transport_step_distance(const array::Scalar1 &U_old, const array::CellType 
   }
 }
 
-void Picop::compute_grounding_line_elevation(const Inputs &inputs,
-                                             array::Scalar1 &result) {
+void PlumeModel::compute_grounding_line_elevation(const Inputs &inputs,
+                                                  array::Scalar1 &result) {
 
   const auto &cell_type = inputs.geometry->cell_type;
   const auto &adv_vel   = inputs.stress_balance->shallow->velocity();
@@ -967,8 +981,8 @@ void Picop::compute_grounding_line_elevation(const Inputs &inputs,
   }
 }
 
-void Picop::compute_shelf_base_elevation(const Inputs &inputs,
-                                         array::Scalar1 &result) {
+void PlumeModel::compute_shelf_base_elevation(const Inputs &inputs,
+                                              array::Scalar1 &result) {
 
   const auto &cell_type = inputs.geometry->cell_type;
   const auto &ice_surface_elevation = inputs.geometry->ice_surface_elevation;
@@ -985,8 +999,8 @@ void Picop::compute_shelf_base_elevation(const Inputs &inputs,
 }
 
 
-void Picop::compute_local_slope(const Inputs &inputs,
-                                         array::Scalar1 &result) {
+void PlumeModel::compute_local_slope(const Inputs &inputs,
+                                              array::Scalar1 &result) {
 
   const auto &cell_type = inputs.geometry->cell_type;
   const auto &ice_surface_elevation = inputs.geometry->ice_surface_elevation;
@@ -1081,7 +1095,8 @@ void Picop::compute_local_slope(const Inputs &inputs,
   }
 }
 // Write diagnostic variables to extra files if requested
-DiagnosticList Picop::spatial_diagnostics_impl() const {
+DiagnosticList PlumeModel::plume_diagnostics(const array::Scalar &T_a,
+                                             const array::Scalar &S_a) const {
 
   DiagnosticList result = {
     { "picop_basal_melt_rate", Diagnostic::wrap(m_basal_melt_rate) },
@@ -1092,12 +1107,16 @@ DiagnosticList Picop::spatial_diagnostics_impl() const {
     { "picop_disch_s", Diagnostic::wrap(m_disch_s) },
     { "picop_grounding_line_elevation", Diagnostic::wrap(m_grounding_line_elevation) },
     { "picop_local_slope", Diagnostic::wrap(m_local_slope) },
-    { "picop_temperature", Diagnostic::wrap(m_theta_ocean) },
-    { "picop_salinity", Diagnostic::wrap(m_salinity_ocean) },
+    { "picop_temperature", Diagnostic::wrap(T_a) },
+    { "picop_salinity", Diagnostic::wrap(S_a) },
     { "picop_shelf_base_elevation", Diagnostic::wrap(m_shelf_base_elevation) },
   };
 
   return combine(result, OceanModel::spatial_diagnostics_impl());
+}
+
+DiagnosticList Picop::spatial_diagnostics_impl() const {
+  return plume_diagnostics(m_theta_ocean, m_salinity_ocean);
 }
 
 

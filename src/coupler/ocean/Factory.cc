@@ -34,6 +34,7 @@
 #include "pism/coupler/ocean/GivenTH.hh"
 #include "pism/coupler/ocean/Pico.hh"
 #include "pism/coupler/ocean/Picop.hh"
+#include "pism/coupler/ocean/Plume.hh"
 
 namespace pism {
 namespace ocean {
@@ -46,6 +47,7 @@ Factory::Factory(std::shared_ptr<const Grid> g)
   add_model<Constant>("constant");
   add_model<Pico>("pico");
   add_model<Picop>("picop");
+  add_model<Plume>("plume");
   add_model<Given>("given");
 
   add_modifier<Anomaly>("anomaly");

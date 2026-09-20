@@ -245,6 +245,45 @@ Prefix: ``ocean.picop.``
 .. pism-parameters::
    :prefix: ocean.picop.
 
+.. _sec-plume:
+
+Plume
++++++
+
+:|options|: ``-ocean plume``
+:|variables|: :var:`theta_ocean` (potential ocean temperature, or thermal forcing; see below), [kelvin],
+
+              :var:`salinity_ocean` (salinity of the adjacent ocean), [g/kg]
+:|implementation|: ``pism::ocean::Plume``
+
+The plume model uses PICOP's buoyant-plume melt rate parameterization (see
+:ref:`sec-picop`) *without* the PICO box model: the ambient temperature `T_a` and salinity
+`S_a` driving the plume are read from a file at every floating grid cell instead of being
+averaged over an ocean basin and passed through PICO's boxes. This is the model to use
+when the forcing already resolves the near-glacier ocean state -- for example thermal
+forcing extrapolated into the fjords, as in the ISMIP6 and ISMIP7 Greenland protocols --
+and the box model's basin averaging would only dilute it.
+
+If :config:`ocean.plume.temperature_as_thermal_forcing` is set, :var:`theta_ocean` is
+interpreted as thermal forcing (temperature above the freezing point, in degrees Celsius)
+and the ambient temperature is `T_a = T_f(S_a, z_{\mathrm{gl}}) + \mathrm{TF}`, with `T_f`
+the freezing point at the grounding-line depth (eqn. 4 in :cite:`Pelle2019`), so the
+plume is driven by exactly the thermal forcing in the file. Otherwise :var:`theta_ocean`
+is used as `T_a` directly.
+
+The sub-shelf ice temperature is set to the freezing point at the shelf base. All plume
+parameters are shared with PICOP (prefix ``ocean.picop.``), including the
+subglacial-discharge extension, and the diagnostics use PICOP's names (``picop_*``), with
+:var:`picop_temperature` holding `T_a`. Like PICOP, this model requires the stress balance
+(ice velocities) to transport the grounding-line elevation.
+
+.. rubric:: Parameters
+
+Prefix: ``ocean.plume.``
+
+.. pism-parameters::
+   :prefix: ocean.plume.
+
       
 .. _sec-ocean-delta-sl:
 

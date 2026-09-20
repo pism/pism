@@ -30,6 +30,11 @@ Select the model with ``-ocean.models picop``. The implementation lives in
 ``src/coupler/ocean/PicopPhysics.{cc,hh}`` (the plume equations). Equation numbers below
 refer to :cite:`Pelle2023`.
 
+The plume machinery is also available without the PICO box model as ``-ocean.models
+plume`` (``src/coupler/ocean/Plume.{cc,hh}``), which reads `T_a` and `S_a` from a file at
+every floating cell; see :ref:`sec-plume`. Everything below except the source of `T_a`
+and `S_a` applies to both.
+
 .. note::
 
    Unlike the reference ISSM implementation, which works in m/year, PISM works in SI
