@@ -1896,6 +1896,7 @@ netcdf pism_config {
     pism_config:ocean.plume.length_scale_factor_option = "plume_length_scale_factor";
     pism_config:ocean.plume.length_scale_factor_type = "number";
     pism_config:ocean.plume.length_scale_factor_units = "1";
+    
     pism_config:ocean.plume.melt_rate_parameter = 10;
     pism_config:ocean.plume.melt_rate_parameter_doc = "Sets the melt rate parameter.";
     pism_config:ocean.plume.melt_rate_parameter_option = "melt_rate_parameter";
@@ -1928,6 +1929,11 @@ netcdf pism_config {
     pism_config:ocean.plume.thermal_expansion_coefficient_option = "";
     pism_config:ocean.plume.thermal_expansion_coefficient_type = "number";
     pism_config:ocean.plume.thermal_expansion_coefficient_units = "kelvin^-1";
+
+    pism_config:ocean.plume.transport_warm_start = "yes";
+    pism_config:ocean.plume.transport_warm_start_doc = "Start the along-flow transports of the plume model (grounding-line elevation and, for the along-flow discharge method, the discharge tracers) from the previous solution on floating cells instead of re-propagating from the grounding line every time. The converged fields are the same to within the iteration tolerance; only the number of sweeps changes.";
+    pism_config:ocean.plume.transport_warm_start_option = "plume_transport_warm_start";
+    pism_config:ocean.plume.transport_warm_start_type = "flag";
 
     pism_config:ocean.plume.turbulent_heat_exchange_coefficient = 1.1e-3;
     pism_config:ocean.plume.turbulent_heat_exchange_coefficient_doc = "Sets the turbulent heat exchange coefficient.";

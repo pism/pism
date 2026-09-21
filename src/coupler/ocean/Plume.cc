@@ -84,6 +84,9 @@ PlumeModel::PlumeModel(std::shared_ptr<const Grid> grid)
     m_zb_y(grid, "staggered slope y") {
 
   m_add_fresh_water_melt = m_config->get_flag("ocean.plume.add_fresh_water_melt");
+  m_warm_start           = m_config->get_flag("ocean.plume.transport_warm_start");
+  m_gl_elevation_valid   = false;
+  m_discharge_valid      = false;
   {
     const auto method = m_config->get_string("ocean.plume.discharge_method");
     if (method == "along_flow") {
@@ -337,6 +340,7 @@ void PlumeModel::build_discharge_field(const Inputs &inputs,
                    "Plume discharge: no outflows found"
                    " (no grounded cell next to floating ice with positive subglacial water flux)\n");
     m_discharge_flux.set(0.0);
+    m_discharge_valid = false;
     return;
   }
 
@@ -420,11 +424,27 @@ void PlumeModel::build_discharge_field(const Inputs &inputs,
   // paint but with distance measured along the flowline. Each floating cell is fed by its
   // single upstream outflow (the semi-Lagrangian characteristic), not a max over all disks.
   if (m_discharge_method == DISCHARGE_ALONG_FLOW) {
-    // Dirichlet BCs: zero everywhere except the outflow cells (held constant by transport_step
-    // since they are grounded). Locate each outflow's owned cell by inverting its coordinates.
-    m_disch_q0.set(0.0);
-    m_disch_L5.set(0.0);
-    m_disch_s.set(0.0);
+    // Dirichlet BCs: zero on every non-floating cell except the outflow cells (held constant
+    // by transport_step since they are grounded). Floating cells keep the previous solution
+    // as the initial guess when warm starts are enabled (see compute_grounding_line_elevation
+    // for why that is safe); otherwise they start from zero. Locate each outflow's owned cell
+    // by inverting its coordinates.
+    if (m_warm_start and m_discharge_valid) {
+      array::AccessScope init{ &cell_type, &m_disch_q0, &m_disch_L5, &m_disch_s };
+      for (auto p : m_grid->points()) {
+        const int i = p.i(), j = p.j();
+        if (not cell_type.floating_ice(i, j)) {
+          m_disch_q0(i, j) = 0.0;
+          m_disch_L5(i, j) = 0.0;
+          m_disch_s(i, j)  = 0.0;
+        }
+      }
+    } else {
+      m_disch_q0.set(0.0);
+      m_disch_L5.set(0.0);
+      m_disch_s.set(0.0);
+    }
+    m_discharge_valid = true;
 
     const double x0 = m_grid->x(0), y0 = m_grid->y(0);
     const double dx = m_grid->dx(), dy = m_grid->dy();
@@ -846,10 +866,25 @@ void PlumeModel::compute_grounding_line_elevation(const Inputs &inputs,
     }
   }
 
-  // FIXME: this is the right way to initialize it *if* we don't have a better guess, but
-  // we may benefit from re-using the result of this computation from the previous time
-  // step, especially if the bed elevation did not change
-  result.copy_from(inputs.geometry->bed_elevation);
+  // Grounded and ice-free cells carry the bed elevation: that is the boundary value the
+  // transport reads at the grounding line. Floating cells start from the previous
+  // solution when warm starts are enabled. The fixed point is the same either way (each
+  // sweep pulls the value from upstream), and the residual test below keeps sweeping
+  // while a change is still propagating, so this only saves the sweeps that would have
+  // re-propagated an unchanged shelf from scratch.
+  {
+    const auto &bed = inputs.geometry->bed_elevation;
+    const bool reuse = m_warm_start and m_gl_elevation_valid;
+    array::AccessScope init{ &bed, &cell_type, &result };
+    for (auto p : m_grid->points()) {
+      const int i = p.i(), j = p.j();
+      if (not (reuse and cell_type.floating_ice(i, j))) {
+        result(i, j) = bed(i, j);
+      }
+    }
+  }
+  result.update_ghosts();
+  m_gl_elevation_valid = true;
   
   const double rtol = 0.001;             // meters
   const int max_iter = 500;

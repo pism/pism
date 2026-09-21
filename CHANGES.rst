@@ -11,6 +11,11 @@ Changes since v2.3.0
   file rather than by a basin average of it. The plume code lives in a `PlumeModel` base
   class (`Plume.{hh,cc}`, `PlumePhysics.{hh,cc}`) that both `Plume` and `Picop` derive
   from; PICOP results are unchanged.
+- The plume's along-flow transports (grounding-line elevation, discharge tracers) start
+  from the previous solution on floating cells (`ocean.plume.transport_warm_start`,
+  default yes) instead of re-propagating from the grounding line at every ocean update,
+  which took ~90 sweeps per update on Greenland's long shelves for a field that hardly
+  changed. The converged fields are the same to within the iteration tolerance.
 - **Breaking:** the plume parameters and diagnostics are shared by `plume` and `picop`
   and are now named after the plume: every `ocean.picop.*` parameter is `ocean.plume.*`
   (`ocean.plume.melt_rate_parameter`, `ocean.plume.power_beta`, ...; the command-line

@@ -82,6 +82,12 @@ protected:
   enum DischargeMethod { DISCHARGE_ISOTROPIC, DISCHARGE_DOWNSTREAM_GATE, DISCHARGE_ALONG_FLOW };
   DischargeMethod m_discharge_method;
 
+  //! start the along-flow transports (grounding-line elevation, discharge tracers) from
+  //! the previous solution on floating cells instead of re-propagating from scratch
+  bool m_warm_start;
+  //! whether m_grounding_line_elevation / the discharge tracers hold a previous solution
+  bool m_gl_elevation_valid, m_discharge_valid;
+
   array::Vector m_flow_direction;
   array::Scalar m_work;
 
