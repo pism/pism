@@ -65,6 +65,9 @@ public:
 
   const array::Scalar& insolation() const;
 
+  void begin_pointwise_access() const;
+  void end_pointwise_access() const;
+
   void insolation_energy_series(int i, int j,
                                 const std::vector<OrbitalParameters> &orbital,
                                 double dt_sub, double latitude,

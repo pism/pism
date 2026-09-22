@@ -430,5 +430,13 @@ void TerrainInsolation::update_daily_insolation(double time,
   profiling.end("surface.debm_enhanced.daily_insolation");
 }
 
+void TerrainInsolation::begin_pointwise_access() const {
+  m_insolation.begin_access();
+}
+
+void TerrainInsolation::end_pointwise_access() const {
+  m_insolation.end_access();
+}
+
 } // end of namespace surface
 } // end of namespace pism
