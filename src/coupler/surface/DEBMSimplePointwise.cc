@@ -237,7 +237,7 @@ DEBMSimpleMelt DEBMSimplePointwise::melt(double declination,
   double E_surface = atmosphere_transmissivity(surface_elevation) * E_toa;
 
   return melt_from_insolation(declination, latitude, E_surface, dt, T_std_deviation, T,
-                              surface_elevation, albedo);
+                              albedo);
 }
 
 /*!
@@ -284,7 +284,6 @@ DEBMSimpleMelt DEBMSimplePointwise::melt_from_insolation(double declination,
                                                          double dt,
                                                          double T_std_deviation,
                                                          double T,
-                                                         double surface_elevation,
                                                          double albedo) const {
   assert(dt > 0.0);
 

@@ -98,7 +98,6 @@ public:
                                       double dt,
                                       double T_std_deviation,
                                       double T,
-                                      double surface_elevation,
                                       double albedo) const;
 
   DEBMSimpleChanges step(double ice_thickness, double max_melt, double snow_depth,

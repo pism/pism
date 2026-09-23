@@ -446,7 +446,6 @@ void DEBMSimple::update_impl(const Inputs &inputs, double t, double dt) {
                                                      dtseries,
                                                      S[k],
                                                      T[k],
-                                                     surfelev,
                                                      (bool)m_input_albedo ? Alb[k] : albedo);
           }
 
