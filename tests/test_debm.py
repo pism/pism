@@ -1,4 +1,4 @@
-# Copyright (C) 2024, 2026 Andy Aschwanden, Constantine Khroulev
+# Copyright (C) 2024, 2026 Andy Aschwanden, Constantine Khrulev
 #
 # This file is part of pism.
 #
@@ -17,6 +17,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 
+from unittest import TestCase
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_array_almost_equal
 
@@ -24,178 +25,170 @@ import PISM
 context = PISM.Context().ctx
 config = context.config()
 
-orb = PISM.OrbitalParameterCalculator(context)
 
-orb_prm = orb.compute(0.0)
+class OrbitalTest(TestCase):
+    def setUp(self):
+        self.orb = PISM.OrbitalParameterCalculator(context)
 
-def test_CalovGreveIntegrand():
-    """
-    Test the CalovGreveIntegrand
-    """
+    def test_orbital_parameters(self):
+        """
+        Test orbital parameters
+        """
+        time = 2022.25
 
-    sigma = np.array([2.0, 0.0, 1.0])
-    temperature = np.array([0.0, 2.0, -1.0])
+        orb = PISM.OrbitalParameterCalculator(context)
+        orbital_parameters = orb.compute(time)
 
-    
-    debm = PISM.SurfaceDEBMSimplePointwise(config)
+        assert_almost_equal(-0.4024197463537702, orbital_parameters.solar_declination, decimal=4)
+        assert_almost_equal(1.0350505747618992, orbital_parameters.distance_factor, decimal=4)
 
-    cgi = np.vectorize(debm.CalovGreveIntegrand)(sigma, temperature)
+    def test_solar_longitude(self):
+        """
+        Test solar longitude
+        """
+        year_fraction = np.array([0.0, 1.0 / 12.0, 1.0])
+        eccentricity = np.array([0.9, 1.0, 1.0])
+        perhelion_longitude = np.array([np.pi / 8.0, -np.pi, 0.0])
 
-    assert_array_almost_equal(np.array([0.7979, 2.0000, 0.0833]), cgi, decimal=4)
+        solar_longitude = np.vectorize(self.orb.solar_longitude)(
+            year_fraction, eccentricity, perhelion_longitude
+        )
+        assert_array_almost_equal(
+            np.array([-2.4174, -0.1785, 3.6222]), solar_longitude, decimal=4
+        )
 
-def test_hour_angle():
-    """
-    Test the calculation of the hour angle
-    """
+    def test_solar_declination_present_day(self):
+        """
+        Test solar declination present day
+        """
+        year_fraction = np.array([0.0, 1.0 / 12.0, 1.0])
 
-    phi = np.array([0.0, np.pi / 4.0, np.pi / 2.0])
-    latitude = np.array([-np.pi / 2.0, 0.0, np.pi / 4.0])
-    declination = np.array([np.pi / 8.0, 0.0, 0.0])
+        solar_declination = np.vectorize(self.orb.solar_declination_present_day)(year_fraction)
+        assert_array_almost_equal(
+            np.array([-0.402449, -0.30673297, -0.402449]), solar_declination, decimal=4
+        )
 
-    sun_position = PISM.SunPositionCalculator(0.0)
-    hour_angle = np.vectorize(sun_position.hour_angle)(phi, latitude, declination)
-    assert_array_almost_equal(np.array([0.0, 0.78539816, 0.0]), hour_angle, decimal=4)
+    def test_solar_declination_paleo(self):
+        """
+        Test solar declination paleo
+        """
 
+        obliquity = np.array([np.pi / 4])
+        solar_longitude = np.array([np.pi * 3 / 4])
 
-def test_solar_longitude():
-    """
-    Test solar longitude
-    """
-    year_fraction = np.array([0.0, 1.0 / 12.0, 1.0])
-    eccentricity = np.array([0.9, 1.0, 1.0])
-    perhelion_longitude = np.array([np.pi / 8.0, -np.pi, 0.0])
+        solar_declination = np.vectorize(self.orb.solar_declination_paleo)(obliquity, solar_longitude)
+        assert_array_almost_equal(
+            np.array([0.523599]), solar_declination, decimal=4
+        )
 
-    orb = PISM.OrbitalParameterCalculator(context)
-    solar_longitude = np.vectorize(orb.solar_longitude)(
-        year_fraction, eccentricity, perhelion_longitude
-    )
-    assert_array_almost_equal(
-        np.array([-2.4174, -0.1785, 3.6222]), solar_longitude, decimal=4
-    )
+    def test_distance_factor_present_day(self):
+        """
+        Test distance factor present day
+        """
+        year_fraction = np.array([0.0, 1.0 / 12.0, 1.0])
 
+        d = np.vectorize(self.orb.distance_factor_present_day)(year_fraction)
+        assert_array_almost_equal(np.array([1.03505, 1.03081244, 1.03505   ]), d, decimal=4)
 
-def test_solar_declination_present_day():
-    """
-    Test solar declination present day
-    """
-    year_fraction = np.array([0.0, 1.0 / 12.0, 1.0])
+    def test_distance_factor_paleo(self):
+        """
+        Test distance factor paleo
+        """
 
-    orb = PISM.OrbitalParameterCalculator(context)
-    solar_declination = np.vectorize(orb.solar_declination_present_day)(year_fraction)
-    assert_array_almost_equal(
-        np.array([-0.402449  , -0.30673297, -0.402449  ]), solar_declination, decimal=4
-    )
-    
-def test_solar_declination_paleo():
-    """
-    Test solar declination paleo
-    """
+        eccentricity = np.array([0.0167, 0.03])
+        earth_true_anomaly = np.deg2rad(np.array([102.94719, -44.3]))
 
-    obliquity = np.array([np.pi / 4])
-    solar_longitude = np.array([np.pi * 3 / 4])
-
-    orb = PISM.OrbitalParameterCalculator(context)
-    solar_declination = np.vectorize(orb.solar_declination_paleo)(obliquity, solar_longitude)
-    assert_array_almost_equal(
-        np.array([0.523599]), solar_declination, decimal=4
-    )
-
-def test_distance_factor_present_day():
-    """
-    Test distance factor present day
-    """
-    year_fraction = np.array([0.0, 1.0 / 12.0, 1.0])
-
-    orb = PISM.OrbitalParameterCalculator(context)
-    d = np.vectorize(orb.distance_factor_present_day)(year_fraction)
-    assert_array_almost_equal(np.array([1.03505, 1.03081244, 1.03505   ]), d, decimal=4)
+        d = np.vectorize(self.orb.distance_factor_paleo)(eccentricity, earth_true_anomaly)
+        assert_array_almost_equal([0.993084, 1.045283], d)
 
 
-def test_distance_factor_paleo():
-    """
-    Test distance factor paleo
-    """
+class SunPositionTest(TestCase):
 
-    eccentricity = np.array([0.0167, 0.03])
-    obliquity = np.deg2rad(np.array([23.14, 22.10]))
-    perihelion_longitude = np.deg2rad(np.array([102.94719, -44.3]))
+    def test_hour_angle(self):
+        """
+        Test the calculation of the hour angle
+        """
 
-    orb = PISM.OrbitalParameterCalculator(context)
-    d = np.vectorize(orb.distance_factor_paleo)(eccentricity, perihelion_longitude, obliquity)
+        phi = np.array([0.0, np.pi / 4.0, np.pi / 2.0])
+        latitude = np.array([-np.pi / 2.0, 0.0, np.pi / 4.0])
+        declination = np.array([np.pi / 8.0, 0.0, 0.0])
 
-def test_insolation():
-    """
-    Test insolation
-    """
-    
-    solar_constant = np.array([1361.0])
-    distance_factor = np.array([1.1])
-    hour_angle = np.array([0.8])
-    latitude = np.array([np.pi / 4])
-    declination = np.array([np.pi / 8])
-
-    debm = PISM.SurfaceDEBMSimplePointwise(config)
-    insolation = np.vectorize(debm.insolation)(solar_constant, distance_factor, hour_angle, latitude, declination)
-
-    assert_array_almost_equal(np.array([1282.10500694]), insolation, decimal=4)
+        sun_position = PISM.SunPositionCalculator(0.0)
+        hour_angle = np.vectorize(sun_position.hour_angle)(phi, latitude, declination)
+        assert_array_almost_equal(np.array([0.0, 0.78539816, 0.0]), hour_angle, decimal=4)
 
 
-def test_orbital_parameters():
-    """
-    Test orbital parameters
-    """
-    time = 2022.25
-    
-    orb = PISM.OrbitalParameterCalculator(context)
-    orbital_parameters = orb.compute(time)
+class DEBMSimpleTest(TestCase):
+    def setUp(self):
+        self.debm = PISM.SurfaceDEBMSimplePointwise(config)
 
-    assert_almost_equal(-0.4024197463537702, orbital_parameters.solar_declination, decimal=4)
-    assert_almost_equal(1.0350505747618992, orbital_parameters.distance_factor, decimal=4)
+    def test_CalovGreveIntegrand(self):
+        """
+        Test the CalovGreveIntegrand
+        """
 
+        sigma = np.array([2.0, 0.0, 1.0])
+        temperature = np.array([0.0, 2.0, -1.0])
 
-def test_albedo():
-    """
-    Test albedo
-    """
+        cgi = np.vectorize(self.debm.CalovGreveIntegrand)(sigma, temperature)
 
-    debm = PISM.SurfaceDEBMSimplePointwise(config)
-    melt_rate = 1. / 3.15569259747e7
-    albedo = debm.albedo(melt_rate)
-    
-    assert_almost_equal(0.7972189470997155, albedo, decimal=4)
+        assert_array_almost_equal(np.array([0.7979, 2.0000, 0.0833]), cgi, decimal=4)
 
-    
-def test_atmospshere_transmissivity():
-    """
-    Test atmosphere transmissivity
-    """
+    def test_insolation(self):
+        """
+        Test insolation
+        """
 
-    debm = PISM.SurfaceDEBMSimplePointwise(config)
-    elevation = np.array([0.0, 1000.0, 2000.0])
-    transmissivity = np.vectorize(debm.atmosphere_transmissivity)(elevation)
-    assert_array_almost_equal(np.array([0.65 , 0.682, 0.714]), transmissivity, decimal=4)
+        solar_constant = np.array([1361.0])
+        distance_factor = np.array([1.1])
+        hour_angle = np.array([0.8])
+        latitude = np.array([np.pi / 4])
+        declination = np.array([np.pi / 8])
 
-    
-def test_melt():
-    """
-    Test melt
-    """
+        insolation = np.vectorize(self.debm.insolation_rate)(solar_constant, distance_factor,
+                                                             hour_angle, latitude, declination)
 
-    year_fraction = 0.
-    dt = 1.0 / 12 
-    temp = 323.0
-    temp_sd = 12.0
-    surface_elevation = 1000
-    latitude = np.pi/4 * 3
-    albedo = 0.47
-    
-    debm = PISM.SurfaceDEBMSimplePointwise(config)
-    orbital_parameters = debm.orbital_parameters(year_fraction)
-    declination = orbital_parameters.declination
-    distance_factor = orbital_parameters.distance_factor
-    melt_info = debm.melt(declination, distance_factor, dt, temp_sd, temp, surface_elevation, latitude, albedo)
+        assert_array_almost_equal(np.array([1282.10500694]), insolation, decimal=4)
 
-    assert_almost_equal(3.41058271637613e-08, melt_info.insolation_melt, decimal=4)
-    assert_almost_equal(1.3995243305283176e-07, melt_info.temperature_melt, decimal=4)
-    assert_almost_equal(-9.003261572844215e-09, melt_info.offset_melt, decimal=4)
-    assert_almost_equal(1.6505499864374886e-07, melt_info.total_melt, decimal=4)
+    def test_albedo(self):
+        """
+        Test albedo
+        """
+
+        melt_rate = 1. / 3.15569259747e7
+        albedo = self.debm.albedo(melt_rate)
+
+        assert_almost_equal(0.7972189470997155, albedo, decimal=4)
+
+    def test_atmospshere_transmissivity(self):
+        """
+        Test atmosphere transmissivity
+        """
+
+        elevation = np.array([0.0, 1000.0, 2000.0])
+        transmissivity = np.vectorize(self.debm.atmosphere_transmissivity)(elevation)
+        assert_array_almost_equal(np.array([0.65, 0.682, 0.714]), transmissivity, decimal=4)
+
+    def test_melt(self):
+        """
+        Test melt
+        """
+
+        time = 0.
+        dt = 1.0 / 12
+        temp = 323.0
+        temp_sd = 12.0
+        surface_elevation = 1000
+        latitude = np.pi/4 * 3
+        albedo = 0.47
+
+        orbital_parameters = PISM.OrbitalParameterCalculator(context).compute(time)
+        declination = orbital_parameters.solar_declination
+        distance_factor = orbital_parameters.distance_factor
+        melt_info = self.debm.melt(declination, distance_factor, dt,
+                                   temp_sd, temp, surface_elevation, latitude, albedo)
+
+        assert_almost_equal(3.41058271637613e-08, melt_info.insolation_melt, decimal=4)
+        assert_almost_equal(1.3995243305283176e-07, melt_info.temperature_melt, decimal=4)
+        assert_almost_equal(-9.003261572844215e-09, melt_info.offset_melt, decimal=4)
+        assert_almost_equal(1.6505499864374886e-07, melt_info.total_melt, decimal=4)
