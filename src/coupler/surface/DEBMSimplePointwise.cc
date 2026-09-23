@@ -22,8 +22,7 @@
 
 #include "pism/coupler/surface/DEBMSimplePointwise.hh"
 #include "pism/util/Config.hh"
-#include "pism/util/Context.hh"
-#include "pism/util/Time.hh"
+#include "pism/util/SunPosition.hh"
 
 /*!
  * This class implements dEBM-simple, the simple diurnal energy balance model described in
@@ -67,25 +66,6 @@ double DEBMSimplePointwise::CalovGreveIntegrand(double sigma, double temperature
 
   double Z = temperature / (sqrt(2.0) * sigma);
   return (sigma / sqrt(2.0 * M_PI)) * exp(-Z * Z) + (temperature / 2.0) * erfc(-Z);
-}
-
-/*!
- * The hour angle (radians) at which the sun reaches the solar altitude angle `phi`
- *
- * Implements equation 11 in Krebs-Kanzow et al solved for h_phi.
- *
- * Equation 2 in Zeitz et al should be equivalent but misses "acos(...)".
- *
- * The return value is in the range [0, pi].
- *
- * @param[in] phi angle (radians)
- * @param[in] latitude latitude (radians)
- * @param[in] declination solar declination angle (radians)
- */
-double DEBMSimplePointwise::hour_angle(double phi, double latitude, double declination) {
-  double cos_h_phi = ((sin(phi) - sin(latitude) * sin(declination)) /
-                      (cos(latitude) * cos(declination)));
-  return acos(pism::clip(cos_h_phi, -1.0, 1.0));
 }
 
 
@@ -224,7 +204,7 @@ double DEBMSimplePointwise::insolation_diagnostic(double declination, double dis
   const double degrees_to_radians = M_PI / 180.0;
   double latitude_rad = latitude_degrees * degrees_to_radians;
 
-  double h_phi = hour_angle(m_phi, latitude_rad, declination);
+  double h_phi = SunPosition::hour_angle(m_phi, latitude_rad, declination);
 
   return insolation_rate(m_solar_constant, distance_factor, h_phi, latitude_rad, declination);
 }
@@ -277,8 +257,9 @@ double DEBMSimplePointwise::insolation_energy(double declination, double distanc
   const double degrees_to_radians = M_PI / 180.0;
   double latitude_rad = latitude * degrees_to_radians;
 
-  double h_phi  = hour_angle(m_phi, latitude_rad, declination);
-  double S_phi  = insolation_rate(m_solar_constant, distance_factor, h_phi, latitude_rad, declination);
+  double h_phi = SunPosition::hour_angle(m_phi, latitude_rad, declination);
+  double S_phi =
+      insolation_rate(m_solar_constant, distance_factor, h_phi, latitude_rad, declination);
 
   return S_phi * dt * (h_phi / M_PI);
 }
@@ -310,7 +291,7 @@ DEBMSimpleMelt DEBMSimplePointwise::melt_from_insolation(double declination,
   const double degrees_to_radians = M_PI / 180.0;
   double latitude_rad = latitude * degrees_to_radians;
 
-  double h_phi          = hour_angle(m_phi, latitude_rad, declination);
+  double h_phi = SunPosition::hour_angle(m_phi, latitude_rad, declination);
 
   double Teff = CalovGreveIntegrand(T_std_deviation,
                                     T - m_positive_threshold_temperature);

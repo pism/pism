@@ -65,6 +65,8 @@ public:
   void compute(double hour_angle, double &altitude, double &azimuth,
                double *solar_vector = nullptr) const;
 
+  static double hour_angle(double phi, double latitude, double declination);
+
 private:
   double m_sin_decl, m_cos_decl;
   double m_sin_lat, m_cos_lat;

@@ -34,6 +34,11 @@
  *             extension of a formula based on the subsolar point and atan2 function,”
  *             Renewable Energy, vol. 172, pp. 1333–1340, Jul. 2021, doi:
  *             10.1016/j.renene.2021.03.047.
+ *
+ * KrebsKanzow2018: U. Krebs-Kanzow, P. Gierz, and G. Lohmann, “Brief communication: An
+ *                  ice surface melt scheme including the diurnal cycle of solar
+ *                  radiation,” The Cryosphere, vol. 12, Art. no. 12, Dec. 2018.
+ *
  */
 
 namespace pism {
@@ -113,6 +118,26 @@ void SunPosition::compute_impl(double cos_hour_angle, double sin_hour_angle, dou
   } else {
     azimuth = 0.0;
   }
+}
+
+
+/*!
+ * The hour angle (radians) at which the sun reaches the solar altitude angle `phi`
+ *
+ * Implements equation 11 in KrebsKanzow2018 et al solved for h_phi.
+ *
+ * Equation 2 in Zeitz et al should be equivalent but misses "acos(...)".
+ *
+ * The return value is in the range [0, pi].
+ *
+ * @param[in] phi angle (radians)
+ * @param[in] latitude latitude (radians)
+ * @param[in] declination solar declination angle (radians)
+ */
+double SunPosition::hour_angle(double phi, double latitude, double declination) {
+  double cos_h_phi = ((sin(phi) - sin(latitude) * sin(declination)) /
+                      (cos(latitude) * cos(declination)));
+  return acos(pism::clip(cos_h_phi, -1.0, 1.0));
 }
 
 } // end of namespace pism
