@@ -52,7 +52,7 @@ SunPositionCalculator::SunPositionCalculator(double declination) {
 }
 
 void SunPositionCalculator::set_hour_angles(const std::vector<double> &hour_angle) {
-  auto N = hour_angle.size();
+  auto N = (int)hour_angle.size();
   m_cos_hour_angle.resize(N);
   m_sin_hour_angle.resize(N);
   for (int k = 0; k < N; ++k) {

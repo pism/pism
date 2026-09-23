@@ -55,8 +55,8 @@ namespace surface {
 TerrainInsolation::TerrainInsolation(std::shared_ptr<const Grid> grid,
                                      std::function<double(double)> atmosphere_transmissivity)
     : m_grid(grid), m_insolation(grid, "insolation"),
-      m_orbital_parameters(*grid->ctx()),
       m_y_azimuth(m_grid, "y_azimuth"),
+      m_orbital_parameters(*grid->ctx()),
       m_transmissivity(atmosphere_transmissivity) {
 
   m_insolation.metadata(0)
@@ -314,9 +314,9 @@ double TerrainInsolation::horizon_altitude(int i, int j, double azimuth) const {
 void TerrainInsolation::update_daily_insolation(double time,
                                                 const array::Scalar1 &surface_elevation) {
 
-  auto p = m_orbital_parameters.compute(time);
-  double declination = p.solar_declination;
-  double distance_factor = p.distance_factor;
+  auto parameters = m_orbital_parameters.compute(time);
+  double declination = parameters.solar_declination;
+  double distance_factor = parameters.distance_factor;
 
   const double seconds_per_day = 86400.0;
 
