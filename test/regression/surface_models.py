@@ -9,21 +9,23 @@ import sys
 import os
 import numpy as np
 from unittest import TestCase, SkipTest
-
+from numpy.testing import assert_array_almost_equal, assert_almost_equal
 from PISM.util import convert
+
+ctx = PISM.Context()
 
 # set run duration to 1 second so that all forcing used here spans the duration of the run
 time = PISM.Context().time
 time.set_start(0)
 time.set_end(1)
 
-config = PISM.Context().config
+config = ctx.config
 
 seconds_per_year = 365 * 86400
 # ensure that this is the correct year length
 config.set_string("time.calendar", "365_day")
 
-log = PISM.Context().log
+log = ctx.log
 # silence models' initialization messages
 log.set_threshold(1)
 
@@ -309,15 +311,12 @@ class ElevationDependent(TestCase):
         self.geometry.ice_thickness.set(1000.0)
         self.geometry.ensure_consistency(0.0)
 
-        ctx = PISM.Context()
-
         # make a copy of the configuration database so we can re-initialize it from
         # options and then restore it
         self.config = PISM.config_from_options(ctx.com, ctx.unit_system)
         self.config.import_from(ctx.config)
 
     def tearDown(self):
-        ctx = PISM.Context()
         ctx.config.import_from(self.config)
 
     def test_elevation_1(self):
@@ -357,7 +356,6 @@ class ElevationDependent(TestCase):
         options.setValue("-climatic_mass_balance",
                          "{},{},{},{},{}".format(M_min, M_max, z_min, z_ela, z_max))
 
-        ctx = PISM.Context()
         PISM.set_config_from_options(ctx.config)
 
         T = PISM.util.convert(0.5 * (T_min + T_max), "degree_Celsius", "kelvin")
@@ -865,7 +863,7 @@ class ISMIP6(TestCase):
 
     def setUp(self):
 
-        self.ctx = PISM.Context()
+        self.ctx = ctx
 
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
@@ -1009,7 +1007,7 @@ class ISMIP7(TestCase):
 
     def setUp(self):
 
-        self.ctx = PISM.Context()
+        self.ctx = ctx
 
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
@@ -1076,6 +1074,82 @@ class ISMIP7(TestCase):
         for p in ["surface.ismip7.file", "surface.ismip7.gradient.file",
                   "surface.ismip7.reference.file"]:
             config.set_string(p, "")
+
+
+class DEBMSimplePointwise(TestCase):
+    def setUp(self):
+        self.debm = PISM.SurfaceDEBMSimplePointwise(config)
+
+    def test_CalovGreveIntegrand(self):
+        """
+        Test the CalovGreveIntegrand
+        """
+
+        sigma = np.array([2.0, 0.0, 1.0])
+        temperature = np.array([0.0, 2.0, -1.0])
+
+        cgi = np.vectorize(self.debm.CalovGreveIntegrand)(sigma, temperature)
+
+        assert_array_almost_equal(np.array([0.7979, 2.0000, 0.0833]), cgi, decimal=4)
+
+    def test_insolation(self):
+        """
+        Test insolation
+        """
+
+        solar_constant = np.array([1361.0])
+        distance_factor = np.array([1.1])
+        hour_angle = np.array([0.8])
+        latitude = np.array([np.pi / 4])
+        declination = np.array([np.pi / 8])
+
+        insolation = np.vectorize(self.debm.insolation_rate)(solar_constant, distance_factor,
+                                                             hour_angle, latitude, declination)
+
+        assert_array_almost_equal(np.array([1282.10500694]), insolation, decimal=4)
+
+    def test_albedo(self):
+        """
+        Test albedo
+        """
+
+        melt_rate = 1. / 3.15569259747e7
+        albedo = self.debm.albedo(melt_rate)
+
+        assert_almost_equal(0.7972189470997155, albedo, decimal=4)
+
+    def test_atmospshere_transmissivity(self):
+        """
+        Test atmosphere transmissivity
+        """
+
+        elevation = np.array([0.0, 1000.0, 2000.0])
+        transmissivity = np.vectorize(self.debm.atmosphere_transmissivity)(elevation)
+        assert_array_almost_equal(np.array([0.65, 0.682, 0.714]), transmissivity, decimal=4)
+
+    def test_melt(self):
+        """
+        Test melt
+        """
+
+        time = 0.
+        dt = 1.0 / 12
+        temp = 323.0
+        temp_sd = 12.0
+        surface_elevation = 1000
+        latitude = np.pi/4 * 3
+        albedo = 0.47
+
+        orbital_parameters = PISM.OrbitalParameterCalculator(ctx.ctx).compute(time)
+        declination = orbital_parameters.solar_declination
+        distance_factor = orbital_parameters.distance_factor
+        melt_info = self.debm.melt(declination, distance_factor, dt,
+                                   temp_sd, temp, surface_elevation, latitude, albedo)
+
+        assert_almost_equal(3.41058271637613e-08, melt_info.insolation_melt, decimal=4)
+        assert_almost_equal(1.3995243305283176e-07, melt_info.temperature_melt, decimal=4)
+        assert_almost_equal(-9.003261572844215e-09, melt_info.offset_melt, decimal=4)
+        assert_almost_equal(1.6505499864374886e-07, melt_info.total_melt, decimal=4)
 
 
 if __name__ == "__main__":

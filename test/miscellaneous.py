@@ -14,6 +14,7 @@ import PISM
 import PISM.testing
 import os
 import numpy as np
+from numpy.testing import assert_almost_equal, assert_array_almost_equal
 import unittest
 from PISM.testing import filename
 
@@ -1538,6 +1539,97 @@ class OtherTests(unittest.TestCase):
 
         NORM_INFINITY = PISM.PETSc.NormType.NORM_INFINITY
         np.testing.assert_almost_equal(gl_flux.norm(NORM_INFINITY), 0.0)
+
+
+class Orbital(unittest.TestCase):
+    def setUp(self):
+        self.orb = PISM.OrbitalParameterCalculator(ctx.ctx)
+
+    def test_orbital_parameters(self):
+        """
+        Test orbital parameters
+        """
+        time = 2022.25
+
+        orbital_parameters = self.orb.compute(time)
+
+        assert_almost_equal(-0.4024197463537702, orbital_parameters.solar_declination, decimal=4)
+        assert_almost_equal(1.0350505747618992, orbital_parameters.distance_factor, decimal=4)
+
+    def test_solar_longitude(self):
+        """
+        Test solar longitude
+        """
+        year_fraction = np.array([0.0, 1.0 / 12.0, 1.0])
+        eccentricity = np.array([0.9, 1.0, 1.0])
+        perhelion_longitude = np.array([np.pi / 8.0, -np.pi, 0.0])
+
+        solar_longitude = np.vectorize(self.orb.solar_longitude)(
+            year_fraction, eccentricity, perhelion_longitude
+        )
+        assert_array_almost_equal(
+            np.array([-2.4174, -0.1785, 3.6222]), solar_longitude, decimal=4
+        )
+
+    def test_solar_declination_present_day(self):
+        """
+        Test solar declination present day
+        """
+        year_fraction = np.array([0.0, 1.0 / 12.0, 1.0])
+
+        solar_declination = np.vectorize(self.orb.solar_declination_present_day)(year_fraction)
+        assert_array_almost_equal(
+            np.array([-0.402449, -0.30673297, -0.402449]), solar_declination, decimal=4
+        )
+
+    def test_solar_declination_paleo(self):
+        """
+        Test solar declination paleo
+        """
+
+        obliquity = np.array([np.pi / 4])
+        solar_longitude = np.array([np.pi * 3 / 4])
+
+        solar_declination = np.vectorize(self.orb.solar_declination_paleo)(obliquity, solar_longitude)
+        assert_array_almost_equal(
+            np.array([0.523599]), solar_declination, decimal=4
+        )
+
+    def test_distance_factor_present_day(self):
+        """
+        Test distance factor present day
+        """
+        year_fraction = np.array([0.0, 1.0 / 12.0, 1.0])
+
+        d = np.vectorize(self.orb.distance_factor_present_day)(year_fraction)
+        assert_array_almost_equal(np.array([1.03505, 1.03081244, 1.03505   ]), d, decimal=4)
+
+    def test_distance_factor_paleo(self):
+        """
+        Test distance factor paleo
+        """
+
+        eccentricity = np.array([0.0167, 0.03])
+        earth_true_anomaly = np.deg2rad(np.array([102.94719, -44.3]))
+
+        d = np.vectorize(self.orb.distance_factor_paleo)(eccentricity, earth_true_anomaly)
+        assert_array_almost_equal([0.993084, 1.045283], d)
+
+
+class SunPosition(unittest.TestCase):
+    def test_hour_angle(self):
+        """
+        Test the calculation of the hour angle
+        """
+
+        phi = np.array([0.0, np.pi / 4.0, np.pi / 2.0])
+        latitude = np.array([-np.pi / 2.0, 0.0, np.pi / 4.0])
+        declination = np.array([np.pi / 8.0, 0.0, 0.0])
+
+        sun_position = PISM.SunPositionCalculator(0.0)
+        hour_angle = np.vectorize(sun_position.hour_angle)(phi, latitude, declination)
+        assert_array_almost_equal(np.array([0.0, 0.78539816, 0.0]), hour_angle, decimal=4)
+
 
 if __name__ == "__main__":
     unittest.main()
