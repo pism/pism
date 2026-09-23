@@ -157,7 +157,7 @@ double OrbitalParameterCalculator::solar_declination_present_day(double year_fra
  * See also equation 2.2.4 of Liou (2002).
  */
 double OrbitalParameterCalculator::solar_declination_paleo(double obliquity,
-                                                  double solar_longitude) {
+                                                           double solar_longitude) {
   return asin(sin(obliquity) * sin(solar_longitude));
 }
 
