@@ -434,3 +434,10 @@ pism_class(pism::IceModel, "pism/icemodel/IceModel.hh")
 %}
 %rename(PetscInitializer) pism::petsc::Initializer;
 %include "util/petscwrappers/PetscInitializer.hh"
+
+%{
+#include "util/SunPosition.hh"
+#include "util/OrbitalParameters.hh"
+%}
+%include "util/SunPosition.hh"
+%include "util/OrbitalParameters.hh"
