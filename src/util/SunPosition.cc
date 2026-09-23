@@ -47,12 +47,11 @@ static inline double clip(double x, double lo, double hi) {
   return x < lo ? lo : (x > hi ? hi : x);
 }
 
-SunPosition::SunPosition(double declination) {
-  m_sin_decl = std::sin(declination);
-  m_cos_decl = std::cos(declination);
+SunPositionCalculator::SunPositionCalculator(double declination) {
+  set_declination(declination);
 }
 
-void SunPosition::set_hour_angles(const std::vector<double> &hour_angle) {
+void SunPositionCalculator::set_hour_angles(const std::vector<double> &hour_angle) {
   auto N = hour_angle.size();
   m_cos_hour_angle.resize(N);
   m_sin_hour_angle.resize(N);
@@ -62,23 +61,42 @@ void SunPosition::set_hour_angles(const std::vector<double> &hour_angle) {
   }
 }
 
-void SunPosition::set_latitude(double latitude_radians) {
+void SunPositionCalculator::set_latitude(double latitude_radians) {
   m_sin_lat = std::sin(latitude_radians);
   m_cos_lat = std::cos(latitude_radians);
 }
 
-void SunPosition::compute_at_set_hour_angle(int k, double &altitude, double &azimuth,
-                                            double *solar_vector) const {
+void SunPositionCalculator::set_declination(double declination) {
+  m_sin_decl = std::sin(declination);
+  m_cos_decl = std::cos(declination);
+}
+
+void SunPositionCalculator::compute_at_set_hour_angle(int k, double &altitude, double &azimuth,
+                                                      double *solar_vector) const {
   compute_impl(m_cos_hour_angle[k], m_sin_hour_angle[k], altitude, azimuth, solar_vector);
 }
 
-void SunPosition::compute(double hour_angle, double &altitude, double &azimuth,
+SunPosition SunPositionCalculator::compute_at_set_hour_angle(int k) const {
+  SunPosition result;
+  compute_impl(m_cos_hour_angle[k], m_sin_hour_angle[k], result.altitude, result.azimuth,
+               result.solar_vector);
+  return result;
+}
+
+void SunPositionCalculator::compute(double hour_angle, double &altitude, double &azimuth,
                           double *solar_vector) const {
   compute_impl(std::cos(hour_angle), std::sin(hour_angle), altitude, azimuth, solar_vector);
 }
 
-void SunPosition::compute_impl(double cos_hour_angle, double sin_hour_angle, double &altitude,
-                               double &azimuth, double *solar_vector) const {
+SunPosition SunPositionCalculator::compute(double hour_angle) const {
+  SunPosition result;
+  compute_impl(std::cos(hour_angle), std::sin(hour_angle), result.altitude, result.azimuth,
+               result.solar_vector);
+  return result;
+}
+
+void SunPositionCalculator::compute_impl(double cos_hour_angle, double sin_hour_angle, double &altitude,
+                                         double &azimuth, double *solar_vector) const {
 
   // Vector pointing from the observer toward the center of the sun, equation (12) in
   // Sproul2007 or equations (6)--(8) in Zhang2021a:
@@ -134,7 +152,7 @@ void SunPosition::compute_impl(double cos_hour_angle, double sin_hour_angle, dou
  * @param[in] latitude latitude (radians)
  * @param[in] declination solar declination angle (radians)
  */
-double SunPosition::hour_angle(double phi, double latitude, double declination) {
+double SunPositionCalculator::hour_angle(double phi, double latitude, double declination) {
   double cos_h_phi = ((sin(phi) - sin(latitude) * sin(declination)) /
                       (cos(latitude) * cos(declination)));
   return acos(pism::clip(cos_h_phi, -1.0, 1.0));

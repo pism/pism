@@ -320,7 +320,7 @@ void TerrainInsolation::update_daily_insolation(double time,
 
   const double seconds_per_day = 86400.0;
 
-  SunPosition sun_position(declination);
+  SunPositionCalculator sun_position(declination);
 
   // number of sub-daily samples used to integrate the diurnal cycle
   int M = static_cast<int>(std::lround(seconds_per_day / m_insolation_dt));

@@ -21,6 +21,16 @@
 
 namespace pism {
 
+struct SunPosition {
+
+  //! Altitude of the sun, radians
+  double altitude;
+  //! Azimuth of the sun (clockwise from north), radians
+  double azimuth;
+  //! Vector pointing toward the center of the sun in the east-north-up coordinate system
+  double solar_vector[3];
+};
+
 /*!
  * Compute sun position (altitude and azimuth in radians) given declination, latitude, and
  * hour angle.
@@ -34,7 +44,7 @@ namespace pism {
  *
  * 1. Create an instance:
  *
- * SunPosition sun_position(declination);
+ * SunPositionCalculator sun_position(declination);
  *
  * 2. Set latitude:
  *
@@ -52,18 +62,22 @@ namespace pism {
  *
  * Azimuth is set to zero if altitude < 0.
  */
-class SunPosition {
+class SunPositionCalculator {
 public:
-  SunPosition(double declination);
+  SunPositionCalculator(double declination);
 
+  void set_declination(double declination);
   void set_latitude(double latitude_radians);
 
   void set_hour_angles(const std::vector<double> &hour_angle);
   void compute_at_set_hour_angle(int k, double &altitude, double &azimuth,
                                  double *solar_vector = nullptr) const;
+  SunPosition compute_at_set_hour_angle(int k) const;
 
   void compute(double hour_angle, double &altitude, double &azimuth,
                double *solar_vector = nullptr) const;
+
+  SunPosition compute(double hour_angle) const;
 
   static double hour_angle(double phi, double latitude, double declination);
 
