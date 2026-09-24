@@ -80,16 +80,10 @@ public:
                            double dt) const;
 
   //! Melt (and its components) given the insolation *energy* (J m^-2) reaching the
-  //! surface over `dt`. dEBM-enhanced supplies a prescribed insolation field here instead
-  //! of the analytic one. `declination` and `latitude` set the daily melt-period length
+  //! surface over `dt`. `declination` and `latitude` set the daily melt-period length
   //! that weights the temperature- and offset-driven melt terms.
-  DEBMSimpleMelt melt_from_insolation(double declination,
-                                      double latitude,
-                                      double insolation_energy,
-                                      double dt,
-                                      double T_std_deviation,
-                                      double T,
-                                      double albedo) const;
+  DEBMSimpleMelt melt(double declination, double latitude, double insolation_energy, double dt,
+                      double T_std_deviation, double T, double albedo) const;
 
   DEBMSimpleChanges step(double ice_thickness, double max_melt, double snow_depth,
                          double accumulation) const;

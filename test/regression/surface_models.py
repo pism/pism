@@ -1149,9 +1149,9 @@ class DEBMSimplePointwise(TestCase):
         toa_insolation_energy = self.debm.insolation_energy(declination, distance_factor, latitude, dt)
         surface_insolation_energy = transmissivity * toa_insolation_energy
 
-        melt_info = self.debm.melt_from_insolation(declination, latitude,
-                                                   surface_insolation_energy, dt,
-                                                   temp_sd, temp, albedo)
+        melt_info = self.debm.melt(declination, latitude,
+                                   surface_insolation_energy, dt,
+                                   temp_sd, temp, albedo)
 
         assert_almost_equal(3.41058271637613e-08, melt_info.insolation_melt, decimal=4)
         assert_almost_equal(1.3995243305283176e-07, melt_info.temperature_melt, decimal=4)

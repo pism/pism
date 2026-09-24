@@ -439,7 +439,7 @@ void DEBMSimple::update_impl(const Inputs &inputs, double t, double dt) {
           bool ice_free_ocean = mask::ice_free_ocean(cell_type);
           if (not ice_free_ocean) {
 
-            melt_info = m_model.melt_from_insolation(orbital[k].solar_declination,
+            melt_info = m_model.melt(orbital[k].solar_declination,
                                                      lat,
                                                      E[k],
                                                      dtseries,

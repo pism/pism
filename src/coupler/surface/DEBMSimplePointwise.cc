@@ -252,7 +252,7 @@ double DEBMSimplePointwise::insolation_energy(double declination, double distanc
  * @param[in] surface_elevation surface elevation (meters)
  * @param[in] albedo current albedo (fraction)
  */
-DEBMSimpleMelt DEBMSimplePointwise::melt_from_insolation(double declination,
+DEBMSimpleMelt DEBMSimplePointwise::melt(double declination,
                                                          double latitude,
                                                          double insolation_energy,
                                                          double dt,
