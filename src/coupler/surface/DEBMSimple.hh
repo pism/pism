@@ -111,22 +111,14 @@ public:
   const OrbitalParameterCalculator &orbital_parameters() const;
 
 protected:
-  // Overridable seams used by dEBM-enhanced (DEBMEnhanced) to substitute a prescribed
-  // insolation field for the analytic dEBM-simple insolation. The base-class
-  // implementations reproduce standard dEBM-simple behavior.
-
   virtual void init_impl(const Inputs &inputs);
 
-  //! Hook called once per update, before the per-cell loop. The base class does nothing;
-  //! dEBM-enhanced updates its insolation forcing and registers it for access.
   virtual void update_insolation_input(double t, double dt,
-                                       const std::vector<double> &ts,
                                        const array::Scalar1 &surface_elevation,
                                        array::AccessScope &list);
 
   //! Insolation *energy* (J m^-2) reaching the surface during each sub-step at the cell
-  //! (i, j). The base class computes it from orbital parameters (analytic dEBM-simple);
-  //! dEBM-enhanced interpolates a prescribed daily field.
+  //! (i, j).
   virtual void insolation_energy_series(int i, int j,
                                         const std::vector<OrbitalParameters> &orbital,
                                         double dt_sub,

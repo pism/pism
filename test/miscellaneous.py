@@ -1628,8 +1628,7 @@ class SunPosition(unittest.TestCase):
 
         def hour_angle(phi, lat, decl):
             sun_position = PISM.SunPositionCalculator(decl)
-            sun_position.set_latitude(lat)
-            return sun_position.hour_angle(phi)
+            return sun_position.set_latitude(lat).hour_angle(phi)
 
         hour_angle = np.vectorize(hour_angle)(phi, latitude, declination)
         assert_array_almost_equal(np.array([0.0, 0.78539816, 0.0]), hour_angle, decimal=4)

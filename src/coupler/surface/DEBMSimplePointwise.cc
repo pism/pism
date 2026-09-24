@@ -118,9 +118,9 @@ double DEBMSimplePointwise::CalovGreveIntegrand(double sigma, double temperature
  * @param[in] declination declination (radians)
  *
  */
-double DEBMSimplePointwise::insolation_rate(double solar_constant, double distance_factor,
-                                            double hour_angle, double latitude,
-                                            double declination) {
+double DEBMSimplePointwise::toa_insolation_rate(double solar_constant, double distance_factor,
+                                                double hour_angle, double latitude,
+                                                double declination) {
   if (hour_angle == 0) {
     return 0.0;
   }
@@ -199,16 +199,14 @@ double DEBMSimplePointwise::atmosphere_transmissivity(double elevation) const {
  * Do not use this in the model itself: doing so will make it slower because that way we'd
  * end up computing hour_angle more than once.
  */
-double DEBMSimplePointwise::insolation_diagnostic(double declination, double distance_factor,
-                                                  double latitude_degrees) const {
+double DEBMSimplePointwise::toa_insolation_diagnostic(double declination, double distance_factor,
+                                                      double latitude_degrees) const {
   const double degrees_to_radians = M_PI / 180.0;
   double latitude_rad = latitude_degrees * degrees_to_radians;
 
-  SunPositionCalculator sun(declination);
-  sun.set_latitude(latitude_rad);
-  double h_phi = sun.hour_angle(m_phi);
+  double h_phi = SunPositionCalculator(declination).set_latitude(latitude_rad).hour_angle(m_phi);
 
-  return insolation_rate(m_solar_constant, distance_factor, h_phi, latitude_rad, declination);
+  return toa_insolation_rate(m_solar_constant, distance_factor, h_phi, latitude_rad, declination);
 }
 
 /*!
@@ -222,17 +220,15 @@ double DEBMSimplePointwise::insolation_diagnostic(double declination, double dis
  * @param[in] latitude latitude (degrees)
  * @param[in] dt time-step length (seconds)
  */
-double DEBMSimplePointwise::insolation_energy(double declination, double distance_factor,
-                                              double latitude, double dt) const {
+double DEBMSimplePointwise::toa_insolation_energy(double declination, double distance_factor,
+                                                  double latitude, double dt) const {
   const double degrees_to_radians = M_PI / 180.0;
   double latitude_rad = latitude * degrees_to_radians;
 
-  SunPositionCalculator sun(declination);
-  sun.set_latitude(latitude_rad);
-  double h_phi = sun.hour_angle(m_phi);
+  double h_phi = SunPositionCalculator(declination).set_latitude(latitude_rad).hour_angle(m_phi);
 
   double S_phi =
-      insolation_rate(m_solar_constant, distance_factor, h_phi, latitude_rad, declination);
+      toa_insolation_rate(m_solar_constant, distance_factor, h_phi, latitude_rad, declination);
 
   return S_phi * dt * (h_phi / M_PI);
 }
@@ -244,28 +240,22 @@ double DEBMSimplePointwise::insolation_energy(double declination, double distanc
  *
  * @param[in] declination solar declination (radians), used for the daily melt-period length
  * @param[in] latitude latitude (degrees north)
- * @param[in] insolation_energy insolation energy reaching the surface over `dt` (J/m^2)
+ * @param[in] surface_insolation_energy insolation energy reaching the surface over `dt` (J/m^2)
  * @param[in] dt time step length (seconds)
  * @param[in] T_std_deviation standard deviation of the near-surface air temperature (kelvin)
  * @param[in] T near-surface air temperature (kelvin)
  * @param[in] surface_elevation surface elevation (meters)
  * @param[in] albedo current albedo (fraction)
  */
-DEBMSimpleMelt DEBMSimplePointwise::melt(double declination,
-                                                         double latitude,
-                                                         double insolation_energy,
-                                                         double dt,
-                                                         double T_std_deviation,
-                                                         double T,
-                                                         double albedo) const {
+DEBMSimpleMelt DEBMSimplePointwise::melt(double declination, double latitude,
+                                         double surface_insolation_energy, double dt,
+                                         double T_std_deviation, double T, double albedo) const {
   assert(dt > 0.0);
 
   const double degrees_to_radians = M_PI / 180.0;
   double latitude_rad = latitude * degrees_to_radians;
 
-  SunPositionCalculator sun(declination);
-  sun.set_latitude(latitude_rad);
-  double h_phi = sun.hour_angle(m_phi);
+  double h_phi = SunPositionCalculator(declination).set_latitude(latitude_rad).hour_angle(m_phi);
 
   double Teff = CalovGreveIntegrand(T_std_deviation,
                                     T - m_positive_threshold_temperature);
@@ -281,9 +271,9 @@ DEBMSimpleMelt DEBMSimplePointwise::melt(double declination,
 
   DEBMSimpleMelt result;
 
-  // insolation_energy is the energy reaching the surface over dt; albedo converts it to
+  // surface_insolation_energy is the energy reaching the surface over dt; albedo converts it to
   // absorbed energy, and dividing by rho_w * L gives melt in meters of water equivalent.
-  result.insolation_melt  = ((1.0 - albedo) * insolation_energy) /
+  result.insolation_melt  = ((1.0 - albedo) * surface_insolation_energy) /
                             (m_water_density * m_L);
   result.temperature_melt = A * m_melt_c1 * Teff;
   result.offset_melt      = A * m_melt_c2;

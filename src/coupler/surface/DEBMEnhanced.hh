@@ -60,7 +60,6 @@ protected:
   void init_impl(const Inputs &inputs) override;
 
   void update_insolation_input(double t, double dt,
-                               const std::vector<double> &ts,
                                const array::Scalar1 &surface_elevation,
                                array::AccessScope &list) override;
 

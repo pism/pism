@@ -1103,8 +1103,8 @@ class DEBMSimplePointwise(TestCase):
         latitude = np.array([np.pi / 4])
         declination = np.array([np.pi / 8])
 
-        insolation = np.vectorize(self.debm.insolation_rate)(solar_constant, distance_factor,
-                                                             hour_angle, latitude, declination)
+        insolation = np.vectorize(self.debm.toa_insolation_rate)(solar_constant, distance_factor,
+                                                                 hour_angle, latitude, declination)
 
         assert_array_almost_equal(np.array([1282.10500694]), insolation, decimal=4)
 
@@ -1146,7 +1146,8 @@ class DEBMSimplePointwise(TestCase):
 
         transmissivity = self.debm.atmosphere_transmissivity(surface_elevation)
 
-        toa_insolation_energy = self.debm.insolation_energy(declination, distance_factor, latitude, dt)
+        toa_insolation_energy = self.debm.toa_insolation_energy(declination, distance_factor,
+                                                                latitude, dt)
         surface_insolation_energy = transmissivity * toa_insolation_energy
 
         melt_info = self.debm.melt(declination, latitude,

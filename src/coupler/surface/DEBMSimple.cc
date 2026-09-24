@@ -72,7 +72,8 @@ DEBMSimple::DEBMSimple(std::shared_ptr<const Grid> g,
   // note: does not need to be calendar-aware
   m_year_length = units::convert(g->ctx()->unit_system(), 1.0, "years", "seconds");
 
-  m_n_per_year = static_cast<unsigned int>(m_config->get_number("surface.debm_simple.max_evals_per_year"));
+  m_n_per_year =
+      static_cast<unsigned int>(m_config->get_number("surface.debm_simple.max_evals_per_year"));
 
   auto albedo_input = m_config->get_string("surface.debm_simple.albedo_input.file");
   if (not albedo_input.empty()) {
@@ -334,7 +335,7 @@ void DEBMSimple::update_impl(const Inputs &inputs, double t, double dt) {
   }
 
   // Let derived classes (dEBM-enhanced) update and register a prescribed insolation field.
-  this->update_insolation_input(t, dt, ts, inputs.geometry->ice_surface_elevation, list);
+  this->update_insolation_input(t, dt, inputs.geometry->ice_surface_elevation, list);
 
   double
     ice_density    = m_config->get_number("constants.ice.density"),
@@ -411,8 +412,6 @@ void DEBMSimple::update_impl(const Inputs &inputs, double t, double dt) {
           surfelev      = surface_altitude(i, j),
           albedo        = m_surface_albedo(i, j);
 
-        auto cell_type = static_cast<MaskValue>(mask.as_int(i, j));
-
         double
           A   = 0.0,            // accumulation
           M   = 0.0,            // melt
@@ -436,16 +435,17 @@ void DEBMSimple::update_impl(const Inputs &inputs, double t, double dt) {
           auto accumulation = P[k] * dtseries;
 
           DEBMSimpleMelt melt_info{};
-          bool ice_free_ocean = mask::ice_free_ocean(cell_type);
+          bool ice_free_ocean = mask.ice_free_ocean(i, j);
           if (not ice_free_ocean) {
-
+            // clang-format off
             melt_info = m_model.melt(orbital[k].solar_declination,
-                                                     lat,
-                                                     E[k],
-                                                     dtseries,
-                                                     S[k],
-                                                     T[k],
-                                                     (bool)m_input_albedo ? Alb[k] : albedo);
+                                     lat,
+                                     E[k],
+                                     dtseries,
+                                     S[k],
+                                     T[k],
+                                     (bool)m_input_albedo ? Alb[k] : albedo);
+            // clang-format on
           }
 
           auto changes = m_model.step(ice_thickness,
@@ -519,13 +519,10 @@ void DEBMSimple::update_impl(const Inputs &inputs, double t, double dt) {
 }
 
 void DEBMSimple::update_insolation_input(double t, double dt,
-                                         const std::vector<double> &ts,
                                          const array::Scalar1 &surface_elevation,
                                          array::AccessScope &list) {
-  // dEBM-simple computes insolation analytically and needs no prescribed input field.
   (void)t;
   (void)dt;
-  (void)ts;
   (void)surface_elevation;
   (void)list;
 }
@@ -536,9 +533,8 @@ void DEBMSimple::insolation_energy_series(int /*i*/, int /*j*/,
                                           double latitude,
                                           std::vector<double> &result) const {
   for (size_t k = 0; k < orbital.size(); ++k) {
-    result[k] = m_model.insolation_energy(orbital[k].solar_declination,
-                                          orbital[k].distance_factor,
-                                          latitude, dt_sub);
+    result[k] = m_model.toa_insolation_energy(orbital[k].solar_declination,
+                                              orbital[k].distance_factor, latitude, dt_sub);
   }
 }
 
@@ -643,7 +639,7 @@ protected:
       for (auto p : m_grid->points()) {
         const int i = p.i(), j = p.j();
 
-        (*result)(i, j) = M.insolation_diagnostic(orbital.solar_declination,
+        (*result)(i, j) = M.toa_insolation_diagnostic(orbital.solar_declination,
                                                   orbital.distance_factor,
                                                   latitude(i, j));
       }

@@ -377,15 +377,12 @@ void TerrainInsolation::update_daily_insolation(double time,
       Nu /= norm;
     }
 
-    // Split into a direct-beam fraction (terrain-shaded) and an isotropic diffuse fraction
-    // (reduced by the sky-view factor). With the sky-view factor disabled the diffuse term
-    // is dropped and the result is pure direct beam.
     const double f_diff = use_sky_view ? m_diffuse_fraction : 0.0;
     const double svf = use_sky_view ? (*m_sky_view)(i, j) : 0.0;
 
-    double energy = 0.0;
+    double toa_insolation_energy = 0.0;
     // loop over hour angles:
-    for (int hour_angle_idx = 0; hour_angle_idx < M; ++hour_angle_idx) {
+    for (int hour_angle_index = 0; hour_angle_index < M; ++hour_angle_index) {
 
       double altitude = 0.0, azimuth = 0.0;
 
@@ -393,7 +390,7 @@ void TerrainInsolation::update_daily_insolation(double time,
       // system:
       double solar_vector[3] = {0.0, 0.0, 0.0};
 
-      sun_position.compute_at_set_hour_angle(hour_angle_idx, altitude, azimuth, solar_vector);
+      sun_position.compute_at_set_hour_angle(hour_angle_index, altitude, azimuth, solar_vector);
 
       if (altitude <= 0.0) {
         // Sun below the astronomical horizon: no direct and no diffuse contribution
@@ -407,7 +404,7 @@ void TerrainInsolation::update_daily_insolation(double time,
       double toa_horizontal = m_solar_constant * distance_factor * sin_altitude;
 
       // diffuse: isotropic sky scaled by the sky-view factor; reaches shadowed cells too
-      energy += f_diff * toa_horizontal * svf * dt;
+      toa_insolation_energy += f_diff * toa_horizontal * svf * dt;
 
       // direct beam: only when the Sun clears the local horizon and lights the surface
       if (altitude > horizon_altitude(i, j, azimuth)) {
@@ -417,14 +414,14 @@ void TerrainInsolation::update_daily_insolation(double time,
 
         double mu = Ne * Se + Nn * Sn + Nu * Su;
         if (mu > 0.0) {
-          energy += (1.0 - f_diff) * m_solar_constant * distance_factor * mu * dt;
+          toa_insolation_energy += (1.0 - f_diff) * m_solar_constant * distance_factor * mu * dt;
         }
       }
     } // end of the loop over hour angles
 
-    // store the daily-mean insolation rate (W m-2), matching dEBM-simple's "insolation"
-    // diagnostic units (the melt code multiplies this rate by the sub-step length)
-    m_insolation(i, j) = m_transmissivity(surface_elevation(i, j)) * energy / seconds_per_day;
+    // store the daily-mean insolation rate (W m-2)
+    m_insolation(i, j) =
+        m_transmissivity(surface_elevation(i, j)) * toa_insolation_energy / seconds_per_day;
   } // end of the loop over grid points
 
   profiling.end("surface.debm_enhanced.daily_insolation");

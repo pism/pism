@@ -73,7 +73,7 @@ public:
   double albedo(double melt_rate) const;
 
   //! Insolation energy (J m^-2) at the top of atmosphere over time interval `dt`.
-  double insolation_energy(double declination,
+  double toa_insolation_energy(double declination,
                            double distance_factor,
                            double latitude,
                            double dt) const;
@@ -90,13 +90,13 @@ public:
   // public because it is a diagnostic field
   double atmosphere_transmissivity(double elevation) const;
 
-  double insolation_diagnostic(double declination,
+  double toa_insolation_diagnostic(double declination,
                     double distance_factor,
                     double latitude_degrees) const;
 
   // implementation details (exposed as "public" methods for testing)
   static double CalovGreveIntegrand(double sigma, double temperature);
-  static double insolation_rate(double solar_constant, double distance_factor, double hour_angle,
+  static double toa_insolation_rate(double solar_constant, double distance_factor, double hour_angle,
                                 double latitude, double declination);
 
 private:
