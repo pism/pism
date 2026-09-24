@@ -211,37 +211,6 @@ double DEBMSimplePointwise::insolation_diagnostic(double declination, double dis
   return insolation_rate(m_solar_constant, distance_factor, h_phi, latitude_rad, declination);
 }
 
-/* Melt amount (in m water equivalent) and its components over the time step `dt`
- *
- * Implements equation (1) in Zeitz et al.
- *
- * See also the equation (6) in Krebs-Kanzow et al.
- *
- * @param[in] time current time (seconds)
- * @param[in] dt time step length (seconds)
- * @param[in] T_std_deviation standard deviation of the near-surface air temperature (kelvin)
- * @param[in] T near-surface air temperature (kelvin)
- * @param[in] surface_elevation surface elevation (meters)
- * @param[in] latitude latitude (degrees north)
- * @param[in] albedo current albedo (fraction)
- */
-DEBMSimpleMelt DEBMSimplePointwise::melt(double declination,
-                                         double distance_factor,
-                                         double dt,
-                                         double T_std_deviation,
-                                         double T,
-                                         double surface_elevation,
-                                         double latitude,
-                                         double albedo) const {
-  // Compute the top-of-atmosphere insolation energy reaching the surface over `dt`.
-  double E_toa = insolation_energy(declination, distance_factor, latitude, dt);
-
-  double E_surface = atmosphere_transmissivity(surface_elevation) * E_toa;
-
-  return melt_from_insolation(declination, latitude, E_surface, dt, T_std_deviation, T,
-                              albedo);
-}
-
 /*!
  * Analytic top-of-atmosphere insolation *energy* (J/m^2) reaching the surface over the
  * time step `dt`.

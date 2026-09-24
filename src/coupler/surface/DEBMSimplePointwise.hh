@@ -72,15 +72,6 @@ public:
 
   double albedo(double melt_rate) const;
 
-  DEBMSimpleMelt melt(double declination,
-                      double distance_factor,
-                      double dt,
-                      double T_std_deviation,
-                      double T,
-                      double surface_elevation,
-                      double lat,
-                      double albedo) const;
-
   //! Insolation energy (J m^-2) reaching the surface over `dt`, computed from the
   //! analytic top-of-atmosphere insolation used by dEBM-simple.
   double insolation_energy(double declination,
