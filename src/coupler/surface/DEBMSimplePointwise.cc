@@ -212,8 +212,7 @@ double DEBMSimplePointwise::insolation_diagnostic(double declination, double dis
 }
 
 /*!
- * Analytic top-of-atmosphere insolation *energy* (J/m^2) reaching the surface over the
- * time step `dt`.
+ * Top-of-atmosphere insolation *energy* (J/m^2) over the time step `dt`.
  *
  * This is the average insolation rate S_Phi (W/m^2) during the daily melt period times the
  * length of that melt period `dt`, i.e. `S_Phi * dt * (h_phi / pi)`.
