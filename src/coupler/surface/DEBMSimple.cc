@@ -397,8 +397,7 @@ void DEBMSimple::update_impl(const Inputs &inputs, double t, double dt) {
         }
       }
 
-      // insolation energy reaching the surface during each sub-step (analytic in
-      // dEBM-simple; a prescribed field in dEBM-enhanced)
+      // insolation energy reaching the surface during each sub-step
       this->insolation_energy_series(i, j, orbital, dtseries, lat, E);
 
       {
