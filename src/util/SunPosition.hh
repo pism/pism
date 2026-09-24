@@ -66,10 +66,10 @@ class SunPositionCalculator {
 public:
   SunPositionCalculator(double declination);
 
-  void set_declination(double declination);
-  void set_latitude(double latitude_radians);
+  SunPositionCalculator& set_declination(double declination);
+  SunPositionCalculator& set_latitude(double latitude_radians);
 
-  void set_hour_angles(const std::vector<double> &hour_angle);
+  SunPositionCalculator& set_hour_angles(const std::vector<double> &hour_angle);
   void compute_at_set_hour_angle(int k, double &altitude, double &azimuth,
                                  double *solar_vector = nullptr) const;
   SunPosition compute_at_set_hour_angle(int k) const;

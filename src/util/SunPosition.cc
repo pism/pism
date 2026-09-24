@@ -51,7 +51,7 @@ SunPositionCalculator::SunPositionCalculator(double declination) {
   set_declination(declination);
 }
 
-void SunPositionCalculator::set_hour_angles(const std::vector<double> &hour_angle) {
+SunPositionCalculator& SunPositionCalculator::set_hour_angles(const std::vector<double> &hour_angle) {
   auto N = (int)hour_angle.size();
   m_cos_hour_angle.resize(N);
   m_sin_hour_angle.resize(N);
@@ -59,16 +59,19 @@ void SunPositionCalculator::set_hour_angles(const std::vector<double> &hour_angl
     m_cos_hour_angle[k] = std::cos(hour_angle[k]);
     m_sin_hour_angle[k] = std::sin(hour_angle[k]);
   }
+  return *this;
 }
 
-void SunPositionCalculator::set_latitude(double latitude_radians) {
+SunPositionCalculator& SunPositionCalculator::set_latitude(double latitude_radians) {
   m_sin_lat = std::sin(latitude_radians);
   m_cos_lat = std::cos(latitude_radians);
+  return *this;
 }
 
-void SunPositionCalculator::set_declination(double declination) {
+SunPositionCalculator& SunPositionCalculator::set_declination(double declination) {
   m_sin_decl = std::sin(declination);
   m_cos_decl = std::cos(declination);
+  return *this;
 }
 
 void SunPositionCalculator::compute_at_set_hour_angle(int k, double &altitude, double &azimuth,
