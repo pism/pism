@@ -204,7 +204,9 @@ double DEBMSimplePointwise::insolation_diagnostic(double declination, double dis
   const double degrees_to_radians = M_PI / 180.0;
   double latitude_rad = latitude_degrees * degrees_to_radians;
 
-  double h_phi = SunPositionCalculator::hour_angle(m_phi, latitude_rad, declination);
+  SunPositionCalculator sun(declination);
+  sun.set_latitude(latitude_rad);
+  double h_phi = sun.hour_angle(m_phi);
 
   return insolation_rate(m_solar_constant, distance_factor, h_phi, latitude_rad, declination);
 }
@@ -257,7 +259,10 @@ double DEBMSimplePointwise::insolation_energy(double declination, double distanc
   const double degrees_to_radians = M_PI / 180.0;
   double latitude_rad = latitude * degrees_to_radians;
 
-  double h_phi = SunPositionCalculator::hour_angle(m_phi, latitude_rad, declination);
+  SunPositionCalculator sun(declination);
+  sun.set_latitude(latitude_rad);
+  double h_phi = sun.hour_angle(m_phi);
+
   double S_phi =
       insolation_rate(m_solar_constant, distance_factor, h_phi, latitude_rad, declination);
 
@@ -290,7 +295,9 @@ DEBMSimpleMelt DEBMSimplePointwise::melt_from_insolation(double declination,
   const double degrees_to_radians = M_PI / 180.0;
   double latitude_rad = latitude * degrees_to_radians;
 
-  double h_phi = SunPositionCalculator::hour_angle(m_phi, latitude_rad, declination);
+  SunPositionCalculator sun(declination);
+  sun.set_latitude(latitude_rad);
+  double h_phi = sun.hour_angle(m_phi);
 
   double Teff = CalovGreveIntegrand(T_std_deviation,
                                     T - m_positive_threshold_temperature);

@@ -79,7 +79,7 @@ public:
 
   SunPosition compute(double hour_angle) const;
 
-  static double hour_angle(double phi, double latitude, double declination);
+  double hour_angle(double phi) const;
 
 private:
   double m_sin_decl, m_cos_decl;

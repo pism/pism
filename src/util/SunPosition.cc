@@ -149,12 +149,9 @@ void SunPositionCalculator::compute_impl(double cos_hour_angle, double sin_hour_
  * The return value is in the range [0, pi].
  *
  * @param[in] phi angle (radians)
- * @param[in] latitude latitude (radians)
- * @param[in] declination solar declination angle (radians)
  */
-double SunPositionCalculator::hour_angle(double phi, double latitude, double declination) {
-  double cos_h_phi = ((sin(phi) - sin(latitude) * sin(declination)) /
-                      (cos(latitude) * cos(declination)));
+double SunPositionCalculator::hour_angle(double phi) const {
+  double cos_h_phi = ((sin(phi) - m_sin_lat * m_sin_decl) / (m_cos_lat * m_cos_decl));
   return acos(pism::clip(cos_h_phi, -1.0, 1.0));
 }
 
