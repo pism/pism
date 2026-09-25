@@ -125,9 +125,7 @@ double ray_horizon(const double *dem, int Mx, int My, double dx, double dy,
 
 void sun_position(double latitude, double declination, double hour_angle,
                   double &altitude, double &azimuth) {
-  SunPositionCalculator sp(declination);
-  sp.set_latitude(latitude);
-  sp.compute(hour_angle, altitude, azimuth);
+  SunPositionCalculator(declination).set_latitude(latitude).compute(hour_angle, altitude, azimuth);
 }
 
 /*!

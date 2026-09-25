@@ -121,11 +121,11 @@ const array::Scalar& TerrainInsolation::insolation() const {
   return m_insolation;
 }
 
-const array::Array3D &TerrainInsolation::horizon() const {
+const array::Array3D &TerrainInsolation::horizon_altitude() const {
   return *m_horizon;
 }
 
-const array::Scalar &TerrainInsolation::sky_view() const {
+const array::Scalar &TerrainInsolation::sky_view_factor() const {
   if (not sky_view_enabled()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "sky view factor is not available");
   }
@@ -257,26 +257,25 @@ void TerrainInsolation::update_shading(const array::Scalar1 &surface_elevation) 
                                                  azimuth[k] - y_azimuth, m_step, m_max_distance);
     }
 
-    // Surface elevation derivatives in the east and north directions:
-    double s_e = 0.0, s_n = 0.0;
-    xy_to_en(y_azimuth, diff.x(surface_elevation, i, j), diff.y(surface_elevation, i, j), s_e, s_n);
-
-    // Compute the upward-pointing normal to the surface in the east-north-up system:
-    double Ne = -s_e, Nn = -s_n, Nu = 1.0;
-    // Scale it to get the unit normal:
-    {
-      // Note that norm != 0.0 because Nu == 1
-      double norm = std::sqrt(Ne * Ne + Nn * Nn + Nu * Nu);
-
-      Ne /= norm;
-      Nn /= norm;
-      Nu /= norm;
-    }
-
-    // sky-view factor from the horizon and the surface slope/aspect (the latter recovered
-    // from the unit normal: slope = acos(Nu), aspect = atan2(Ne, Nn), clockwise from north)
     if (sky_view_enabled()) {
-      double slope = std::acos(pism::clip(Nu, -1.0, 1.0));
+      // Surface elevation derivatives in the east and north directions:
+      double s_e = 0.0, s_n = 0.0;
+      xy_to_en(y_azimuth, diff.x(surface_elevation, i, j), diff.y(surface_elevation, i, j), s_e,
+               s_n);
+
+      // Compute the upward-pointing normal to the surface in the east-north-up system:
+      double Ne = -s_e, Nn = -s_n, Nu = 1.0;
+      // Scale it to get the unit normal:
+      {
+        // Note that norm != 0.0 because Nu == 1
+        double norm = std::sqrt(Ne * Ne + Nn * Nn + Nu * Nu);
+
+        Ne /= norm;
+        Nn /= norm;
+        Nu /= norm;
+      }
+
+      double slope  = std::acos(pism::clip(Nu, -1.0, 1.0));
       double aspect = std::atan2(Ne, Nn);
       (*m_sky_view)(i, j) =
           terrain::sky_view_factor(horizon_altitude, azimuth.data(), m_n_directions, slope, aspect);
@@ -425,14 +424,6 @@ void TerrainInsolation::update_daily_insolation(double time,
   } // end of the loop over grid points
 
   profiling.end("surface.debm_enhanced.daily_insolation");
-}
-
-void TerrainInsolation::begin_pointwise_access() const {
-  m_insolation.begin_access();
-}
-
-void TerrainInsolation::end_pointwise_access() const {
-  m_insolation.end_access();
 }
 
 } // end of namespace surface

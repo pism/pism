@@ -34,44 +34,52 @@ class AccessScope;
 
 namespace surface {
 
-class Insolation : public Component {
+class Insolation : public Component, public PetscAccessible {
 public:
   Insolation(std::shared_ptr<const Grid> grid);
 
   void update(double time, const array::Scalar1 &surface_elevation);
 
-  void begin_pointwise_access();
-  void end_pointwise_access();
+  void surface_insolation_energy_series(int i, int j, const std::vector<OrbitalParameters> &orbital,
+                                        double dt, std::vector<double> &result) const;
 
-  const array::Scalar &insolation() const;
-
-  void insolation_energy_series(int i, int j,
-                                const std::vector<OrbitalParameters> &orbital,
-                                double dt_sub,
-                                std::vector<double> &result) const;
 protected:
-  virtual void update_impl(double time, const array::Scalar1 &surface_elevation);
-  virtual void begin_pointwise_access_impl();
-  virtual void end_pointwise_access_impl();
-  virtual const array::Scalar &insolation_impl() const;
-
+  virtual void update_impl(double time, const array::Scalar1 &surface_elevation) = 0;
 
   virtual void
-  insolation_energy_series_impl(int i, int j,
-                                const std::vector<OrbitalParameters> &orbital,
-                                double dt_sub, std::vector<double> &result) const;
+  surface_insolation_energy_series_impl(int i, int j,
+                                        const std::vector<OrbitalParameters> &orbital,
+                                        double dt, std::vector<double> &result) const = 0;
 };
 
 class DEBMSimpleInsolation : public Insolation {
 public:
-  DEBMSimpleInsolation(std::shared_ptr<const Grid> grid);
+  DEBMSimpleInsolation(std::shared_ptr<const Grid> grid,
+                       DEBMSimplePointwise &pointwise_model);
 private:
+  void update_impl(double time, const array::Scalar1 &surface_elevation);
+  void begin_access() const;
+  void end_access() const;
+
+  void surface_insolation_energy_series_impl(int i, int j,
+                                             const std::vector<OrbitalParameters> &orbital,
+                                             double dt, std::vector<double> &result) const;
+
+  const array::Scalar *m_surface_elevation;
+  DEBMSimplePointwise m_pointwise_model;
 };
 
 class TerrainShadedInsolation : public Insolation {
 public:
     TerrainShadedInsolation(std::shared_ptr<const Grid> grid);
 private:
+  void update_impl(double time, const array::Scalar1 &surface_elevation);
+  void begin_access() const;
+  void end_access() const;
+
+  void surface_insolation_energy_series_impl(int i, int j,
+                                             const std::vector<OrbitalParameters> &orbital,
+                                             double dt, std::vector<double> &result) const;
 };
 
 //! @brief A class implementing a temperature-index (positive degree-day) scheme

@@ -41,22 +41,21 @@ class Array3D;
 namespace surface {
 
 /*!
- * Computes the horizon map and terrain-shaded daily surface insolation from a surface
- * elevation array.
+ * Computes the horizon map and terrain-shaded daily surface insolation.
  *
  * The terrain horizon ray-casting reaches several grid points from a current point,
  * crossing MPI subdomain boundaries. Because this computation requires a single 2D field,
  * `update_shading()` scatters the surface elevation array onto every rank; each rank then
  * processes only its owned cells using global surface elevation, without communication.
- *
- * The horizon map and the sky view factor are computed by update_shading() . The daily
- * insolation field is computed in `update_daily_insolation()`.
  */
 class TerrainInsolation {
 public:
   TerrainInsolation(std::shared_ptr<const Grid> grid,
                     std::function<double(double)> atmosphere_transmissivity);
 
+  /*!
+   * Compute the horizon map and the sky view factor.
+   */
   void update_shading(const array::Scalar1 &surface_elevation);
 
   //! Daily-mean terrain-shaded surface insolation rate (W m-2) at time `time`: the
@@ -65,23 +64,15 @@ public:
 
   const array::Scalar& insolation() const;
 
-  void begin_pointwise_access() const;
-  void end_pointwise_access() const;
-
-  void insolation_energy_series(int i, int j,
-                                const std::vector<OrbitalParameters> &orbital,
-                                double dt_sub, double latitude,
-                                std::vector<double> &result) const;
-
-  //! Terrain horizon map (azimuth, y, x), elevation angle in radians.
-  const array::Array3D &horizon() const;
+  //! Terrain horizon map (x, y, azimuth), elevation angle in radians.
+  const array::Array3D &horizon_altitude() const;
 
   //! Sky-view factor: the fraction (between 0 and 1) of the diffuse sky hemisphere
   //! visible from each cell, accounting for the terrain horizon and the surface
   //! slope/aspect.
   //!
   //! Only valid (computed) when sky_view_enabled() is true.
-  const array::Scalar &sky_view() const;
+  const array::Scalar &sky_view_factor() const;
 
   //! Whether the sky-view factor is computed (surface.debm_enhanced.use_sky_view_factor).
   bool sky_view_enabled() const;

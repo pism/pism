@@ -112,9 +112,9 @@ DiagnosticList DEBMEnhanced::spatial_diagnostics_impl() const {
   // "insolation" diagnostic (which dEBM-enhanced does not use)
   result["insolation"] = Diagnostic::wrap(m_terrain->insolation());
   // and the terrain horizon map (azimuth, y, x) and sky-view factor (y, x)
-  result["horizon"] = Diagnostic::wrap(m_terrain->horizon());
+  result["horizon"] = Diagnostic::wrap(m_terrain->horizon_altitude());
   if (m_terrain->sky_view_enabled()) {
-    result["sky_view_factor"] = Diagnostic::wrap(m_terrain->sky_view());
+    result["sky_view_factor"] = Diagnostic::wrap(m_terrain->sky_view_factor());
   }
   return result;
 }
