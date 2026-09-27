@@ -106,8 +106,8 @@ void EnglacialTransport::step(double dt, const array::Scalar1 &H_old,
     }
   }
 
-  for (auto *v : { &m_melt_out, &m_burial, &m_basal_loss, &m_ice_free_loss }) {
-    v->set(0.0);
+  for (auto *field : { &m_melt_out, &m_burial, &m_basal_loss, &m_ice_free_loss }) {
+    field->set(0.0);
   }
 
   const double f = 1.0 / m_substeps, dt_sub = dt * f;
