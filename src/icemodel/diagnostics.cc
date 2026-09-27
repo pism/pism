@@ -1000,10 +1000,14 @@ private:
       const int i = p.i(), j = p.j();
 
       if (m_kind == GROUNDED) {
+        // impose ISMIP7 valid range for libmassbfgr:
+        (*result)(i, j) = pism::clip((*result)(i, j), -0.0003, 0.0001);
         if (not geometry.cell_type.grounded_ice(i, j)) {
           (*result)(i, j) = fill;
         }
       } else {                  // m_kind == FLOATING
+        // impose ISMIP7 valid range for libmassbffl:
+        (*result)(i, j) = pism::clip((*result)(i, j), -0.008, 0.001);
         if (not geometry.cell_type.floating_ice(i, j)) {
           (*result)(i, j) = fill;
         }
