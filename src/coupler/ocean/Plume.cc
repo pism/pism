@@ -739,6 +739,12 @@ static double interpolate(double a, double b, double c, double d,
  * sw-----s-----se
  */
 static double interpolate(const stencils::Box<double> &B, double x, double y) {
+  // The box spans [-1, 1]; a point outside it would be extrapolated, with weights outside
+  // [0, 1] that amplify the field on every transport sweep. Clamp so the result stays a
+  // convex combination of the box values. (A NaN passes through and is caught below.)
+  x = std::max(-1.0, std::min(1.0, x));
+  y = std::max(-1.0, std::min(1.0, y));
+
   if (x <= 0 and y <= 0) {
     /*!
      *  w--------c
@@ -856,11 +862,19 @@ void PlumeModel::compute_grounding_line_elevation(const Inputs &inputs,
 
   // Step 1: Initialize zgl0 at grounding line: bed elevation
   //         Normalize velocities
+  //
+  // Speeds below min_speed carry no usable direction. At ~1e-162 m/s (stagnant patches
+  // do reach this) u^2 + v^2 underflows to a denormal, so u / magnitude() is no longer a
+  // unit vector: |D| = 1.108 made transport_step() extrapolate, z_gl ran away over the
+  // sweeps and the melt parameterization froze ~2e5 m of ice onto one cell in one step.
+  // std::hypot() does not underflow, and the floor treats such cells as stagnant.
+  const double min_speed = 1e-15; // m/s, ~3e-8 m/yr
   for (auto p : m_grid->points()) {
     int i = p.i(), j = p.j();
-    double flow_speed = adv_vel(i, j).magnitude();
-    if (flow_speed > 0.0) {
-      m_flow_direction(i, j) = adv_vel(i, j) / flow_speed;
+    const auto V = adv_vel(i, j);
+    const double flow_speed = std::hypot(V.u, V.v);
+    if (flow_speed > min_speed) {
+      m_flow_direction(i, j) = V / flow_speed;
     } else {
       m_flow_direction(i, j) = 0.0;
     }
