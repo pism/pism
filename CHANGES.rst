@@ -22,6 +22,12 @@ Changes since v2.3.0
   options `-picop_*` are `-plume_*`), and the diagnostics `picop_*` are `plume_*`
   (`plume_basal_melt_rate`, `plume_discharge_flux`, ...). `ocean.picop.file` is gone:
   PICOP reads its forcing through PICO (`ocean.pico.file`).
+- Add `output.clip_grounding_line_flux` (default no). When set, the diagnostics
+  `grounding_line_flux` (`ligroundf` with `output.ISMIP`) and
+  `ice_mass_transport_across_grounding_line` count only ice leaving the grounded area:
+  positive contributions are set to zero at every time step, before the average over the
+  reporting interval, so ice moving back onto grounded cells cannot offset the outflow.
+  The scalar `grounding_line_flux` time series is unchanged.
 
 - Add `stress_balance.ssa.fem.dirichlet_scale` (default 1e9, unchanged), the scaling of the
   identity blocks `SSAFEM` puts into the Jacobian at Dirichlet nodes and, when
