@@ -117,6 +117,49 @@ class MeltOut(unittest.TestCase):
             self.assertLess(profile[0], 0.1 * C0)
             np.testing.assert_allclose(profile[(z > 3 * a * T) & (z < H - 5.0)], C0, rtol=1e-3)
 
+    def test_substeps(self):
+        "One long step is sub-cycled to satisfy the vertical CFL condition in every column."
+        H = 80.0
+        Mz = 21
+        grid = create_grid(Mz, 100.0)   # dz = 5 m; the volumes at the bed and the surface are 2.5 m thick
+        geometry = create_geometry(grid, H)
+
+        a = 1e-7
+        T = 2e8                        # a T = 20 m of ice melted
+        cfl_ratio = 0.5
+
+        C0 = 2.0
+        C = PISM.Array3D(grid, "C", PISM.WITHOUT_GHOSTS, grid.z())
+        C.set(C0)
+
+        scheme = PISM.TransportScheme3D.create(grid, "upwind", 1, False)
+        transport = PISM.EnglacialTransport(grid, scheme, rho_s, cfl_ratio)
+        transport.set_concentration(C, geometry.ice_thickness)
+
+        self.assertEqual(transport.substeps(), 0)
+        self.assertTrue(np.isinf(transport.vertical_dt_max()))
+
+        u, v, w = uniform_3d(grid, 0.0), uniform_3d(grid, 0.0), uniform_3d(grid, a)
+        transport.step(T, geometry.ice_thickness, geometry.cell_type,
+                       geometry.ice_thickness, geometry.cell_type,
+                       scalar(grid, "top_smb", -a * T), scalar(grid, "bottom_smb", 0.0),
+                       scalar(grid, "rate", 0.0), u, v, w)
+
+        dt_cfl = 2.5 / a
+        np.testing.assert_allclose(transport.vertical_dt_max(), dt_cfl, rtol=1e-12)
+        self.assertEqual(transport.substeps(), int(np.ceil(T / (cfl_ratio * dt_cfl))))
+
+        melted = PISM.testing.sample(transport.melt_out())
+        np.testing.assert_allclose(melted, C0 * a * T, rtol=1e-6)
+        np.testing.assert_allclose(column_mass(transport), C0 * (H - a * T), rtol=1e-6)
+
+        # a step within the CFL limit is not sub-cycled
+        transport.step(0.1 * cfl_ratio * dt_cfl, geometry.ice_thickness, geometry.cell_type,
+                       geometry.ice_thickness, geometry.cell_type,
+                       scalar(grid, "top_smb", 0.0), scalar(grid, "bottom_smb", 0.0),
+                       scalar(grid, "rate", 0.0), u, v, w)
+        self.assertEqual(transport.substeps(), 1)
+
     def test_basal_melt(self):
         "Basal melt removes debris at the bed; the rest keeps its height above the bed."
         H = 80.0

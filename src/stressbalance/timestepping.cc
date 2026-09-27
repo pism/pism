@@ -34,6 +34,7 @@ CFLData::CFLData() {
   u_max = 0.0;
   v_max = 0.0;
   w_max = 0.0;
+  vertical_dt_max = std::numeric_limits<double>::infinity();
 }
 
 //! Compute the maximum velocities for time-stepping and reporting to user.
@@ -66,7 +67,20 @@ CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
     one_over_dx = 1.0 / grid->dx(),
     one_over_dy = 1.0 / grid->dy();
 
-  double u_max = 0.0, v_max = 0.0, w_max = 0.0;
+  // control volumes centered at the grid levels: volume k spans [zi[k], zi[k + 1]] with
+  // zi[0] = 0, zi[k] = (z[k - 1] + z[k]) / 2 and zi[Mz] unbounded (see
+  // debris::column::interfaces())
+  const auto &z = grid->z();
+  const int Mz = (int)z.size();
+  std::vector<double> zi(Mz + 1);
+  zi[0] = 0.0;
+  for (int k = 1; k < Mz; ++k) {
+    zi[k] = 0.5 * (z[k - 1] + z[k]);
+  }
+  zi[Mz] = std::numeric_limits<double>::infinity();
+
+  double u_max = 0.0, v_max = 0.0, w_max = 0.0,
+    dt_vertical = std::numeric_limits<double>::infinity();
   ParallelSection loop(grid->com);
   try {
     for (auto p : grid->points()) {
@@ -98,6 +112,16 @@ CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
         for (int k = 0; k <= ks; ++k) {
           w_max = std::max(w_max, fabs(w[k]));
         }
+
+        // vertical CFL: every volume below the surface with its full thickness (the
+        // truncated topmost volume can be arbitrarily thin)
+        const double H = ice_thickness(i, j);
+        for (int k = 0; k < Mz and zi[k] < H; ++k) {
+          const double w_abs = fabs(w[k]);
+          if (w_abs > 0.0) {
+            dt_vertical = std::min(dt_vertical, (zi[k + 1] - zi[k]) / w_abs);
+          }
+        }
       }
     }
   } catch (...) {
@@ -113,6 +137,7 @@ CFLData max_timestep_cfl_3d(const array::Scalar &ice_thickness,
   result.v_max = tmp[1];
   result.w_max = tmp[2];
   result.dt_max = MaxTimestep(GlobalMin(grid->com, dt_max));
+  result.vertical_dt_max = GlobalMin(grid->com, dt_vertical);
 
   return result;
 }

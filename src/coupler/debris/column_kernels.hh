@@ -93,7 +93,10 @@ double fold_above(const std::vector<double> &zi, double H, double *m);
 
 /*!
  * Largest time step allowed by the explicit vertical CFL condition in one column:
- * `min_k dz_k / |w_k|` over the volumes below `H`.
+ * `min_k dz_k / |w_k|` over the volumes below `H`, using the full thickness `zi[k+1] -
+ * zi[k]` of every volume. The volume containing the surface may be much thinner than that
+ * (a truncated volume can be centimeters thick); the transport scheme limits the outflow of
+ * such volumes to their content, so they do not restrict the step.
  *
  * @return infinity if the column is at rest
  */

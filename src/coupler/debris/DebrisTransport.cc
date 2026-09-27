@@ -80,12 +80,13 @@ DebrisTransport::DebrisTransport(std::shared_ptr<const Grid> grid)
     m_solid_density(config_solid_density(config_of(*grid))),
     m_vertical_cfl_ratio(config_of(*grid).get_number("debris.transport.vertical_cfl_ratio")),
     m_cover_coefficient(config_of(*grid).get_number("debris.transport.cover_fraction_coefficient")),
+    m_max_substeps((unsigned int)config_of(*grid).get_number("debris.transport.englacial.max_substeps")),
     m_do_gravity(config_of(*grid).get_flag("debris.transport.gravitational_transport")),
     m_do_terminus(config_of(*grid).get_flag("debris.transport.terminus_removal")),
     m_debris_thickness(grid, "debris_thickness"),
     m_concentration(grid, "englacial_debris_concentration", array::WITHOUT_GHOSTS, grid->z()),
     m_input(grid),
-    m_englacial(grid, scheme_3d(grid, config_of(*grid)), m_solid_density),
+    m_englacial(grid, scheme_3d(grid, config_of(*grid)), m_solid_density, m_vertical_cfl_ratio),
     m_supraglacial(grid, scheme_2d(grid, config_of(*grid))),
     m_gravity(grid, config_mobility(config_of(*grid)), m_solid_density,
               config_of(*grid).get_number("debris.transport.diffusion_cfl_ratio")),
@@ -108,6 +109,11 @@ DebrisTransport::DebrisTransport(std::shared_ptr<const Grid> grid)
     m_cumulative_input_mass(0.0),
     m_cumulative_output_mass(0.0),
     m_cumulative_lost_mass(0.0) {
+
+  if (m_max_substeps < 1) {
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "debris.transport.englacial.max_substeps has to be at least 1");
+  }
 
   m_debris_thickness.metadata(0)
       .long_name("thickness of the supraglacial debris layer")
@@ -167,6 +173,10 @@ const DebrisInput &DebrisTransport::input() const {
 
 const array::Array3D &DebrisTransport::concentration() const {
   return m_concentration;
+}
+
+double DebrisTransport::englacial_substeps() const {
+  return m_englacial.substeps();
 }
 
 const array::Scalar &DebrisTransport::cumulative_input() const {
@@ -335,6 +345,11 @@ void DebrisTransport::update_impl(const Inputs &inputs, double t, double dt) {
                    *inputs.u3, *inputs.v3, *inputs.w3);
   profiling().end("debris.englacial");
 
+  if (m_englacial.substeps() > 1) {
+    m_log->message(3, "  debris transport: %u sub-steps of the englacial debris step (dt = %.3g s)\n",
+                   m_englacial.substeps(), dt / m_englacial.substeps());
+  }
+
   // 2. sources of the supraglacial layer: melt-out (equation 19) and direct input in the
   // ablation zone (equation 18)
   profiling().begin("debris.sources");
@@ -479,11 +494,14 @@ MaxTimestep DebrisTransport::max_timestep_impl(double t, const CFLData *cfl_data
     return {};
   }
 
+  // horizontal CFL of the englacial and supraglacial advection
   double dt = cfl_data->dt_max.value();
 
-  // explicit vertical CFL: the thinnest control volume is half the smallest spacing
-  if (cfl_data->w_max > 0.0) {
-    dt = std::min(dt, m_vertical_cfl_ratio * 0.5 * m_grid->dz_min() / cfl_data->w_max);
+  // The englacial step is sub-cycled (EnglacialTransport::step()) to satisfy the vertical
+  // CFL condition; restrict the time step only if more than the allowed number of
+  // sub-steps would be needed.
+  if (std::isfinite(cfl_data->vertical_dt_max)) {
+    dt = std::min(dt, m_max_substeps * m_vertical_cfl_ratio * cfl_data->vertical_dt_max);
   }
 
   return MaxTimestep(dt, "debris transport");
@@ -626,6 +644,20 @@ private:
   Getter m_getter;
 };
 
+/*! @brief Number of sub-steps of the englacial advection during the last step. */
+class Substeps : public TSDiag<TSSnapshotDiagnostic, DebrisTransport> {
+public:
+  Substeps(const DebrisTransport *m)
+    : TSDiag<TSSnapshotDiagnostic, DebrisTransport>(m, "debris_englacial_substeps") {
+    set_units("1", "1");
+    m_variable["long_name"] = "number of sub-steps of the englacial debris step in the last time step";
+  }
+
+  double compute() {
+    return model->englacial_substeps();
+  }
+};
+
 /*! @brief Scalar mass flux (kg s^-1) from the amount transferred during the last step. */
 class MassFlux : public TSDiag<TSFluxDiagnostic, DebrisTransport> {
 public:
@@ -687,6 +719,8 @@ TSDiagnosticList DebrisTransport::scalar_diagnostics_impl() const {
       this, "debris_mass_conservation_error",
       "debris mass minus its initial value, inputs, outputs and losses since the start of this run",
       &DebrisTransport::conservation_error));
+
+  result["debris_englacial_substeps"] = TSDiagnostic::Ptr(new Substeps(this));
 
   result["debris_input_mass_flux"] = TSDiagnostic::Ptr(new MassFlux(
       this, "debris_input_mass_flux", "rate of debris input from the surrounding terrain",

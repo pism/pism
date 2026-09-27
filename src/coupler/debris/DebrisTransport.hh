@@ -64,6 +64,9 @@ public:
   //! Englacial debris concentration (kg m^-3) at the end of the last step.
   const array::Array3D &concentration() const;
 
+  //! Number of sub-steps of the englacial advection during the last step.
+  double englacial_substeps() const;
+
   //! Cumulative debris input (m of solid debris) since the start of the run.
   const array::Scalar &cumulative_input() const;
   //! Cumulative melt-out (m of solid debris) since the start of the run.
@@ -114,6 +117,7 @@ private:
   void update_budget(const Geometry &geometry, double dt);
 
   double m_solid_density, m_vertical_cfl_ratio, m_cover_coefficient;
+  unsigned int m_max_substeps;
   bool m_do_gravity, m_do_terminus;
 
   // state

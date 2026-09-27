@@ -266,11 +266,14 @@ static void test_vertical_dt_max() {
   auto zi = column::interfaces(z);
   // volumes: [0,0.5] [0.5,2] [2,4.5] [4.5,8] [8,inf)
 
-  std::vector<double> w = { 0.0, -2.0, 1.0, 4.0, 100.0 };
-  // H = 7: thicknesses 0.5, 1.5, 2.5, 2.5, 0 -> dz/|w| = inf, 0.75, 2.5, 0.625
-  check_close("vertical_dt_max", column::vertical_dt_max(zi, 7.0, w.data()), 0.625, 1e-15);
-  // H = 3: 0.5, 1.5, 1.0, 0 -> inf, 0.75, 1.0
+  std::vector<double> w = { 0.0, -2.0, 1.0, 8.0, 100.0 };
+  // H = 7: full thicknesses 0.5, 1.5, 2.5, 3.5 -> dz/|w| = inf, 0.75, 2.5, 0.4375; the
+  // truncated top volume (2.5 m thick) does not count with its truncated thickness (0.3125)
+  check_close("vertical_dt_max", column::vertical_dt_max(zi, 7.0, w.data()), 0.4375, 1e-15);
+  // H = 3: volumes 0-2 -> inf, 0.75, 2.5
   check_close("vertical_dt_max: truncated", column::vertical_dt_max(zi, 3.0, w.data()), 0.75, 1e-15);
+  // H = 9: the surface is in the unbounded top volume, which does not restrict the step
+  check_close("vertical_dt_max: unbounded top", column::vertical_dt_max(zi, 9.0, w.data()), 0.4375, 1e-15);
 
   std::vector<double> rest(5, 0.0);
   check_true("vertical_dt_max: at rest", std::isinf(column::vertical_dt_max(zi, 7.0, rest.data())));

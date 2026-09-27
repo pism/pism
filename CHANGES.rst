@@ -16,6 +16,15 @@ Changes since v2.3.0
   (`debris.englacial`, `debris.sources`, `debris.supraglacial`, `debris.gravity`,
   `debris.terminus`, `debris.ice_free_loss`, `debris.budget`, `debris.input`,
   `debris.concentration`).
+- The englacial debris step (advection, melt-out, burial) is sub-cycled within a model
+  time step so that every sub-step satisfies `debris.transport.vertical_cfl_ratio` times
+  the vertical CFL limit computed per ice column (control volume thickness over the local
+  vertical velocity) instead of restricting the model time step to the smallest vertical
+  spacing over the largest vertical velocity anywhere. The debris model restricts the model
+  time step only if more than `debris.transport.englacial.max_substeps` (default 100)
+  sub-steps would be needed. The scalar diagnostic `debris_englacial_substeps` reports the
+  number of sub-steps. `CFLData` gained `vertical_dt_max`, the vertical CFL limit of the
+  control volumes centered at the grid levels (`max_timestep_cfl_3d()`).
 - Add the advection scheme interfaces `TransportScheme2D` (first-order upwinding, MPDATA,
   UNO2, UNO3) and `TransportScheme3D` (first-order upwinding, MPDATA) and the
   three-dimensional MPDATA implementation `MPDATA3`. `MPDATA2` and `UNO` are now built in

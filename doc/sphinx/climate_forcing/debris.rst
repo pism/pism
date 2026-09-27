@@ -70,9 +70,14 @@ below). The transport schemes are selected with :config:`debris.transport.englac
 scheme used in the paper, with :config:`debris.transport.mpdata.iterations` passes and the
 non-oscillatory limiter enabled by :config:`debris.transport.mpdata.nonoscillatory`.
 
-The explicit vertical advection restricts the time step to a fraction
-(:config:`debris.transport.vertical_cfl_ratio`) of the smallest vertical spacing divided
-by the largest vertical velocity; the gravitational transport is sub-cycled internally
+The englacial step (advection, melt-out and burial) is sub-cycled within a model time
+step: each sub-step is at most a fraction (:config:`debris.transport.vertical_cfl_ratio`)
+of the vertical CFL limit, the thickness of a vertical control volume divided by the
+vertical velocity in it, minimized over all ice columns (the horizontal CFL condition is
+enforced by the model time step). The debris model restricts the model time step only if more than
+:config:`debris.transport.englacial.max_substeps` sub-steps would be needed; the number of
+sub-steps taken is available as the scalar diagnostic ``debris_englacial_substeps``. The
+gravitational transport is sub-cycled the same way
 (:config:`debris.transport.diffusion_cfl_ratio`).
 
 .. list-table:: Parameters of the transport model

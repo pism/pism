@@ -54,11 +54,23 @@ namespace debris {
      (`melt_out()`); ice added at the top is clean, except at debris input cells where it
      buries the prescribed input (`burial()`),
   5. columns that lost all their ice give up their debris (`ice_free_loss()`).
+
+  The step is sub-cycled so that each sub-step satisfies a fraction `cfl_ratio` of the
+  vertical CFL condition in every column (see `column::vertical_dt_max()`): the
+  advection of a sub-step uses the thickness interpolated linearly between the old and the
+  new geometry, and the surface and basal mass balance are split equally over the
+  sub-steps. (Applying the whole step's melt after a long advection would remove the
+  debris that piled up under the closed top face all at once and overestimate the
+  melt-out.) With one sub-step this is the plain sequence above.
 */
 class EnglacialTransport {
 public:
+  /*!
+   * @param[in] cfl_ratio fraction of the local vertical CFL limit used for the sub-steps of
+   *                      the advection
+   */
   EnglacialTransport(std::shared_ptr<const Grid> grid, std::shared_ptr<TransportScheme3D> scheme,
-                     double solid_density);
+                     double solid_density, double cfl_ratio = 0.5);
 
   /*!
    * Advance by `dt`.
@@ -100,15 +112,35 @@ public:
   //! Total mass (kg) on this sub-domain (not reduced across processors).
   double local_mass() const;
 
+  //! Number of advection sub-steps taken during the last step.
+  unsigned int substeps() const;
+
+  //! Largest time step satisfying the vertical CFL condition in every ice column during
+  //! the last step (reduced across processors; infinity before the first step or if the
+  //! ice is at rest).
+  double vertical_dt_max() const;
+
 private:
+  //! Steps 2-5 for one sub-step: the thickness at its end is `H_old + f_new (H_new -
+  //! H_old)`, the mass balance is `f_sub` times the step's; `final` marks the last sub-step.
+  void column_step(double f_new, double f_sub, double dt_sub, const array::Scalar &H_old,
+                   const array::Scalar &H_new, const array::CellType1 &cell_type_new,
+                   const array::Scalar &top_smb, const array::Scalar &bottom_smb,
+                   const array::Scalar &input_rate, bool final);
+
   std::shared_ptr<const Grid> m_grid;
   std::shared_ptr<TransportScheme3D> m_scheme;
 
   std::vector<double> m_zi;
-  double m_solid_density;
+  double m_solid_density, m_cfl_ratio;
+
+  unsigned int m_substeps;
+  double m_dt_vertical;
 
   std::shared_ptr<array::Array3D> m_mass;
   array::Scalar m_melt_out, m_burial, m_basal_loss, m_ice_free_loss;
+  //! thickness the advection of a sub-step uses (ghosted)
+  array::Scalar1 m_H_sub;
 };
 
 } // end of namespace debris

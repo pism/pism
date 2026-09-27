@@ -57,6 +57,11 @@ struct CFLData {
   CFLData();
   MaxTimestep dt_max;
   double u_max, v_max, w_max;
+  //! Largest time step (seconds) satisfying the explicit vertical CFL condition in the
+  //! control volumes centered at the levels of the vertical grid (`dz_k / |w_k|`, minimized
+  //! over all volumes below the ice surface, the topmost one counted with its full
+  //! thickness); infinity if the ice is at rest. Only set by `max_timestep_cfl_3d()`.
+  double vertical_dt_max;
 };
 
 //! Greater than operator for MaxTimestep.

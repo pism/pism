@@ -195,11 +195,9 @@ double vertical_dt_max(const std::vector<double> &zi, double H, const double *w)
   const int Mz = (int)zi.size() - 1;
 
   double result = std::numeric_limits<double>::infinity();
-  for (int k = 0; k < Mz; ++k) {
-    const double dz = volume_thickness(zi, k, H);
-    if (dz <= 0.0) {
-      break;
-    }
+  for (int k = 0; k < Mz and zi[k] < H; ++k) {
+    // full thickness: the top volume counts as if it were not truncated by the surface
+    const double dz = zi[k + 1] - zi[k];
     const double speed = std::fabs(w[k]);
     if (speed > 0.0) {
       result = std::min(result, dz / speed);
