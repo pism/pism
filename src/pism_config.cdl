@@ -821,15 +821,15 @@ netcdf pism_config {
     pism_config:debris.transport.diffusion_cfl_ratio_type = "number";
     pism_config:debris.transport.diffusion_cfl_ratio_units = "1";
 
-    pism_config:debris.transport.englacial.scheme = "mpdata";
-    pism_config:debris.transport.englacial.scheme_choices = "upwind,mpdata";
-    pism_config:debris.transport.englacial.scheme_doc = "Advection scheme used for englacial debris. ``upwind``: first-order upwinding. ``mpdata``: MPDATA (Smolarkiewicz, 1983) with ``debris.transport.mpdata.iterations`` passes.";
-    pism_config:debris.transport.englacial.scheme_type = "keyword";
-
     pism_config:debris.transport.englacial.max_substeps = 100;
     pism_config:debris.transport.englacial.max_substeps_doc = "Largest number of sub-steps of the englacial debris step (advection, melt-out, burial) within one model time step. The step is sub-cycled so that every sub-step satisfies ``debris.transport.vertical_cfl_ratio`` times the vertical CFL limit in every ice column; if more sub-steps than this would be needed, the debris model restricts the model time step instead.";
     pism_config:debris.transport.englacial.max_substeps_type = "integer";
     pism_config:debris.transport.englacial.max_substeps_units = "count";
+
+    pism_config:debris.transport.englacial.scheme = "mpdata";
+    pism_config:debris.transport.englacial.scheme_choices = "upwind,mpdata";
+    pism_config:debris.transport.englacial.scheme_doc = "Advection scheme used for englacial debris. ``upwind``: first-order upwinding. ``mpdata``: MPDATA (Smolarkiewicz, 1983) with ``debris.transport.mpdata.iterations`` passes.";
+    pism_config:debris.transport.englacial.scheme_type = "keyword";
 
     pism_config:debris.transport.gravitational_transport = "yes";
     pism_config:debris.transport.gravitational_transport_doc = "If set, supraglacial debris moves down the slope of the debris surface (equations 21 and 22 in :cite:`VerhaegenHuybrechts2026`).";
