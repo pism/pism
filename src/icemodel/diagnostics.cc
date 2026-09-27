@@ -3318,10 +3318,42 @@ protected:
   }
 };
 
+/*!
+ * Add the ice flow rate across the grounding line over one time step to `accumulator`.
+ *
+ * With `clip` (output.clip_grounding_line_flux) only the negative part is kept, i.e. ice
+ * leaving the grounded area; ice moving from floating or ocean cells onto grounded ones
+ * is dropped at every step, so it cannot offset outflow in the reporting-interval mean.
+ * `work` holds the unclipped step.
+ */
+static void accumulate_grounding_line_flux(const IceModel &model, double unit_conversion_factor,
+                                           bool clip, array::Scalar &work,
+                                           array::Scalar &accumulator) {
+  const auto &cell_type = model.geometry().cell_type;
+  const auto &flux      = model.geometry_evolution().flux_staggered();
+
+  if (not clip) {
+    ice_flow_rate_across_grounding_line(cell_type, flux, unit_conversion_factor, accumulator);
+    return;
+  }
+
+  work.set(0.0);
+  ice_flow_rate_across_grounding_line(cell_type, flux, unit_conversion_factor, work);
+
+  array::AccessScope list{ &work, &accumulator };
+  for (auto p : accumulator.grid()->points()) {
+    const int i = p.i(), j = p.j();
+    accumulator(i, j) += std::min(work(i, j), 0.0);
+  }
+}
+
 /*! @brief Report grounding line flux. */
 class GroundingLineFlux : public DiagAverageRate<IceModel> {
 public:
-  GroundingLineFlux(const IceModel *m) : DiagAverageRate<IceModel>(m, "grounding_line_flux", RATE) {
+  GroundingLineFlux(const IceModel *m)
+      : DiagAverageRate<IceModel>(m, "grounding_line_flux", RATE),
+        m_work(m_grid, "grounding_line_flux_step"),
+        m_clip(m_config->get_flag("output.clip_grounding_line_flux")) {
 
     m_accumulator.metadata()["units"] = "kg m^-2";
 
@@ -3336,10 +3368,15 @@ public:
     m_vars[0]["cell_methods"] = "time: mean";
 
     m_vars[0]["_FillValue"] = { fill_value() };
-    m_vars[0]["comment"] =
+    std::string comment =
       "Positive flux corresponds to mass moving from the ocean to"
       " an icy grounded area. This convention makes it easier to compare"
       " grounding line flux to the total discharge into the ocean";
+    if (m_clip) {
+      comment += ". Positive contributions are set to zero at every time step"
+                 " (output.clip_grounding_line_flux).";
+    }
+    m_vars[0]["comment"] = comment;
   }
 
 protected:
@@ -3352,18 +3389,22 @@ protected:
     // factor used to convert from m^3/s to kg/m^2
     double unit_conversion_factor = dt * (ice_density / cell_area); // units: kg * s / m^5
 
-    ice_flow_rate_across_grounding_line(model->geometry().cell_type,
-                                        model->geometry_evolution().flux_staggered(),
-                                        unit_conversion_factor, m_accumulator);
+    accumulate_grounding_line_flux(*model, unit_conversion_factor, m_clip, m_work, m_accumulator);
 
     m_interval_length += dt;
   }
+
+private:
+  array::Scalar m_work;
+  bool m_clip;
 };
 
 class MassTransportAcrossGroundingLine : public DiagAverageRate<IceModel> {
 public:
   MassTransportAcrossGroundingLine(const IceModel *m)
-      : DiagAverageRate<IceModel>(m, "ice_mass_transport_across_grounding_line", RATE) {
+      : DiagAverageRate<IceModel>(m, "ice_mass_transport_across_grounding_line", RATE),
+        m_work(m_grid, "ice_mass_transport_across_grounding_line_step"),
+        m_clip(m_config->get_flag("output.clip_grounding_line_flux")) {
 
     m_accumulator.metadata()["units"] = "kg";
 
@@ -3376,9 +3417,14 @@ public:
     m_vars[0]["cell_methods"] = "time: mean";
 
     m_vars[0]["_FillValue"] = { fill_value() };
-    m_vars[0]["comment"] =
+    std::string comment =
         "Negative values correspond to mass moving from an icy grounded area into a lake or ocean."
         " This convention makes it easier to compare to calving, frontal melt, and discharge fluxes.";
+    if (m_clip) {
+      comment += " Positive contributions are set to zero at every time step"
+                 " (output.clip_grounding_line_flux).";
+    }
+    m_vars[0]["comment"] = comment;
   }
 
 protected:
@@ -3390,12 +3436,14 @@ protected:
     // factor used to convert from m^3/s to kg
     double unit_conversion_factor = dt * ice_density; // units: kg * s / m^3
 
-    ice_flow_rate_across_grounding_line(model->geometry().cell_type,
-                                        model->geometry_evolution().flux_staggered(),
-                                        unit_conversion_factor, m_accumulator);
+    accumulate_grounding_line_flux(*model, unit_conversion_factor, m_clip, m_work, m_accumulator);
 
     m_interval_length += dt;
   }
+
+private:
+  array::Scalar m_work;
+  bool m_clip;
 };
 
 //! \brief Reports the pressure within the ice (3D).

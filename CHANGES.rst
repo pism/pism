@@ -3,6 +3,13 @@
 Changes since v2.3.0
 ====================
 
+- Add `output.clip_grounding_line_flux` (default no). When set, the diagnostics
+  `grounding_line_flux` (`ligroundf` with `output.ISMIP`) and
+  `ice_mass_transport_across_grounding_line` count only ice leaving the grounded area:
+  positive contributions are set to zero at every time step, before the average over the
+  reporting interval, so ice moving back onto grounded cells cannot offset the outflow.
+  The scalar `grounding_line_flux` time series is unchanged.
+
 - Re-run SWIG when a wrapped C++ header changes (`USE_SWIG_DEPENDENCIES`). Previously the
   generated Python bindings depended on the `.i` files only, so header edits could leave a
   stale `PISM.cpp` module in the build tree (e.g. Blatter-based classes wrapped as abstract,
