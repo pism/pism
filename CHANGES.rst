@@ -12,6 +12,10 @@ Changes since v2.3.0
   the mass budget is available as scalar time series (`total_debris_mass`,
   `debris_input_mass_flux`, `debris_output_mass_flux`, `debris_mass_conservation_error`,
   ...). See `examples/debris/` and `doc/sphinx/climate_forcing/debris.rst`.
+  With `-profile`, each step of the model is its own event inside `debris`
+  (`debris.englacial`, `debris.sources`, `debris.supraglacial`, `debris.gravity`,
+  `debris.terminus`, `debris.ice_free_loss`, `debris.budget`, `debris.input`,
+  `debris.concentration`).
 - Add the advection scheme interfaces `TransportScheme2D` (first-order upwinding, MPDATA,
   UNO2, UNO3) and `TransportScheme3D` (first-order upwinding, MPDATA) and the
   three-dimensional MPDATA implementation `MPDATA3`. `MPDATA2` and `UNO` are now built in

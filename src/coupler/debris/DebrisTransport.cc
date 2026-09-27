@@ -27,6 +27,7 @@
 #include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/Profiling.hh"
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/array/Vector.hh"
@@ -322,16 +323,21 @@ void DebrisTransport::update_impl(const Inputs &inputs, double t, double dt) {
   const array::Scalar &H = geometry.ice_thickness;
   const array::CellType2 &cell_type = geometry.cell_type;
 
+  profiling().begin("debris.input");
   m_input.update(t, dt);
+  profiling().end("debris.input");
   const array::Scalar &rate = m_input.rate();
 
   // 1. englacial transport, burial and melt-out
+  profiling().begin("debris.englacial");
   m_englacial.step(dt, m_H_old, m_cell_type_old, H, cell_type,
                    *inputs.top_surface_mass_balance, *inputs.bottom_surface_mass_balance, rate,
                    *inputs.u3, *inputs.v3, *inputs.w3);
+  profiling().end("debris.englacial");
 
   // 2. sources of the supraglacial layer: melt-out (equation 19) and direct input in the
   // ablation zone (equation 18)
+  profiling().begin("debris.sources");
   {
     const array::Scalar &melt_out = m_englacial.melt_out(), &burial = m_englacial.burial(),
                         &top_smb = *inputs.top_surface_mass_balance;
@@ -364,19 +370,25 @@ void DebrisTransport::update_impl(const Inputs &inputs, double t, double dt) {
     }
   }
   m_debris_thickness.update_ghosts();
+  profiling().end("debris.sources");
 
   // 3. advection by the surface velocity
+  profiling().begin("debris.supraglacial");
   m_supraglacial.update_surface_velocity(*inputs.u3, *inputs.v3, H);
   m_supraglacial.step(dt, cell_type, m_debris_thickness);
   m_debris_thickness.update_ghosts();
+  profiling().end("debris.supraglacial");
 
   // 4. gravitational redistribution
   if (m_do_gravity) {
+    profiling().begin("debris.gravity");
     m_gravity.step(dt, cell_type, geometry.ice_surface_elevation, m_debris_thickness);
+    profiling().end("debris.gravity");
   }
 
   // 5. removal at the margin
   if (m_do_terminus) {
+    profiling().begin("debris.terminus");
     m_terminus.step(dt, cell_type, geometry.ice_surface_elevation, m_debris_thickness);
 
     array::AccessScope list{ &m_cumulative_removal, &m_terminus.removal_rate() };
@@ -384,9 +396,11 @@ void DebrisTransport::update_impl(const Inputs &inputs, double t, double dt) {
       const int i = p.i(), j = p.j();
       m_cumulative_removal(i, j) += m_terminus.removal_rate()(i, j) * dt;
     }
+    profiling().end("debris.terminus");
   }
 
   // 6. debris in ice-free cells is lost
+  profiling().begin("debris.ice_free_loss");
   {
     array::AccessScope list{ &cell_type, &m_debris_thickness, &m_surface_loss };
     for (auto p : m_grid->points()) {
@@ -400,14 +414,19 @@ void DebrisTransport::update_impl(const Inputs &inputs, double t, double dt) {
     }
   }
   m_debris_thickness.update_ghosts();
+  profiling().end("debris.ice_free_loss");
 
+  profiling().begin("debris.budget");
   update_budget(geometry, dt);
+  profiling().end("debris.budget");
 
   // remember the geometry this velocity field corresponds to
+  profiling().begin("debris.concentration");
   m_H_old.copy_from(H);
   m_cell_type_old.copy_from(cell_type);
 
   m_englacial.concentration(H, m_concentration);
+  profiling().end("debris.concentration");
 }
 
 void DebrisTransport::update_budget(const Geometry &geometry, double dt) {
