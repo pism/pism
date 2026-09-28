@@ -21,6 +21,14 @@
 #include <string>
 #include <cstdio>
 
+#include "pism/util/array/Array.hh"
+#include "pism/util/Grid.hh"
+#include "pism/util/Context.hh"
+#include "pism/util/Config.hh"
+#include "pism/util/pism_utilities.hh"
+#include "pism/util/io/IO_Flags.hh"
+#include "pism/util/Logger.hh"
+
 namespace pism {
 namespace io {
 
@@ -40,6 +48,33 @@ bool file_exists(MPI_Comm com, const std::string &filename) {
   MPI_Bcast(&file_exists_flag, 1, MPI_INT, 0, com);
 
   return file_exists_flag == 1;
+}
+
+void regrid(const Config &config, const std::string &module_name,
+            array::Array &variable, bool regrid_by_default) {
+
+  auto log = variable.grid()->ctx()->log();
+
+  auto regrid_file = config.get_string("input.regrid.file");
+  auto regrid_vars = set_split(config.get_string("input.regrid.vars"), ',');
+
+  if (regrid_file.empty()) {
+    return;
+  }
+
+  auto &m = variable.metadata();
+
+  if (((not regrid_vars.empty()) and set_member(m["short_name"], regrid_vars)) or
+      (regrid_vars.empty() and regrid_by_default)) {
+
+    log->message(2,
+               "  %s: regridding '%s' from file '%s' ...\n",
+               module_name.c_str(),
+               m.get_string("short_name").c_str(), regrid_file.c_str());
+
+    variable.regrid(regrid_file, io::Default::Nil());
+  }
+
 }
 
 } // end of namespace io

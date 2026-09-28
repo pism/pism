@@ -27,18 +27,20 @@
 #include <petscvec.h>
 #include <vector>
 
+#include "pism/util/Component.hh"
 #include "pism/util/Config.hh"
 #include "pism/util/Context.hh"
 #include "pism/util/Grid.hh"
+#include "pism/util/Logger.hh"
 #include "pism/util/Profiling.hh"
+#include "pism/util/SunPosition.hh"
 #include "pism/util/array/Array3D.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/error_handling.hh"
-#include "pism/util/petscwrappers/Vec.hh"
-#include "pism/util/Logger.hh"
-#include "pism/util/pism_utilities.hh"
+#include "pism/util/io/io_helpers.hh"
 #include "pism/util/petscwrappers/DM.hh"
-#include "pism/util/SunPosition.hh"
+#include "pism/util/petscwrappers/Vec.hh"
+#include "pism/util/pism_utilities.hh"
 #include "pism/util/projection.hh"
 
 /*!
@@ -191,6 +193,30 @@ private:
   int Mx, My;
   double dx, dy;
 };
+
+void TerrainInsolation::init(const InputOptions &options) {
+  auto log    = m_grid->ctx()->log();
+  auto config = m_grid->ctx()->config();
+
+  switch (options.type) {
+  case INIT_RESTART:
+    // read bed elevation and uplift rate from file
+    log->message(2, "    reading bed topography and uplift from %s ... \n",
+                 options.filename.c_str());
+    // re-starting
+    m_horizon->read(options.filename, options.record); // fails if not found!
+    break;
+  case INIT_BOOTSTRAP:
+  case INIT_OTHER:
+  default: {
+    // do nothing
+  } break;
+  }
+
+  // process -regrid_file and -regrid_vars
+  io::regrid(*config, "insolation", *m_horizon, true);
+}
+
 
 /*!
  * Update the sky view factor and the map of horizon altitude angles (in radians) at each

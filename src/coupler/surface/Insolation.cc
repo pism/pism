@@ -24,6 +24,8 @@
 #include "pism/util/MaxTimestep.hh"
 #include "pism/util/array/Array3D.hh"
 #include "pism/util/Time.hh"
+#include "pism/util/io/io_helpers.hh"
+#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace surface {
@@ -98,6 +100,21 @@ DEBMTerrainShadedInsolation::DEBMTerrainShadedInsolation(
 }
 
 void DEBMTerrainShadedInsolation::init_impl(const InputOptions &options) {
+  m_t_last = time().current();
+  if (options.type == INIT_RESTART or options.type == INIT_BOOTSTRAP) {
+    File input_file(m_grid->com, options.filename, io::PISM_NETCDF3, io::PISM_READONLY);
+
+    if (input_file.variable_exists(m_time_name)) {
+      auto t_length = input_file.nrecords(m_time_name, "", m_sys);
+      auto t_last   = t_length > 0 ? t_length - 1 : 0;
+
+      auto t =
+          io::read_timeseries_variable(input_file, m_time_name, time().units(), m_sys, t_last, 1);
+      m_t_last = t[0];
+    }
+  }
+
+  m_model->init(options);
 }
 
 void DEBMTerrainShadedInsolation::update_impl(double t, double dt,

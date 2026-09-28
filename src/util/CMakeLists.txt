@@ -48,6 +48,7 @@ add_library (util OBJECT
   io/OutputWriter.cc
   io/SynchronousOutputWriter.cc
   io/input_helpers.cc
+  io/io_helpers.cc
   io/output_helpers.cc
   node_types.cc
   options.cc

@@ -30,6 +30,8 @@
 
 namespace pism {
 
+struct InputOptions;
+
 class Grid;
 
 namespace array {
@@ -53,6 +55,7 @@ public:
   TerrainInsolation(std::shared_ptr<const Grid> grid,
                     std::function<double(double)> atmosphere_transmissivity);
 
+  void init(const InputOptions &options);
   /*!
    * Compute the horizon map and the sky view factor.
    */
