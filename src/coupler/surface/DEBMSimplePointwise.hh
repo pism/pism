@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2025 PISM Authors
+// Copyright (C) 2009--2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -85,6 +85,26 @@ public:
                       double surface_elevation,
                       double lat,
                       double albedo) const;
+
+  //! Insolation energy (J m^-2) reaching the surface over `dt`, computed from the
+  //! analytic top-of-atmosphere insolation used by dEBM-simple.
+  double insolation_energy(double declination,
+                           double distance_factor,
+                           double latitude,
+                           double dt) const;
+
+  //! Melt (and its components) given the insolation *energy* (J m^-2) reaching the
+  //! surface over `dt`. dEBM-enhanced supplies a prescribed insolation field here instead
+  //! of the analytic one. `declination` and `latitude` set the daily melt-period length
+  //! that weights the temperature- and offset-driven melt terms.
+  DEBMSimpleMelt melt_from_insolation(double declination,
+                                      double latitude,
+                                      double insolation_energy,
+                                      double dt,
+                                      double T_std_deviation,
+                                      double T,
+                                      double surface_elevation,
+                                      double albedo) const;
 
   DEBMSimpleChanges step(double ice_thickness, double max_melt, double snow_depth,
                          double accumulation) const;

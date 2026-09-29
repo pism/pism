@@ -6,8 +6,13 @@ synthetic surface velocities via a forward Blatter solve, then runs
 Tikhonov inversions using both the incomplete (Picard/KSPSolve) and exact
 (Newton/KSPSolveTranspose) adjoints.
 
+With ``-design hardav`` the design variable is the vertically-averaged ice
+hardness instead: the bed is made very sticky (deformation-dominated flow,
+where surface velocities are sensitive to the hardness) and a smooth
+sinusoidal hardness pattern is recovered from a constant prior.
+
 Usage:
-  mpiexec -n N python3 ismiphom_twin.py [options]
+  mpiexec -n N python3 ismiphom_twin.py [-design tauc|hardav] [options]
 
 Example:
   mpiexec -n 8 python3 ismiphom_twin.py \
@@ -61,6 +66,35 @@ def tauc_D(x, y, L):
 tests = {
     "C": {"tauc": tauc_C, "hom": PISM.HOM_C, "My_min": None},
     "D": {"tauc": tauc_D, "hom": PISM.HOM_D, "My_min": 3},
+}
+
+# Very sticky bed used for the hardness twin (Pa year / m): sliding is then
+# negligible and surface velocities are controlled by the ice hardness.
+tauc_hardav_twin = 1e5
+
+
+def hardav_true(x, y, L, B0):
+    """Smooth 'true' vertically-averaged hardness pattern."""
+    omega = 2.0 * np.pi / L
+    return B0 * (1.0 + 0.3 * np.sin(omega * x) * np.sin(omega * y))
+
+
+# Forward problem / Tikhonov classes for each design variable.
+design_classes = {
+    "tauc": {
+        "forward": PISM.IP_BlatterTaucForwardProblem,
+        "problem": PISM.IP_BlatterTaucTaoTikhonovProblem,
+        "solver": PISM.IP_BlatterTaucTaoTikhonovSolver,
+        "listener": PISM.IP_BlatterTaucTaoTikhonovProblemListener,
+        "prior_scale": 0.5,
+    },
+    "hardav": {
+        "forward": PISM.IP_BlatterHardavForwardProblem,
+        "problem": PISM.IP_BlatterHardavTaoTikhonovProblem,
+        "solver": PISM.IP_BlatterHardavTaoTikhonovSolver,
+        "listener": PISM.IP_BlatterHardavTaoTikhonovProblemListener,
+        "prior_scale": 1.5,
+    },
 }
 
 
@@ -123,8 +157,12 @@ def create_grid(config, ctx, test_name, L):
     return PISM.Grid(ctx.ctx, P)
 
 
-def init_geometry(grid, test_name, L):
-    """Set up ISMIP-HOM geometry and yield stress."""
+def init_geometry(grid, test_name, L, design_var="tauc"):
+    """Set up ISMIP-HOM geometry, yield stress and (for ``hardav``) hardness.
+
+    Returns ``(geometry, enthalpy, design_true)`` where ``design_true`` is
+    the true yield stress or the true hardness, depending on ``design_var``.
+    """
     geometry = PISM.Geometry(grid)
     grid.variables().add(geometry.ice_thickness)
     grid.variables().add(geometry.cell_type)
@@ -139,6 +177,8 @@ def init_geometry(grid, test_name, L):
     grid.variables().add(yield_stress)
 
     tauc_fn = tests[test_name]["tauc"]
+    if design_var == "hardav":
+        tauc_fn = lambda x, y, L: tauc_hardav_twin  # noqa: E731
 
     with PISM.vec.Access([yield_stress, geometry.ice_thickness,
                           geometry.bed_elevation]):
@@ -153,15 +193,32 @@ def init_geometry(grid, test_name, L):
     geometry.sea_level_elevation.shift(-100.0)
     geometry.ensure_consistency(0.0)
 
-    return geometry, enthalpy, yield_stress
+    if design_var == "tauc":
+        return geometry, enthalpy, yield_stress
+
+    # True hardness: B0 = A^(-1/n) from the isothermal softness, modulated
+    # by a smooth pattern.
+    config = grid.ctx().config()
+    A = config.get_number("flow_law.isothermal_Glen.ice_softness")
+    n = config.get_number("stress_balance.blatter.Glen_exponent")
+    B0 = A ** (-1.0 / n)
+
+    hardav = PISM.Scalar(grid, "hardav")
+    hardav.metadata(0).long_name("vertically-averaged ice hardness")
+    hardav.metadata(0).set_units_without_validation("Pa s^(1/n)")
+    with PISM.vec.Access([hardav]):
+        for (i, j) in grid.points():
+            hardav[i, j] = hardav_true(grid.x(i), grid.y(j), L, B0)
+
+    return geometry, enthalpy, hardav
 
 
 # ============================================================================
 # Forward solve
 # ============================================================================
 
-def forward_solve(grid, yield_stress, config):
-    """Run a forward Blatter solve using IP_BlatterTaucForwardProblem.
+def forward_solve(grid, design_true, config, design_var="tauc"):
+    """Run a forward Blatter solve using the inverse forward problem.
 
     Uses the same solver as the inversion so the twin experiment is
     self-consistent (no model mismatch between observations and inversion).
@@ -171,14 +228,14 @@ def forward_solve(grid, yield_stress, config):
     coarsening = int(config.get_number("stress_balance.blatter.coarsening_factor"))
 
     param_name = config.get_string("inverse.design.param")
-    design_param = PISM.invert.core.createDesignVariableParam(config, "tauc", param_name)
+    design_param = PISM.invert.core.createDesignVariableParam(config, design_var, param_name)
 
-    solver = PISM.IP_BlatterTaucForwardProblem(grid, Mz, coarsening, design_param)
+    solver = design_classes[design_var]["forward"](grid, Mz, coarsening, design_param)
     solver.init()
 
-    # Convert tauc -> zeta, then forward solve
+    # Convert the design variable -> zeta, then forward solve
     zeta = PISM.Scalar2(grid, "zeta")
-    design_param.convertFromDesignVariable(yield_stress, zeta)
+    design_param.convertFromDesignVariable(design_true, zeta)
 
     reason = solver.linearize_at(zeta)
     PISM.verbPrintf(2, com, "Forward solve: %s\n" % reason.description())
@@ -197,13 +254,14 @@ def forward_solve(grid, yield_stress, config):
 # Inversion
 # ============================================================================
 
-def run_inversion(grid, geometry, enthalpy, yield_stress_true,
-                  u_obs, test_name, adjoint_method, config):
-    """Run a Tikhonov inversion for tauc using the Blatter solver.
+def run_inversion(grid, geometry, enthalpy, design_true,
+                  u_obs, test_name, adjoint_method, config, design_var="tauc"):
+    """Run a Tikhonov inversion for tauc or hardav using the Blatter solver.
 
-    Returns dict with convergence history and recovered tauc.
+    Returns dict with convergence history and the recovered design field.
     """
     com = grid.com
+    classes = design_classes[design_var]
     Mz = int(config.get_number("stress_balance.blatter.Mz"))
     coarsening = int(config.get_number("stress_balance.blatter.coarsening_factor"))
 
@@ -232,24 +290,24 @@ def run_inversion(grid, geometry, enthalpy, yield_stress_true,
 
     # Design variable parameterization
     param_name = config.get_string("inverse.design.param")
-    design_param = PISM.invert.core.createDesignVariableParam(config, "tauc", param_name)
+    design_param = PISM.invert.core.createDesignVariableParam(config, design_var, param_name)
 
     # Forward problem
-    solver = PISM.IP_BlatterTaucForwardProblem(grid, Mz, coarsening, design_param)
+    solver = classes["forward"](grid, Mz, coarsening, design_param)
     solver.init()
 
     # Start from a perturbed initial guess.
     # With "exp" parameterization, the SNES sees log(tauc), so even
     # scale=0.5 is only log(0.5)=-0.69 away in zeta-space — modest.
-    prior_scale = 0.5
-    tauc_prior = PISM.Scalar(grid, "tauc_prior")
-    tauc_prior.copy_from(yield_stress_true)
-    tauc_prior.scale(prior_scale)
-    PISM.verbPrintf(2, com, "  Prior: %.1f x true tauc\n" % prior_scale)
+    prior_scale = classes["prior_scale"]
+    design_prior = PISM.Scalar(grid, "%s_prior" % design_var)
+    design_prior.copy_from(design_true)
+    design_prior.scale(prior_scale)
+    PISM.verbPrintf(2, com, "  Prior: %.1f x true %s\n" % (prior_scale, design_var))
 
-    # Convert prior tauc -> zeta
+    # Convert the prior -> zeta
     zeta = PISM.Scalar2(grid, "zeta")
-    design_param.convertFromDesignVariable(tauc_prior, zeta)
+    design_param.convertFromDesignVariable(design_prior, zeta)
 
     # Functionals
     velocity_scale = config.get_number(
@@ -271,7 +329,7 @@ def run_inversion(grid, geometry, enthalpy, yield_stress_true,
     # Constructor order: forward, d0, u_obs, eta, designFunctional, stateFunctional
     eta = config.get_number("inverse.tikhonov.penalty_weight")
 
-    tikhonov = PISM.IP_BlatterTaucTaoTikhonovProblem(
+    tikhonov = classes["problem"](
         solver, zeta, u_obs, eta, design_func, state_func)
 
     tao_types = {'tikhonov_lmvm': 'lmvm',
@@ -280,7 +338,7 @@ def run_inversion(grid, geometry, enthalpy, yield_stress_true,
     method = config.get_string("inverse.stress_balance.method")
     tao_type = tao_types.get(method, 'lmvm')
     PISM.verbPrintf(2, com, "  TAO type: %s (from method=%s)\n" % (tao_type, method))
-    tao_solver = PISM.IP_BlatterTaucTaoTikhonovSolver(com, tao_type, tikhonov)
+    tao_solver = classes["solver"](com, tao_type, tikhonov)
 
     max_it = int(config.get_number("inverse.max_iterations"))
     tao_solver.setMaximumIterations(max_it)
@@ -288,7 +346,7 @@ def run_inversion(grid, geometry, enthalpy, yield_stress_true,
     # Convergence logger
     misfit_history = []
 
-    class MisfitLogger(PISM.IP_BlatterTaucTaoTikhonovProblemListener):
+    class MisfitLogger(classes["listener"]):
         def iteration(self, problem, eta_param, it,
                       val_design, val_state,
                       d, d_diff, grad_design,
@@ -340,20 +398,22 @@ def run_inversion(grid, geometry, enthalpy, yield_stress_true,
 
     # Extract result
     zeta_inv = tikhonov.designSolution()
-    tauc_inv = PISM.Scalar(grid, "tauc_inv")
-    design_param.convertToDesignVariable(zeta_inv, tauc_inv)
+    design_inv = PISM.Scalar(grid, "%s_inv" % design_var)
+    design_inv.metadata(0).set_units_without_validation(
+        design_true.metadata(0).get_string("units"))
+    design_param.convertToDesignVariable(zeta_inv, design_inv)
 
-    # Compute tauc error
-    tauc_err = PISM.Scalar(grid, "tauc_error")
-    tauc_err.copy_from(tauc_inv)
-    tauc_err.add(-1.0, yield_stress_true)
+    # Compute the design error
+    design_err = PISM.Scalar(grid, "%s_error" % design_var)
+    design_err.copy_from(design_inv)
+    design_err.add(-1.0, design_true)
 
     err_l2 = 0.0
     true_l2 = 0.0
-    with PISM.vec.Access(nocomm=[tauc_err, yield_stress_true]):
+    with PISM.vec.Access(nocomm=[design_err, design_true]):
         for (i, j) in grid.points():
-            err_l2 += tauc_err[i, j] ** 2
-            true_l2 += yield_stress_true[i, j] ** 2
+            err_l2 += design_err[i, j] ** 2
+            true_l2 += design_true[i, j] ** 2
 
     err_l2 = PISM.GlobalSum(com, err_l2)
     true_l2 = PISM.GlobalSum(com, true_l2)
@@ -375,15 +435,18 @@ def run_inversion(grid, geometry, enthalpy, yield_stress_true,
     result = {
         "adjoint": adjoint_method,
         "test": test_name,
+        "design": design_var,
         "iterations": len(misfit_history),
         "solve_time_s": solve_time,
         "rms_misfit_m_yr": float(rms_misfit),
+        "design_rel_error": float(rel_error),
+        # kept for backwards compatibility of the JSON output
         "tauc_rel_error": float(rel_error),
         "history": misfit_history,
         "reason": reason.description(),
     }
 
-    return result, tauc_inv
+    return result, design_inv
 
 
 # ============================================================================
@@ -436,6 +499,12 @@ def main():
     # which destroys the initial guess if the bounds are too tight.
     config.set_number("inverse.stress_balance.tauc_max", 1e12)
 
+    # Design variable
+    # (For hardav, BLMVM clips zeta to [log(hardav_min/scale), log(hardav_max/scale)];
+    # the defaults 0 and 1e10 Pa s^(1/3) are wide enough for B ~ 7e7.)
+    design_var = PISM.OptionKeyword("-design", "design variable to invert for",
+                                    "tauc,hardav", "tauc").value()
+
     # Domain size (default 80 km)
     L = 80e3
     L_opt = PISM.OptionReal(ctx.unit_system, "-L",
@@ -457,33 +526,37 @@ def main():
                         "=" * 60 + "\n")
 
         grid = create_grid(config, ctx, test_name, L)
-        geometry, enthalpy, yield_stress = init_geometry(grid, test_name, L)
+        geometry, enthalpy, design_true = init_geometry(grid, test_name, L, design_var)
 
         # Step 1: Forward solve to get "observed" surface velocity
         PISM.verbPrintf(1, com, "\n--- Forward solve (generating observations) ---\n")
-        u_obs = forward_solve(grid, yield_stress, config)
+        u_obs = forward_solve(grid, design_true, config, design_var)
 
         # Step 2: Run inversion with each adjoint method
         methods = ["approximate", "incomplete", "exact"]
-        tauc_results = {}
+        design_results = {}
 
         for method in methods:
-            result, tauc_inv = run_inversion(
-                grid, geometry, enthalpy, yield_stress,
-                u_obs, test_name, adjoint_method=method, config=config)
+            result, design_inv = run_inversion(
+                grid, geometry, enthalpy, design_true,
+                u_obs, test_name, adjoint_method=method, config=config,
+                design_var=design_var)
             all_results.append(result)
-            tauc_results[method] = tauc_inv
+            design_results[method] = design_inv
 
         # Write NetCDF output
-        output_file = "ismiphom_twin_%s_L%03d.nc" % (test_name, int(L / 1e3))
+        if design_var == "tauc":
+            output_file = "ismiphom_twin_%s_L%03d.nc" % (test_name, int(L / 1e3))
+        else:
+            output_file = "ismiphom_twin_%s_%s_L%03d.nc" % (design_var, test_name, int(L / 1e3))
         PISM.verbPrintf(1, com, "Writing results to %s\n" % output_file)
         output = PISM.util.prepare_output(output_file)
 
-        yield_stress.metadata().set_name("tauc_true")
-        write_vars = [yield_stress, u_obs]
-        for method, tauc_inv in tauc_results.items():
-            tauc_inv.metadata().set_name("tauc_%s" % method)
-            write_vars.append(tauc_inv)
+        design_true.metadata().set_name("%s_true" % design_var)
+        write_vars = [design_true, u_obs]
+        for method, design_inv in design_results.items():
+            design_inv.metadata().set_name("%s_%s" % (design_var, method))
+            write_vars.append(design_inv)
 
         for arr in write_vars:
             for k in range(arr.ndof()):
@@ -498,16 +571,18 @@ def main():
         print("ISMIP-HOM Twin Experiment Summary")
         print("=" * 78)
         print(f"{'Test':>4s}  {'Adjoint':>12s}  {'Iters':>5s}  {'Time(s)':>8s}  "
-              f"{'RMS(m/yr)':>10s}  {'tauc err%':>10s}  {'Reason'}")
+              f"{'RMS(m/yr)':>10s}  {design_var + ' err%':>10s}  {'Reason'}")
         print("-" * 78)
         for r in all_results:
             print(f"{r['test']:>4s}  {r['adjoint']:>12s}  {r['iterations']:>5d}  "
                   f"{r['solve_time_s']:>8.1f}  {r['rms_misfit_m_yr']:>10.4f}  "
-                  f"{r['tauc_rel_error'] * 100:>9.2f}%  {r['reason']}")
+                  f"{r['design_rel_error'] * 100:>9.2f}%  {r['reason']}")
         print("=" * 78)
 
         # Save convergence history as JSON
         json_file = "ismiphom_twin_results.json"
+        if design_var != "tauc":
+            json_file = "ismiphom_twin_%s_results.json" % design_var
         with open(json_file, "w") as f:
             json.dump(all_results, f, indent=2)
         print(f"\nConvergence history saved to {json_file}")

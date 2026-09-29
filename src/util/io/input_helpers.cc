@@ -442,9 +442,13 @@ void regrid_spatial_variable(const VariableMetadata &variable,
     size_t data_size =
       static_cast<long>(target_grid.xm() * target_grid.ym()) * interp_context.z->n_output();
 
-    // Convert data:
-    units::Converter(variable.unit_system(), input_units, internal_units)
-        .convert_doubles(output, data_size);
+    // Convert data. Identical units strings need no conversion; skipping it
+    // also allows reading fields whose units are not valid UDUNITS
+    // expressions (e.g. the ice hardness "Pa s^(1/n)").
+    if (input_units != internal_units) {
+      units::Converter(variable.unit_system(), input_units, internal_units)
+          .convert_doubles(output, data_size);
+    }
   }
 }
 
@@ -723,11 +727,14 @@ void read_spatial_variable(const VariableMetadata &variable, const Grid &grid,
 
   input_units = check_units(variable, input_units, log);
 
-  // Convert data:
+  // Convert data (identical units strings need no conversion; see
+  // regrid_spatial_variable()):
   size_t size = static_cast<long>(grid.xm()) * grid.ym() * nlevels;
 
-  units::Converter(variable.unit_system(), input_units, internal_units)
-      .convert_doubles(output, size);
+  if (input_units != internal_units) {
+    units::Converter(variable.unit_system(), input_units, internal_units)
+        .convert_doubles(output, size);
+  }
 }
 
 /*!
