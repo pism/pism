@@ -33,7 +33,7 @@ class Scalar;
 
 namespace surface {
 
-class TerrainInsolation;
+class DEBMTerrainShadedInsolation;
 
 //! @brief dEBM-enhanced: dEBM-simple with the insolation-driven melt computed from a
 //! terrain-shaded surface-insolation field rather than the analytic top-of-atmosphere
@@ -73,7 +73,7 @@ protected:
 
 private:
   //! terrain-horizon + shaded-insolation engine
-  std::unique_ptr<TerrainInsolation> m_terrain;
+  std::unique_ptr<DEBMTerrainShadedInsolation> m_terrain;
 
   //! interval (seconds) between recomputations of the terrain horizon
   double m_update_interval;

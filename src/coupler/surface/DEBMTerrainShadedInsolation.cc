@@ -1,23 +1,30 @@
-// Copyright (C) 2026 PISM Authors
-//
-// This file is part of PISM.
-//
-// PISM is free software; you can redistribute it and/or modify it under the
-// terms of the GNU General Public License as published by the Free Software
-// Foundation; either version 3 of the License, or (at your option) any later
-// version.
-//
-// PISM is distributed in the hope that it will be useful, but WITHOUT ANY
-// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-// FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
-// details.
-//
-// You should have received a copy of the GNU General Public License
-// along with PISM; if not, write to the Free Software
-// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+/* Copyright (C) 2026 PISM Authors
+ *
+ * This file is part of PISM.
+ *
+ * PISM is free software; you can redistribute it and/or modify it under the
+ * terms of the GNU General Public License as published by the Free Software
+ * Foundation; either version 3 of the License, or (at your option) any later
+ * version.
+ *
+ * PISM is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with PISM; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ */
 
-#include "pism/coupler/surface/TerrainInsolation.hh"
-#include "pism/coupler/surface/terrain_insolation_kernel.hh"
+
+/*!
+ * Reference:
+ *
+ * A. Chokshi, “Solshade: Terrain-aware Solar Illumination Modelling using Digital
+ * Elevation Models and Orbital Geometry,” Journal of Open Source Software, vol. 11, no.
+ * 122, p. 9944, Jun. 2026, doi: 10.21105/joss.09944.
+ */
 
 #include <cassert>
 #include <cmath>
@@ -26,6 +33,10 @@
 #include <petscsystypes.h>
 #include <petscvec.h>
 #include <vector>
+
+#include "pism/coupler/surface/Insolation.hh"
+
+#include "pism/coupler/surface/terrain_insolation_kernel.hh"
 
 #include "pism/util/Component.hh"
 #include "pism/util/Config.hh"
@@ -42,24 +53,155 @@
 #include "pism/util/petscwrappers/Vec.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/projection.hh"
-
-/*!
- * Reference:
- *
- * A. Chokshi, “Solshade: Terrain-aware Solar Illumination Modelling using Digital
- * Elevation Models and Orbital Geometry,” Journal of Open Source Software, vol. 11, no.
- * 122, p. 9944, Jun. 2026, doi: 10.21105/joss.09944.
- */
+#include "pism/util/Time.hh"
+#include "pism/util/io/IO_Flags.hh"
+#include "pism/util/MaxTimestep.hh"
 
 namespace pism {
 namespace surface {
 
-TerrainInsolation::TerrainInsolation(std::shared_ptr<const Grid> grid,
-                                     std::function<double(double)> atmosphere_transmissivity)
-    : m_grid(grid), m_insolation(grid, "insolation"),
+void DEBMTerrainShadedInsolation::init_impl(const InputOptions &options) {
+  m_t_last = time().current();
+  if (options.type == INIT_RESTART or options.type == INIT_BOOTSTRAP) {
+    File input_file(m_grid->com, options.filename, io::PISM_NETCDF3, io::PISM_READONLY);
+
+    if (input_file.variable_exists(m_time_name)) {
+      auto t_length = input_file.nrecords(m_time_name, "", m_sys);
+      auto t_last   = t_length > 0 ? t_length - 1 : 0;
+
+      auto t =
+          io::read_timeseries_variable(input_file, m_time_name, time().units(), m_sys, t_last, 1);
+      m_t_last = t[0];
+    }
+  }
+
+  {
+    auto log    = m_grid->ctx()->log();
+    auto config = m_grid->ctx()->config();
+
+    switch (options.type) {
+    case INIT_RESTART:
+      // read bed elevation and uplift rate from file
+      log->message(2, "    reading bed topography and uplift from %s ... \n",
+                   options.filename.c_str());
+      // re-starting
+      m_horizon->read(options.filename, options.record); // fails if not found!
+      break;
+    case INIT_BOOTSTRAP:
+    case INIT_OTHER:
+    default: {
+      // do nothing
+    } break;
+    }
+
+    // process -regrid_file and -regrid_vars
+    io::regrid(*config, "insolation", *m_horizon, true);
+  }
+}
+
+void DEBMTerrainShadedInsolation::update_impl(double t, double dt,
+                                              const array::Scalar1 &surface_elevation) {
+
+  update_shading(surface_elevation);
+
+  update_daily_insolation(t + 0.5 * dt, surface_elevation);
+}
+
+void DEBMTerrainShadedInsolation::begin_access() const {
+  insolation().begin_access();
+}
+
+void DEBMTerrainShadedInsolation::end_access() const {
+  insolation().end_access();
+}
+
+void DEBMTerrainShadedInsolation::surface_insolation_energy_series_impl(
+    int i, int j, const std::vector<OrbitalParameters> &orbital, double dt,
+    std::vector<double> &result) const {
+  // the daily-mean insolation rate (W m^-2) at this cell was computed in
+  // update_insolation_input
+  double rate = m_insolation(i, j);
+  for (size_t k = 0; k < orbital.size(); ++k) {
+    result[k] = rate * dt;
+  }
+}
+
+MaxTimestep DEBMTerrainShadedInsolation::max_timestep_impl(double t,
+                                                           const CFLData * /*cfl_data*/) const {
+
+  if (t < m_t_last) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION, "time %f is less than the previous time %f",
+                                  t, m_t_last);
+  }
+
+  if (m_update_interval == 0.0) {
+    return {};
+  }
+
+  // Find the smallest time of the form m_t_last + k * m_update_interval that is greater
+  // than t
+  double k = std::ceil((t - m_t_last) / m_update_interval);
+
+  double t_next = m_t_last + k * m_update_interval;
+
+  double dt_max = m_update_interval;
+  if (t < t_next) {
+    dt_max = t_next - t;
+  }
+
+  if (dt_max < m_t_eps) {
+    dt_max = m_update_interval;
+  }
+
+  return MaxTimestep(dt_max, "bed_def");
+}
+
+std::set<VariableMetadata> DEBMTerrainShadedInsolation::state_impl() const {
+  auto variables = array::metadata({ &horizon_altitude() });
+
+  VariableMetadata T(m_time_name, m_sys);
+  T.long_name("time of the last update of the terrain-shaded insolation model")
+      .set_time_dependent(true)
+      .units(time().units())
+      .set_string("calendar", time().calendar());
+
+  variables.insert(T);
+
+  return variables;
+}
+
+void DEBMTerrainShadedInsolation::write_state_impl(const OutputFile &output) const {
+  horizon_altitude().write(output);
+
+  auto t_length = output.time_dimension_length();
+  auto t_start = t_length > 0 ? t_length - 1 : 0;
+
+  output.write_timeseries(m_time_name, { t_start }, { 1 }, { m_t_last });
+}
+
+DiagnosticList DEBMTerrainShadedInsolation::spatial_diagnostics_impl() const {
+  DiagnosticList result = { { "insolation", Diagnostic::wrap(insolation()) },
+                            { "horizon", Diagnostic::wrap(horizon_altitude()) } };
+
+  if (sky_view_enabled()) {
+    result["sky_view_factor"] = Diagnostic::wrap(sky_view_factor());
+  }
+
+  return result;
+}
+
+DEBMTerrainShadedInsolation::DEBMTerrainShadedInsolation(
+    std::shared_ptr<const Grid> grid, std::function<double(double)> atmosphere_transmissivity)
+    : Insolation(grid),
+      m_time_name(time().variable_name() + "_insolation"),
+      m_t_last(time().current()),
+      m_insolation(grid, "insolation"),
       m_y_azimuth(m_grid, "y_azimuth"),
       m_orbital_parameters(*grid->ctx()),
       m_transmissivity(atmosphere_transmissivity) {
+
+  m_update_interval = m_config->get_number("bed_deformation.update_interval", "seconds");
+  m_t_eps           = m_config->get_number("time_stepping.resolution", "seconds");
 
   m_insolation.metadata(0)
       .long_name("daily mean terrain-shaded surface insolation")
@@ -75,7 +217,7 @@ TerrainInsolation::TerrainInsolation(std::shared_ptr<const Grid> grid,
   m_solar_constant   = config->get_number("surface.debm_simple.solar_constant");
   m_diffuse_fraction = config->get_number("surface.debm_enhanced.diffuse_fraction");
 
-  if (not (m_step > 0.0)) {
+  if (not(m_step > 0.0)) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
                                   "surface.debm_enhanced.horizon.step must be positive");
   }
@@ -91,8 +233,7 @@ TerrainInsolation::TerrainInsolation(std::shared_ptr<const Grid> grid,
     azimuth[k] = 2.0 * M_PI * k / m_n_directions;
   }
 
-  m_horizon = std::make_shared<array::Array3D>(m_grid, "horizon", array::WITHOUT_GHOSTS,
-                                               azimuth);
+  m_horizon = std::make_shared<array::Array3D>(m_grid, "horizon", array::WITHOUT_GHOSTS, azimuth);
   m_horizon->metadata(0)
       .long_name("terrain horizon elevation angle as a function of azimuth")
       .units("radian");
@@ -119,22 +260,22 @@ TerrainInsolation::TerrainInsolation(std::shared_ptr<const Grid> grid,
   compute_y_azimuth(m_y_azimuth);
 }
 
-const array::Scalar& TerrainInsolation::insolation() const {
+const array::Scalar& DEBMTerrainShadedInsolation::insolation() const {
   return m_insolation;
 }
 
-const array::Array3D &TerrainInsolation::horizon_altitude() const {
+const array::Array3D &DEBMTerrainShadedInsolation::horizon_altitude() const {
   return *m_horizon;
 }
 
-const array::Scalar &TerrainInsolation::sky_view_factor() const {
+const array::Scalar &DEBMTerrainShadedInsolation::sky_view_factor() const {
   if (not sky_view_enabled()) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION, "sky view factor is not available");
   }
   return *m_sky_view;
 }
 
-bool TerrainInsolation::sky_view_enabled() const {
+bool DEBMTerrainShadedInsolation::sky_view_enabled() const {
   return m_sky_view != nullptr;
 }
 
@@ -194,35 +335,12 @@ private:
   double dx, dy;
 };
 
-void TerrainInsolation::init(const InputOptions &options) {
-  auto log    = m_grid->ctx()->log();
-  auto config = m_grid->ctx()->config();
-
-  switch (options.type) {
-  case INIT_RESTART:
-    // read bed elevation and uplift rate from file
-    log->message(2, "    reading bed topography and uplift from %s ... \n",
-                 options.filename.c_str());
-    // re-starting
-    m_horizon->read(options.filename, options.record); // fails if not found!
-    break;
-  case INIT_BOOTSTRAP:
-  case INIT_OTHER:
-  default: {
-    // do nothing
-  } break;
-  }
-
-  // process -regrid_file and -regrid_vars
-  io::regrid(*config, "insolation", *m_horizon, true);
-}
-
 
 /*!
  * Update the sky view factor and the map of horizon altitude angles (in radians) at each
  * grid point.
  */
-void TerrainInsolation::update_shading(const array::Scalar1 &surface_elevation) {
+void DEBMTerrainShadedInsolation::update_shading(const array::Scalar1 &surface_elevation) {
   auto log = m_grid->ctx()->log();
 
   log->message(2, "* Updating the horizon map...\n");
@@ -314,7 +432,7 @@ void TerrainInsolation::update_shading(const array::Scalar1 &surface_elevation) 
 }
 
 //! Periodic linear interpolation of a horizon column at the given azimuth (radians).
-double TerrainInsolation::horizon_altitude(int i, int j, double azimuth) const {
+double DEBMTerrainShadedInsolation::horizon_altitude(int i, int j, double azimuth) const {
   const double *column = m_horizon->get_column(i, j);
   const int n = m_n_directions;
   const double two_pi = 2.0 * M_PI;
@@ -336,8 +454,8 @@ double TerrainInsolation::horizon_altitude(int i, int j, double azimuth) const {
 // (solshade/irradiance.py).
 //
 // Here they are integrated over the diurnal cycle to compute daily energy.
-void TerrainInsolation::update_daily_insolation(double time,
-                                                const array::Scalar1 &surface_elevation) {
+void DEBMTerrainShadedInsolation::update_daily_insolation(double time,
+                                                          const array::Scalar1 &surface_elevation) {
 
   auto parameters = m_orbital_parameters.compute(time);
   double declination = parameters.solar_declination;
@@ -452,5 +570,5 @@ void TerrainInsolation::update_daily_insolation(double time,
   profiling.end("surface.debm_enhanced.daily_insolation");
 }
 
-} // end of namespace surface
-} // end of namespace pism
+}
+}

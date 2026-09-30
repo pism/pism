@@ -22,7 +22,6 @@
 #include <memory>
 #include <vector>
 
-#include "TerrainInsolation.hh"
 #include "pism/coupler/surface/DEBMSimplePointwise.hh"
 #include "pism/coupler/SurfaceModel.hh"
 #include "pism/util/OrbitalParameters.hh"
@@ -35,76 +34,6 @@ class AccessScope;
 
 namespace surface {
 
-class TerrainInsolation;
-
-class Insolation : public Component, public PetscAccessible {
-public:
-  Insolation(std::shared_ptr<const Grid> grid);
-
-  void init(const InputOptions &options);
-  
-  void update(double t, double dt, const array::Scalar1 &surface_elevation);
-
-  void surface_insolation_energy_series(int i, int j, const std::vector<OrbitalParameters> &orbital,
-                                        double dt, std::vector<double> &result) const;
-
-protected:
-  virtual void init_impl(const InputOptions &options) = 0;
-  virtual void update_impl(double t, double dt, const array::Scalar1 &surface_elevation) = 0;
-
-  virtual void
-  surface_insolation_energy_series_impl(int i, int j,
-                                        const std::vector<OrbitalParameters> &orbital,
-                                        double dt, std::vector<double> &result) const = 0;
-};
-
-class DEBMSimpleInsolation : public Insolation {
-public:
-  DEBMSimpleInsolation(std::shared_ptr<const Grid> grid,
-                       DEBMSimplePointwise &pointwise_model);
-private:
-  void init_impl(const InputOptions &options);
-  void update_impl(double t, double dt, const array::Scalar1 &surface_elevation);
-  void begin_access() const;
-  void end_access() const;
-
-  void surface_insolation_energy_series_impl(int i, int j,
-                                             const std::vector<OrbitalParameters> &orbital,
-                                             double dt, std::vector<double> &result) const;
-
-  const array::Scalar *m_surface_elevation;
-  DEBMSimplePointwise m_pointwise_model;
-};
-
-class DEBMTerrainShadedInsolation : public Insolation {
-public:
-  DEBMTerrainShadedInsolation(std::shared_ptr<const Grid> grid,
-                              std::function<double(double)> atmosphere_transmissivity);
-
-private:
-  void init_impl(const InputOptions &options);
-  void update_impl(double t, double dt, const array::Scalar1 &surface_elevation);
-  void begin_access() const;
-  void end_access() const;
-
-  void surface_insolation_energy_series_impl(int i, int j,
-                                             const std::vector<OrbitalParameters> &orbital,
-                                             double dt, std::vector<double> &result) const;
-
-  MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data = nullptr) const;
-
-  std::set<VariableMetadata> state_impl() const;
-  void write_state_impl(const OutputFile &output) const;
-
-  DiagnosticList spatial_diagnostics_impl() const;
-
-  std::shared_ptr<TerrainInsolation> m_model;
-
-  std::string m_time_name;
-  double m_t_last;
-  double m_update_interval;
-  double m_t_eps;
-};
 
 //! @brief A class implementing a temperature-index (positive degree-day) scheme
 //! to compute melt and runoff, and thus surface mass balance, from

@@ -20,7 +20,7 @@
 
 #include "pism/coupler/surface/DEBMEnhanced.hh"
 #include "pism/coupler/surface/DEBMSimplePointwise.hh"
-#include "pism/coupler/surface/TerrainInsolation.hh"
+#include "pism/coupler/surface/Insolation.hh"
 
 #include "pism/coupler/AtmosphereModel.hh"
 #include "pism/geometry/Geometry.hh"
@@ -50,7 +50,7 @@ DEBMEnhanced::DEBMEnhanced(std::shared_ptr<const Grid> g,
                  "  internally from the ice surface elevation.\n");
 
   DEBMSimpleAtmosphereTransmissivity transmissivity(*m_config);
-  m_terrain.reset(new TerrainInsolation(m_grid, transmissivity));
+  m_terrain.reset(new DEBMTerrainShadedInsolation(m_grid, transmissivity));
 
   m_update_interval =
       m_config->get_number("surface.debm_enhanced.update_interval", "seconds");
