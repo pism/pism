@@ -504,7 +504,7 @@ void PlumeModel::build_discharge_field(const Inputs &inputs,
       }
     }
     if (residual >= rtol) {
-      m_log->message(2,
+      m_log->message(3,
                      "Plume discharge along-flow transport reached max iterations %03d"
                      " (max rel. change %f)\n", max_iter, residual);
     }
@@ -945,14 +945,14 @@ void PlumeModel::compute_grounding_line_elevation(const Inputs &inputs,
 
 
     if (residual < rtol) {
-      m_log->message(2, "grounding line elevation converged iteration %03d, max rel. change = %f\n", iter, residual);
+      m_log->message(3, "grounding line elevation converged iteration %03d, max rel. change = %f\n", iter, residual);
       break;
     }
   }
 
   // Warn if maximum iterations reached without convergence
   if (residual >= rtol) {
-    m_log->message(2, "grounding line elevation maximum number of iterations reached %03d, max rel. change = %f\n", max_iter, residual);
+    m_log->message(3, "grounding line elevation maximum number of iterations reached %03d, max rel. change = %f\n", max_iter, residual);
   }
 }
 
