@@ -34,7 +34,8 @@ surface="-atmosphere uniform -surface simple"
 max_melt() {
 # Prints the maximum of plume_basal_melt_rate in a spatial output file.
 ncwa -O -y max -v plume_basal_melt_rate $1 max.nc
-ncks -H -s "%g" -v plume_basal_melt_rate max.nc
+# -C: the variable alone, without the grid mapping it points at
+ncks -C -H -s "%g" -v plume_basal_melt_rate max.nc
 }
 
 check() {

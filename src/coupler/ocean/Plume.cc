@@ -102,31 +102,25 @@ PlumeModel::PlumeModel(std::shared_ptr<const Grid> grid)
       .long_name("PICOP sub-shelf melt rate")
       .units("m s^-1")
       .output_units("m year^-1");
-  m_basal_melt_rate.metadata()["_FillValue"] = {0.0};
   
   m_grounding_line_elevation.metadata(0).long_name("grounding line elevation").units("m");
-  m_grounding_line_elevation.metadata()["_FillValue"] = { 0.0 };
   m_grounding_line_elevation.set(0.0);
 
   m_shelf_base_elevation.metadata(0).long_name("shelf base elevation").units("m");
-  m_shelf_base_elevation.metadata()["_FillValue"] = { 0.0 };
   m_shelf_base_elevation.set(0.0);
   
   m_local_slope.metadata(0).long_name("shelf base slope").units("rad").output_units("degree");
-  m_local_slope.metadata()["_FillValue"] = { 0.0 };
   m_local_slope.set(0.0);
       
   m_fresh_water_melt_rate.metadata(0)
       .long_name("PICOP fresh water melt rate")
       .units("m s^-1")
       .output_units("m year^-1");
-  m_fresh_water_melt_rate.metadata()["_FillValue"] = {0.0};
   m_fresh_water_melt_rate.set(0.0);
 
   m_discharge_flux.metadata(0)
       .long_name("PICOP subglacial discharge flux on floating ice")
       .units("m^2 s^-1");
-  m_discharge_flux.metadata()["_FillValue"] = {0.0};
   m_discharge_flux.set(0.0);
 
   // Internal along-flow transport tracers, exposed as diagnostics for debugging.
@@ -136,8 +130,6 @@ PlumeModel::PlumeModel(std::shared_ptr<const Grid> grid)
   m_disch_q0.set(0.0);
   m_disch_L5.set(0.0);
   m_disch_s.set(0.0);
-
-  m_shelf_base_temperature->metadata()["_FillValue"] = {0.0};
 }
 
 // CODE Duplication: should this be a public member of PICO?
@@ -1069,22 +1061,68 @@ void PlumeModel::compute_local_slope(const Inputs &inputs,
     }
   }
 }
+namespace diagnostics {
+
+/*! @brief Report a plume field under floating ice, the fill value elsewhere. */
+/*!
+ * The plume is defined at floating cells only. The fields it works with hold zeros
+ * everywhere else, which the physics relies on, so they cannot carry the fill value
+ * themselves: an output file would then show a zero outside the shelves that is
+ * indistinguishable from a zero under them. This reports a copy with `output.fill_value`
+ * (in the units of the field) outside floating ice instead.
+ */
+class FloatingIceField : public Diagnostic {
+public:
+  FloatingIceField(const array::Scalar &input) : Diagnostic(input.grid()), m_input(input) {
+    m_vars = { input.metadata(0) };
+    m_vars[0]["_FillValue"] = { fill_value() };
+  }
+
+protected:
+  std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const {
+    auto result = allocate<array::Scalar>(m_input.get_name());
+
+    const auto &cell_type = geometry.cell_type;
+    const double fill     = fill_value();
+
+    array::AccessScope scope{ &cell_type, &m_input, result.get() };
+
+    for (auto p : m_grid->points()) {
+      const int i = p.i(), j = p.j();
+
+      (*result)(i, j) = cell_type.floating_ice(i, j) ? m_input(i, j) : fill;
+    }
+
+    return result;
+  }
+
+  const array::Scalar &m_input;
+};
+
+static Diagnostic::Ptr floating_ice(const array::Scalar &input) {
+  return Diagnostic::Ptr(new FloatingIceField(input));
+}
+
+} // end of namespace diagnostics
+
 // Write diagnostic variables to extra files if requested
 DiagnosticList PlumeModel::plume_diagnostics(const array::Scalar &T_a,
                                              const array::Scalar &S_a) const {
+  using diagnostics::floating_ice;
 
   DiagnosticList result = {
-    { "plume_basal_melt_rate", Diagnostic::wrap(m_basal_melt_rate) },
-    { "plume_fresh_water_melt_rate", Diagnostic::wrap(m_fresh_water_melt_rate) },
-    { "plume_discharge_flux", Diagnostic::wrap(m_discharge_flux) },
+    { "plume_basal_melt_rate", floating_ice(m_basal_melt_rate) },
+    { "plume_fresh_water_melt_rate", floating_ice(m_fresh_water_melt_rate) },
+    { "plume_discharge_flux", floating_ice(m_discharge_flux) },
+    // internal transport tracers, reported as they are
     { "plume_disch_q0", Diagnostic::wrap(m_disch_q0) },
     { "plume_disch_L5", Diagnostic::wrap(m_disch_L5) },
     { "plume_disch_s", Diagnostic::wrap(m_disch_s) },
-    { "plume_grounding_line_elevation", Diagnostic::wrap(m_grounding_line_elevation) },
-    { "plume_local_slope", Diagnostic::wrap(m_local_slope) },
-    { "plume_temperature", Diagnostic::wrap(T_a) },
-    { "plume_salinity", Diagnostic::wrap(S_a) },
-    { "plume_shelf_base_elevation", Diagnostic::wrap(m_shelf_base_elevation) },
+    { "plume_grounding_line_elevation", floating_ice(m_grounding_line_elevation) },
+    { "plume_local_slope", floating_ice(m_local_slope) },
+    { "plume_temperature", floating_ice(T_a) },
+    { "plume_salinity", floating_ice(S_a) },
+    { "plume_shelf_base_elevation", floating_ice(m_shelf_base_elevation) },
   };
 
   return combine(result, OceanModel::spatial_diagnostics_impl());
@@ -1136,13 +1174,11 @@ Plume::Plume(std::shared_ptr<const Grid> grid)
   m_ambient_temperature.metadata(0)
       .long_name("ambient ocean temperature driving the plume")
       .units("kelvin");
-  m_ambient_temperature.metadata()["_FillValue"] = { 0.0 };
   m_ambient_temperature.set(0.0);
 
   m_ambient_salinity.metadata(0)
       .long_name("ambient ocean salinity driving the plume")
       .units("g/kg");
-  m_ambient_salinity.metadata()["_FillValue"] = { 0.0 };
   m_ambient_salinity.set(0.0);
 }
 
