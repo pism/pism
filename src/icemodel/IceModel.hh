@@ -469,9 +469,21 @@ protected:
   ThicknessChanges m_thickness_change;
 
   /*!
+   * Orders model state variables by name.
+   *
+   * Reading and writing the model state are collective operations, so every rank has to
+   * visit the variables in the same order. Ordering by address does not guarantee that:
+   * a state variable allocated on its own (e.g. `no_model_mask` in IceRegionalModel) can
+   * sit before or after IceModel's members depending on the rank.
+   */
+  struct CompareByName {
+    bool operator()(const array::Array *a, const array::Array *b) const;
+  };
+
+  /*!
    * The set of variables that the "state" of IceModel consists of.
    */
-  std::set<array::Array*> m_model_state;
+  std::set<array::Array*, CompareByName> m_model_state;
   //! Available spatially-variable diagnostics
   std::map<std::string,Diagnostic::Ptr> m_available_spatial_diagnostics;
   //! Available scalar diagnostics
