@@ -3,6 +3,30 @@
 Changes since v2.3.0
 ====================
 
+- Fix the Blatter stress balance (`-stress_balance blatter`) in the regional mode
+  (`-regional`). Previously the Blatter mesh followed `grid.periodicity` (`xy` by
+  default), so elements "wrapped around" the domain and connected the "no model" strips
+  at opposite edges, producing a huge spurious driving stress (and ice velocity) in the
+  strip wherever the surface elevation differs between the two edges. The regional
+  inputs were also ignored: the driving stress in the strip followed the evolving
+  surface instead of the stored one (so `regional.zero_gradient` had no effect),
+  `vel_bc_mask`/`u_bc`/`v_bc` were not applied (with `stress_balance.ssa.dirichlet_bc`),
+  and grounded ice reaching a domain edge below sea level was treated as a calving
+  front. In the regional mode the Blatter solver now uses a non-periodic mesh, uses the
+  stored geometry (`thkstore`, `usurfstore`) for the driving stress in elements inside
+  the strip, prescribes the (depth-independent) velocity at Dirichlet locations, and
+  applies no lateral stress boundary condition on element faces at domain edges, as in
+  `SSAFD`.
+- Python bindings: SWIG now searches the source tree before other include directories,
+  so PISM headers installed in the same prefix as PETSc (e.g. a conda environment) no
+  longer shadow the ones being built.
+- Add `stress_balance.blatter.grounding_line_quadrature_order` (default 10). It sets the order
+  N of the N-by-N quadrature used on Blatter basal faces at grounding lines and on
+  partially-submerged marine faces (where the basal drag / lateral stress is discontinuous
+  within a cell). Lowering it (e.g. to 6) reduces the cost of the Blatter Jacobian and residual
+  assembly at the ice-sheet margin, at the price of a coarser sub-grid grounding-line integral;
+  the maximum is 10. Also hoist a loop-invariant term out of the Blatter Jacobian assembly
+  inner loop (no change in results).
 - Re-run SWIG when a wrapped C++ header changes (`USE_SWIG_DEPENDENCIES`). Previously the
   generated Python bindings depended on the `.i` files only, so header edits could leave a
   stale `PISM.cpp` module in the build tree (e.g. Blatter-based classes wrapped as abstract,
@@ -12,13 +36,6 @@ Changes since v2.3.0
   petsc4py at interpreter shutdown. Previously a failure such as a missing `input.file`
   could deadlock the run under some MPI implementations, so a batch job kept its nodes
   until the wall-clock limit. The traceback is now printed once, by rank 0.
-- Add `stress_balance.blatter.grounding_line_quadrature_order` (default 10). It sets the order
-  N of the N-by-N quadrature used on Blatter basal faces at grounding lines and on
-  partially-submerged marine faces (where the basal drag / lateral stress is discontinuous
-  within a cell). Lowering it (e.g. to 6) reduces the cost of the Blatter Jacobian and residual
-  assembly at the ice-sheet margin, at the price of a coarser sub-grid grounding-line integral;
-  the maximum is 10. Also hoist a loop-invariant term out of the Blatter Jacobian assembly
-  inner loop (no change in results).
 - Add a ISMP7 surface model that uses the gradients but not the anomalies, and adds runoff.
 - Allow the Blatter stress balance to restart from SSA velocities: if `uvel_sigma` and
   `vvel_sigma` are not present in the input file but `u_ssa` and `v_ssa` are, use the

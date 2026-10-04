@@ -44,7 +44,7 @@ StressBalance create(const std::string &model, std::shared_ptr<const Grid> grid,
     int Mz = config->get_number("stress_balance.blatter.Mz");
     int C = config->get_number("stress_balance.blatter.coarsening_factor");
 
-    auto blatter = std::make_shared<Blatter>(grid, Mz, C);
+    auto blatter = std::make_shared<Blatter>(grid, Mz, C, regional);
     auto mod = std::make_shared<BlatterMod>(blatter);
 
     return {blatter, mod};

@@ -287,6 +287,15 @@ void Blatter::residual_dirichlet(const DMDALocalInfo &info,
         continue;
       }
 
+      // compute the residual at map plane locations with prescribed velocity
+      if (dirichlet_bc_node(P[j][i])) {
+        Vector2d U_bc = bc_velocity(P[j][i]);
+        for (int k = info.zs; k < info.zs + info.zm; k++) {
+          R[j][i][k] = scaling * (x[j][i][k] - U_bc); // STORAGE_ORDER
+        }
+        continue;
+      }
+
       for (int k = info.zs; k < info.zs + info.zm; k++) {
         // reset to zero
         R[j][i][k] = 0.0;     // STORAGE_ORDER
@@ -337,6 +346,9 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
   // scalar quantities
   double z[Nk];
   double floatation[Nk], sea_level[Nk], bottom_elevation[Nk], ice_thickness[Nk], surface_elevation[Nk];
+  // bottom and surface elevation used to compute the driving stress (these differ from
+  // bottom_elevation and surface_elevation in the "no model" strip of regional setups)
+  double bottom_ds[Nk], surface_ds[Nk];
   double B[Nk], basal_yield_stress[Nk];
   int node_type[Nk];
 
@@ -372,6 +384,10 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
         continue;
       }
 
+      bool use_source_term = driving_stress_geometry(element, P, i, j,
+                                                     bottom_elevation, surface_elevation,
+                                                     bottom_ds, surface_ds);
+
       // loop over elements in a column
       for (int k = info.gzs; k < info.gzs + info.gzm - 1; k++) {
 
@@ -398,7 +414,10 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
           // values of the current iterate to Dirichlet BC values.
           for (int n = 0; n < Nk; ++n) {
             auto I = element.local_to_global(n);
-            if (dirichlet_node(info, I)) {
+            if (dirichlet_bc_node(P[I.j][I.i])) {
+              element.mark_row_invalid(n);
+              velocity[n] = bc_velocity(P[I.j][I.i]);
+            } else if (dirichlet_node(info, I)) {
               element.mark_row_invalid(n);
               velocity[n] = u_bc(element.x(n), element.y(n), element.z(n));
             }
@@ -412,7 +431,9 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
         residual_f(element, velocity, B, R_nodal);
 
         // the "source term" (driving stress)
-        residual_source_term(element, surface_elevation, bottom_elevation, floatation, R_nodal);
+        if (use_source_term) {
+          residual_source_term(element, surface_ds, bottom_ds, floatation, R_nodal);
+        }
 
         // basal boundary
         if (k == 0) {
@@ -433,6 +454,12 @@ void Blatter::compute_residual(DMDALocalInfo *petsc_info,
         // lateral boundary
         // loop over all vertical faces (see fem::q13d::incident_nodes for the order)
         for (int f = 0; f < 4; ++f) {
+          // In regional setups ice may extend to the edge of the domain; such faces are
+          // not calving fronts.
+          if (m_regional_mode and domain_edge_face(info, i, j, f)) {
+            continue;
+          }
+
           if (marine_boundary(f, node_type, bottom_elevation, sea_level)) {
             // use an N*N-point equally-spaced quadrature for partially-submerged faces
             fem::Q1Element3Face *face = (partially_submerged_face(f, z, sea_level) ?

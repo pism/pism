@@ -191,7 +191,9 @@ void Blatter::jacobian_dirichlet(const DMDALocalInfo &info, Parameters **P, Mat 
   for (int j = info.ys; j < info.ys + info.ym; j++) {
     for (int i = info.xs; i < info.xs + info.xm; i++) {
       for (int k = info.zs; k < info.zs + info.zm; k++) {
-        if ((int)P[j][i].node_type == NODE_EXTERIOR or dirichlet_node(info, {i, j, k})) {
+        if ((int)P[j][i].node_type == NODE_EXTERIOR or
+            dirichlet_bc_node(P[j][i]) or
+            dirichlet_node(info, {i, j, k})) {
 
           double identity[4] = {scaling.u, 0, 0, scaling.v};
 
@@ -311,7 +313,11 @@ void Blatter::compute_jacobian(DMDALocalInfo *petsc_info,
           // Don't contribute to Dirichlet nodes
           for (int n = 0; n < Nk; ++n) {
             auto I = element.local_to_global(n);
-            if (dirichlet_node(info, I)) {
+            if (dirichlet_bc_node(P[I.j][I.i])) {
+              element.mark_row_invalid(n);
+              element.mark_col_invalid(n);
+              velocity[n] = bc_velocity(P[I.j][I.i]);
+            } else if (dirichlet_node(info, I)) {
               element.mark_row_invalid(n);
               element.mark_col_invalid(n);
               velocity[n] = u_bc(element.x(n), element.y(n), element.z(n));
