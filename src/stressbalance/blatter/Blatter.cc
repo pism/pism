@@ -252,6 +252,117 @@ bool Blatter::marine_boundary(int face,
   return false;
 }
 
+/*!
+ * Return true if a vertical face of the element with the map-plane index (i, j) lies on
+ * a (non-periodic) edge of the computational domain.
+ *
+ * In regional setups ice may extend to the edge of the domain. Such faces are not
+ * calving fronts: skipping the lateral boundary integral there corresponds to the
+ * "natural" boundary condition, i.e. ice behaves as if it extended past the edge
+ * without a change in geometry. This is the Blatter analog of the treatment of domain
+ * edges in SSAFD.
+ */
+bool Blatter::domain_edge_face(const DMDALocalInfo &info, int i, int j, int face) const {
+  // Note: info is "transposed" (see grid_transpose()), so info.bx and info.by are
+  // boundary types in the x and y directions.
+  bool
+    x_periodic = info.bx == DM_BOUNDARY_PERIODIC,
+    y_periodic = info.by == DM_BOUNDARY_PERIODIC;
+
+  // The element (i, j) has nodes i, i+1 in the x direction and j, j+1 in the y direction.
+  switch (face) {
+  case fem::q13d::FACE_LEFT:
+    return (not x_periodic) and i == 0;
+  case fem::q13d::FACE_RIGHT:
+    return (not x_periodic) and i + 1 == info.mx - 1;
+  case fem::q13d::FACE_FRONT:
+    return (not y_periodic) and j == 0;
+  case fem::q13d::FACE_BACK:
+    return (not y_periodic) and j + 1 == info.my - 1;
+  default:
+    return false;
+  }
+}
+
+/*!
+ * Compute nodal values of the bottom and surface elevation used to compute the driving
+ * stress in the current element.
+ *
+ * Away from the "no model" strip (and in non-regional setups) these are just the
+ * current geometry. In regional setups elements that lie entirely within the "no model"
+ * strip use the stored geometry (`no_model_thickness`, `no_model_surface`) instead, so
+ * that the driving stress in the strip stays constant (or vanishes if
+ * `regional.zero_gradient` is set), as in the regional versions of the SIA and SSA
+ * solvers. Elements straddling the edge of the strip use the current geometry: using
+ * stored values at some nodes and current values at others would create an artificial
+ * "cliff" when the stored geometry differs from the current one.
+ *
+ * @param[in] element the current element
+ * @param[in] P 2D parameters
+ * @param[in] i, j map-plane index of the element
+ * @param[in] bottom, surface current bottom and surface elevation at element nodes
+ * @param[out] bottom_ds, surface_ds elevations to use in the driving stress computation
+ *
+ * @return false if the driving stress vanishes in this element (and the source term
+ * should be skipped), true otherwise.
+ */
+bool Blatter::driving_stress_geometry(const fem::Q1Element3 &element,
+                                      Parameters **P,
+                                      int i,
+                                      int j,
+                                      const double *bottom,
+                                      const double *surface,
+                                      double *bottom_ds,
+                                      double *surface_ds) const {
+  const int Nk = fem::q13d::n_chi;
+
+  for (int n = 0; n < Nk; ++n) {
+    bottom_ds[n]  = bottom[n];
+    surface_ds[n] = surface[n];
+  }
+
+  if (not m_regional_mode) {
+    return true;
+  }
+
+  // number of nodes per map-plane cell
+  const int N = 4;
+
+  bool in_strip = true;
+  double max_thickness = 0.0;
+  for (int n = 0; n < N; ++n) {
+    auto I = element.local_to_global(i, j, 0, n);
+    const auto &p = P[I.j][I.i];
+
+    if (p.no_model < 0.5) {
+      in_strip = false;
+      break;
+    }
+    max_thickness = std::max(max_thickness, p.no_model_thickness);
+  }
+
+  if (not in_strip) {
+    return true;
+  }
+
+  if (max_thickness <= 0.0) {
+    // regional.zero_gradient: no driving stress in the strip
+    return false;
+  }
+
+  // Note: this element has nodes i, i+1 and j, j+1 in the map plane; the lower and upper
+  // layers of nodes share the same 2D parameters.
+  for (int n = 0; n < Nk; ++n) {
+    auto I = element.local_to_global(i, j, 0, n);
+    const auto &p = P[I.j][I.i];
+
+    surface_ds[n] = p.no_model_surface;
+    bottom_ds[n]  = p.no_model_surface - p.no_model_thickness;
+  }
+
+  return true;
+}
+
 namespace {
 //! Read and validate stress_balance.blatter.grounding_line_quadrature_order.
 /*! The N-by-N quadrature has to fit the pre-allocated workspace (Blatter::m_Nq = 100
@@ -277,9 +388,11 @@ int gl_quadrature_order(const Config &config) {
  * @param[in] Mz number of vertical levels
  * @param[in] coarsening_factor grid coarsening factor
  */
-Blatter::Blatter(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor)
+Blatter::Blatter(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor,
+                 bool regional_mode)
   : ShallowStressBalance(grid),
     m_parameters(grid, "bp_input_parameters", array::WITH_GHOSTS),
+    m_regional_mode(regional_mode),
     m_face4(grid->dx(), grid->dy(), fem::Q1Quadrature4()),    // 4-point Gaussian quadrature
     // higher-order (N-by-N) quadrature for grounding lines and marine faces
     m_face_high_order(grid->dx(), grid->dy(),
@@ -293,7 +406,13 @@ Blatter::Blatter(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor
   
   auto pism_da = grid->get_dm(1, 0);
 
-  int ierr = setup(*pism_da, grid->periodicity(), Mz, coarsening_factor, "bp_");
+  // PISM's grid is periodic by default (grid.periodicity = "xy") and finite-difference
+  // solvers avoid using neighbors across the domain boundary in the regional mode. Here
+  // we use a non-periodic DM in the regional mode so that no elements "wrap around" and
+  // connect the "no model" strips at opposite edges of the domain.
+  auto periodicity = regional_mode ? grid::NOT_PERIODIC : grid->periodicity();
+
+  int ierr = setup(*pism_da, periodicity, Mz, coarsening_factor, "bp_");
   if (ierr != 0) {
     throw RuntimeError(PISM_ERROR_LOCATION,
                        "Failed to allocate a Blatter solver instance");
@@ -594,6 +713,59 @@ void Blatter::init_2d_parameters(const Inputs &inputs) {
       m_parameters(i, j).bed        = std::max(b_grounded, b_floating);
       m_parameters(i, j).node_type  = NODE_EXTERIOR;
       m_parameters(i, j).floatation = s_floating - s_grounded;
+
+      m_parameters(i, j).bc_mask = 0.0;
+      m_parameters(i, j).u_bc    = 0.0;
+      m_parameters(i, j).v_bc    = 0.0;
+
+      m_parameters(i, j).no_model           = 0.0;
+      m_parameters(i, j).no_model_thickness = H(i, j);
+      m_parameters(i, j).no_model_surface   = s_grounded;
+    }
+  }
+
+  // Dirichlet BC (e.g. prescribed velocity in the "no model" strip of a regional setup
+  // with stress_balance.ssa.dirichlet_bc set)
+  if (inputs.bc_mask != nullptr and inputs.bc_values != nullptr) {
+    const auto &bc_mask   = *inputs.bc_mask;
+    const auto &bc_values = *inputs.bc_values;
+
+    array::AccessScope list{&bc_mask, &bc_values, &m_parameters};
+
+    for (auto p : m_grid->points()) {
+      const int i = p.i(), j = p.j();
+
+      if (bc_mask.as_int(i, j) == 1) {
+        m_parameters(i, j).bc_mask = 1.0;
+        m_parameters(i, j).u_bc    = bc_values(i, j).u;
+        m_parameters(i, j).v_bc    = bc_values(i, j).v;
+      }
+    }
+  }
+
+  if (m_regional_mode) {
+    if (inputs.no_model_mask == nullptr or
+        inputs.no_model_ice_thickness == nullptr or
+        inputs.no_model_surface_elevation == nullptr) {
+      throw RuntimeError(PISM_ERROR_LOCATION,
+                         "regional inputs (no_model_mask, etc) were not provided to the"
+                         " Blatter solver");
+    }
+
+    const auto &no_model    = *inputs.no_model_mask;
+    const auto &H_no_model  = *inputs.no_model_ice_thickness;
+    const auto &s_no_model  = *inputs.no_model_surface_elevation;
+
+    array::AccessScope list{&no_model, &H_no_model, &s_no_model, &m_parameters};
+
+    for (auto p : m_grid->points()) {
+      const int i = p.i(), j = p.j();
+
+      if (no_model(i, j) > 0.5) {
+        m_parameters(i, j).no_model           = 1.0;
+        m_parameters(i, j).no_model_thickness = H_no_model(i, j);
+        m_parameters(i, j).no_model_surface   = s_no_model(i, j);
+      }
     }
   }
 

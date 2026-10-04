@@ -3,6 +3,23 @@
 Changes since v2.3.0
 ====================
 
+- Fix the Blatter stress balance (`-stress_balance blatter`) in the regional mode
+  (`-regional`). Previously the Blatter mesh followed `grid.periodicity` (`xy` by
+  default), so elements "wrapped around" the domain and connected the "no model" strips
+  at opposite edges, producing a huge spurious driving stress (and ice velocity) in the
+  strip wherever the surface elevation differs between the two edges. The regional
+  inputs were also ignored: the driving stress in the strip followed the evolving
+  surface instead of the stored one (so `regional.zero_gradient` had no effect),
+  `vel_bc_mask`/`u_bc`/`v_bc` were not applied (with `stress_balance.ssa.dirichlet_bc`),
+  and grounded ice reaching a domain edge below sea level was treated as a calving
+  front. In the regional mode the Blatter solver now uses a non-periodic mesh, uses the
+  stored geometry (`thkstore`, `usurfstore`) for the driving stress in elements inside
+  the strip, prescribes the (depth-independent) velocity at Dirichlet locations, and
+  applies no lateral stress boundary condition on element faces at domain edges, as in
+  `SSAFD`.
+- Python bindings: SWIG now searches the source tree before other include directories,
+  so PISM headers installed in the same prefix as PETSc (e.g. a conda environment) no
+  longer shadow the ones being built.
 - Add the `plume` ocean model (`-ocean plume`): PICOP's buoyant-plume melt rate
   parameterization, including the subglacial-discharge extension, driven by ambient
   ocean temperature and salinity read from a file (`ocean.plume.file`) at every floating

@@ -41,7 +41,12 @@ if (Pism_BUILD_PYTHON_BINDINGS)
     pism_calving.i
     )
 
-  set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-I${CMAKE_BINARY_DIR}" APPEND)
+  # SWIG searches -I directories in the order given (unlike the C++ compiler, which
+  # searches -I before -isystem). Put the source tree first so that PISM headers
+  # installed in the same prefix as PETSc (e.g. a conda environment) do not shadow the
+  # ones we are building.
+  set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS
+    "-I${CMAKE_BINARY_DIR}/include" "-I${CMAKE_BINARY_DIR}" APPEND)
 
   if(Pism_DEBUG)
     set_property(SOURCE PISM.i PROPERTY SWIG_FLAGS "-DPism_DEBUG=1" APPEND)

@@ -37,7 +37,13 @@ namespace stressbalance {
 
 class Blatter : public ShallowStressBalance {
 public:
-  Blatter(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor);
+  /*!
+   * @param[in] regional_mode true if used in a "regional" (outlet glacier) setup: use a
+   *            non-periodic mesh, honor the "no model" strip and treat domain edges as
+   *            internal boundaries
+   */
+  Blatter(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor,
+          bool regional_mode = false);
   virtual ~Blatter() = default;
 
   virtual void update_impl(const Inputs &inputs, bool /*full_update*/);
@@ -61,7 +67,15 @@ public:
     double sea_level;
     // floatation function (positive where floating, zero or negative where grounded)
     double floatation;
-    // FIXME: Add Dirichlet BC at a map plane location.
+    // Dirichlet BC: 1 where ice velocity is prescribed, 0 elsewhere
+    double bc_mask;
+    // prescribed (depth-independent) ice velocity at Dirichlet locations
+    double u_bc, v_bc;
+    // regional mode: 1 in the "no model" strip, 0 in the modeled area
+    double no_model;
+    // regional mode: ice thickness and surface elevation used to compute the driving
+    // stress in the "no model" strip
+    double no_model_thickness, no_model_surface;
   };
 
 protected:
@@ -105,6 +119,9 @@ protected:
 
   // True if the Eisenstat-Walker method of adjusting linear solver tolerances is enabled.
   bool m_ksp_use_ew;
+
+  // True in "regional" (outlet glacier) setups.
+  bool m_regional_mode;
 
   static const int m_Nq = 100;
   static const int m_n_work = 9;
@@ -150,6 +167,27 @@ protected:
   virtual bool dirichlet_node(const DMDALocalInfo &info, const fem::Element3::GlobalIndex& I);
 
   virtual Vector2d u_bc(double x, double y, double z) const;
+
+  //! True if ice velocity is prescribed (Dirichlet BC) in the column corresponding to `p`.
+  static bool dirichlet_bc_node(const Parameters &p) {
+    return p.bc_mask > 0.5;
+  }
+
+  //! Prescribed ice velocity in the column corresponding to `p`.
+  static Vector2d bc_velocity(const Parameters &p) {
+    return {p.u_bc, p.v_bc};
+  }
+
+  bool domain_edge_face(const DMDALocalInfo &info, int i, int j, int face) const;
+
+  bool driving_stress_geometry(const fem::Q1Element3 &element,
+                               Parameters **P,
+                               int i,
+                               int j,
+                               const double *bottom,
+                               const double *surface,
+                               double *bottom_ds,
+                               double *surface_ds) const;
 
   void compute_jacobian(DMDALocalInfo *info, const Vector2d ***x, Mat A, Mat J);
 
