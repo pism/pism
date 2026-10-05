@@ -18,6 +18,11 @@ Changes since v2.3.0
   driving stress, as in `SIAFD_Regional`), prescribes the (depth-independent) velocity
   at Dirichlet locations, and applies no lateral stress boundary condition on element
   faces at domain edges, as in `SSAFD`.
+- Fix the `tauc` written to output files in the regional mode: it was the yield stress
+  *without* the `regional.no_model_yield_stress` modification in the "no model" strip
+  (the modified field was written second and skipped by the output writer, which
+  writes each variable once per time record). The yield stress used by the model was
+  correct; only the output (and so restarts that read `tauc`) was affected.
 - Python bindings: SWIG now searches the source tree before other include directories,
   so PISM headers installed in the same prefix as PETSc (e.g. a conda environment) no
   longer shadow the ones being built.
