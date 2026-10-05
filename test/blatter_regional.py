@@ -309,8 +309,9 @@ class TestRegional(TestCase):
 
         Ice in the strip still moves because of the longitudinal coupling with the
         modeled area (the Blatter solver includes membrane stresses), but with the
-        driving stress removed the ice at the edge of the domain is slower than with
-        the stored geometry equal to the current one."""
+        driving stress removed from all elements touching the strip the ice at the edge
+        of the domain is much slower than with the stored geometry equal to the current
+        one."""
         strip_width = 5
 
         def in_strip(i, j):
