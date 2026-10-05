@@ -289,13 +289,21 @@ bool Blatter::domain_edge_face(const DMDALocalInfo &info, int i, int j, int face
  * stress in the current element.
  *
  * Away from the "no model" strip (and in non-regional setups) these are just the
- * current geometry. In regional setups elements that lie entirely within the "no model"
- * strip use the stored geometry (`no_model_thickness`, `no_model_surface`) instead, so
- * that the driving stress in the strip stays constant (or vanishes if
- * `regional.zero_gradient` is set), as in the regional versions of the SIA and SSA
- * solvers. Elements straddling the edge of the strip use the current geometry: using
- * stored values at some nodes and current values at others would create an artificial
- * "cliff" when the stored geometry differs from the current one.
+ * current geometry. In regional setups nodes in the "no model" strip use the stored
+ * geometry (`no_model_thickness`, `no_model_surface`) instead, so that the driving
+ * stress in the strip stays constant, as in the regional versions of the SIA and SSA
+ * solvers.
+ *
+ * If `regional.zero_gradient` is set the stored thickness is zero. Then *every* element
+ * containing a node in the strip (not just elements inside the strip) contributes no
+ * driving stress. This is the analog of SIAFD_Regional, which sets the surface gradient
+ * to zero on all staggered-grid locations adjacent to the strip, and it matters: an
+ * element straddling the edge of the strip would otherwise see the step between the
+ * evolving surface in the modeled area and the fixed surface in the strip and push ice
+ * towards the strip, where the mass transport code does not let it go. The resulting
+ * pile-up next to the strip steepens the step, which is a positive feedback. Using
+ * only the modeled side to compute the driving stress at the last modeled node makes
+ * such a pile-up push ice *away* from the strip, as in the SIA case.
  *
  * @param[in] element the current element
  * @param[in] P 2D parameters
@@ -325,36 +333,20 @@ bool Blatter::driving_stress_geometry(const fem::Q1Element3 &element,
     return true;
   }
 
-  // number of nodes per map-plane cell
-  const int N = 4;
-
-  bool in_strip = true;
-  double max_thickness = 0.0;
-  for (int n = 0; n < N; ++n) {
-    auto I = element.local_to_global(i, j, 0, n);
-    const auto &p = P[I.j][I.i];
-
-    if (p.no_model < 0.5) {
-      in_strip = false;
-      break;
-    }
-    max_thickness = std::max(max_thickness, p.no_model_thickness);
-  }
-
-  if (not in_strip) {
-    return true;
-  }
-
-  if (max_thickness <= 0.0) {
-    // regional.zero_gradient: no driving stress in the strip
-    return false;
-  }
-
   // Note: this element has nodes i, i+1 and j, j+1 in the map plane; the lower and upper
   // layers of nodes share the same 2D parameters.
   for (int n = 0; n < Nk; ++n) {
     auto I = element.local_to_global(i, j, 0, n);
     const auto &p = P[I.j][I.i];
+
+    if (p.no_model < 0.5) {
+      continue;
+    }
+
+    if (p.no_model_thickness <= 0.0) {
+      // regional.zero_gradient: no driving stress in elements touching the strip
+      return false;
+    }
 
     surface_ds[n] = p.no_model_surface;
     bottom_ds[n]  = p.no_model_surface - p.no_model_thickness;

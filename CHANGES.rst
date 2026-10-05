@@ -13,10 +13,11 @@ Changes since v2.3.0
   `vel_bc_mask`/`u_bc`/`v_bc` were not applied (with `stress_balance.ssa.dirichlet_bc`),
   and grounded ice reaching a domain edge below sea level was treated as a calving
   front. In the regional mode the Blatter solver now uses a non-periodic mesh, uses the
-  stored geometry (`thkstore`, `usurfstore`) for the driving stress in elements inside
-  the strip, prescribes the (depth-independent) velocity at Dirichlet locations, and
-  applies no lateral stress boundary condition on element faces at domain edges, as in
-  `SSAFD`.
+  stored geometry (`thkstore`, `usurfstore`) at strip nodes when computing the driving
+  stress (with `regional.zero_gradient` no element touching the strip contributes a
+  driving stress, as in `SIAFD_Regional`), prescribes the (depth-independent) velocity
+  at Dirichlet locations, and applies no lateral stress boundary condition on element
+  faces at domain edges, as in `SSAFD`.
 - Python bindings: SWIG now searches the source tree before other include directories,
   so PISM headers installed in the same prefix as PETSc (e.g. a conda environment) no
   longer shadow the ones being built.
