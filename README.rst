@@ -45,6 +45,28 @@ Then build PISM::
   
   CMAKE_BUILD_PARALLEL_LEVEL=8 python -m pip install --no-build-isolation -v .
 
+Building the documentation
+--------------------------
+
+Building the manual requires the development environment, which adds
+``sphinx`` and ``sphinxcontrib-bibtex``::
+
+  conda env create -f environment-dev.yml
+  conda activate pism
+
+Or update the existing environment::
+
+  conda env update -f environment-dev.yml
+  
+The documentation is configured independently of the PISM build. With the
+``pism`` environment active, run::
+
+  cmake -S doc -B doc/build
+  make -C doc/build manual_html
+
+The HTML manual is written to ``doc/build/sphinx/manual_html/index.html``.
+The ``manual_linkcheck`` target checks external links, and ``manual_pdf``
+builds the PDF manual if ``pdflatex`` and ``latexmk`` are available.
 
 Support
 -------
