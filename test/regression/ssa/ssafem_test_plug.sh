@@ -21,7 +21,7 @@ output=`mktemp pism-ssa-test-plug.XXXX` || exit 1
 set -e
 set -x
 
-OPTS="-verbose 1 -ssa_method fem -o_size none -ksp_type cg"
+OPTS="-verbose 1 -ssa_method fem -o_size none -ssafem_ksp_type cg"
 
 # do stuff
 $MPIEXEC_COMMAND $PISM_PATH/pism_ssa_test_plug${EXT} -Mx 22 -My 31 $OPTS > ${output}
