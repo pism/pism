@@ -59,8 +59,14 @@ double convert(System::Ptr system, double input,
                const std::string &spec1, const std::string &spec2);
 
 struct DateTime {
+  DateTime(int year_, int month_, int day_, int hour_, int minute_, double second_,
+           const std::string &calendar_);
+  // parse date of the form Y-M-D and set hour, minute, second to zero
+  DateTime(const std::string &input, const std::string &calendar);
+
   int year, month, day, hour, minute;
   double second;
+  std::string calendar;
 };
 
 class Unit {
@@ -71,7 +77,7 @@ public:
   bool is_convertible(const Unit &other) const;
 
   DateTime date(double T, const std::string &calendar) const;
-  double time(const DateTime &d, const std::string &calendar) const;
+  double time(const DateTime &d) const;
 
   Unit& operator=(const Unit& other);
   std::string string() const;
