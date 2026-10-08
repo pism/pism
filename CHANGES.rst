@@ -3,6 +3,13 @@
 Changes since v2.3.0
 ====================
 
+- Add `output.clip_grounding_line_flux` (default no). When set, the diagnostics
+  `grounding_line_flux` (`ligroundf` with `output.ISMIP`) and
+  `ice_mass_transport_across_grounding_line` count only ice leaving the grounded area:
+  positive contributions are set to zero at every time step, before the average over the
+  reporting interval, so ice moving back onto grounded cells cannot offset the outflow.
+  The scalar `grounding_line_flux` time series is unchanged.
+
 - Re-run SWIG when a wrapped C++ header changes (`USE_SWIG_DEPENDENCIES`). Previously the
   generated Python bindings depended on the `.i` files only, so header edits could leave a
   stale `PISM.cpp` module in the build tree (e.g. Blatter-based classes wrapped as abstract,
@@ -12,6 +19,11 @@ Changes since v2.3.0
   petsc4py at interpreter shutdown. Previously a failure such as a missing `input.file`
   could deadlock the run under some MPI implementations, so a batch job kept its nodes
   until the wall-clock limit. The traceback is now printed once, by rank 0.
+- Fix missing CF grid mapping metadata in files written by Python scripts (`pismi.py`,
+  `ssa_forward.py`, and others). `Array.write(filename)` now defines the grid mapping
+  variable (if the grid has projection information) and adds the `grid_mapping` attribute
+  to spatial variables, matching output written by `pism` itself. This makes inversion
+  output georeferenced, so tools like GDAL, `rioxarray`, and QGIS pick up the projection.
 - Add a ISMP7 surface model that uses the gradients but not the anomalies, and adds runoff.
 - Allow the Blatter stress balance to restart from SSA velocities: if `uvel_sigma` and
   `vvel_sigma` are not present in the input file but `u_ssa` and `v_ssa` are, use the

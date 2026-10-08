@@ -1902,6 +1902,10 @@ netcdf pism_config {
     pism_config:output.checkpoint.size_option = "checkpoint_size";
     pism_config:output.checkpoint.size_type = "keyword";
 
+    pism_config:output.clip_grounding_line_flux = "no";
+    pism_config:output.clip_grounding_line_flux_doc = "If ``true``, the diagnostics ``grounding_line_flux`` (``ligroundf``) and ``ice_mass_transport_across_grounding_line`` count only ice leaving the grounded area: positive contributions (ice moving from floating or ocean cells onto grounded ones) are set to zero at every time step, before they are averaged over the reporting interval.";
+    pism_config:output.clip_grounding_line_flux_type = "flag";
+
     pism_config:output.compression_level = 0;
     pism_config:output.compression_level_doc = "Compression level for 2D and 3D output variables (if supported by :config:`output.format`)";
     pism_config:output.compression_level_type = "integer";
