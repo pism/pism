@@ -12,6 +12,29 @@ Changes since v2.3.0
   petsc4py at interpreter shutdown. Previously a failure such as a missing `input.file`
   could deadlock the run under some MPI implementations, so a batch job kept its nodes
   until the wall-clock limit. The traceback is now printed once, by rank 0.
+- Fix a crash and a parallel deadlock in the `steady` hydrology emptying solver. The explicit
+  upwind emptying iteration is monotone only up to roundoff and its fixed-speed CFL estimate,
+  so it can undershoot slightly negative; the old code aborted with `W(i, j) = ... < 0`. Since
+  water thickness cannot be negative, such undershoots are now clamped to zero. This also
+  removes a parallel hang: the abort was a per-rank `throw` (only the rank owning the cell hit
+  it), which left the other ranks deadlocked at the next ghost exchange. Runoff-driven `steady`
+  runs on multiple ranks previously crashed or hung as a result.
+- The `steady` subglacial hydrology model now works with `hydrology.surface_input_from_runoff`
+  (previously it required `hydrology.surface_input.file`). When the water input comes from the
+  surface model (runoff), the steady-state flux is re-solved every
+  `hydrology.steady.flux_update_interval` using the input rate time-averaged over that
+  interval (runoff is strongly seasonal, so a snapshot would misrepresent the period).
+  File-driven behavior is unchanged.
+- Change the default `hydrology.steady.flux_update_interval` from one year to one month, so
+  seasonal (runoff-driven) input is resolved by default. Runs relying on the old yearly
+  cadence should set it explicitly.
+- Speed up the `routing` subglacial hydrology model. The parts of the conductivity and
+  water velocity that depend only on the hydraulic potential `R = P + rho_w g b` (which is
+  constant during the internal sub-stepping loop, since the pressure equals the overburden
+  pressure) are now computed once per step instead of every sub-step. This roughly halves
+  the time spent computing conductivity and removes two ghost communications per sub-step,
+  with no change in results. (The `distributed` model, where the pressure evolves, is
+  unaffected.)
 - Add a ISMP7 surface model that uses the gradients but not the anomalies, and adds runoff.
 - Allow the Blatter stress balance to restart from SSA velocities: if `uvel_sigma` and
   `vvel_sigma` are not present in the input file but `u_ssa` and `v_ssa` are, use the
