@@ -3,6 +3,60 @@
 Changes since v2.3.0
 ====================
 
+- Add the `plume` ocean model (`-ocean plume`): PICOP's buoyant-plume melt rate
+  parameterization, including the subglacial-discharge extension, driven by ambient
+  ocean temperature and salinity read from a file (`ocean.plume.file`) at every floating
+  cell instead of by the PICO box model. Set `ocean.plume.temperature_as_thermal_forcing`
+  to read thermal forcing; the plume is then driven by exactly the thermal forcing in the
+  file rather than by a basin average of it. The plume code lives in a `PlumeModel` base
+  class (`Plume.{hh,cc}`, `PlumePhysics.{hh,cc}`) that both `Plume` and `Picop` derive
+  from; PICOP results are unchanged.
+- The plume's along-flow transports (grounding-line elevation, discharge tracers) start
+  from the previous solution on floating cells (`ocean.plume.transport_warm_start`,
+  default yes) instead of re-propagating from the grounding line at every ocean update,
+  which took ~90 sweeps per update on Greenland's long shelves for a field that hardly
+  changed. The converged fields are the same to within the iteration tolerance.
+- **Breaking:** the plume parameters and diagnostics are shared by `plume` and `picop`
+  and are now named after the plume: every `ocean.picop.*` parameter is `ocean.plume.*`
+  (`ocean.plume.melt_rate_parameter`, `ocean.plume.power_beta`, ...; the command-line
+  options `-picop_*` are `-plume_*`), and the diagnostics `picop_*` are `plume_*`
+  (`plume_basal_melt_rate`, `plume_discharge_flux`, ...). `ocean.picop.file` is gone:
+  PICOP reads its forcing through PICO (`ocean.pico.file`).
+- Add `ocean.picop.power_beta` (default 2). It sets the exponent on the thermal forcing
+  `(T_a - T_f)` in the PICOP ambient melt function (`Pelle2019`, eqn. 10). The default 2 is the
+  Antarctic plume value; `Cai2017` find approximately 1.2 for Petermann. Lowering it weakens the
+  melt sensitivity to ocean warming (changing it from 2 alters the effective units of
+  `ocean.picop.melt_rate_parameter`, which may then need re-tuning).
+- Add `ocean.picop.power_alpha` (default 1/3). It sets the plume-velocity exponent applied to
+  the buoyancy-and-geometry group `G2 (g q_sg delta_rho)` in the PICOP subglacial-discharge
+  melt rate (`Pelle2023`, eqns. 13-14). The default reproduces the published parameterization.
+- Add `ocean.picop.discharge_method` (keyword, default `along_flow`) controlling how the PICOP
+  subglacial-discharge plume `q_sg(x,y)` is distributed onto floating cells. `along_flow` (the
+  new default) transports the discharge downstream along the ice flow (semi-Lagrangian), with
+  quadratic decay over 5L' measured in along-flow path distance. `isotropic` restores the
+  previous behavior: a disk of radius 5L' around each grounding-line outflow. `downstream_gate`
+  paints that disk only onto cells downstream of the outflow (positive dot product of the
+  outflow-to-cell vector with the local ice-flow direction). The default change (`isotropic`
+  to `along_flow`) removes spurious fresh-water melt along the lateral margins of ice shelves;
+  pass `-ocean.picop.discharge_method isotropic` to reproduce earlier PICOP results.
+- Add `ocean.picop.add_fresh_water_melt` (default `no`). When `yes`, the PICOP sub-shelf melt
+  rate includes the subglacial-discharge (fresh water plume) melt contribution; when `no`, it
+  uses the ambient (PICO-style) contribution only. This lets the fresh-water plume melt be
+  toggled on and off without editing the code.
+- Fix PICOP subglacial discharge at coarse resolution. When the discharge governing length
+  scale `5L'` (Pelle et al. 2023) is smaller than the grid spacing, the plume no longer
+  reached any floating cell center and `picop_discharge_flux`/`picop_fresh_water_melt_rate`
+  were zero everywhere. The full discharge flux is now deposited in the outflow's nearest
+  floating cell(s) in that (sub-grid) case; resolved plumes keep the quadratic decay.
+- Add `ocean.pico.temperature_as_thermal_forcing` (default `no`). When set to `yes`, PICO
+  interprets the input `theta_ocean` field as ocean thermal forcing (temperature above the
+  in-situ freezing point) and converts it to potential temperature, so ISMIP-style
+  thermal-forcing datasets can be used with PICO/PICOP directly.
+- Added PICOP (PICO + Plume) from Pelle et al (2019). Use `-ocean.models picop`.
+- Fix a segfault when using the PICOP ocean model (`-ocean.models picop`): subglacial
+  hydrology was not passed to the ocean model, so PICOP dereferenced an uninitialized
+  `Inputs::hydrology` pointer when reading subglacial discharge. The `ocean::Inputs` fields
+  now default to `nullptr` so a missing input is caught rather than causing undefined behavior.
 - Add `ocean.th.temperature_as_thermal_forcing` (default `no`), the `ocean th` counterpart of
   `ocean.pico.temperature_as_thermal_forcing`. When `yes`, the input `theta_ocean` field is
   interpreted as ocean thermal forcing (temperature above the freezing point) instead of
@@ -11,10 +65,6 @@ Changes since v2.3.0
   temperature (`b` in `HollandJenkins1999`), consistent with the three-equation system that
   consumes it. Thermal forcing is a temperature *difference*, so it has to be supplied in
   `degree_Celsius`.
-- Add `ocean.pico.temperature_as_thermal_forcing` (default `no`). When set to `yes`, PICO
-  interprets the input `theta_ocean` field as ocean thermal forcing (temperature above the
-  in-situ freezing point) and converts it to potential temperature, so ISMIP-style
-  thermal-forcing datasets can be used with PICO/PICOP directly.
 - Re-run SWIG when a wrapped C++ header changes (`USE_SWIG_DEPENDENCIES`). Previously the
   generated Python bindings depended on the `.i` files only, so header edits could leave a
   stale `PISM.cpp` module in the build tree (e.g. Blatter-based classes wrapped as abstract,
