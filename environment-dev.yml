@@ -35,6 +35,7 @@ dependencies:
   - scikit-build-core
   - yac=*=*openmpi*
   - yaxt=*=*openmpi*
+  - nco
   - ncview
   # Development
   - pre-commit

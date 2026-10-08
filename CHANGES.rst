@@ -3,6 +3,18 @@
 Changes since v2.3.0
 ====================
 
+- Add `ocean.th.temperature_as_thermal_forcing` (default `no`), the `ocean th` counterpart of
+  `ocean.pico.temperature_as_thermal_forcing`. When `yes`, the input `theta_ocean` field is
+  interpreted as ocean thermal forcing (temperature above the freezing point) instead of
+  potential temperature, and converted to potential temperature by adding the pressure- and
+  salinity-dependent freezing point. The freezing point uses the coefficients for potential
+  temperature (`b` in `HollandJenkins1999`), consistent with the three-equation system that
+  consumes it. Thermal forcing is a temperature *difference*, so it has to be supplied in
+  `degree_Celsius`.
+- Add `ocean.pico.temperature_as_thermal_forcing` (default `no`). When set to `yes`, PICO
+  interprets the input `theta_ocean` field as ocean thermal forcing (temperature above the
+  in-situ freezing point) and converts it to potential temperature, so ISMIP-style
+  thermal-forcing datasets can be used with PICO/PICOP directly.
 - Re-run SWIG when a wrapped C++ header changes (`USE_SWIG_DEPENDENCIES`). Previously the
   generated Python bindings depended on the `.i` files only, so header edits could leave a
   stale `PISM.cpp` module in the build tree (e.g. Blatter-based classes wrapped as abstract,
