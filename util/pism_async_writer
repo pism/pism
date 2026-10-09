@@ -530,7 +530,12 @@ def main(compression_level, single_precision):
 
             case ServerActions.DEFINE_VARIABLE.value:
                 logger.debug(f"DEFINE_VARIABLE {metadata['variable_name']} in {file_name}")
-                if len(metadata["dimensions"]) > 1 and single_precision:
+                # "-f" reduces double-precision spatial fields to single precision.
+                # Spatial fields are the ones PISM defined as YAC fields; bounds
+                # (time_bounds, x_bnds, ...) and text variables are not, and integer
+                # fields such as "mask" keep the type PISM declared.
+                if (single_precision and metadata["dtype"] == "f8"
+                        and metadata["variable_name"] in yac_wrapper.fields):
                     metadata["dtype"] = "f4"
                 get_file(file_name).define_variable(metadata)
 
@@ -573,7 +578,7 @@ if __name__ == "__main__":
         "--float",
         dest="single_precision",
         action="store_true",
-        help="save diagnostics in single precision",
+        help="save double-precision spatial fields in single precision",
     )
 
     parser.add_argument(
