@@ -62,7 +62,7 @@ ISMIP7::ISMIP7(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
     {
       m_mass_flux_reference =
           std::make_shared<array::Forcing>(m_grid, file, "climatic_mass_balance",
-                                           "", // no standard name
+                                           "land_ice_surface_specific_mass_balance_flux",
                                            buffer_size, opt.periodic);
 
       m_mass_flux_reference->metadata(0)
@@ -85,13 +85,14 @@ ISMIP7::ISMIP7(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
     {
       m_runoff_reference =
           std::make_shared<array::Forcing>(m_grid, file, "runoff_rate",
-                                           "", // no standard name
+                                           "land_ice_runoff_flux",
                                            buffer_size, opt.periodic);
 
       m_runoff_reference->metadata(0)
-          .long_name("reference runoff")
-          .units("kg m^-2 s^-1")
-          .output_units("kg m^-2 year^-1");
+        .long_name("reference runoff")
+        .standard_name("land_ice_runoff_flux")
+        .units("kg m^-2 s^-1")
+        .output_units("kg m^-2 year^-1");
     }
 
     

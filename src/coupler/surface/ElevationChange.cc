@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2025 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -55,7 +55,7 @@ ElevationChange::ElevationChange(std::shared_ptr<const Grid> g, std::shared_ptr<
     File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     m_reference_surface = std::make_shared<array::Forcing>(m_grid, file, "usurf",
-                                                           "", // no standard name
+                                                           "surface_altitude",
                                                            buffer_size, opt.periodic, LINEAR);
     m_reference_surface->metadata(0)
         .long_name("ice surface elevation")
