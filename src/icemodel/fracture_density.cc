@@ -21,16 +21,20 @@
 #include "pism/energy/EnergyModel.hh"
 #include "pism/stressbalance/ShallowStressBalance.hh"
 #include "pism/fracturedensity/FractureDensity.hh"
+#include "pism/util/Profiling.hh"
 
 namespace pism {
 
 void IceModel::update_fracture_density(double dt) {
+  const Profiling &profiling = m_ctx->profiling();
+
   // generate the BC mask for the fracture density model
   //
   // This mask contains ones at the in-flow boundary according to the SSA Dirichlet BC
   // mask (if it is used) and at grounded grid points if
   // fracture_density.include_grounded_ice is not set.
   auto &bc_mask = *m_work2d[0];
+  profiling.begin("fracture_density.bc_mask");
   {
     bool do_fracground = m_config->get_flag("fracture_density.include_grounded_ice");
     const bool dirichlet_bc = m_config->get_flag("stress_balance.ssa.dirichlet_bc");
@@ -60,15 +64,18 @@ void IceModel::update_fracture_density(double dt) {
       }
     } // end of the loop over grid points
   }
+  profiling.end("fracture_density.bc_mask");
 
   // compute the vertically-averaged ice hardness
   auto &hardness = *m_work2d[1];
+  profiling.begin("fracture_density.hardness");
   {
     rheology::averaged_hardness_vec(*m_stress_balance.shallow->flow_law(),
                                     m_geometry.ice_thickness,
                                     m_energy_model->enthalpy(),
                                     hardness);
   }
+  profiling.end("fracture_density.hardness");
 
   // This model has the same time-step restriction as the mass transport code so we don't
   // check if this time step is short enough.

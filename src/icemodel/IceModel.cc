@@ -20,6 +20,7 @@
 #include <cstring>
 #include <algorithm>
 #include <memory>
+#include <functional>
 #include <petscsys.h>
 
 #include "pism/icemodel/IceModel.hh"
@@ -58,6 +59,16 @@
 #endif
 
 namespace pism {
+
+bool IceModel::CompareByName::operator()(const array::Array *a, const array::Array *b) const {
+  const auto &a_name = a->get_name();
+  const auto &b_name = b->get_name();
+  if (a_name != b_name) {
+    return a_name < b_name;
+  }
+  // Two arrays with the same name are distinct state variables: keep both.
+  return std::less<const array::Array *>()(a, b);
+}
 
 IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &context)
     : m_grid(grid),
