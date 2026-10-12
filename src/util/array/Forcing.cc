@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2025 Constantine Khroulev
+// Copyright (C) 2009--2026 Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -257,7 +257,7 @@ void Forcing::init(const std::string &filename, bool periodic) {
     if (not one_record) {
       std::vector<double> times{};
       std::vector<double> bounds{};
-      io::read_time_info(ctx->unit_system(), file, time_name, time->units(), times, bounds);
+      io::read_time_info(time->units(), time->calendar(), file, time_name, times, bounds);
 
       if (periodic) {
         m_data->period_start = bounds.front();

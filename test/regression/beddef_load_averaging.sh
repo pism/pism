@@ -35,6 +35,7 @@ ctx = PISM.Context().ctx
 ice_density = ctx.config().get_number("constants.ice.density")
 
 ctx.config().set_string("time.calendar", "360_day")
+ctx.time().init_calendar("360_day")
 
 Lx = 500e3
 M = 5

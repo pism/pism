@@ -1,4 +1,4 @@
-/* Copyright (C) 2018, 2019, 2020, 2021, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2018, 2019, 2020, 2021, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -94,9 +94,10 @@ void ScalarForcing::initialize(const Context &ctx,
       // The following line relies on the fact that this is a scalar variable.
       std::string time_name = file.dimensions(variable_name)[0];
 
+      auto time = ctx.time();
       std::vector<double> times{};
       std::vector<double> bounds{};
-      io::read_time_info(unit_system, file, time_name, ctx.time()->units(), times, bounds);
+      io::read_time_info(time->units(), time->calendar(), file, time_name, times, bounds);
       size_t N = times.size();
 
       // Compute values used to extend data read from file
