@@ -56,7 +56,7 @@ void DischargeRouting::init_impl(const Geometry &geometry) {
     File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     m_theta_ocean = std::make_shared<array::Forcing>(m_grid, file, "theta_ocean",
-                                                     "", // no standard name
+                                                     "sea_water_potential_temperature",
                                                      buffer_size, opt.periodic, LINEAR);
   }
 
