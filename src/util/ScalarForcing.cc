@@ -95,9 +95,10 @@ void ScalarForcing::initialize(const Context &ctx,
       std::string time_name = file.dimensions(variable_name)[0];
 
       auto time = ctx.time();
-      std::vector<double> times{};
-      std::vector<double> bounds{};
-      io::read_time_info(time->units(), time->calendar(), file, time_name, times, bounds);
+      auto info = io::read_time_info(time->units(), time->calendar(), file, time_name);
+      const auto &times = info.times;
+      const auto &bounds = info.bounds;
+
       size_t N = times.size();
 
       // Compute values used to extend data read from file

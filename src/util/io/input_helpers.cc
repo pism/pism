@@ -19,6 +19,7 @@
 
 #include <cmath>
 
+#include "io_helpers.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/io/LocalInterpCtx.hh"
 #include "pism/util/io/IO_Flags.hh"
@@ -614,10 +615,9 @@ std::vector<double> read_bounds(const File &file, const std::string &bounds_vari
  * This requires careful handling of unit conversion because UDUNITS always uses the
  * Gregorian calendar when computing offsets between dates of the form "X since Y-M-D".
  */
-void read_time_info(const units::Unit &time_units, const std::string &calendar, const File &file,
-                    const std::string &time_name, std::vector<double> &times,
-                    std::vector<double> &bounds) {
-
+TimeInfo read_time_info(const units::Unit &time_units, const std::string &calendar, const File &file,
+                        const std::string &time_name) {
+  TimeInfo result;
   auto unit_system = time_units.system();
 
   auto input_calendar = file.read_text_attribute(time_name, "calendar");
@@ -649,23 +649,23 @@ void read_time_info(const units::Unit &time_units, const std::string &calendar, 
   {
     auto units = "seconds since " + input_reference_date;
     // read time, converting to seconds since the input reference date:
-    times =
+    result.times =
         io::read_1d_variable(file, time_name, units, unit_system);
 
-    if (not is_increasing(times)) {
+    if (not is_increasing(result.times)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "times have to be strictly increasing");
     }
 
     // apply time_offset
-    size_t N = times.size();
+    size_t N = result.times.size();
     for (size_t k = 0; k < N; ++k) {
-      times[k] += time_offset;
+      result.times[k] += time_offset;
     }
   }
 
   // Read time bounds
   {
-    auto N = times.size();
+    auto N = result.times.size();
 
     std::string time_bounds_name = file.read_text_attribute(time_name, "bounds");
     auto units = "seconds since " + input_reference_date;
@@ -675,28 +675,30 @@ void read_time_info(const units::Unit &time_units, const std::string &calendar, 
                                     time_name.c_str());
     }
 
-    bounds = io::read_bounds(file, time_bounds_name, units, unit_system);
+    result.bounds = io::read_bounds(file, time_bounds_name, units, unit_system);
 
-    if (2 * N != bounds.size()) {
+    if (2 * N != result.bounds.size()) {
       throw RuntimeError(PISM_ERROR_LOCATION,
                          "each time record has to have 2 bounds");
     }
 
     // apply time_offset
     for (size_t k = 0; k < N; ++k) {
-      bounds[2 * k + 0] += time_offset;
-      bounds[2 * k + 1] += time_offset;
+      result.bounds[2 * k + 0] += time_offset;
+      result.bounds[2 * k + 1] += time_offset;
     }
 
     // validate bounds
     for (size_t k = 0; k < N; ++k) {
-      if (not (times[k] >= bounds[2 * k + 0] and
-               times[k] <= bounds[2 * k + 1])) {
+      if (not (result.times[k] >= result.bounds[2 * k + 0] and
+               result.times[k] <= result.bounds[2 * k + 1])) {
         throw RuntimeError(PISM_ERROR_LOCATION,
                            "each time has to be contained in its time interval");
       }
     }
   } // end of the block reading time bounds
+
+  return result;
 }
 
 //! Read a variable from a file into an array `output`.

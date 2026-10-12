@@ -87,9 +87,12 @@ std::vector<double> read_bounds(const File &file, const std::string &bounds_vari
                                 const std::string &units,
                                 std::shared_ptr<units::System> unit_system);
 
-void read_time_info(const units::Unit &time_units, const std::string &calendar, const File &file,
-                    const std::string &time_name, std::vector<double> &times,
-                    std::vector<double> &bounds);
+struct TimeInfo {
+  std::vector<double> times, bounds;
+};
+
+TimeInfo read_time_info(const units::Unit &time_units, const std::string &calendar, const File &file,
+                        const std::string &time_name);
 
 VariableMetadata read_attributes(const File &file, const std::string &variable_name,
                                  std::shared_ptr<units::System> unit_system);
