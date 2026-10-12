@@ -1616,5 +1616,48 @@ class DateTime(unittest.TestCase):
         np.testing.assert_equal(to_tuple(PISM.DateTime("1850-1-1   11:45", "365_day")),
                                 (1850, 1, 1, 11, 45, 0.0, "365_day")) # multiple spaces between date and time
 
+class ReferenceDate(unittest.TestCase):
+    def setUp(self):
+        suffix = "-reference_date"
+
+        self.filename_360day = filename("input" + suffix + "-360day")
+        self.filename_365day = filename("input" + suffix + "-365day")
+
+        self.old_calendar = PISM.Context().time.calendar()
+
+        self.y0 = 1000
+
+    def tearDown(self):
+        PISM.Context().time.init_calendar(self.old_calendar)
+        try:
+            os.remove(self.filename_360day)
+            os.remove(self.filename_365day)
+        except:
+            pass
+
+    def check_times(self, year_length, filename):
+        time = PISM.Context().time
+        time.init_calendar(f"{year_length}_day")
+
+        PISM.testing.create_scalar_forcing(filename, "delta_T", "kelvin",
+                                           [0, 1], times=[0, 360], time_bounds=[0, 360, 360, 720],
+                                           time_units=f"days since {self.y0}-1-1")
+
+        F = PISM.File(PISM.PETSc.COMM_SELF, filename, PISM.PISM_GUESS, PISM.PISM_READONLY)
+        info = PISM.read_time_info(time.units(), time.calendar(), F, time.variable_name())
+        F.close()
+
+        t0 = int(info.times[0])
+        t1 = (self.y0 - 1) * year_length * 86400
+
+        assert t0 == t1
+
+    def test_reference_date_360day(self):
+        self.check_times(360, self.filename_360day)
+
+    def test_reference_date_365day(self):
+        self.check_times(365, self.filename_365day)
+
+
 if __name__ == "__main__":
     unittest.main()
