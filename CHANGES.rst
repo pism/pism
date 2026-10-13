@@ -94,6 +94,12 @@ Changes since v2.3.0
   `-inv_monitor_adjoint`, `-inv_morozov_scale`, `-inv_ls_verbose`, and `-ign_theta`,
   which only applied to those methods.
 
+- Fix processing of reference dates in time units of time-dependent inputs (climate
+  forcing, etc). Before this change PISM incorrectly computed time offsets between times
+  in an input file and PISM's internal time *if* PISM's calendar is different from the
+  calendar in an input file. This resulted in a "shift" in time between intended time of a
+  forcing and effective of a forcing.
+
 Changes from 2.3.0 to 2.3.1
 ===========================
 
