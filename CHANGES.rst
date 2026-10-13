@@ -8,6 +8,11 @@ Changes from 2.3.2 to 2.3.3
   `PetscBarrier`, `MatMult MF`). The file is now executed with auto-vivifying dictionaries
   instead of imported as a module.
 - Fix `issue 578`_ (broken 3D diagnostics `uvel`, `vvel`, `wvel`, `wvel_rel`).
+- Fix processing of reference dates in time units of time-dependent inputs (climate
+  forcing, etc). Before this change PISM incorrectly computed time offsets between times
+  in an input file and PISM's internal time *if* PISM's calendar is different from the
+  calendar in an input file. This resulted in a "shift" in time between intended time of a
+  forcing and effective of a forcing.
 
 Changes from 2.3.1 to 2.3.2
 ===========================
