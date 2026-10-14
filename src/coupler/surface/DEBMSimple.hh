@@ -22,8 +22,9 @@
 #include <memory>
 #include <vector>
 
-#include "pism/coupler/surface/DEBMSimplePointwise.hh"
 #include "pism/coupler/SurfaceModel.hh"
+#include "pism/coupler/surface/DEBMSimplePointwise.hh"
+#include "pism/coupler/surface/Insolation.hh"
 #include "pism/util/OrbitalParameters.hh"
 
 namespace pism {
