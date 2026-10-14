@@ -73,10 +73,8 @@ public:
   double albedo(double melt_rate) const;
 
   //! Insolation energy (J m^-2) at the top of atmosphere over time interval `dt`.
-  double toa_insolation_energy(double declination,
-                           double distance_factor,
-                           double latitude,
-                           double dt) const;
+  double toa_insolation_energy(double declination, double distance_factor, double latitude,
+                               double dt) const;
 
   //! Melt (and its components) given the insolation *energy* (J m^-2) reaching the
   //! surface over `dt`. `declination` and `latitude` set the daily melt-period length
@@ -96,8 +94,9 @@ public:
 
   // implementation details (exposed as "public" methods for testing)
   static double CalovGreveIntegrand(double sigma, double temperature);
-  static double toa_insolation_rate(double solar_constant, double distance_factor, double hour_angle,
-                                double latitude, double declination);
+
+  static double toa_insolation_rate(double solar_constant, double distance_factor,
+                                    double hour_angle, double latitude, double declination);
 
 private:
   //! refreeze melted ice
