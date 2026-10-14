@@ -289,7 +289,8 @@ void DEBMSimple::update_impl(const Inputs &inputs, double t, double dt) {
   int N = static_cast<int>(timeseries_length(dt));
 
   const double dtseries = dt / N;
-  std::vector<double> ts(N), T(N), S(N), P(N), Alb(N), E(N);
+  std::vector<double> ts(N), air_temp(N), air_temp_std_dev(N), precip(N), Alb(N),
+      surface_insolation_energy(N);
   std::vector<OrbitalParameters> orbital(N);
 
   for (int k = 0; k < N; ++k) {
@@ -353,22 +354,22 @@ void DEBMSimple::update_impl(const Inputs &inputs, double t, double dt) {
       double lat = latitude(i, j);
 
       // Get the temperature time series from an atmosphere model and its modifiers
-      m_atmosphere->temp_time_series(i, j, T);
+      m_atmosphere->temp_time_series(i, j, air_temp);
 
       if (mask.ice_free_ocean(i, j)) {
         // ignore precipitation over ice-free ocean
         for (int k = 0; k < N; ++k) {
-          P[k] = 0.0;
+          precip[k] = 0.0;
         }
       } else {
         // elsewhere, get precipitation from the atmosphere model
-        m_atmosphere->precip_time_series(i, j, P);
+        m_atmosphere->precip_time_series(i, j, precip);
 
         // Use temperature time series to remove rainfall from precipitation and convert to
         // m/s ice equivalent.
         for (int k = 0; k < N; ++k) {
-          P[k] = snow_accumulation(T[k],  // air temperature (input)
-                                   P[k] / ice_density); // precipitation rate (input, gets overwritten)
+          precip[k] = snow_accumulation(air_temp[k],  // air temperature (input)
+                                   precip[k] / ice_density); // precipitation rate (input, gets overwritten)
         }
       }
 
@@ -381,25 +382,25 @@ void DEBMSimple::update_impl(const Inputs &inputs, double t, double dt) {
         // interpolate temperature standard deviation time series
         //
         // Note: this works when m_air_temp_sd is constant in time.
-        m_air_temp_sd->interp(i, j, S);
+        m_air_temp_sd->interp(i, j, air_temp_std_dev);
 
         if (sigmalapserate != 0.0) {
           // apply standard deviation lapse rate on top of prescribed values
           for (int k = 0; k < N; ++k) {
-            S[k] += sigmalapserate * (lat - sigmabaselat);
+            air_temp_std_dev[k] += sigmalapserate * (lat - sigmabaselat);
           }
-          (*m_air_temp_sd)(i, j) = S[0]; // ensure correct SD reporting
+          (*m_air_temp_sd)(i, j) = air_temp_std_dev[0]; // ensure correct SD reporting
         } else if (m_sd_use_param and mask.icy(i, j)) {
           // apply standard deviation parameterization over ice if in use
           for (int k = 0; k < N; ++k) {
-            S[k] = std::max(m_sd_param_a * (T[k] - melting_point) + m_sd_param_b, 0.0);
+            air_temp_std_dev[k] = std::max(m_sd_param_a * (air_temp[k] - melting_point) + m_sd_param_b, 0.0);
           }
-          (*m_air_temp_sd)(i, j) = S[0]; // ensure correct SD reporting
+          (*m_air_temp_sd)(i, j) = air_temp_std_dev[0]; // ensure correct SD reporting
         }
       }
 
       // insolation energy reaching the surface during each sub-step
-      this->insolation_energy_series(i, j, orbital, dtseries, lat, E);
+      this->insolation_energy_series(i, j, orbital, dtseries, lat, surface_insolation_energy);
 
       {
         double next_snow_depth_reset = m_next_balance_year_start;
@@ -432,7 +433,7 @@ void DEBMSimple::update_impl(const Inputs &inputs, double t, double dt) {
             }
           }
 
-          auto accumulation = P[k] * dtseries;
+          auto accumulation = precip[k] * dtseries;
 
           DEBMSimpleMelt melt_info{};
           bool ice_free_ocean = mask.ice_free_ocean(i, j);
@@ -440,10 +441,10 @@ void DEBMSimple::update_impl(const Inputs &inputs, double t, double dt) {
             // clang-format off
             melt_info = m_model.melt(orbital[k].solar_declination,
                                      lat,
-                                     E[k],
+                                     surface_insolation_energy[k],
                                      dtseries,
-                                     S[k],
-                                     T[k],
+                                     air_temp_std_dev[k],
+                                     air_temp[k],
                                      (bool)m_input_albedo ? Alb[k] : albedo);
             // clang-format on
           }
