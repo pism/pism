@@ -71,7 +71,6 @@ add_library (boundary OBJECT
   ./surface/Formulas.cc
   ./surface/EISMINTII.cc
   ./surface/NoGLRetreat.cc
-  ./surface/DEBMEnhanced.cc
   ./surface/DEBMSimple.cc
   ./surface/DEBMSimplePointwise.cc
   ./surface/DEBMTerrainShadedInsolation.cc

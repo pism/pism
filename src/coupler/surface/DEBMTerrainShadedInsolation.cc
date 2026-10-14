@@ -108,18 +108,17 @@ void DEBMTerrainShadedInsolation::update_impl(double t, double dt,
 }
 
 void DEBMTerrainShadedInsolation::begin_access() const {
-  insolation().begin_access();
+  m_insolation.begin_access();
 }
 
 void DEBMTerrainShadedInsolation::end_access() const {
-  insolation().end_access();
+  m_insolation.end_access();
 }
 
 void DEBMTerrainShadedInsolation::surface_insolation_energy_series_impl(
     int i, int j, const std::vector<OrbitalParameters> &orbital, double dt,
     std::vector<double> &result) const {
-  // the daily-mean insolation rate (W m^-2) at this cell was computed in
-  // update_insolation_input
+  // the daily-mean insolation rate (W m^-2) at this cell was computed in update_shading()
   double rate = m_insolation(i, j);
   for (size_t k = 0; k < orbital.size(); ++k) {
     result[k] = rate * dt;

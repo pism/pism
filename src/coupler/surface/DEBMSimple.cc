@@ -17,7 +17,9 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <algorithm> // std::min
+#include <memory>
 
+#include "Insolation.hh"
 #include "pism/coupler/surface/DEBMSimple.hh"
 
 #include "pism/coupler/AtmosphereModel.hh"
@@ -51,6 +53,9 @@ DEBMSimple::DEBMSimple(std::shared_ptr<const Grid> g,
       m_offset_melt(m_grid, "debm_offset_melt_flux"),
       m_surface_albedo(m_grid, "surface_albedo"),
       m_transmissivity(m_grid, "atmosphere_transmissivity") {
+
+  // FIXME: allow switching insolation models
+  m_insolation = std::make_shared<DEBMSimpleInsolation>(m_grid, m_model);
 
   m_albedo_ocean = m_config->get_number("surface.debm_simple.albedo_ocean");
 
@@ -187,15 +192,15 @@ void DEBMSimple::init_impl(const Inputs &inputs) {
   }
 
   // initializing the model state
-  InputOptions input = process_input_options(m_grid->com, m_config);
+  InputOptions options = process_input_options(m_grid->com, m_config);
 
   auto default_albedo =  m_config->get_number("surface.debm_simple.albedo_max");
-  if (input.type == INIT_RESTART) {
-    m_snow_depth.read(input.filename, input.record);
-    m_surface_albedo.read(input.filename, input.record);
-  } else if (input.type == INIT_BOOTSTRAP) {
-    m_snow_depth.regrid(input.filename, io::Default(0.0));
-    m_surface_albedo.regrid(input.filename, io::Default(default_albedo));
+  if (options.type == INIT_RESTART) {
+    m_snow_depth.read(options.filename, options.record);
+    m_surface_albedo.read(options.filename, options.record);
+  } else if (options.type == INIT_BOOTSTRAP) {
+    m_snow_depth.regrid(options.filename, io::Default(0.0));
+    m_surface_albedo.regrid(options.filename, io::Default(default_albedo));
   } else {
     m_snow_depth.set(0.0);
     m_surface_albedo.set(default_albedo);
@@ -220,10 +225,12 @@ void DEBMSimple::init_impl(const Inputs &inputs) {
     m_melt->set(0.0);
     m_runoff->set(0.0);
   }
+
+  m_insolation->init(options);
 }
 
 MaxTimestep DEBMSimple::max_timestep_impl(double t, const CFLData *cfl_data) const {
-  return m_atmosphere->max_timestep(t, cfl_data);
+  return std::min(m_atmosphere->max_timestep(t, cfl_data), m_insolation->max_timestep(t, cfl_data));
 }
 
 double DEBMSimple::compute_next_balance_year_start(double time) {
@@ -284,6 +291,8 @@ void DEBMSimple::update_impl(const Inputs &inputs, double t, double dt) {
   // Use near-surface air temperature as the top-of-the-ice temperature:
   m_temperature->copy_from(m_atmosphere->air_temperature());
 
+  m_insolation->update(t, dt, inputs.geometry->ice_surface_elevation);
+
   // Set up air temperature and precipitation time series
   int N = static_cast<int>(timeseries_length(dt));
 
@@ -325,7 +334,8 @@ void DEBMSimple::update_impl(const Inputs &inputs, double t, double dt) {
       &m_surface_albedo,
       &m_transmissivity,
       &latitude,
-      &surface_altitude
+      &surface_altitude,
+      m_insolation.get()
     };
 
   if ((bool)m_input_albedo) {
@@ -333,9 +343,6 @@ void DEBMSimple::update_impl(const Inputs &inputs, double t, double dt) {
     m_input_albedo->init_interpolation(ts);
     list.add(*m_input_albedo);
   }
-
-  // Let derived classes (dEBM-enhanced) update and register a prescribed insolation field.
-  this->update_insolation_input(t, dt, inputs.geometry->ice_surface_elevation, list);
 
   double
     ice_density    = m_config->get_number("constants.ice.density"),
@@ -399,7 +406,8 @@ void DEBMSimple::update_impl(const Inputs &inputs, double t, double dt) {
       }
 
       // insolation energy reaching the surface during each sub-step
-      this->insolation_energy_series(i, j, orbital, dtseries, lat, surface_insolation_energy);
+      m_insolation->surface_insolation_energy_series(i, j, orbital, dtseries,
+                                                     surface_insolation_energy);
 
       {
         double next_snow_depth_reset = m_next_balance_year_start;
@@ -518,26 +526,6 @@ void DEBMSimple::update_impl(const Inputs &inputs, double t, double dt) {
     compute_next_balance_year_start(time().current());
 }
 
-void DEBMSimple::update_insolation_input(double t, double dt,
-                                         const array::Scalar1 &surface_elevation,
-                                         array::AccessScope &list) {
-  (void)t;
-  (void)dt;
-  (void)surface_elevation;
-  (void)list;
-}
-
-void DEBMSimple::insolation_energy_series(int /*i*/, int /*j*/,
-                                          const std::vector<OrbitalParameters> &orbital,
-                                          double dt_sub,
-                                          double latitude,
-                                          std::vector<double> &result) const {
-  for (size_t k = 0; k < orbital.size(); ++k) {
-    result[k] = m_model.toa_insolation_energy(orbital[k].solar_declination,
-                                              orbital[k].distance_factor, latitude, dt_sub);
-  }
-}
-
 const array::Scalar &DEBMSimple::mass_flux_impl() const {
   return m_mass_flux;
 }
@@ -624,7 +612,7 @@ protected:
 
     auto result = allocate<array::Scalar>("insolation");
 
-    // note: DEBMSimple cannot be used if m_grid-latitude() is not available, so we don't
+    // note: DEBMSimple cannot be used if m_grid->latitude() is not available, so we don't
     // need to call m_grid->has_longitude_latitude() here
     const auto &latitude = m_grid->latitude();
     auto ctx = m_grid->ctx();
@@ -640,8 +628,8 @@ protected:
         const int i = p.i(), j = p.j();
 
         (*result)(i, j) = M.toa_insolation_diagnostic(orbital.solar_declination,
-                                                  orbital.distance_factor,
-                                                  latitude(i, j));
+                                                      orbital.distance_factor,
+                                                      latitude(i, j));
       }
     }
 
@@ -841,6 +829,7 @@ DiagnosticList DEBMSimple::spatial_diagnostics_impl() const {
   };
 
   result = pism::combine(result, SurfaceModel::spatial_diagnostics_impl());
+  result = pism::combine(result, m_insolation->spatial_diagnostics());
 
   return result;
 }

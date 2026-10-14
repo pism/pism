@@ -75,18 +75,6 @@ public:
 protected:
   virtual void init_impl(const Inputs &inputs);
 
-  virtual void update_insolation_input(double t, double dt,
-                                       const array::Scalar1 &surface_elevation,
-                                       array::AccessScope &list);
-
-  //! Insolation *energy* (J m^-2) reaching the surface during each sub-step at the cell
-  //! (i, j).
-  virtual void insolation_energy_series(int i, int j,
-                                        const std::vector<OrbitalParameters> &orbital,
-                                        double dt_sub,
-                                        double latitude,
-                                        std::vector<double> &result) const;
-
   virtual DiagnosticList spatial_diagnostics_impl() const;
 
 private:
@@ -107,6 +95,8 @@ private:
 
   DEBMSimplePointwise m_model;
 
+  std::shared_ptr<Insolation> m_insolation;
+  
   OrbitalParameterCalculator m_orbital_parameters;
 
   double m_next_balance_year_start;
