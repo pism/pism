@@ -358,7 +358,7 @@ void DEBMTerrainShadedInsolation::update_shading(const array::Scalar1 &surface_e
   // global surface elevation that lets it compute shading at its owned cells without
   // ghost communication.
   {
-    profiling.begin("surface.debm_enhanced.scatter_dem");
+    profiling.begin("insolation.scatter_dem");
     PetscErrorCode ierr;
     auto dm = surface_elevation.dm();
     petsc::TemporaryGlobalVec dem_global(dm);
@@ -374,10 +374,10 @@ void DEBMTerrainShadedInsolation::update_shading(const array::Scalar1 &surface_e
     PISM_CHK(ierr, "VecScatterBegin");
     ierr = VecScatterEnd(m_scatter, dem_global, m_dem_local, INSERT_VALUES, SCATTER_FORWARD);
     PISM_CHK(ierr, "VecScatterEnd");
-    profiling.end("surface.debm_enhanced.scatter_dem");
+    profiling.end("insolation.scatter_dem");
   }
 
-  profiling.begin("surface.debm_enhanced.horizon");
+  profiling.begin("insolation.horizon_altitude");
 
   const auto &azimuth = m_horizon->levels();
 
@@ -424,7 +424,7 @@ void DEBMTerrainShadedInsolation::update_shading(const array::Scalar1 &surface_e
           terrain::sky_view_factor(horizon_altitude, azimuth.data(), m_n_directions, slope, aspect);
     }
   } // end of the loop over grid points
-  profiling.end("surface.debm_enhanced.horizon");
+  profiling.end("insolation.horizon_altitude");
 
   double end = get_time(m_grid->com);
   log->message(2, "* Updated the horizon map in %f s.\n", end - start);
@@ -483,7 +483,7 @@ void DEBMTerrainShadedInsolation::update_daily_insolation(double time,
   const double dt = seconds_per_day / M;
 
   const auto &profiling = m_grid->ctx()->profiling();
-  profiling.begin("surface.debm_enhanced.daily_insolation");
+  profiling.begin("insolation.daily");
 
   const auto &latitude = m_grid->latitude();
 
@@ -566,7 +566,7 @@ void DEBMTerrainShadedInsolation::update_daily_insolation(double time,
         m_transmissivity(surface_elevation(i, j)) * toa_insolation_energy / seconds_per_day;
   } // end of the loop over grid points
 
-  profiling.end("surface.debm_enhanced.daily_insolation");
+  profiling.end("insolation.daily");
 }
 
 }
