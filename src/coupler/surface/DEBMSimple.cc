@@ -22,7 +22,6 @@
 
 #include "pism/coupler/AtmosphereModel.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/io/File.hh"
 

@@ -21,11 +21,6 @@
 #include "pism/coupler/surface/DEBMSimplePointwise.hh"
 
 #include "pism/coupler/surface/Insolation.hh"
-#include "pism/util/MaxTimestep.hh"
-#include "pism/util/array/Array3D.hh"
-#include "pism/util/Time.hh"
-#include "pism/util/io/io_helpers.hh"
-#include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
 namespace surface {
