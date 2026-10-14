@@ -34,7 +34,7 @@ static std::set<std::string> process_ts_shortcuts(const Config &config,
 
   if (result.find("ismip") != result.end()) {
     result.erase("ismip");
-    for (auto v : set_split(config.get_string("output.ISMIP_scalar_variables"), ',')) {
+    for (const auto& v : set_split(config.get_string("output.ISMIP_scalar_variables"), ',')) {
       result.insert(v);
     }
   }

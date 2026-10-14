@@ -257,7 +257,7 @@ void NC_Serial::def_var_impl(const std::string &name, io::Type nctype,
     std::vector<int> dimids;
     int varid;
 
-    for (auto d : dims) {
+    for (const auto& d : dims) {
       int dimid;
       stat = nc_inq_dimid(m_file_id, d.c_str(), &dimid);
       if (stat != NC_NOERR) {
