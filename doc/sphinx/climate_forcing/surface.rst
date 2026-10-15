@@ -788,10 +788,10 @@ approximated using centred differences of the ice surface elevation (one-sided a
 edge).
 
 The *terrain horizon* `H(A, x, y)` is the elevation angle of the local skyline in azimuth
-direction `A`. For each of :config:`surface.debm_enhanced.horizon.n_directions` azimuths
+direction `A`. For each of :config:`terrain_shaded_insolation.horizon.n_directions` azimuths
 `A_k = 2\pi k / N_{\text{dir}}` a ray is marched outward from the cell in steps of
-:config:`surface.debm_enhanced.horizon.step` up to
-:config:`surface.debm_enhanced.horizon.max_distance`, sampling the surface elevation
+:config:`terrain_shaded_insolation.horizon.step` up to
+:config:`terrain_shaded_insolation.horizon.max_distance`, sampling the surface elevation
 `z(d)` using bilinear interpolation. The horizon is the largest elevation angle along the
 ray,
 
@@ -801,7 +801,7 @@ ray,
    H(A_k, x, y) = \max_{d}\ \arctan\left(\frac{z(d) - z(x, y)}{d}\right),
 
 with rays stopped at the domain boundary. The horizon field is recomputed every
-:config:`surface.debm_enhanced.update_interval` as the geometry evolves (set it to `0` to
+:config:`terrain_shaded_insolation.update_interval` as the geometry evolves (set it to `0` to
 recompute every time step), and is available as the ``horizon`` diagnostic.
 
 Sun position
@@ -832,7 +832,7 @@ Terrain-shaded daily insolation
 
 The surface insolation that replaces `\bar S_{\Phi}` is the daily mean of a direct and a
 diffuse component. The hour angle is swept over a full day (so the result is independent of
-longitude), sampled at steps of :config:`surface.debm_enhanced.insolation_dt`:
+longitude), sampled at steps of :config:`terrain_shaded_insolation.dt`:
 
 .. math::
    :label: eq-debm-enhanced-insolation
@@ -851,7 +851,7 @@ with
    
 where `T = 86400\,\text{s}`, `S_0` is the solar constant
 (:config:`surface.debm_simple.solar_constant`), `f` is the diffuse fraction
-(:config:`surface.debm_enhanced.diffuse_fraction`), and `\sigma` is the sky-view factor.
+(:config:`terrain_shaded_insolation.diffuse_fraction`), and `\sigma` is the sky-view factor.
 
 - The **direct beam** projects onto the tilted surface through the cosine of incidence
   `\hat{\mathbf n}\cdot\hat{\mathbf s}` (clamped at zero for back-facing slopes) and is set
@@ -870,14 +870,14 @@ afterwards by the dEBM-simple melt core, exactly as for `\bar S_{\Phi}` in
 Sky-view factor
 ###############
 
-When :config:`surface.debm_enhanced.use_sky_view_factor` is set (the default), the sky-view
+When :config:`terrain_shaded_insolation.use_sky_view_factor` is set (the default), the sky-view
 factor `\sigma(y, x)` --- the fraction of the overlying sky hemisphere visible from a cell,
 accounting for both the cell's own slope and the surrounding horizon --- is computed using
 the slope-corrected formulation of Dozier and Frew (1990) and stored as the
 ``sky_view_factor`` diagnostic. It enters the diffuse term of
 :eq:`eq-debm-enhanced-insolation`.
 
-If :config:`surface.debm_enhanced.use_sky_view_factor` is *not* set, the diffuse fraction
+If :config:`terrain_shaded_insolation.use_sky_view_factor` is *not* set, the diffuse fraction
 `f` is forced to zero and :eq:`eq-debm-enhanced-insolation` reduces to pure terrain-shaded
 direct beam.
 
@@ -893,16 +893,16 @@ Approximations
   boundaries and at sunrise/sunset.
 - A single declination and distance factor (the update-interval midpoint) are used across
   each update, and the horizon lags the evolving geometry between recomputations
-  (:config:`surface.debm_enhanced.update_interval`).
+  (:config:`terrain_shaded_insolation.update_interval`).
 - Rays are clamped at the domain boundary, so near-edge cells differ slightly from an
   offline pipeline that emits "no data" there.
 
 .. rubric:: Parameters
 
-Prefix: ``surface.debm_enhanced.``
+Prefix: ``terrain_shaded_insolation.``
 
 .. pism-parameters::
-   :prefix: surface.debm_enhanced.
+   :prefix: terrain_shaded_insolation.
 
 
                    

@@ -8,16 +8,16 @@ Changes since v2.3.0
   top-of-atmosphere parameterization. The terrain horizon and surface normals are computed
   from the ice surface elevation and combined with PISM's analytic solar geometry to produce
   the daily surface insolation. The horizon ray-casting is controlled by
-  `surface.debm_enhanced.horizon.*` (`n_directions`, `max_distance`, `step`)
+  `terrain_shaded_insolation.horizon.*` (`n_directions`, `max_distance`, `step`)
   and, because it depends on the evolving geometry, is recomputed every
-  `surface.debm_enhanced.update_interval` (default 10 years). The insolation is split into a
+  `terrain_shaded_insolation.update_interval` (default 10 years). The insolation is split into a
   direct-beam component (terrain-shaded) and an isotropic diffuse component reduced by the
   sky-view factor (slope-corrected Dozier & Frew, 1990); the diffuse share is
-  `surface.debm_enhanced.diffuse_fraction` (default 0.2) and the whole sky-view treatment can
-  be disabled with `surface.debm_enhanced.use_sky_view_factor` (reverting to pure direct
+  `terrain_shaded_insolation.diffuse_fraction` (default 0.2) and the whole sky-view treatment can
+  be disabled with `terrain_shaded_insolation.use_sky_view_factor` (reverting to pure direct
   beam). The `insolation` (daily-mean top-of-atmosphere rate, in `W m-2`), `horizon`, and
   `sky_view_factor` diagnostics are available; `sky_view_factor` only when
-  `surface.debm_enhanced.use_sky_view_factor` is set. All other parameters are shared with
+  `terrain_shaded_insolation.use_sky_view_factor` is set. All other parameters are shared with
   `surface.debm_simple.*`.
 - Add an `ismip7` surface model that uses the gradients but not the anomalies, and adds
   runoff. It is exposed to Python as `PISM.SurfaceISMIP7`.

@@ -84,7 +84,6 @@ public:
   DEBMTerrainShadedInsolation(std::shared_ptr<const Grid> grid,
                               std::function<double(double)> atmosphere_transmissivity);
 
-  void init(const InputOptions &options);
   /*!
    * Compute the horizon map and the sky view factor.
    */
@@ -101,12 +100,10 @@ public:
 
   //! Sky-view factor: the fraction (between 0 and 1) of the diffuse sky hemisphere
   //! visible from each cell, accounting for the terrain horizon and the surface
-  //! slope/aspect.
-  //!
-  //! Only valid (computed) when sky_view_enabled() is true.
+  //! slope/aspect. Only valid when sky_view_enabled() is true.
   const array::Scalar &sky_view_factor() const;
 
-  //! Whether the sky-view factor is computed (surface.debm_enhanced.use_sky_view_factor).
+  //! True if the sky-view factor is computed, otherwise false
   bool sky_view_enabled() const;
 
 private:

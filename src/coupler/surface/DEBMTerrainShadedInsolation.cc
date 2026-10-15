@@ -209,21 +209,21 @@ DEBMTerrainShadedInsolation::DEBMTerrainShadedInsolation(
   auto config = m_grid->ctx()->config();
 
   m_n_directions =
-      static_cast<int>(config->get_number("surface.debm_enhanced.horizon.n_directions"));
-  m_max_distance     = config->get_number("surface.debm_enhanced.horizon.max_distance");
-  m_step             = config->get_number("surface.debm_enhanced.horizon.step");
-  m_insolation_dt    = config->get_number("surface.debm_enhanced.insolation_dt");
+      static_cast<int>(config->get_number("terrain_shaded_insolation.horizon.n_directions"));
+  m_max_distance     = config->get_number("terrain_shaded_insolation.horizon.max_distance");
+  m_step             = config->get_number("terrain_shaded_insolation.horizon.step");
+  m_insolation_dt    = config->get_number("terrain_shaded_insolation.dt");
   m_solar_constant   = config->get_number("surface.debm_simple.solar_constant");
-  m_diffuse_fraction = config->get_number("surface.debm_enhanced.diffuse_fraction");
+  m_diffuse_fraction = config->get_number("terrain_shaded_insolation.diffuse_fraction");
 
   if (not(m_step > 0.0)) {
     throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "surface.debm_enhanced.horizon.step must be positive");
+                                  "terrain_shaded_insolation.horizon.step must be positive");
   }
 
   if (m_n_directions < 1) {
     throw RuntimeError(PISM_ERROR_LOCATION,
-                       "surface.debm_enhanced.horizon.n_directions must be positive");
+                       "terrain_shaded_insolation.horizon.n_directions must be positive");
   }
 
   // azimuth sample directions (radians), clockwise from north
@@ -237,7 +237,7 @@ DEBMTerrainShadedInsolation::DEBMTerrainShadedInsolation(
       .long_name("terrain horizon elevation angle as a function of azimuth")
       .units("radian");
 
-  if (config->get_flag("surface.debm_enhanced.use_sky_view_factor")) {
+  if (config->get_flag("terrain_shaded_insolation.use_sky_view_factor")) {
     m_sky_view = std::make_shared<array::Scalar>(m_grid, "sky_view_factor");
     m_sky_view->metadata(0)
         .long_name("sky-view factor (fraction of the diffuse sky hemisphere visible "

@@ -76,7 +76,7 @@ for sv in no yes; do
                -atmosphere.given.file era5_wgs84_RGI2000-v7.0-C-01-04374.nc \
                -atmosphere.given.periodic yes \
                -surface debm_enhanced \
-               -surface.debm_enhanced.diffuse_fraction $df \
+               -terrain_shaded_insolation.diffuse_fraction $df \
                -surface.debm_simple.std_dev.file era5_wgs84_RGI2000-v7.0-C-01-04374.nc \
                -surface.debm_simple.std_dev.periodic yes \
                -surface.debm_simple.interpret_precip_as_snow no \
@@ -86,7 +86,7 @@ for sv in no yes; do
                -surface.debm_simple.refreeze_ice_melt no \
                -surface.debm_simple.air_temp_all_precip_as_snow 271.65 \
                -surface.debm_simple.air_temp_all_precip_as_rain 275.0 \
-               -surface.debm_enhanced.use_sky_view_factor $sv \
+               -terrain_shaded_insolation.use_sky_view_factor $sv \
                -time.start 2000-01-01 \
                -time.end 2001-01-01 \
                -time.calendar standard \
