@@ -2526,7 +2526,7 @@ netcdf pism_config {
     pism_config:surface.debm_simple.c2_units = "W m^-2";
 
     pism_config:surface.debm_simple.insolation_model = "simple";
-    pism_config:surface.debm_simple.insolation_model_doc = "";
+    pism_config:surface.debm_simple.insolation_model_doc = "Insolation model: ``simple`` is the uniform-in-space insolation reaching the surface, :cite:`Zeitzetal2021`; ``terrain_shaded`` models insolation reaching the surface as a combination of isotropic diffuse sky radiation (using the sky view factor) and a direct beam contribution. Both models use a linear model of atmospheric transmissivity described in :cite:`Zeitzetal2021`.";
     pism_config:surface.debm_simple.insolation_model_type = "keyword";
     pism_config:surface.debm_simple.insolation_model_choices = "simple,terrain_shaded";
     pism_config:surface.debm_simple.insolation_model_option = "insolation";
