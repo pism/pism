@@ -8,7 +8,7 @@ output_file=$1
 input_file=$2
 climate_file=$2
 
-spatial_vars=climatic_mass_balance,surface_accumulation_flux,surface_runoff_flux,air_temp_snapshot,snow_depth,surface_albedo,insolation,atmosphere_transmissivity,debms_insolation_driven_melt_flux,debms_temperature_driven_melt_flux,debms_background_melt_flux,thk,mask
+spatial_vars=climatic_mass_balance,surface_accumulation_flux,surface_runoff_flux,air_temp_snapshot,snow_depth,surface_albedo,insolation,atmosphere_transmissivity,debm_insolation_driven_melt_flux,debm_temperature_driven_melt_flux,debm_offset_melt_flux,thk,mask
 
 common_options="
   -atmosphere searise_greenland \
