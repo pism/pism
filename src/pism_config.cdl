@@ -2941,7 +2941,7 @@ netcdf pism_config {
     pism_config:surface.temp_to_runoff_a_units = "K^-1";
 
     pism_config:terrain_shaded_insolation.diffuse_fraction = 0.2;
-    pism_config:terrain_shaded_insolation.diffuse_fraction_doc = "Fraction of insolation treated as isotropic diffuse sky radiation (scaled by the sky-view factor); the remainder is direct beam subject to terrain shading. Applies only when :config:`terrain_shaded_insolation.use_sky_view_factor` is true.";
+    pism_config:terrain_shaded_insolation.diffuse_fraction_doc = "Fraction of insolation treated as isotropic diffuse sky radiation (scaled by the sky-view factor); the remainder is direct beam subject to terrain shading.";
     pism_config:terrain_shaded_insolation.diffuse_fraction_type = "number";
     pism_config:terrain_shaded_insolation.diffuse_fraction_units = "1";
     pism_config:terrain_shaded_insolation.diffuse_fraction_valid_max = 1.0;
@@ -2972,10 +2972,6 @@ netcdf pism_config {
     pism_config:terrain_shaded_insolation.update_interval_type = "number";
     pism_config:terrain_shaded_insolation.update_interval_units = "365days";
     pism_config:terrain_shaded_insolation.update_interval_valid_min = 0.0;
-
-    pism_config:terrain_shaded_insolation.use_sky_view_factor = "yes";
-    pism_config:terrain_shaded_insolation.use_sky_view_factor_doc = "If true, compute the terrain sky-view factor :cite:`Dozier1990`, expose it as the ``sky_view_factor`` diagnostic, and split insolation into a terrain-shaded direct beam plus an isotropic diffuse component (a fraction :config:`terrain_shaded_insolation.diffuse_fraction` of the horizontal top-of-atmosphere flux, scaled by the sky-view factor). If false, the diffuse fraction is forced to zero and the insolation is pure terrain-shaded direct beam.";
-    pism_config:terrain_shaded_insolation.use_sky_view_factor_type = "flag";
 
     pism_config:time.calendar = "365_day";
     pism_config:time.calendar_choices = "standard,gregorian,proleptic_gregorian,noleap,365_day,360_day,julian";

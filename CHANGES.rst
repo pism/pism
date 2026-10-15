@@ -14,11 +14,10 @@ Changes since v2.3.0
   direct-beam component (terrain-shaded) and an isotropic diffuse component reduced by the
   sky-view factor (slope-corrected Dozier & Frew, 1990); the diffuse share is
   `terrain_shaded_insolation.diffuse_fraction` (default 0.2) and the whole sky-view treatment can
-  be disabled with `terrain_shaded_insolation.use_sky_view_factor` (reverting to pure direct
-  beam). The `insolation` (daily-mean top-of-atmosphere rate, in `W m-2`), `horizon`, and
+  be disabled by setting it to zero, reverting to pure direct
+  beam. The `insolation` (daily-mean top-of-atmosphere rate, in `W m-2`), `horizon`, and
   `sky_view_factor` diagnostics are available; `sky_view_factor` only when
-  `terrain_shaded_insolation.use_sky_view_factor` is set. All other parameters are shared with
-  `surface.debm_simple.*`.
+  `terrain_shaded_insolation.diffuse_fraction` is positive.
 - Add an `ismip7` surface model that uses the gradients but not the anomalies, and adds
   runoff. It is exposed to Python as `PISM.SurfaceISMIP7`.
 - Implement the Blatter hardness inversion (`pismi -stress_balance.model blatter -inv_design

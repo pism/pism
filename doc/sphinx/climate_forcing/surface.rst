@@ -870,16 +870,15 @@ afterwards by the dEBM-simple melt core, exactly as for `\bar S_{\Phi}` in
 Sky-view factor
 ###############
 
-When :config:`terrain_shaded_insolation.use_sky_view_factor` is set (the default), the sky-view
+When :config:`terrain_shaded_insolation.diffuse_fraction` is not zero, the sky-view
 factor `\sigma(y, x)` --- the fraction of the overlying sky hemisphere visible from a cell,
 accounting for both the cell's own slope and the surrounding horizon --- is computed using
-the slope-corrected formulation of Dozier and Frew (1990) and stored as the
+the slope-corrected formulation of :cite:`Dozier1990` and stored as the
 ``sky_view_factor`` diagnostic. It enters the diffuse term of
 :eq:`eq-debm-enhanced-insolation`.
 
-If :config:`terrain_shaded_insolation.use_sky_view_factor` is *not* set, the diffuse fraction
-`f` is forced to zero and :eq:`eq-debm-enhanced-insolation` reduces to pure terrain-shaded
-direct beam.
+If the diffuse fraction is zero :eq:`eq-debm-enhanced-insolation` reduces to pure
+terrain-shaded direct beam.
 
 Approximations
 ==============

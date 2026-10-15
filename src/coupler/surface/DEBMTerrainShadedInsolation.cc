@@ -237,7 +237,7 @@ DEBMTerrainShadedInsolation::DEBMTerrainShadedInsolation(
       .long_name("terrain horizon elevation angle as a function of azimuth")
       .units("radian");
 
-  if (config->get_flag("terrain_shaded_insolation.use_sky_view_factor")) {
+  if (m_diffuse_fraction > 0.0) {
     m_sky_view = std::make_shared<array::Scalar>(m_grid, "sky_view_factor");
     m_sky_view->metadata(0)
         .long_name("sky-view factor (fraction of the diffuse sky hemisphere visible "
