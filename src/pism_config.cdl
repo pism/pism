@@ -772,6 +772,11 @@ netcdf pism_config {
     pism_config:constants.sea_water.specific_heat_capacity_type = "number";
     pism_config:constants.sea_water.specific_heat_capacity_units = "Joule / (kg kelvin)";
 
+    pism_config:constants.solar_constant = 1361.0;
+    pism_config:constants.solar_constant_doc = "Mean solar electromagnetic radiation (total solar irradiance) per unit area :cite:`Kopp2011`";
+    pism_config:constants.solar_constant_type = "number";
+    pism_config:constants.solar_constant_units = "W m^-2";
+
     pism_config:constants.standard_gravity = 9.81;
     pism_config:constants.standard_gravity_doc = "acceleration due to gravity on Earth geoid";
     pism_config:constants.standard_gravity_type = "number";
@@ -1882,6 +1887,35 @@ netcdf pism_config {
     pism_config:ocean.th.periodic_doc = "If true, interpret forcing data as periodic in time";
     pism_config:ocean.th.periodic_type = "flag";
 
+    pism_config:orbital_parameters.paleo.eccentricity =  0.0167;
+    pism_config:orbital_parameters.paleo.eccentricity_doc = "Eccentricity of the Earth's orbit";
+    pism_config:orbital_parameters.paleo.eccentricity_type = "number";
+    pism_config:orbital_parameters.paleo.eccentricity_units = "1";
+
+    pism_config:orbital_parameters.paleo.enabled = "false";
+    pism_config:orbital_parameters.paleo.enabled_doc = "If true, use orbital parameters to compute top of the atmosphere insolation";
+    pism_config:orbital_parameters.paleo.enabled_option = "debm_simple_paleo";
+    pism_config:orbital_parameters.paleo.enabled_type = "flag";
+
+    pism_config:orbital_parameters.paleo.file = "";
+    pism_config:orbital_parameters.paleo.file_doc = "File containing orbital parameters (:var:`eccentricity`, :var:`obliquity`, :var:`perihelion_longitude`) for paleo-simulations";
+    pism_config:orbital_parameters.paleo.file_option = "debm_simple_paleo_file";
+    pism_config:orbital_parameters.paleo.file_type = "string";
+
+    pism_config:orbital_parameters.paleo.obliquity =  23.44;
+    pism_config:orbital_parameters.paleo.obliquity_doc = "Mean obliquity (axial tilt) of the Earth";
+    pism_config:orbital_parameters.paleo.obliquity_type = "number";
+    pism_config:orbital_parameters.paleo.obliquity_units = "degree";
+
+    pism_config:orbital_parameters.paleo.perihelion_longitude =  282.94719;
+    pism_config:orbital_parameters.paleo.perihelion_longitude_doc = "Mean longitude of the perihelion relative to the vernal equinox, in the geocentric ecliptic coordinate system";
+    pism_config:orbital_parameters.paleo.perihelion_longitude_type = "number";
+    pism_config:orbital_parameters.paleo.perihelion_longitude_units = "degree";
+
+    pism_config:orbital_parameters.paleo.periodic = "no";
+    pism_config:orbital_parameters.paleo.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:orbital_parameters.paleo.periodic_type = "flag";
+
     pism_config:output.ISMIP = "false";
     pism_config:output.ISMIP_doc = "Follow ISMIP conventions (units, variable names, \"standard names\") when writing output variables.";
     pism_config:output.ISMIP_type = "flag";
@@ -2491,6 +2525,12 @@ netcdf pism_config {
     pism_config:surface.debm_simple.c2_type = "number";
     pism_config:surface.debm_simple.c2_units = "W m^-2";
 
+    pism_config:surface.debm_simple.insolation_model = "simple";
+    pism_config:surface.debm_simple.insolation_model_doc = "";
+    pism_config:surface.debm_simple.insolation_model_type = "keyword";
+    pism_config:surface.debm_simple.insolation_model_choices = "simple,terrain_shaded";
+    pism_config:surface.debm_simple.insolation_model_option = "insolation";
+
     pism_config:surface.debm_simple.interpret_precip_as_snow = "no";
     pism_config:surface.debm_simple.interpret_precip_as_snow_doc = "If true, interpret *all* precipitation as snow";
     pism_config:surface.debm_simple.interpret_precip_as_snow_type = "flag";
@@ -2504,35 +2544,6 @@ netcdf pism_config {
     pism_config:surface.debm_simple.melting_threshold_temp_doc = "Threshold temperature below which no melting occurs";
     pism_config:surface.debm_simple.melting_threshold_temp_type = "number";
     pism_config:surface.debm_simple.melting_threshold_temp_units = "kelvin";
-
-    pism_config:surface.debm_simple.paleo.eccentricity =  0.0167;
-    pism_config:surface.debm_simple.paleo.eccentricity_doc = "Eccentricity of the Earth's orbit";
-    pism_config:surface.debm_simple.paleo.eccentricity_type = "number";
-    pism_config:surface.debm_simple.paleo.eccentricity_units = "1";
-
-    pism_config:surface.debm_simple.paleo.enabled = "false";
-    pism_config:surface.debm_simple.paleo.enabled_doc = "If true, use orbital parameters to compute top of the atmosphere insolation";
-    pism_config:surface.debm_simple.paleo.enabled_option = "debm_simple_paleo";
-    pism_config:surface.debm_simple.paleo.enabled_type = "flag";
-
-    pism_config:surface.debm_simple.paleo.file = "";
-    pism_config:surface.debm_simple.paleo.file_doc = "File containing orbital parameters (:var:`eccentricity`, :var:`obliquity`, :var:`perihelion_longitude`) for paleo-simulations";
-    pism_config:surface.debm_simple.paleo.file_option = "debm_simple_paleo_file";
-    pism_config:surface.debm_simple.paleo.file_type = "string";
-
-    pism_config:surface.debm_simple.paleo.obliquity =  23.44;
-    pism_config:surface.debm_simple.paleo.obliquity_doc = "Mean obliquity (axial tilt) of the Earth";
-    pism_config:surface.debm_simple.paleo.obliquity_type = "number";
-    pism_config:surface.debm_simple.paleo.obliquity_units = "degree";
-
-    pism_config:surface.debm_simple.paleo.perihelion_longitude =  282.94719;
-    pism_config:surface.debm_simple.paleo.perihelion_longitude_doc = "Mean longitude of the perihelion relative to the vernal equinox, in the geocentric ecliptic coordinate system";
-    pism_config:surface.debm_simple.paleo.perihelion_longitude_type = "number";
-    pism_config:surface.debm_simple.paleo.perihelion_longitude_units = "degree";
-
-    pism_config:surface.debm_simple.paleo.periodic = "no";
-    pism_config:surface.debm_simple.paleo.periodic_doc = "If true, interpret forcing data as periodic in time";
-    pism_config:surface.debm_simple.paleo.periodic_type = "flag";
 
     pism_config:surface.debm_simple.phi =  17.5;
     pism_config:surface.debm_simple.phi_doc = "Threshold solar elevation angle above which melt is possible";
@@ -2552,11 +2563,6 @@ netcdf pism_config {
     pism_config:surface.debm_simple.refreeze_ice_melt = "no";
     pism_config:surface.debm_simple.refreeze_ice_melt_doc = "If set to 'yes', refreeze :config:`surface.debm_simple.refreeze` fraction of melted ice, otherwise all of the melted ice runs off.";
     pism_config:surface.debm_simple.refreeze_ice_melt_type = "flag";
-
-    pism_config:surface.debm_simple.solar_constant = 1361.0;
-    pism_config:surface.debm_simple.solar_constant_doc = "Mean solar electromagnetic radiation (total solar irradiance) per unit area :cite:`Kopp2011`";
-    pism_config:surface.debm_simple.solar_constant_type = "number";
-    pism_config:surface.debm_simple.solar_constant_units = "W m^-2";
 
     pism_config:surface.debm_simple.std_dev = 5.0;
     pism_config:surface.debm_simple.std_dev_doc = "Standard deviation of daily near-surface air temperature variation";

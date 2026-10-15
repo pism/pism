@@ -159,7 +159,7 @@ DEBMSimplePointwise::DEBMSimplePointwise(const Config &config) : m_transmissivit
   m_positive_threshold_temperature = config.get_number("surface.debm_simple.positive_threshold_temp");
   m_refreeze_fraction              = config.get_number("surface.debm_simple.refreeze");
   m_refreeze_ice_melt              = config.get_flag("surface.debm_simple.refreeze_ice_melt");
-  m_solar_constant                 = config.get_number("surface.debm_simple.solar_constant");
+  m_solar_constant                 = config.get_number("constants.solar_constant");
 
   m_ice_density   = config.get_number("constants.ice.density");
   m_water_density = config.get_number("constants.fresh_water.density");

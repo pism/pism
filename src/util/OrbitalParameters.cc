@@ -38,7 +38,7 @@ namespace pism {
  * 3).
  */
 double OrbitalParameterCalculator::solar_longitude(double year_fraction, double eccentricity,
-                                          double perihelion_longitude) {
+                                                   double perihelion_longitude) {
 
   // Shortcuts to make formulas below easier to read:
   double E   = eccentricity;
@@ -166,22 +166,22 @@ OrbitalParameterCalculator::OrbitalParameterCalculator(const Context &ctx) {
 
   m_time = ctx.time();
 
-  m_constant_eccentricity          = config.get_number("surface.debm_simple.paleo.eccentricity");
-  m_constant_obliquity             = config.get_number("surface.debm_simple.paleo.obliquity", "radian");
-  m_constant_perihelion_longitude  = config.get_number("surface.debm_simple.paleo.perihelion_longitude", "radian");
-  m_paleo                          = config.get_flag("surface.debm_simple.paleo.enabled");
+  m_constant_eccentricity          = config.get_number("orbital_parameters.paleo.eccentricity");
+  m_constant_obliquity             = config.get_number("orbital_parameters.paleo.obliquity", "radian");
+  m_constant_perihelion_longitude  = config.get_number("orbital_parameters.paleo.perihelion_longitude", "radian");
+  m_paleo                          = config.get_flag("orbital_parameters.paleo.enabled");
 
-  std::string paleo_file = config.get_string("surface.debm_simple.paleo.file");
+  std::string paleo_file = config.get_string("orbital_parameters.paleo.file");
 
   if (not paleo_file.empty()) {
-    m_eccentricity.reset(new ScalarForcing(ctx, "surface.debm_simple.paleo", "eccentricity", "1",
+    m_eccentricity.reset(new ScalarForcing(ctx, "orbital_parameters.paleo", "eccentricity", "1",
                                            "1", "eccentricity of the earth"));
 
-    m_obliquity.reset(new ScalarForcing(ctx, "surface.debm_simple.paleo", "obliquity", "radian",
+    m_obliquity.reset(new ScalarForcing(ctx, "orbital_parameters.paleo", "obliquity", "radian",
                                         "degree", "obliquity of the earth"));
 
     m_perihelion_longitude.reset(
-        new ScalarForcing(ctx, "surface.debm_simple.paleo", "perihelion_longitude", "radian",
+        new ScalarForcing(ctx, "orbital_parameters.paleo", "perihelion_longitude", "radian",
                           "degree", "longitude of the perihelion relative to the vernal equinox, "
                           "in the geocentric ecliptic coordinate system"));
   }

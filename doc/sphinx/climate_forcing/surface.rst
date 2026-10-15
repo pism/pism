@@ -496,7 +496,7 @@ the solar altitude angle of `\Phi` degrees is approximated by
 
 where
 
-- `S_0` is the solar constant :config:`surface.debm_simple.solar_constant` :cite:`Kopp2011`,
+- `S_0` is the solar constant :config:`constants.solar_constant` :cite:`Kopp2011`,
 - `\bar d / d` is the ratio of the mean earth-sun distance `\bar d` to the current
   earth-sun distance (the inverse of the earth-sun distance in units of `\bar d`),
 - `h_{\Phi}` is the hour angle when the sun has an elevation angle of at least `\Phi`,
@@ -513,7 +513,7 @@ have the period of one year and are approximated using trigonometric expansions 
 Trigonometric expansions for `\bar d / d` and `\delta` mentioned above are not applicable
 when modeling times far from present; in this case we use more general (and more
 computationally expensive) formulas (:cite:`Liou2002`, chapter 2). Set
-:config:`surface.debm_simple.paleo.enabled` to switch to using the "paleo" mode.
+:config:`orbital_parameters.paleo.enabled` to switch to using the "paleo" mode.
 
 In this case
 
@@ -524,15 +524,15 @@ In this case
 
 The values of these three orbital parameters (eccentricity, obliquity, perihelion
 longitude) are set using the following configuration parameters (prefix:
-``surface.debm_simple.paleo.``):
+``orbital_parameters.paleo.``):
 
 .. pism-parameters::
-   :prefix: surface.debm_simple.paleo.
+   :prefix: orbital_parameters.paleo.
    :exclude: .+(enabled|file|periodic)$
 
 Alternatively, PISM can read in scalar time series of variables :var:`eccentricity`,
 :var:`obliquity`, and :var:`perihelion_longitude` from a file specified using
-:config:`surface.debm_simple.paleo.file`.
+:config:`orbital_parameters.paleo.file`.
 
 .. note::
 
@@ -555,8 +555,8 @@ Alternatively, PISM can read in scalar time series of variables :var:`eccentrici
    .. This implies that the true anomaly of the earth in the heliocentric system is the same
       as the true anomaly of the sun in the geocentric system.
 
-   The parameter :config:`surface.debm_simple.paleo.perihelion_longitude` and the
-   ``perihelion_longitude`` variable in :config:`surface.debm_simple.paleo.file` should
+   The parameter :config:`orbital_parameters.paleo.perihelion_longitude` and the
+   ``perihelion_longitude`` variable in :config:`orbital_parameters.paleo.file` should
    use the *geocentric* definition, i.e. the one equal to approximately `283^{\circ}` on
    January 1, 2000.
 
@@ -850,7 +850,7 @@ with
    \quad \text{if } a > 0, \text{ else } 0,
    
 where `T = 86400\,\text{s}`, `S_0` is the solar constant
-(:config:`surface.debm_simple.solar_constant`), `f` is the diffuse fraction
+(:config:`constants.solar_constant`), `f` is the diffuse fraction
 (:config:`terrain_shaded_insolation.diffuse_fraction`), and `\sigma` is the sky-view factor.
 
 - The **direct beam** projects onto the tilted surface through the cosine of incidence

@@ -213,7 +213,7 @@ DEBMTerrainShadedInsolation::DEBMTerrainShadedInsolation(
   m_max_distance     = config->get_number("terrain_shaded_insolation.horizon.max_distance");
   m_step             = config->get_number("terrain_shaded_insolation.horizon.step");
   m_insolation_dt    = config->get_number("terrain_shaded_insolation.dt");
-  m_solar_constant   = config->get_number("surface.debm_simple.solar_constant");
+  m_solar_constant   = config->get_number("constants.solar_constant");
   m_diffuse_fraction = config->get_number("terrain_shaded_insolation.diffuse_fraction");
 
   if (not(m_step > 0.0)) {
