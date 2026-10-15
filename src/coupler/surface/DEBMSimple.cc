@@ -576,6 +576,9 @@ const array::Scalar &DEBMSimple::atmosphere_transmissivity() const {
 
 std::set<VariableMetadata> DEBMSimple::state_impl() const {
   auto variables = array::metadata({&m_snow_depth, &m_surface_albedo});
+
+  variables = pism::combine(variables, m_insolation->state());
+
   return pism::combine(variables, SurfaceModel::state_impl());
 }
 
@@ -583,6 +586,7 @@ void DEBMSimple::write_state_impl(const OutputFile &output) const {
   SurfaceModel::write_state_impl(output);
   m_snow_depth.write(output);
   m_surface_albedo.write(output);
+  m_insolation->write_state(output);
 }
 
 const DEBMSimplePointwise& DEBMSimple::pointwise_model() const {
