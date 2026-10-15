@@ -19,6 +19,7 @@
 
 #include <cmath>
 
+#include "io_helpers.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/io/LocalInterpCtx.hh"
 #include "pism/util/io/IO_Flags.hh"
@@ -614,45 +615,94 @@ std::vector<double> read_bounds(const File &file, const std::string &bounds_vari
 
 /*!
  * Reads and validates times and time bounds.
+ *
+ * This requires careful handling of unit conversion because UDUNITS always uses the
+ * Gregorian calendar when computing offsets between dates of the form "X since Y-M-D".
  */
-void read_time_info(std::shared_ptr<units::System> unit_system, const File &file,
-                    const std::string &time_name, const std::string &time_units,
-                    std::vector<double> &times, std::vector<double> &bounds) {
+TimeInfo read_time_info(const units::Unit &time_units, const std::string &calendar, const File &file,
+                        const std::string &time_name) {
+  TimeInfo result;
+  auto unit_system = time_units.system();
 
-  size_t N = 0;
+  auto input_calendar = file.read_text_attribute(time_name, "calendar");
+
+  // make sure the input file uses a matching calendar
+  if (calendar != input_calendar) {
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION,
+        "cannot read time info from a file: calendar in '%s' (%s) does not match PISM's calendar (%s)",
+        file.name().c_str(), input_calendar.c_str(), calendar.c_str());
+  }
+
+  // time offset
+  std::string input_reference_date;
+  double time_offset = 0;
   {
-    times = io::read_1d_variable(file, time_name, time_units, unit_system);
+    auto input_time_units = file.read_text_attribute(time_name, "units");
 
-    if (not is_increasing(times)) {
+    size_t position = input_time_units.find("since");
+
+    if (position != std::string::npos) {
+      input_reference_date = string_strip(input_time_units.substr(position + strlen("since")));
+    }
+
+    time_offset = time_units.time(units::DateTime(input_reference_date, calendar));
+  }
+
+  // read time
+  {
+    auto units = "seconds since " + input_reference_date;
+    // read time, converting to seconds since the input reference date:
+    result.times =
+        io::read_1d_variable(file, time_name, units, unit_system);
+
+    if (not is_increasing(result.times)) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "times have to be strictly increasing");
     }
-    N = times.size();
+
+    // apply time_offset
+    size_t N = result.times.size();
+    for (size_t k = 0; k < N; ++k) {
+      result.times[k] += time_offset;
+    }
   }
 
   // Read time bounds
   {
+    auto N = result.times.size();
+
     std::string time_bounds_name = file.read_text_attribute(time_name, "bounds");
+    auto units = "seconds since " + input_reference_date;
 
     if (time_bounds_name.empty()) {
       throw RuntimeError::formatted(PISM_ERROR_LOCATION, "please provide time bounds for '%s'",
                                     time_name.c_str());
     }
 
-    bounds = io::read_bounds(file, time_bounds_name, time_units, unit_system);
+    result.bounds = io::read_bounds(file, time_bounds_name, units, unit_system);
 
-    if (2 * N != bounds.size()) {
+    if (2 * N != result.bounds.size()) {
       throw RuntimeError(PISM_ERROR_LOCATION,
                          "each time record has to have 2 bounds");
     }
 
+    // apply time_offset
     for (size_t k = 0; k < N; ++k) {
-      if (not (times[k] >= bounds[2 * k + 0] and
-               times[k] <= bounds[2 * k + 1])) {
+      result.bounds[2 * k + 0] += time_offset;
+      result.bounds[2 * k + 1] += time_offset;
+    }
+
+    // validate bounds
+    for (size_t k = 0; k < N; ++k) {
+      if (not (result.times[k] >= result.bounds[2 * k + 0] and
+               result.times[k] <= result.bounds[2 * k + 1])) {
         throw RuntimeError(PISM_ERROR_LOCATION,
                            "each time has to be contained in its time interval");
       }
     }
   } // end of the block reading time bounds
+
+  return result;
 }
 
 //! Read a variable from a file into an array `output`.

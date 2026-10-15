@@ -190,9 +190,9 @@ void IceModel::reset_counters() {
       // and not a multiple of year_increment:
       last_multiple -= year_increment * static_cast<int>(year % year_increment < 0);
 
-      units::DateTime last_date{ last_multiple, 1, 1, 0, 0, 0.0 };
+      units::DateTime last_date{ last_multiple, 1, 1, 0, 0, 0.0, m_time->calendar() };
 
-      m_timestep_hit_multiples_last_time = m_time->units().time(last_date, m_time->calendar());
+      m_timestep_hit_multiples_last_time = m_time->units().time(last_date);
     } else {
       m_timestep_hit_multiples_last_time = m_time->current();
     }
