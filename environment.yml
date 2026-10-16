@@ -1,7 +1,6 @@
 name: pism
 channels:
   - conda-forge
-  - pism
 dependencies:
   - python
   # Compilers & build tools
@@ -14,11 +13,10 @@ dependencies:
   - swig
   - gnuconfig
   # MPI
-  - openmpi >=5
-  - libnetcdf=*=*openmpi*
-  - netcdf4=*=*openmpi*
-  - h5py=*=*openmpi*
-  - hdf5=*=*openmpi*
+  - libnetcdf=*=*mpi_*
+  - netcdf4=*=*mpi_*
+  - h5py=*=*mpi_*
+  - hdf5=*=*mpi_*
   # Libraries
   - fftw
   - gsl >=1.15
@@ -33,8 +31,8 @@ dependencies:
   - petsc
   - petsc4py
   - scikit-build-core
-  - yac=*=*openmpi*
-  - yaxt=*=*openmpi*
+  - yac=*=mpi_*
+  - yaxt=*=mpi_*
   - ncview
   # Python / analysis
   - pip
