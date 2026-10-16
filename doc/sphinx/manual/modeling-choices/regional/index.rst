@@ -110,6 +110,18 @@ uses them to modify surface elevation and thickness gradients.
 To use *zero* surface elevation and thickness gradients, set
 :config:`regional.zero_gradient`. (This disables SIA flow across the boundary.)
 
+The Blatter stress balance (see :ref:`sec-blatter`) is a finite element solver, so the
+treatment of the :var:`no_model_mask` area is slightly different: the stored ice thickness
+and surface elevation are used at :var:`no_model_mask` nodes when computing the driving
+stress (with :config:`regional.zero_gradient` every element touching the
+:var:`no_model_mask` area contributes no driving stress, so the last modeled column is
+driven by the modeled side only) and the prescribed sliding velocity is applied at all
+vertical levels.
+In addition, the Blatter mesh is *not* periodic in the regional mode (regardless of
+:config:`grid.periodicity`), and lateral faces of elements at the edges of the domain are
+*not* treated as calving fronts, i.e. ice is assumed to extend past the domain edge
+without a change in geometry.
+
 .. warning::
 
    High surface elevation and ice thickness gradients near the domain boundary *will*
