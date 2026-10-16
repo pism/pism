@@ -19,8 +19,9 @@
 #include <algorithm> // std::min
 #include <memory>
 
-#include "Insolation.hh"
 #include "pism/coupler/surface/DEBMSimple.hh"
+
+#include "pism/coupler/surface/Insolation.hh"
 
 #include "pism/coupler/AtmosphereModel.hh"
 #include "pism/util/Grid.hh"
@@ -39,7 +40,7 @@
 namespace pism {
 namespace surface {
 
-///// PISM surface model implementing a dEBM-Simple scheme.
+///// PISM surface model implementing the dEBM-Simple scheme.
 
 DEBMSimple::DEBMSimple(std::shared_ptr<const Grid> g,
                        std::shared_ptr<atmosphere::AtmosphereModel> input)
@@ -54,8 +55,13 @@ DEBMSimple::DEBMSimple(std::shared_ptr<const Grid> g,
       m_surface_albedo(m_grid, "surface_albedo"),
       m_transmissivity(m_grid, "atmosphere_transmissivity") {
 
-  // FIXME: allow switching insolation models
-  m_insolation = std::make_shared<DEBMSimpleInsolation>(m_grid, m_model);
+  auto insolation_model = m_config->get_string("surface.debm_simple.insolation_model");
+  if (insolation_model == "terrain_shaded") {
+    m_insolation = std::make_shared<DEBMTerrainShadedInsolation>(
+        m_grid, DEBMSimpleAtmosphereTransmissivity(*m_config));
+  } else {
+    m_insolation = std::make_shared<DEBMSimpleInsolation>(m_grid, m_model);
+  }
 
   m_albedo_ocean = m_config->get_number("surface.debm_simple.albedo_ocean");
 
