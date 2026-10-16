@@ -1,5 +1,9 @@
 #!/bin/bash
 
+set -e
+set -u
+set -x
+
 # Download example files
 
 for f in bootfile_RGI2000-v7.0-C-01-04374.nc era5_wgs84_RGI2000-v7.0-C-01-04374.nc; do
