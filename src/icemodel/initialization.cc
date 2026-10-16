@@ -308,12 +308,36 @@ void IceModel::model_state_setup(InputOptions input_options) {
  * This method should eventually go away as IceModel turns into a "coupler" and all physical
  * processes are handled by sub-models.
  */
+//! True if `name` is listed in `-input.regrid.vars` and a regridding file is set.
+bool IceModel::will_be_regridded(const std::string &name) const {
+  auto filename = m_config->get_string("input.regrid.file");
+  auto vars     = set_split(m_config->get_string("input.regrid.vars"), ',');
+  return (not filename.empty()) and set_member(name, vars);
+}
+
 void IceModel::restart_2d(const File &input_file, unsigned int last_record) {
   std::string filename = input_file.name();
 
   m_log->message(2, "initializing 2D fields from NetCDF file '%s'...\n", filename.c_str());
 
   for (auto *variable : m_model_state) {
+    if (variable == &m_averaged_hardness and
+        not input_file.variable_exists(m_averaged_hardness.get_name())) {
+      // The prescribed hardness usually comes from an inversion output file
+      // and not from the state file we restart from: allow it to be regridded
+      // instead (see IceModel::regrid()).
+      if (will_be_regridded(m_averaged_hardness.get_name())) {
+        m_log->message(2, "  '%s' not found in '%s'; it will be regridded from '%s'\n",
+                       m_averaged_hardness.get_name().c_str(), filename.c_str(),
+                       m_config->get_string("input.regrid.file").c_str());
+        continue;
+      }
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "stress_balance.averaged_hardness.enabled is set, but "
+                                    "'%s' is not in '%s' and is not listed in "
+                                    "-input.regrid.vars",
+                                    m_averaged_hardness.get_name().c_str(), filename.c_str());
+    }
     variable->read(input_file, last_record);
   }
 
@@ -396,6 +420,23 @@ void IceModel::bootstrap_2d(const File &input_file) {
 
   m_ice_thickness_bc_mask.regrid(input_file, io::Default(0.0));
 
+  if (m_use_averaged_hardness) {
+    const auto &name = m_averaged_hardness.get_name();
+    if (input_file.variable_exists(name)) {
+      m_averaged_hardness.regrid(input_file, io::Default::Nil());
+    } else if (will_be_regridded(name)) {
+      m_log->message(2, "  '%s' not found in '%s'; it will be regridded from '%s'\n",
+                     name.c_str(), input_file.name().c_str(),
+                     m_config->get_string("input.regrid.file").c_str());
+    } else {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                    "stress_balance.averaged_hardness.enabled is set, but "
+                                    "'%s' is not in '%s' and is not listed in "
+                                    "-input.regrid.vars",
+                                    name.c_str(), input_file.name().c_str());
+    }
+  }
+
   // check if Lz is valid
   auto max_thickness = array::max(m_geometry.ice_thickness);
 
@@ -467,9 +508,16 @@ void IceModel::allocate_stressbalance() {
 
   m_log->message(2, "# Allocating a stress balance model...\n");
 
+  auto model = m_config->get_string("stress_balance.model");
+  if (m_use_averaged_hardness and model != "blatter") {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "stress_balance.averaged_hardness.enabled requires "
+                                  "stress_balance.model = 'blatter' (got '%s')",
+                                  model.c_str());
+  }
+
   // false means "not regional"
-  m_stress_balance =
-      stressbalance::create(m_config->get_string("stress_balance.model"), m_grid, false);
+  m_stress_balance = stressbalance::create(model, m_grid, false);
 
   m_submodels["shallow stress balance"] = m_stress_balance.shallow.get();
   m_submodels["stress balance modifier"] = m_stress_balance.modifier.get();

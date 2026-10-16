@@ -158,7 +158,20 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
     // all ranks of target_grid.com have to call functions that use `input_file`:
     auto source_grid_name = grid_name(input_file, variable_name, ctx->unit_system(),
                                       type == PIECEWISE_CONSTANT);
-    auto target_grid_name = "internal for " + source_grid_name;
+
+    // Names used to register grids and fields with YAC. YAC keeps grid definitions in a
+    // process-wide registry that is *not* scoped to the instance created above (and not
+    // freed by yac_cfinalize_instance() while PISM's default instance is alive), so
+    // defining a second interpolation from the same file in one process would fail with
+    // "multiple definitions of grid with identical name". This happens, for example,
+    // when a Python driver builds more than one Grid in one process (pismi's alternating
+    // tauc/hardav inversion). Append a process-wide counter to make the names unique.
+    // These names are internal to this object; log messages use source_grid_name.
+    static int s_yac_interpolation_counter = 0;
+    std::string yac_name_suffix = " #" + std::to_string(++s_yac_interpolation_counter);
+    std::string source_yac_name = source_grid_name + yac_name_suffix;
+    std::string target_yac_name = "internal for " + source_yac_name;
+
     double target_grid_spacing = std::min(target_grid.dx(), target_grid.dy());
 
     log->message(
@@ -219,7 +232,7 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
       auto x = grid::subset(target_grid.xs(), target_grid.xm(), target_grid.x());
       auto y = grid::subset(target_grid.ys(), target_grid.ym(), target_grid.y());
 
-      m_target_field_id = define_field(target_comp_id, x, y, target_proj_params, target_grid_name);
+      m_target_field_id = define_field(target_comp_id, x, y, target_proj_params, target_yac_name);
     }
 
     // define the source field on the io_subcomm:
@@ -286,7 +299,7 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
       io_log->message(2, " Input grid spacing: ~%3.3f m\n", source_grid_spacing);
       {
         m_source_field_id =
-            define_field(source_comp_id, x, y, source_proj_params, source_grid_name);
+            define_field(source_comp_id, x, y, source_proj_params, source_yac_name);
       }
 
       // Define the interpolation stack and the "couple":
@@ -341,11 +354,11 @@ InputInterpolationYAC::InputInterpolationYAC(const pism::Grid &target_grid,
         const int tgt_lag = 0;
         yac_cdef_couple_instance(m_instance_id,
                                  "source_component",       // source component name
-                                 source_grid_name.c_str(), // source grid name
-                                 source_grid_name.c_str(), // source field name
+                                 source_yac_name.c_str(),  // source grid name
+                                 source_yac_name.c_str(),  // source field name
                                  "target_component",       // target component name
-                                 target_grid_name.c_str(), // target grid name
-                                 target_grid_name.c_str(), // target field name
+                                 target_yac_name.c_str(),  // target grid name
+                                 target_yac_name.c_str(),  // target field name
                                  "1",                      // time step length in units below
                                  YAC_TIME_UNIT_SECOND,     // time step length units
                                  YAC_REDUCTION_TIME_NONE,  // reduction in time (for

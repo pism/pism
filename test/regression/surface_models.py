@@ -873,6 +873,181 @@ class ISMIP6(TestCase):
         os.remove(self.reference_file)
         os.remove(self.forcing_file)
 
+class ISMIP7(TestCase):
+    """Surface model ISMIP7.
+
+    Like ISMIP6, but there are no anomalies: the SMB, the ice surface temperature, and
+    the runoff rate are each a (time-dependent) reference field corrected for the
+    departure of the modeled ice surface from a fixed reference surface:
+
+    X(x, y, t) = X_ref(x, y, t) + dXdz(x, y, t) * [h(x, y, t) - h_ref(x, y)]
+
+    for X in {climatic_mass_balance, ice_surface_temp, runoff_rate}. The reference
+    fields and the gradients live in two separate files.
+    """
+
+    # reference surface elevation and the elevation of the modeled ice surface; the
+    # gradients below are applied to the difference
+    H_ref = 20.0                # m
+    H     = 100.0               # m
+
+    # reference fields (constant in time, so that averaging over any interval is exact)
+    SMB_ref = 500.0             # kg m-2 s-1
+    T_ref   = 260.0             # kelvin
+    R_ref   = 3.0               # kg m-2 s-1
+
+    # elevation gradients (also constant in time)
+    dSMBdz = -10.0              # kg m-2 s-1 m-1
+    dTdz   = -0.01              # kelvin m-1
+    dRdz   = 0.02               # kg m-2 s-1 m-1
+
+    def prepare_reference_data(self, grid, filename):
+        "Write the time-independent reference surface elevation."
+
+        usurf = PISM.model.createIceSurfaceVec(grid)
+        usurf.metadata(0).set_string("units", "m").set_time_dependent(False)
+        usurf.set(self.H_ref)
+
+        out = PISM.util.prepare_output(filename, append_time=True)
+
+        out.define_variable(usurf.metadata(0))
+        usurf.write(out)
+
+        out.close()
+
+    def write_forcing(self, filename, variables):
+        """Write monthly forcing covering one year. `variables` is a list of
+        (array, value) pairs; each array is constant in time, so the average over the
+        time step used below is exactly `value`."""
+
+        time = self.ctx.time.metadata(with_bounds=True)
+        time.units("seconds since 1-1-1")
+
+        out = PISM.util.prepare_output(filename, append_time=False, time=time)
+
+        bounds = self.ctx.time.bounds_metadata()
+
+        out.define_variable(bounds)
+
+        for v, _ in variables:
+            out.define_variable(v.metadata())
+
+        # monthly steps
+        dt = (365 * 86400) / 12.0
+
+        for j in range(12):
+
+            t = self.ctx.time.current() + j * dt
+
+            out.append_time(t)
+
+            out.write_array(bounds.get_name(), [j, 0], [1, 2], [t, t + dt])
+
+            for v, value in variables:
+                v.set(value)
+                v.write(out)
+
+        out.close()
+
+    def prepare_climate_forcing(self, grid, filename):
+        "Write the reference SMB, temperature, and runoff rate."
+
+        SMB = PISM.Scalar(grid, "climatic_mass_balance")
+        SMB.metadata(0).long_name("reference SMB").units("kg m^-2 s^-1").output_units("kg m^-2 s^-1")
+
+        T = PISM.Scalar(grid, "ice_surface_temp")
+        T.metadata(0).long_name("reference temperature").units("kelvin")
+
+        R = PISM.Scalar(grid, "runoff_rate")
+        R.metadata(0).long_name("reference runoff").units("kg m^-2 s^-1").output_units("kg m^-2 s^-1")
+
+        self.write_forcing(filename,
+                           [(SMB, self.SMB_ref), (T, self.T_ref), (R, self.R_ref)])
+
+    def prepare_gradient_forcing(self, grid, filename):
+        "Write the SMB, temperature, and runoff rate elevation gradients."
+
+        dSMBdz = PISM.Scalar(grid, "climatic_mass_balance_gradient")
+        dSMBdz.metadata(0).long_name("SMB gradient").units("kg m^-2 s^-1 m^-1").output_units("kg m^-2 s^-1 m^-1")
+
+        dTdz = PISM.Scalar(grid, "ice_surface_temp_gradient")
+        dTdz.metadata(0).long_name("surface temperature gradient").units("K m^-1").output_units("K m^-1")
+
+        dRdz = PISM.Scalar(grid, "runoff_rate_gradient")
+        dRdz.metadata(0).long_name("runoff gradient").units("kg m^-2 s^-1 m^-1").output_units("kg m^-2 s^-1 m^-1")
+
+        self.write_forcing(filename,
+                           [(dSMBdz, self.dSMBdz), (dTdz, self.dTdz), (dRdz, self.dRdz)])
+
+    def setUp(self):
+
+        self.ctx = PISM.Context()
+
+        self.grid = shallow_grid()
+        self.geometry = PISM.Geometry(self.grid)
+
+        self.geometry.ice_surface_elevation.set(self.H)
+
+        self.forcing_file    = filename("surface_ismip7_forcing_")
+        self.gradient_file   = filename("surface_ismip7_gradient_")
+        self.reference_file  = filename("surface_ismip7_reference_")
+        self.output_filename = filename("surface_ismip7_output_")
+
+        self.prepare_reference_data(self.grid, self.reference_file)
+        self.prepare_climate_forcing(self.grid, self.forcing_file)
+        self.prepare_gradient_forcing(self.grid, self.gradient_file)
+
+        config.set_string("surface.ismip7.file", self.forcing_file)
+        config.set_string("surface.ismip7.gradient.file", self.gradient_file)
+        config.set_string("surface.ismip7.reference.file", self.reference_file)
+
+    def test_ismip7(self):
+        "Model 'ismip7'"
+
+        model = PISM.SurfaceISMIP7(self.grid, PISM.AtmosphereUniform(self.grid))
+
+        model.init(self.geometry)
+
+        t = self.ctx.time.current()
+        dt = model.max_timestep(t, None).value()
+
+        model.update(self.geometry, t, dt)
+
+        dz = self.H - self.H_ref
+
+        SMB = self.SMB_ref + self.dSMBdz * dz
+        T   = self.T_ref + self.dTdz * dz
+        R   = self.R_ref + self.dRdz * dz
+
+        # this SMB is negative, so all of it is melt and none of it is accumulation
+        assert SMB < 0.0
+
+        # runoff comes from the forcing, *not* from the SMB: unlike the other surface
+        # models, ISMIP7 does not derive it using dummy_runoff()
+        assert abs(R - (-SMB)) > 1.0
+
+        check_model(model, T=T, omega=0.0, SMB=SMB,
+                    accumulation=max(SMB, 0.0), melt=max(-SMB, 0.0), runoff=R)
+
+        write_state(model, self.geometry, self.output_filename)
+        probe_interface(model)
+
+    def tearDown(self):
+        for f in [self.reference_file, self.forcing_file, self.gradient_file]:
+            os.remove(f)
+
+        # this one is not written if the test fails before write_state(); removing it
+        # unconditionally would mask the original failure
+        try:
+            os.remove(self.output_filename)
+        except FileNotFoundError:
+            pass
+
+        for p in ["surface.ismip7.file", "surface.ismip7.gradient.file",
+                  "surface.ismip7.reference.file"]:
+            config.set_string(p, "")
+
+
 if __name__ == "__main__":
 
     t = ISMIP6()
