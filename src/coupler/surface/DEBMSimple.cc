@@ -217,6 +217,14 @@ void DEBMSimple::init_impl(const Inputs &inputs) {
     m_input_albedo->init(filename, periodic);
   }
 
+  {
+    auto filename = m_config->get_string("surface.debm_simple.std_dev.file");
+    if (not filename.empty()) {
+      bool periodic = m_config->get_flag("surface.debm_simple.std_dev.periodic");
+      m_air_temp_sd->init(filename, periodic);
+    }
+  }
+
   // finish up
   {
     m_next_balance_year_start = compute_next_balance_year_start(time().current());
