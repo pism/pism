@@ -58,6 +58,13 @@ protected:
 
   std::shared_ptr<EmptyingProblem> m_emptying_problem;
 
+  //! Whether the surface water input comes from the model (runoff) instead of a forcing file.
+  bool m_from_runoff;
+
+  //! Time-integrated surface input accumulated since the last flux update; used to drive the
+  //! steady-state solve with the time-averaged input rate (runoff-derived input case).
+  array::Scalar m_input_accumulator;
+
   //! time of the last water flux update
   double m_t_last;
   //! Update interval in seconds
