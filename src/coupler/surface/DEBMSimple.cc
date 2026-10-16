@@ -847,7 +847,9 @@ DiagnosticList DEBMSimple::spatial_diagnostics_impl() const {
   };
 
   result = pism::combine(result, SurfaceModel::spatial_diagnostics_impl());
-  result = pism::combine(result, m_insolation->spatial_diagnostics());
+
+  // note the argument order: allow m_insolation to override diagnostics from above
+  result = pism::combine(m_insolation->spatial_diagnostics(), result);
 
   return result;
 }
