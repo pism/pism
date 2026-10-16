@@ -47,8 +47,6 @@ mpirun -np 8 pism -i bootfile_RGI2000-v7.0-C-01-04374.nc \
        -atmosphere.given.file era5_wgs84_RGI2000-v7.0-C-01-04374.nc \
        -atmosphere.given.periodic yes \
        -surface debm_simple \
-       -surface.debm_simple.std_dev.file era5_wgs84_RGI2000-v7.0-C-01-04374.nc \
-       -surface.debm_simple.std_dev.periodic yes \
        -surface.debm_simple.interpret_precip_as_snow no \
        -surface.debm_simple.c1 25 \
        -surface.debm_simple.c2 -103 \
@@ -81,8 +79,6 @@ for df in 0.0 0.2; do
          -surface debm_simple \
          -surface.debm_simple.insolation_model terrain_shaded \
          -terrain_shaded_insolation.diffuse_fraction $df \
-         -surface.debm_simple.std_dev.file era5_wgs84_RGI2000-v7.0-C-01-04374.nc \
-         -surface.debm_simple.std_dev.periodic yes \
          -surface.debm_simple.interpret_precip_as_snow no \
          -surface.debm_simple.c1 25 \
          -surface.debm_simple.c2 -103 \
