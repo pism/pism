@@ -32,8 +32,8 @@ void Insolation::update(double t, double dt, const array::Scalar1 &surface_eleva
   update_impl(t, dt, surface_elevation);
 }
 
-void Insolation::init(const InputOptions &options) {
-  init_impl(options);
+void Insolation::init(const InputOptions &options, const array::Scalar1 &surface_elevation) {
+  init_impl(options, surface_elevation);
 }
 
 void Insolation::surface_insolation_energy_series(int i, int j,
@@ -49,7 +49,9 @@ DEBMSimpleInsolation::DEBMSimpleInsolation(std::shared_ptr<const Grid> grid,
   // empty
 }
 
-void DEBMSimpleInsolation::init_impl(const InputOptions &/*options*/) {
+void DEBMSimpleInsolation::init_impl(const InputOptions & /*options*/,
+                                     const array::Scalar1 &surface_elevation) {
+  m_surface_elevation = &surface_elevation;
 }
 
 void DEBMSimpleInsolation::update_impl(double /*t*/, double /*dt*/,

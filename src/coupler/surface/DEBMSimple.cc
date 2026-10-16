@@ -240,7 +240,7 @@ void DEBMSimple::init_impl(const Inputs &inputs) {
     m_runoff->set(0.0);
   }
 
-  m_insolation->init(options);
+  m_insolation->init(options, inputs.geometry->ice_surface_elevation);
 }
 
 MaxTimestep DEBMSimple::max_timestep_impl(double t, const CFLData *cfl_data) const {

@@ -35,7 +35,7 @@ class Insolation : public Component, public PetscAccessible {
 public:
   Insolation(std::shared_ptr<const Grid> grid);
 
-  void init(const InputOptions &options);
+  void init(const InputOptions &options, const array::Scalar1 &surface_elevation);
 
   void update(double t, double dt, const array::Scalar1 &surface_elevation);
 
@@ -43,7 +43,7 @@ public:
                                         double dt, std::vector<double> &result) const;
 
 protected:
-  virtual void init_impl(const InputOptions &options) = 0;
+  virtual void init_impl(const InputOptions &options, const array::Scalar1 &surface_elevation) = 0;
   virtual void update_impl(double t, double dt, const array::Scalar1 &surface_elevation) = 0;
 
   virtual void
@@ -57,7 +57,7 @@ public:
   DEBMSimpleInsolation(std::shared_ptr<const Grid> grid,
                        DEBMSimplePointwise &pointwise_model);
 private:
-  void init_impl(const InputOptions &options);
+  void init_impl(const InputOptions &options, const array::Scalar1 &surface_elevation);
   void update_impl(double t, double dt, const array::Scalar1 &surface_elevation);
   void begin_access() const;
   void end_access() const;
@@ -107,7 +107,7 @@ public:
   bool sky_view_enabled() const;
 
 private:
-  void init_impl(const InputOptions &options);
+  void init_impl(const InputOptions &options, const array::Scalar1 &surface_elevation);
   void update_impl(double t, double dt, const array::Scalar1 &surface_elevation);
   void begin_access() const;
   void end_access() const;

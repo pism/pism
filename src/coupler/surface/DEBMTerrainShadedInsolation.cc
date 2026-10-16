@@ -60,49 +60,50 @@
 namespace pism {
 namespace surface {
 
-void DEBMTerrainShadedInsolation::init_impl(const InputOptions &options) {
-  m_t_last = time().current();
-  if (options.type == INIT_RESTART or options.type == INIT_BOOTSTRAP) {
+void DEBMTerrainShadedInsolation::init_impl(const InputOptions &options,
+                                            const array::Scalar1 &surface_elevation) {
+
+  // FIXME: fix restarting using bootstrapping + regridding: it has to match restarting
+  // with INIT_RESTART, but does not since so far we cannot recover m_t_last when
+  // regridding horizon altitude.
+
+  if (options.type == INIT_RESTART) {
     File input_file(m_grid->com, options.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
-    if (input_file.variable_exists(m_time_name)) {
-      auto t_length = input_file.nrecords(m_time_name, "", m_sys);
-      auto t_last   = t_length > 0 ? t_length - 1 : 0;
+    auto t_length = input_file.nrecords(m_time_name, "" /*no standard name*/, m_sys);
+    auto t_last   = t_length > 0 ? t_length - 1 : 0;
 
-      auto t =
-          io::read_timeseries_variable(input_file, m_time_name, time().units(), m_sys, t_last, 1);
-      m_t_last = t[0];
-    }
-  }
+    auto t =
+        io::read_timeseries_variable(input_file, m_time_name, time().units(), m_sys, t_last, 1);
+    m_t_last = t[0];
 
-  {
-    auto log    = m_grid->ctx()->log();
-    auto config = m_grid->ctx()->config();
-
-    switch (options.type) {
-    case INIT_RESTART:
-      // read bed elevation and uplift rate from file
-      log->message(2, "    reading bed topography and uplift from %s ... \n",
-                   options.filename.c_str());
-      // re-starting
-      m_horizon->read(options.filename, options.record); // fails if not found!
-      break;
-    case INIT_BOOTSTRAP:
-    case INIT_OTHER:
-    default: {
-      // do nothing
-    } break;
-    }
-
-    // process -regrid_file and -regrid_vars
-    io::regrid(*config, "insolation", *m_horizon, true);
+    m_log->message(2, "    reading %s from %s ... \n",
+                 m_horizon->metadata().get_string("long_name").c_str(), options.filename.c_str());
+    // re-starting
+    m_horizon->read(options.filename, options.record); // fails if not found!
+  } else {
+    update_shading(surface_elevation);
+    update_daily_insolation(time().current(), surface_elevation);
+    m_t_last = time().current();
   }
 }
 
 void DEBMTerrainShadedInsolation::update_impl(double t, double dt,
                                               const array::Scalar1 &surface_elevation) {
 
-  update_shading(surface_elevation);
+  double t_final = t + dt;
+
+  if (t_final < m_t_last) {
+    throw RuntimeError(PISM_ERROR_LOCATION, "cannot go back in time");
+  }
+
+  double t_next = m_update_interval > 0.0 ? m_t_last + m_update_interval : t_final;
+
+  if (std::abs(t_next - t_final) < m_t_eps) { // reached the next update time
+    update_shading(surface_elevation);
+
+    m_t_last = t_final;
+  }
 
   update_daily_insolation(t + 0.5 * dt, surface_elevation);
 }
