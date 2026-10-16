@@ -236,6 +236,70 @@ class GivenTHTest(TestCase):
     def tearDown(self):
         os.remove(self.filename)
 
+class GivenTHThermalForcingTest(TestCase):
+    """Supplying theta_ocean as thermal forcing has to reproduce the run using the
+    equivalent potential temperature (GivenTHTest above)."""
+    def setUp(self):
+
+        ice_thickness = 1000.0
+        salinity = 35.0
+        potential_temperature = 270.0
+        self.average_water_column_pressure = water_column_pressure(ice_thickness)
+        # same expected values as GivenTHTest:
+        self.temperature = 270.17909999999995
+        self.mass_flux = -6.489250000000001e-05
+
+        # Freezing point as a potential temperature, in degrees Celsius, using the "b"
+        # coefficients from GivenTH::Constants.
+        b = [-0.0575, 0.0921, -7.85e-4]
+        freezing_point = b[0] * salinity + b[1] + b[2] * ice_thickness
+
+        # thermal forcing equivalent to `potential_temperature`
+        thermal_forcing = (potential_temperature - 273.15) - freezing_point
+
+        self.grid = shallow_grid()
+        self.geometry = PISM.Geometry(self.grid)
+        self.inputs = PISM.OceanInputs()
+        self.inputs.geometry = self.geometry
+
+        self.geometry.ice_thickness.set(ice_thickness)
+        self.geometry.bed_elevation.set(-2 * ice_thickness)
+        self.geometry.ensure_consistency(0.0)
+
+        self.filename = tmp_name("ocean_given_th_tf_input")
+
+        output = PISM.util.prepare_output(self.filename)
+
+        # Note the units: thermal forcing is a temperature *difference*, so it has to be
+        # stored in degrees Celsius for the model's "value - 273.15" to recover it.
+        Th = PISM.Scalar(self.grid, "theta_ocean")
+        Th.metadata(0).long_name("ocean thermal forcing").units("degree_Celsius")
+        Th.set(thermal_forcing)
+        output.define_variable(Th.metadata())
+        Th.write(output)
+
+        S = PISM.Scalar(self.grid, "salinity_ocean")
+        S.metadata(0).long_name("ocean salinity").units("g/kg")
+        S.set(salinity)
+        output.define_variable(S.metadata())
+        S.write(output)
+
+        config.set_string("ocean.th.file", self.filename)
+        config.set_flag("ocean.th.temperature_as_thermal_forcing", True)
+
+    def test_ocean_th_thermal_forcing(self):
+        "Model GivenTH (theta_ocean as thermal forcing)"
+
+        model = PISM.OceanGivenTH(self.grid)
+        model.init(self.geometry)
+        model.update(self.inputs, 0, 1)
+
+        check_model(model, self.temperature, self.mass_flux, self.average_water_column_pressure)
+
+    def tearDown(self):
+        config.set_flag("ocean.th.temperature_as_thermal_forcing", False)
+        os.remove(self.filename)
+
 class DeltaT(TestCase):
     def setUp(self):
         self.filename = tmp_name("ocean_delta_T_input")

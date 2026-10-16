@@ -43,7 +43,10 @@ add_library (boundary OBJECT
   ./ocean/Factory.cc
   ./ocean/Initialization.cc
   ./ocean/Pico.cc
+  ./ocean/Picop.cc
+  ./ocean/Plume.cc
   ./ocean/PicoPhysics.cc
+  ./ocean/PlumePhysics.cc
   ./ocean/PicoGeometry.cc
   ./ocean/PyOceanModel.cc
   ./ocean/sea_level/Initialization.cc

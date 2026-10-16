@@ -3,6 +3,14 @@ mark_as_advanced(RST2MAN_EXECUTABLE)
 
 if (RST2MAN_EXECUTABLE)
   find_package(UnixCommands)
+
+  # macOS BSD sed requires '' after -i for in-place editing without backup
+  if(APPLE)
+    set(SED_INPLACE_FLAG "-i" "''")
+  else()
+    set(SED_INPLACE_FLAG "-i")
+  endif()
+
   macro(add_manpages names)
     foreach(name ${names})
       # Note the sed command: this fixes formatting of command-line options: rst2man
