@@ -13,10 +13,10 @@ dependencies:
   - swig
   - gnuconfig
   # MPI
-  - libnetcdf=*=*mpi_*
-  - netcdf4=*=*mpi_*
-  - h5py=*=*mpi_*
-  - hdf5=*=*mpi_*
+  - libnetcdf=*=mpi_*
+  - netcdf4=*=mpi_*
+  - h5py=*=mpi_*
+  - hdf5=*=mpi_*
   # Libraries
   - fftw
   - gsl >=1.15
@@ -34,6 +34,7 @@ dependencies:
   - yac=*=mpi_*
   - yaxt=*=mpi_*
   - ncview
+  - wget
   # Python / analysis
   - pip
   - pip:
