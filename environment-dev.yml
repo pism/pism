@@ -35,6 +35,7 @@ dependencies:
   - yaxt=*=mpi*
   - ncview
   - wget
+  - cdo
   # Development
   - pre-commit
   # Docs

@@ -35,6 +35,7 @@ dependencies:
   - yaxt=*=mpi_*
   - ncview
   - wget
+  - cdo
   # Python / analysis
   - pip
   - pip:
