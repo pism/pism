@@ -65,7 +65,6 @@ protected:
 
   void insolation_energy_series(int i, int j,
                                 const std::vector<DEBMSimpleOrbitalParameters> &orbital,
-                                const std::vector<double> &ts,
                                 double dt_sub,
                                 double latitude,
                                 std::vector<double> &result) const override;
@@ -77,10 +76,7 @@ private:
   std::unique_ptr<TerrainInsolation> m_terrain;
 
   //! daily surface insolation energy (J m-2) computed for the current update
-  std::shared_ptr<array::Scalar> m_computed_insolation;
-
-  //! per-cell latitude (degrees north), cached from the geometry at initialization
-  const array::Scalar *m_latitude;
+  std::shared_ptr<array::Scalar> m_insolation;
 
   //! ice surface elevation, cached from the geometry at initialization (the horizon is
   //! recomputed from this evolving field every m_update_interval)

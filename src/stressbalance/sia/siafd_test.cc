@@ -40,7 +40,6 @@ static char help[] =
 #include "pism/geometry/Geometry.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/io/SynchronousOutputWriter.hh"
-#include "pism/util/io/io_helpers.hh"
 
 namespace pism {
 
@@ -50,7 +49,7 @@ static void compute_strain_heating_errors(const array::Array3D &strain_heating,
                                           double &gmax_strain_heating_err,
                                           double &gav_strain_heating_err) {
   double    max_strain_heating_error = 0.0, av_strain_heating_error = 0.0, avcount = 0.0;
-  const int Mz = grid.Mz();
+  auto Mz = grid.Mz();
 
   const double LforFG = 750000; // m
 
@@ -75,12 +74,12 @@ static void compute_strain_heating_errors(const array::Array3D &strain_heating,
         // singularity
         TestFGParameters F = exactFG(0.0, r, grid.z(), 0.0);
 
-        for (int k = 0; k < Mz; k++) {
+        for (unsigned int k = 0; k < Mz; k++) {
           F.Sig[k] *= ice_rho * ice_c; // scale exact strain_heating to J/(s m^3)
         }
-        const int ks = grid.kBelowHeight(thickness(i, j));
+        auto ks = grid.kBelowHeight(thickness(i, j));
         const double *strain_heating_ij = strain_heating.get_column(i, j);
-        for (int k = 0; k < ks; k++) {  // only eval error if below num surface
+        for (unsigned int k = 0; k < ks; k++) {  // only eval error if below num surface
           const double _strain_heating_error = fabs(strain_heating_ij[k] - F.Sig[k]);
           max_strain_heating_error = std::max(max_strain_heating_error, _strain_heating_error);
           avcount += 1.0;
@@ -300,7 +299,7 @@ int main(int argc, char *argv[]) {
     P.Ly = P.Lx;
 
     double Lz = 4000.0;
-    unsigned int Mz = config->get_number("grid.Mz");
+    unsigned int Mz = static_cast<unsigned int>(config->get_number("grid.Mz"));
 
     P.z = grid::compute_vertical_levels(Lz, Mz, grid::EQUAL);
     P.ownership_ranges_from_options(*ctx->config(), ctx->size());
@@ -333,14 +332,9 @@ int main(int argc, char *argv[]) {
 
     // Create the SIA solver object:
 
-    // We use SIA_Nonsliding and not SIAFD here because we need the z-component
-    // of the ice velocity, which is computed using incompressibility of ice in
-    // StressBalance::compute_vertical_velocity().
     std::shared_ptr<SIAFD> sia(new SIAFD(grid));
-    std::shared_ptr<ZeroSliding> no_sliding(new ZeroSliding(grid));
-
-    // stress_balance will de-allocate no_sliding and sia.
-    StressBalance stress_balance(grid, no_sliding, sia);
+    array::Vector sliding_velocity(grid, "base");
+    sliding_velocity.set(0.0);
 
     // fill the fields:
     setInitStateF(*grid, *EC,
@@ -353,7 +347,7 @@ int main(int argc, char *argv[]) {
     geometry.ensure_consistency(config->get_number("geometry.ice_free_thickness_standard"));
 
     // Initialize the SIA solver:
-    stress_balance.init();
+    sia->init();
 
     bool full_update = true;
 
@@ -363,18 +357,27 @@ int main(int argc, char *argv[]) {
     inputs.enthalpy              = &enthalpy;
     inputs.age                   = &age;
 
-    stress_balance.update(inputs, full_update);
+    sia->update(sliding_velocity, inputs, full_update);
 
     // Report errors relative to the exact solution:
     const array::Array3D
-      &u3 = stress_balance.velocity_u(),
-      &v3 = stress_balance.velocity_v(),
-      &w3 = stress_balance.velocity_w();
+      &u3 = sia->velocity_u(),
+      &v3 = sia->velocity_v();
 
-    const array::Array3D &sigma = stress_balance.volumetric_strain_heating();
+    auto w3 = u3.duplicate(pism::array::WITHOUT_GHOSTS);
+    w3->set_name("w");
+    stressbalance::compute_vertical_velocity(geometry.cell_type, u3, v3, nullptr, *w3);
+
+    auto sigma = u3.duplicate(pism::array::WITHOUT_GHOSTS);
+    sigma->set_name("sigma");
+
+    double e_factor = config->get_number("stress_balance.sia.enhancement_factor");
+    stressbalance::compute_volumetric_strain_heating(u3, v3, enthalpy, geometry.ice_thickness,
+                                                     geometry.cell_type, *sia->flow_law(), *EC,
+                                                     e_factor, *sigma);
 
     reportErrors(*grid, ctx->unit_system(),
-                 geometry.ice_thickness, u3, v3, w3, sigma);
+                 geometry.ice_thickness, u3, v3, *w3, *sigma);
 
     {
       auto writer = std::make_shared<SynchronousOutputWriter>(grid->com, *config);
@@ -391,8 +394,8 @@ int main(int argc, char *argv[]) {
         &sia->diffusivity(),
         &u3,
         &v3,
-        &w3,
-        &sigma,
+        w3.get(),
+        sigma.get(),
       };
 
       // define

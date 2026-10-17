@@ -52,7 +52,7 @@ protected:
                                const array::Scalar &W,
                                const array::Scalar &P);
 
-  virtual MaxTimestep max_timestep_impl(double t) const;
+  virtual MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 
   //! Solves an implicit step of a highly-simplified ODE.
   virtual void update_impl(double t, double dt, const Inputs& inputs);

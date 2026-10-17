@@ -270,6 +270,12 @@ void YacOutputWriter::define_yac_field(const VariableMetadata &variable) {
     m_field_ids[variable_name] = field_id;
   }
 
+  // check if this variable has the "_FillValue" attribute:
+  if (variable.has_attribute("_FillValue")) {
+    yac_cenable_field_frac_mask("pism", details::grid_name(variable).c_str(), variable_name.c_str(),
+                                (double)variable["_FillValue"]);
+  }
+
   // tell the output server to define the field
   {
     nlohmann::json info;
@@ -290,6 +296,7 @@ void YacOutputWriter::end_yac_definitions() {
   yac_cenddef();
 
   m_field_buffer = new double[m_field_buffer_size];
+  m_mask_buffer = new double[m_mask_buffer_size];
 }
 
 void YacOutputWriter::send_action(int action_id,
@@ -337,6 +344,7 @@ YacOutputWriter::~YacOutputWriter() {
   details::free_array_buffers(m_buffers);
 
   delete m_field_buffer;
+  delete m_mask_buffer;
 
   MPI_Comm_free(&m_intercomm);
 
@@ -360,6 +368,7 @@ void YacOutputWriter::initialize_impl(const std::set<VariableMetadata> &array_va
     int collection_size = std::max((int)variable.levels().size(), 1);
     int array_size      = (int)(grid.xm * grid.ym * collection_size);
     m_field_buffer_size = std::max(array_size, m_field_buffer_size);
+    m_mask_buffer_size = std::max((int)(grid.xm * grid.ym), m_mask_buffer_size);
 
     // define the grid (if necessary)
     define_yac_grid(variable, m_grid_mapping);
@@ -646,6 +655,7 @@ void YacOutputWriter::write_distributed_array_impl(const std::string &file_name,
       }
     }
   }
+
   // Since the output interface is only called when the output is done, all calls to
   // yac_cput() should result in an actual data exchange.
   //
@@ -653,7 +663,47 @@ void YacOutputWriter::write_distributed_array_impl(const std::string &file_name,
   // Since the snapshot output calls are normally equal or smaller than the number of time
   // steps this should work fine nonetheless
   int info, error;
-  yac_cput(m_field_ids[variable_name], collection_size, collection_data.data(), &info, &error);
+  if (variable.has_attribute("_FillValue")) {
+    double fill_value = variable["_FillValue"];
+
+    std::vector<double **> mask_data(collection_size, nullptr);
+    std::vector<double *> mask_point_data(collection_size, nullptr);
+    for (int j = 0; j < collection_size; ++j) {
+      mask_point_data[j] = m_mask_buffer; // the mask is the same for all elements in a collection
+      mask_data[j]       = &(mask_point_data[j]);
+    }
+
+    // PISM indexing helpers:
+    int delta_x_p = collection_size;
+    int delta_y_p = collection_size * x_size;
+    // YAC indexing helpers:
+    int delta_x_y = 1;
+    int delta_y_y = x_size;
+    for (int x = 0; x < x_size; x++) {
+      for (int y = 0; y < y_size; y++) {
+        int yac_index = y * delta_y_y + x * delta_x_y;
+        // default value: include this point
+        double fractional_mask = 1.0;
+        for (int c = 0; c < collection_size; c++) {
+          int pism_index = y * delta_y_p + x * delta_x_p + c;
+          // Pick the smallest value from all elements of a collection: exclude a grid
+          // point from all elements of a collection if it is excluded in one or more.
+          fractional_mask = std::min(fractional_mask, data[pism_index] == fill_value ? 0.0 : 1.0);
+        }
+
+        m_mask_buffer[yac_index] = fractional_mask;
+
+        // for (int c = 0; c < collection_size; c++) {
+        //   mask_data[c][0][yac_index] = fractional_mask;
+        // }
+      }
+    }
+
+    yac_cput_frac(m_field_ids[variable_name], collection_size, collection_data.data(),
+                  mask_data.data(), &info, &error);
+  } else {
+    yac_cput(m_field_ids[variable_name], collection_size, collection_data.data(), &info, &error);
+  }
 }
 
 bool yac_component_defined(const std::string &name) {

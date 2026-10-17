@@ -116,9 +116,6 @@ class MassTransport(object):
 
     def reset(self):
         geometry = self.geometry
-        # grid info
-        geometry.latitude.set(0.0)
-        geometry.longitude.set(0.0)
         # environment
         geometry.bed_elevation.set(-10.0)
         geometry.sea_level_elevation.set(0.0)

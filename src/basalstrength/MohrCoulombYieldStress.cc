@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2023, 2025 PISM Authors
+// Copyright (C) 2004--2023, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -206,7 +206,7 @@ void MohrCoulombYieldStress::finish_initialization(const YieldStressInputs &inpu
   this->update(inputs, time().current(), 1.0 /* one second time step */);
 }
 
-MaxTimestep MohrCoulombYieldStress::max_timestep_impl(double t) const {
+MaxTimestep MohrCoulombYieldStress::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
   (void) t;
 
   if (m_delta) {

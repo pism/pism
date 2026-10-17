@@ -45,7 +45,7 @@ protected:
   const array::Scalar& melt_impl() const;
   const array::Scalar& runoff_impl() const;
 
-  MaxTimestep max_timestep_impl(double t) const;
+  MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 private:
   void adjust_mass_flux(double time,
                         const array::Scalar &ice_thickness,

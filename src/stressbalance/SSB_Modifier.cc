@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2025 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022, 2023, 2025, 2026 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -24,6 +24,7 @@
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/array/Vector.hh"
 #include "pism/util/Context.hh"
+#include "pism/util/Profiling.hh"
 
 namespace pism {
 namespace stressbalance {
@@ -54,6 +55,13 @@ SSB_Modifier::SSB_Modifier(std::shared_ptr<const Grid> g)
 }
 
 void SSB_Modifier::init() {
+}
+
+void SSB_Modifier::update(const array::Vector &sliding_velocity, const Inputs &inputs,
+                          bool full_update) {
+  profiling().begin("stress_balance.modifier");
+  this->update_impl(sliding_velocity, inputs, full_update);
+  profiling().end("stress_balance.modifier");
 }
 
 const array::Staggered& SSB_Modifier::diffusive_flux() {
@@ -103,9 +111,9 @@ ConstantInColumn::ConstantInColumn(std::shared_ptr<const Grid> g)
  * - maximum diffusivity
  * - strain heating (strain_heating)
  */
-void ConstantInColumn::update(const array::Vector &sliding_velocity,
-                              const Inputs &inputs,
-                              bool full_update) {
+void ConstantInColumn::update_impl(const array::Vector &sliding_velocity,
+                                   const Inputs &inputs,
+                                   bool full_update) {
 
   (void) inputs;
 

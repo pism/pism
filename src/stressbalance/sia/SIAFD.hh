@@ -56,10 +56,6 @@ public:
 
   virtual void init();
 
-  virtual void update(const array::Vector &sliding_velocity,
-                      const Inputs &inputs,
-                      bool full_update);
-
   const BedSmoother& bed_smoother() const;
 
   const array::Staggered& surface_gradient_x() const;
@@ -67,6 +63,11 @@ public:
   const array::Staggered1& diffusivity() const;
 
 protected:
+
+  virtual void update_impl(const array::Vector &sliding_velocity,
+                           const Inputs &inputs,
+                           bool full_update);
+
   virtual DiagnosticList spatial_diagnostics_impl() const;
 
   virtual void compute_surface_gradient(const Inputs &inputs,

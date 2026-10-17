@@ -1,4 +1,4 @@
-// Copyright (C) 2012-2023, 2025 PISM Authors
+// Copyright (C) 2012-2023, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -65,7 +65,7 @@ void NullTransport::init_impl(const array::Scalar &W_till, const array::Scalar &
   Hydrology::init_impl(W_till, W, P);
 }
 
-MaxTimestep NullTransport::max_timestep_impl(double t) const {
+MaxTimestep NullTransport::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
   (void)t;
   if (m_diffuse_tillwat) {
     const double dx2 = m_grid->dx() * m_grid->dx(), dy2 = m_grid->dy() * m_grid->dy(),

@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -38,9 +38,9 @@ public:
 
   void init();
 
-  void update(const array::Vector &sliding_velocity,
-              const Inputs &inputs,
-              bool full_update);
+  void update_impl(const array::Vector &sliding_velocity,
+                   const Inputs &inputs,
+                   bool full_update);
 private:
   std::shared_ptr<Blatter> m_solver;
 

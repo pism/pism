@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2021, 2023, 2025 Torsten Albrecht and Constantine Khroulev
+// Copyright (C) 2004--2021, 2023, 2025, 2026 Torsten Albrecht and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -104,7 +104,7 @@ void IceModel::front_retreat_step(double t, double dt) {
   {
     if (m_eigen_calving) {
       m_eigen_calving->update(m_geometry.cell_type,
-                              m_stress_balance->shallow()->velocity());
+                              m_stress_balance.shallow->velocity());
     }
 
     if (m_hayhurst_calving) {
@@ -119,7 +119,7 @@ void IceModel::front_retreat_step(double t, double dt) {
       // instead of using ice thickness and enthalpy.
       m_vonmises_calving->update(m_geometry.cell_type,
                                  m_geometry.ice_thickness,
-                                 m_stress_balance->shallow()->velocity(),
+                                 m_stress_balance.shallow->velocity(),
                                  m_energy_model->enthalpy());
     }
 

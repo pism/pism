@@ -76,9 +76,9 @@ const array::Scalar& SeaLevel::elevation() const {
   return m_sea_level;
 }
 
-MaxTimestep SeaLevel::max_timestep_impl(double t) const {
+MaxTimestep SeaLevel::max_timestep_impl(double t, const CFLData *cfl_data) const {
   if (m_input_model) {
-    return m_input_model->max_timestep(t);
+    return m_input_model->max_timestep(t, cfl_data);
   }
   return MaxTimestep("sea level forcing");
 }
@@ -107,7 +107,7 @@ public:
   }
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
     auto result = allocate<array::Scalar>("sea_level");
 
     result->copy_from(model->elevation());

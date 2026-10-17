@@ -1,4 +1,4 @@
-// Copyright (C) 2019, 2021, 2022, 2023, 2024, 2025 PISM Authors
+// Copyright (C) 2019, 2021, 2022, 2023, 2024, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -197,7 +197,7 @@ void ISMIP6::update_impl(const Geometry &geometry, double t, double dt) {
   dummy_runoff(SMB, *m_runoff);
 }
 
-MaxTimestep ISMIP6::max_timestep_impl(double t) const {
+MaxTimestep ISMIP6::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
   using std::min;
 
   auto dt = m_temperature_anomaly->max_timestep(t);

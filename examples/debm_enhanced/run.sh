@@ -1,12 +1,15 @@
 #!/bin/bash
 
+# Download example files
+
 for f in bootfile_RGI2000-v7.0-C-01-04374.nc era5_wgs84_RGI2000-v7.0-C-01-04374.nc; do
     wget -nc https://pism-cloud-data.s3.amazonaws.com/debm_enhanced/$f;
 done
 
-export res="200m"
-export interval="monthly"
-    
+res="200m"
+interval="weekly"
+
+# PDD baseline with default melt factors
 mpirun -np 8 pism -i bootfile_RGI2000-v7.0-C-01-04374.nc \
        -input.bootstrap yes  \
        -grid.dx $res \
@@ -28,6 +31,7 @@ mpirun -np 8 pism -i bootfile_RGI2000-v7.0-C-01-04374.nc \
        -output.spatial.times $interval
 cdo yearmean pdd.nc pdd_ym.nc 
 
+# dEBM Simple
 mpirun -np 8 pism -i bootfile_RGI2000-v7.0-C-01-04374.nc \
        -input.bootstrap yes  \
        -grid.dx $res \
@@ -58,6 +62,7 @@ mpirun -np 8 pism -i bootfile_RGI2000-v7.0-C-01-04374.nc \
        -output.spatial.times $interval
 cdo yearmean debm_simple.nc debm_simple_ym.nc
 
+# dEBM Enhanced 
 for sv in no yes; do
     for df in 0.2; do
         mpirun -np 8 pism -i bootfile_RGI2000-v7.0-C-01-04374.nc \
@@ -90,11 +95,16 @@ for sv in no yes; do
                -output.size none \
                -output.spatial.file debm_enhanced_sv_${sv}_df_${df}.nc \
                -output.spatial.vars mass_fluxes,pdd_fluxes,effective_air_temp,effective_precipitation,climatic_mass_balance,insolation,sky_view_factor \
+<<<<<<< HEAD
                -output.spatial.stop_missing $sv \
+=======
+               -output.spatial.stop_missing no \
+>>>>>>> aaschwanden/insolation
                -output.spatial.times $interval
         cdo yearmean debm_enhanced_sv_${sv}_df_${df}.nc debm_enhanced_sv_${sv}_df_${df}_ym.nc
     done
 done
+<<<<<<< HEAD
 
 mpirun -np 8 pism -i bootfile_RGI2000-v7.0-C-01-04374.nc \
        -energy.model none \
@@ -132,3 +142,5 @@ mpirun -np 8 pism -i bootfile_RGI2000-v7.0-C-01-04374.nc \
        -output.spatial.vars mass_fluxes,pdd_fluxes,effective_air_temp,effective_precipitation,climatic_mass_balance,insolation \
 cdo yearmean debm_enhanced_df_${df}.nc debm_enhanced_df_${df}_ym.nc
 done
+=======
+>>>>>>> aaschwanden/insolation

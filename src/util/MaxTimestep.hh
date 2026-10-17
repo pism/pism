@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2021 PISM Authors
+/* Copyright (C) 2015, 2016, 2021, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -51,6 +51,12 @@ private:
   bool m_finite;
   double m_value;
   std::string m_description;
+};
+
+struct CFLData {
+  CFLData();
+  MaxTimestep dt_max;
+  double u_max, v_max, w_max;
 };
 
 //! Greater than operator for MaxTimestep.

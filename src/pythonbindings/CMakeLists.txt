@@ -15,7 +15,6 @@ if (Pism_BUILD_PYTHON_BINDINGS)
 
   list(APPEND PISM_Python_deps
     AgeModel.i
-    geometry.i
     pism_BedDef.i
     pism_ColumnSystem.i
     pism_DM.i
@@ -52,7 +51,11 @@ if (Pism_BUILD_PYTHON_BINDINGS)
 
   set_source_files_properties(PISM.i PROPERTIES
     CPLUSPLUS ON
-    SWIG_MODULE_NAME cpp)
+    SWIG_MODULE_NAME cpp
+    # Re-run SWIG when a C++ header it wraps changes: without this the only
+    # dependencies are the .i files, so header edits silently produce stale
+    # bindings.
+    USE_SWIG_DEPENDENCIES TRUE)
 
   # has to be set *before* calling SWIG_ADD_MODULE
   set(SWIG_MODULE_cpp_EXTRA_DEPS ${PISM_Python_deps})

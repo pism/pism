@@ -1,7 +1,7 @@
 .. default-role:: literal
 
-This directory contains scripts that run ISMIP-HOM_ experiments A-D (subdirectory `abcd`)
-and experiment E (subdirectory `e-arolla`) and plot resulting ice velocities.
+This directory contains scripts that run ISMIP-HOM_ experiments A-D (subdirectory `abcd`),
+experiment E (subdirectory `e-arolla`) and plot resulting ice velocities.
 
 Run
 
@@ -21,3 +21,11 @@ Run
 to download inputs, run PISM, and produce figures for experiment E.
 
 .. _ISMIP-HOM: https://tc.copernicus.org/articles/2/95/2008/
+
+Use `bench_blatter_solvers.sh` in the subdirectory `benchmark` run ISMIP-HOM  to test different solver settings,
+Do
+
+.. code::
+
+   cd benchmark
+   sh bench_blatter_solvers.sh 

@@ -143,6 +143,8 @@ public:
   const array::Scalar &calving() const;
   const array::Scalar &frontal_melt() const;
   const array::Scalar &forced_retreat() const;
+  const array::Array3D &vertical_velocity() const;
+  const array::Array3D &volumetric_strain_heating() const;
 
   const stressbalance::StressBalance* stress_balance() const;
   const ocean::OceanModel* ocean_model() const;
@@ -150,6 +152,7 @@ public:
   const energy::EnergyModel* energy_balance_model() const;
   const YieldStress* basal_yield_stress_model() const;
   const bed::BedDef* bed_deformation_model() const;
+  const hydrology::Hydrology* subglacial_hydrology_model() const;
 
   /*!
    * Replace the ocean model with an implementation in Python.
@@ -159,11 +162,20 @@ public:
   const Geometry& geometry() const;
   const GeometryEvolution& geometry_evolution() const;
 
+  //! Prescribed vertically-averaged ice hardness (see
+  //! `stress_balance.averaged_hardness.enabled`).
+  const array::Scalar& averaged_hardness() const;
+
   double dt() const;
+
+  CFLData max_timestep_cfl_3d() const;
+
+  CFLData max_timestep_cfl_2d() const;
 
 protected:
   virtual void allocate_submodels();
   virtual void allocate_stressbalance();
+  bool will_be_regridded(const std::string &name) const;
   virtual void allocate_age_model();
   virtual void allocate_isochrones();
   virtual void allocate_bed_deformation();
@@ -220,7 +232,7 @@ protected:
    * diagnostic quantities.
    */
   std::set<VariableMetadata>
-  state_variables_diagnostics(const std::set<std::string> &variable_names) const;
+  state_variables_for_diagnostics(const std::set<std::string> &variable_names) const;
 
   /*!
    * Return the set of "common" variables (i.e. ones written to most files): step counter,
@@ -241,8 +253,6 @@ protected:
   void init_final_output();
 
   virtual double step(bool do_mass_continuity, bool do_skip);
-  virtual void pre_step_hook();
-  virtual void post_step_hook();
 
   void reset_counters();
 
@@ -261,7 +271,7 @@ protected:
   /*!
    * Write state variables of diagnostic quantities in `variable_names` to `file`.
    */
-  void write_state_diagnostics(const OutputFile &file,
+  void write_state_for_diagnostics(const OutputFile &file,
                                const std::set<std::string> &variable_names) const;
 
   void write_run_stats(const OutputFile &file) const;
@@ -336,10 +346,21 @@ protected:
 
   //! ghosted
   array::Scalar2 m_basal_yield_stress;
+  //! prescribed vertically-averaged ice hardness ("hardav"); used instead of the
+  //! enthalpy-derived hardness if `stress_balance.averaged_hardness.enabled` is set
+  array::Scalar m_averaged_hardness;
+  //! true if the prescribed hardness above is used
+  bool m_use_averaged_hardness;
   //! rate of production of basal meltwater (ice-equivalent); no ghosts
   array::Scalar m_basal_melt_rate;
   //! temperature at the top surface of the bedrock thermal layer
   array::Scalar m_bedtoptemp;
+
+  //! 3D vertical velocity within the ice volume
+  array::Array3D m_vertical_velocity;
+
+  //! volumetric strain heating
+  array::Array3D m_strain_heating;
 
   std::shared_ptr<FractureDensity> m_fracture;
 
@@ -347,6 +368,8 @@ protected:
   array::Scalar2 m_velocity_bc_mask;
   //! Dirichlet boundary velocities
   array::Vector2 m_velocity_bc_values;
+
+  std::shared_ptr<array::Scalar2> m_no_model_mask;
 
   //! Mask prescribing locations where ice thickness is held constant
   array::Scalar1 m_ice_thickness_bc_mask;
@@ -366,6 +389,8 @@ protected:
   std::string m_stdout_flags;
 
   unsigned int m_step_counter;
+
+  CFLData m_cfl_2d, m_cfl_3d;
 
   // see iceModel.cc
   virtual void allocate_storage();
@@ -436,7 +461,7 @@ protected:
   static const int m_n_work2d = 4;
   mutable std::vector<std::shared_ptr<array::Scalar2>> m_work2d;
 
-  std::shared_ptr<stressbalance::StressBalance> m_stress_balance;
+  stressbalance::StressBalance m_stress_balance;
 
   struct ThicknessChanges {
     ThicknessChanges(const std::shared_ptr<const Grid> &grid);
@@ -454,9 +479,21 @@ protected:
   ThicknessChanges m_thickness_change;
 
   /*!
+   * Orders model state variables by name.
+   *
+   * Reading and writing the model state are collective operations, so every rank has to
+   * visit the variables in the same order. Ordering by address does not guarantee that:
+   * a state variable allocated on its own (e.g. `no_model_mask` in IceRegionalModel) can
+   * sit before or after IceModel's members depending on the rank.
+   */
+  struct CompareByName {
+    bool operator()(const array::Array *a, const array::Array *b) const;
+  };
+
+  /*!
    * The set of variables that the "state" of IceModel consists of.
    */
-  std::set<array::Array*> m_model_state;
+  std::set<array::Array*, CompareByName> m_model_state;
   //! Available spatially-variable diagnostics
   std::map<std::string,Diagnostic::Ptr> m_available_spatial_diagnostics;
   //! Available scalar diagnostics

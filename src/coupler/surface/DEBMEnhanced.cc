@@ -42,7 +42,7 @@ namespace surface {
 
 DEBMEnhanced::DEBMEnhanced(std::shared_ptr<const Grid> g,
                            std::shared_ptr<atmosphere::AtmosphereModel> input)
-  : DEBMSimple(g, std::move(input)), m_latitude(nullptr), m_surface_elevation(nullptr),
+  : DEBMSimple(g, std::move(input)), m_surface_elevation(nullptr),
     m_update_interval(0.0), m_t_last_horizon(0.0) {
 
   // dEBM-enhanced reuses the analytic orbit only for the temperature/offset melt-period
@@ -63,8 +63,8 @@ DEBMEnhanced::DEBMEnhanced(std::shared_ptr<const Grid> g,
   m_update_interval =
       m_config->get_number("surface.debm_enhanced.update_interval", "seconds");
 
-  m_computed_insolation = std::make_shared<array::Scalar>(m_grid, "insolation");
-  m_computed_insolation->metadata(0)
+  m_insolation = std::make_shared<array::Scalar>(m_grid, "insolation");
+  m_insolation->metadata(0)
       .long_name("daily mean terrain-shaded surface insolation")
       .units("W m^-2");
 }
@@ -82,10 +82,9 @@ void DEBMEnhanced::init_impl(const Geometry &geometry) {
                  "  insolation computed from the ice surface elevation (instead of the\n"
                  "  analytic top-of-atmosphere parameterization).\n");
 
-  // Cache the latitude and surface-elevation fields and build the initial horizon map and
+  // Cache the surface-elevation field and build the initial horizon map and
   // surface normals. The horizon is recomputed from the (evolving) surface elevation every
   // surface.debm_enhanced.update_interval (see update_insolation_input).
-  m_latitude = &geometry.latitude;
   m_surface_elevation = &geometry.ice_surface_elevation;
   m_terrain->init(geometry.ice_surface_elevation);
   m_t_last_horizon = m_grid->ctx()->time()->current();
@@ -115,24 +114,20 @@ void DEBMEnhanced::update_insolation_input(double t, double dt,
   double declination = DEBMSimplePointwise::solar_declination_present_day(year_fraction);
   double distance_factor = DEBMSimplePointwise::distance_factor_present_day(year_fraction);
 
-  m_terrain->daily_insolation(declination, distance_factor, *m_latitude,
-                              *m_computed_insolation);
-  list.add(*m_computed_insolation);
+  m_terrain->daily_insolation(declination, distance_factor, m_grid->latitude(),
+                              *m_insolation);
+  list.add(*m_insolation);
 }
 
 void DEBMEnhanced::insolation_energy_series(int i, int j,
                                             const std::vector<DEBMSimpleOrbitalParameters> &orbital,
-                                            const std::vector<double> &ts,
                                             double dt_sub,
-                                            double latitude,
+                                            double /*latitude*/,
                                             std::vector<double> &result) const {
-  (void)ts;       // sampling times are already set via init_interpolation()
-  (void)latitude; // spatial variability is encoded in the computed field
-
   // the daily-mean insolation rate (W m^-2) at this cell was computed in
   // update_insolation_input; the energy reaching the surface during a sub-step of length
   // dt_sub (seconds) is rate * dt_sub
-  double rate = (*m_computed_insolation)(i, j);
+  double rate = (*m_insolation)(i, j);
   for (size_t k = 0; k < orbital.size(); ++k) {
     result[k] = rate * dt_sub;
   }
@@ -142,7 +137,7 @@ DiagnosticList DEBMEnhanced::spatial_diagnostics_impl() const {
   DiagnosticList result = DEBMSimple::spatial_diagnostics_impl();
   // expose the insolation actually driving the melt, replacing the analytic dEBM-simple
   // "insolation" diagnostic (which dEBM-enhanced does not use)
-  result["insolation"] = Diagnostic::wrap(*m_computed_insolation);
+  result["insolation"] = Diagnostic::wrap(*m_insolation);
   // and the terrain horizon map (azimuth, y, x) and sky-view factor (y, x)
   result["horizon"] = Diagnostic::wrap(m_terrain->horizon());
   if (m_terrain->sky_view_enabled()) {

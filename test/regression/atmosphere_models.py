@@ -29,7 +29,7 @@ config.set_string("time.calendar", "365_day")
 # silence models' initialization messages
 PISM.Context().log.set_threshold(1)
 
-def write_state(model):
+def write_state(model, geometry):
     "Test writing of the model state"
 
     o_filename = tmp_name("atmosphere_model_state")
@@ -48,7 +48,7 @@ def write_state(model):
         for d in ds:
             for k in range(ds[d].n_variables()):
                 output.define_variable(ds[d].metadata(k))
-            ds[d].compute().write(output)
+            ds[d].compute(geometry).write(output)
 
         output.close()
 
@@ -56,7 +56,7 @@ def write_state(model):
         os.remove(o_filename)
         os.remove(o_diagnostics)
 
-def check_model(model, T, P, ts=None, Ts=None, Ps=None):
+def check_model(model, geometry, T, P, ts=None, Ts=None, Ps=None):
     check(model.air_temperature(), T)
     check(model.precipitation(), P)
 
@@ -69,11 +69,11 @@ def check_model(model, T, P, ts=None, Ts=None, Ps=None):
     finally:
         model.end_pointwise_access()
 
-    write_state(model)
+    write_state(model, geometry)
 
-    model.max_timestep(ts[0])
+    model.max_timestep(ts[0], None)
 
-def check_modifier(model, modifier, T=0.0, P=0.0, ts=None, Ts=None, Ps=None):
+def check_modifier(model, modifier, geometry, T=0.0, P=0.0, ts=None, Ts=None, Ps=None):
     check_difference(modifier.air_temperature(),
                      model.air_temperature(),
                      T)
@@ -100,9 +100,9 @@ def check_modifier(model, modifier, T=0.0, P=0.0, ts=None, Ts=None, Ps=None):
         modifier.end_pointwise_access()
         model.end_pointwise_access()
 
-    write_state(modifier)
+    write_state(modifier, geometry)
 
-    modifier.max_timestep(ts[0])
+    modifier.max_timestep(ts[0], None)
 
 def precipitation(grid, value):
     precip = PISM.Scalar(grid, "precipitation")
@@ -122,7 +122,12 @@ class PIK(TestCase):
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
 
-        self.geometry.latitude.set(-80.0)
+        latitude = PISM.allocate_latitude(self.grid)
+        longitude = PISM.allocate_longitude(self.grid)
+        self.grid.set_longitude_latitude(longitude, latitude)
+
+        latitude.set(-80.0)
+        longitude.set(0.0)
 
         self.P = 10.0           # this is very high, but that's fine
 
@@ -149,9 +154,9 @@ class PIK(TestCase):
             # t and dt are irrelevant here
             model.update(self.geometry, 0, 1)
 
-            check_model(model, T=T, P=self.P, ts=[0.5], Ts=Ts, Ps=Ps)
+            check_model(model, self.geometry, T=T, P=self.P, ts=[0.5], Ts=Ts, Ps=Ps)
 
-        self.assertTrue(model.max_timestep(0).infinite())
+        self.assertTrue(model.max_timestep(0, None).infinite())
 
         with self.assertRaises(RuntimeError, msg="failed to catch an invalid parameterization"):
             config.set_string("atmosphere.pik.parameterization", "invalid")
@@ -185,7 +190,7 @@ class DeltaT1D(TestCase):
         modifier.init(self.geometry)
         modifier.update(self.geometry, 0, 1)
 
-        check_modifier(self.model, modifier, T=self.dT, ts=[0.5], Ts=[self.dT], Ps=[0])
+        check_modifier(self.model, modifier, self.geometry, T=self.dT, ts=[0.5], Ts=[self.dT], Ps=[0])
 
 class DeltaT2D(TestCase):
     def setUp(self):
@@ -221,7 +226,7 @@ class DeltaT2D(TestCase):
 
         modifier.update(self.geometry, 0, 1)
 
-        check_modifier(self.model, modifier, T=self.delta_T, P=0.0,
+        check_modifier(self.model, modifier, self.geometry, T=self.delta_T, P=0.0,
                        ts=[0.5], Ts=[self.delta_T], Ps=[0])
 
 class DeltaP1D(TestCase):
@@ -249,7 +254,7 @@ class DeltaP1D(TestCase):
         modifier.init(self.geometry)
         modifier.update(self.geometry, 0, 1)
 
-        check_modifier(self.model, modifier, P=self.dP, ts=[0.5], Ts=[0], Ps=[self.dP])
+        check_modifier(self.model, modifier, self.geometry, P=self.dP, ts=[0.5], Ts=[0], Ps=[self.dP])
 
 class DeltaP2D(TestCase):
     def setUp(self):
@@ -285,7 +290,7 @@ class DeltaP2D(TestCase):
 
         modifier.update(self.geometry, 0, 1)
 
-        check_modifier(self.model, modifier, P=self.delta_P, T=0.0,
+        check_modifier(self.model, modifier, self.geometry, P=self.delta_P, T=0.0,
                        ts=[0.5], Ps=[self.delta_P], Ts=[0])
 
 class Given(TestCase):
@@ -320,16 +325,21 @@ class Given(TestCase):
         model.init(self.geometry)
         model.update(self.geometry, 0, 1)
 
-        check_model(model, T=self.T, P=self.P, ts=[0.5], Ts=[self.T], Ps=[self.P])
+        check_model(model, self.geometry, T=self.T, P=self.P, ts=[0.5], Ts=[self.T], Ps=[self.P])
 
 class SeaRISE(TestCase):
     def setUp(self):
         self.filename = tmp_name("atmosphere_searise_input")
         self.grid = shallow_grid()
 
+        latitude = PISM.allocate_latitude(self.grid)
+        longitude = PISM.allocate_longitude(self.grid)
+        self.grid.set_longitude_latitude(longitude, latitude)
+
+        latitude.set(70.0)
+        longitude.set(-45.0)
+
         self.geometry = PISM.Geometry(self.grid)
-        self.geometry.latitude.set(70.0)
-        self.geometry.longitude.set(-45.0)
         self.geometry.ice_thickness.set(2500.0)
         self.geometry.ensure_consistency(0.0)
 
@@ -354,7 +364,7 @@ class SeaRISE(TestCase):
 
         model.update(self.geometry, 0, 1)
 
-        check_model(model, P=self.P, T=251.9085, ts=[0.5], Ts=[238.66192632], Ps=[self.P])
+        check_model(model, self.geometry, P=self.P, T=251.9085, ts=[0.5], Ts=[238.66192632], Ps=[self.P])
 
 class YearlyCycle(TestCase):
     def setUp(self):
@@ -407,7 +417,7 @@ class YearlyCycle(TestCase):
         T = (self.T_summer - self.T_mean) * cycle + self.T_mean
         P = np.zeros_like(T) + self.P
 
-        check_model(model, T=self.T_mean, P=self.P, ts=ts, Ts=T, Ps=P)
+        check_model(model, self.geometry, T=self.T_mean, P=self.P, ts=ts, Ts=T, Ps=P)
 
 class OneStation(TestCase):
     def setUp(self):
@@ -454,7 +464,7 @@ class OneStation(TestCase):
 
         model.update(self.geometry, 0, 1)
 
-        check_model(model, P=self.P, T=self.T, ts=[0.5], Ts=[self.T], Ps=[self.P])
+        check_model(model, self.geometry, P=self.P, T=self.T, ts=[0.5], Ts=[self.T], Ps=[self.P])
 
 class Uniform(TestCase):
     def setUp(self):
@@ -475,7 +485,7 @@ class Uniform(TestCase):
         model.update(self.geometry, 0, 1)
 
         P = PISM.util.convert(self.P, "kg m-2 year-1", "kg m-2 s-1")
-        check_model(model, T=self.T, P=P, ts=[0.5], Ts=[self.T], Ps=[P])
+        check_model(model, self.geometry, T=self.T, P=P, ts=[0.5], Ts=[self.T], Ps=[P])
 
 class Anomaly(TestCase):
     def setUp(self):
@@ -516,7 +526,7 @@ class Anomaly(TestCase):
 
         modifier.update(self.geometry, 0, 1)
 
-        check_modifier(self.model, modifier, T=self.dT, P=self.dP,
+        check_modifier(self.model, modifier, self.geometry, T=self.dT, P=self.dP,
                        ts=[0.5], Ts=[self.dT], Ps=[self.dP])
 
 class PrecipScaling(TestCase):
@@ -545,7 +555,7 @@ class PrecipScaling(TestCase):
 
         modifier.update(self.geometry, 0, 1)
 
-        check_modifier(self.model, modifier, P=1.3373514942327523e-05,
+        check_modifier(self.model, modifier, self.geometry, P=1.3373514942327523e-05,
                        ts=[0.5], Ts=[0], Ps=[1.33735149e-05])
 
 class FracP1D(TestCase):
@@ -577,7 +587,7 @@ class FracP1D(TestCase):
         check_ratio(modifier.precipitation(), self.model.precipitation(),
                     self.P_ratio)
 
-        check_modifier(self.model, modifier, T=0, P=0.00012675505856327396,
+        check_modifier(self.model, modifier, self.geometry, T=0, P=0.00012675505856327396,
                        ts=[0.5], Ts=[0], Ps=[0.00012676])
 
 class FracP2D(TestCase):
@@ -617,7 +627,7 @@ class FracP2D(TestCase):
         check_ratio(modifier.precipitation(), self.model.precipitation(),
                     self.P_ratio)
 
-        check_modifier(self.model, modifier, T=0, P=0.00012675505856327396,
+        check_modifier(self.model, modifier, self.geometry, T=0, P=0.00012675505856327396,
                        ts=[0.5], Ts=[0], Ps=[0.00012676])
 
 
@@ -663,7 +673,7 @@ class ElevationChange(TestCase):
 
         # check that the temperature changed accordingly
         modifier.update(self.geometry, 0, 1)
-        check_modifier(model, modifier, T=self.dT, P=self.dP,
+        check_modifier(model, modifier, self.geometry, T=self.dT, P=self.dP,
                        ts=[0.5], Ts=[self.dT], Ps=[self.dP])
 
     def test_atmosphere_elevation_change_scale(self):
@@ -687,5 +697,5 @@ class ElevationChange(TestCase):
         P = sample(model.precipitation())
         dP = np.exp(C * dT) * P - P
 
-        check_modifier(model, modifier, T=self.dT, P=dP,
+        check_modifier(model, modifier, self.geometry, T=self.dT, P=dP,
                        ts=[0.5], Ts=[self.dT], Ps=[dP])

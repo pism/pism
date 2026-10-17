@@ -162,12 +162,6 @@ if(Pism_BUILD_PYTHON_BINDINGS)
 
 # Inversion regression tests.
 
-        execute_process (COMMAND ${Python3_EXECUTABLE} -c "import siple"
-          RESULT_VARIABLE IMPORT_SIPLE_ERRCODE
-          OUTPUT_QUIET ERROR_QUIET)
-
-        set (Pism_HAS_SIPLE ${IMPORT_SIPLE_ERRCODE} EQUAL 0)
-
         # Copy over commonly used files. pismi.py lives under the Python
         # package now (and has a `pismi` console-script entry point), so
         # the regression test copies a tiny shim that invokes
@@ -184,14 +178,6 @@ if(Pism_BUILD_PYTHON_BINDINGS)
         file (WRITE ${CMAKE_CURRENT_BINARY_DIR}/pismi.py
               "#!/usr/bin/env python3\nfrom PISM.pismi import main\nif __name__ == '__main__':\n    main()\n")
 
-
-        if (Pism_HAS_SIPLE) # siple is installed
-
-          message (STATUS "Enabling regression tests that use siple")
-
-          pism_python_test (Python:inversion:nlcg inverse/tiny_nlcg.sh)
-
-        endif()
 
         pism_python_test (Python:inversion:tikhonov  inverse/tiny_tikhonov_lmvm.sh)
 

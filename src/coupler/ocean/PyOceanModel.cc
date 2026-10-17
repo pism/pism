@@ -1,4 +1,4 @@
-/* Copyright (C) 2023, 2025 PISM Authors
+/* Copyright (C) 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -68,7 +68,7 @@ PyOceanModelAdapter::PyOceanModelAdapter(std::shared_ptr<const Grid> grid,
   m_impl->water_column_pressure = m_water_column_pressure;
 }
 
-MaxTimestep PyOceanModelAdapter::max_timestep_impl(double t) const {
+MaxTimestep PyOceanModelAdapter::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
   return m_impl->max_timestep(t);
 }
 

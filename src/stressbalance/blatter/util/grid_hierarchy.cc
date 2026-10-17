@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022, 2023 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -97,11 +97,7 @@ PetscErrorCode setup_level(DM dm, int mg_levels) {
     DM  da;
     Vec parameters;
     int dof = 1;
-#if PETSC_VERSION_LT(3,10,0)
-    ierr = DMDAGetReducedDMDA(dm, dof, &da); CHKERRQ(ierr);
-#else
     ierr = DMDACreateCompatibleDMDA(dm, dof, &da); CHKERRQ(ierr);
-#endif
 
     ierr = DMSetUp(da); CHKERRQ(ierr);
 

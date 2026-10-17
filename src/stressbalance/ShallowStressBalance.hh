@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2019, 2021, 2022, 2025 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010--2019, 2021, 2022, 2025, 2026 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -45,7 +45,7 @@ public:
 
   void init();
 
-  virtual void update(const Inputs &inputs, bool full_update) = 0;
+  void update(const Inputs &inputs, bool full_update);
 
   //! \brief Get the thickness-advective 2D velocity.
   const array::Vector1& velocity() const;
@@ -53,10 +53,6 @@ public:
   //! \brief Get the basal frictional heating (for the adaptive energy time-stepping).
   const array::Scalar& basal_frictional_heating();
 
-  void compute_basal_frictional_heating(const array::Vector &velocity,
-                                        const array::Scalar &tauc,
-                                        const array::CellType &mask,
-                                        array::Scalar &result) const;
   // helpers:
 
   //! \brief Produce a report string for the standard output.
@@ -71,6 +67,8 @@ public:
   double flow_enhancement_factor() const;
 protected:
   virtual void init_impl();
+
+  virtual void update_impl(const Inputs &inputs, bool full_update) = 0;
 
   virtual DiagnosticList spatial_diagnostics_impl() const;
 
@@ -96,7 +94,7 @@ public:
   ZeroSliding(std::shared_ptr<const Grid> g);
   virtual ~ZeroSliding() = default;
 
-  virtual void update(const Inputs &inputs, bool full_update);
+  virtual void update_impl(const Inputs &inputs, bool full_update);
 
 protected:
 };
@@ -105,7 +103,7 @@ class PrescribedSliding : public ZeroSliding {
 public:
   PrescribedSliding(std::shared_ptr<const Grid> g);
   virtual ~PrescribedSliding() = default;
-  virtual void update(const Inputs &inputs, bool full_update);
+  virtual void update_impl(const Inputs &inputs, bool full_update);
 protected:
   virtual void init_impl();
 };

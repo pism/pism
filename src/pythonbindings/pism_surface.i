@@ -1,11 +1,12 @@
 %{
 #include "coupler/surface/ISMIP6Climate.hh"
+#include "coupler/surface/ISMIP7Climate.hh"
 #include "coupler/surface/EISMINTII.hh"
 #include "coupler/surface/Delta_T.hh"
 #include "coupler/surface/ConstantPIK.hh"
 #include "coupler/surface/Cache.hh"
 #include "coupler/surface/Anomaly.hh"
-#include "coupler/surface/Elevation.hh"
+#include "coupler/surface/ElevationDependent.hh"
 #include "coupler/surface/ElevationChange.hh"
 #include "coupler/surface/Simple.hh"
 #include "coupler/surface/TemperatureIndex.hh"
@@ -35,6 +36,10 @@
 %rename(SurfaceISMIP6) pism::surface::ISMIP6;
 %include "coupler/surface/ISMIP6Climate.hh"
 
+%shared_ptr(pism::surface::ISMIP7)
+%rename(SurfaceISMIP7) pism::surface::ISMIP7;
+%include "coupler/surface/ISMIP7Climate.hh"
+
 %shared_ptr(pism::surface::PIK)
 %rename(SurfacePIK) pism::surface::PIK;
 %include "coupler/surface/ConstantPIK.hh"
@@ -51,9 +56,9 @@
 %rename(SurfaceGiven) pism::surface::Given;
 %include "coupler/surface/GivenClimate.hh"
 
-%shared_ptr(pism::surface::Elevation)
-%rename(SurfaceElevation) pism::surface::Elevation;
-%include "coupler/surface/Elevation.hh"
+%shared_ptr(pism::surface::ElevationDependent)
+%rename(SurfaceElevationDependent) pism::surface::ElevationDependent;
+%include "coupler/surface/ElevationDependent.hh"
 
 %shared_ptr(pism::surface::ElevationChange)
 %rename(SurfaceElevationChange) pism::surface::ElevationChange;

@@ -30,7 +30,6 @@
 #include "pism/util/pism_options.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/IO_Flags.hh"
-#include "pism/util/io/OutputWriter.hh"
 #include "pism/external/nlohmann/json.hpp"
 
 // include an implementation header so that we can allocate a NetCDFConfig instance in
@@ -750,12 +749,12 @@ void set_config_from_options(Config &config) {
     }
   }
 
-  if (config.get_flag("output.ISMIP6")) {
-    // use MKS units in ISMIP6 mode
+  if (config.get_flag("output.ISMIP")) {
+    // use MKS units in ISMIP mode
     config.set_flag("output.use_MKS", true);
   }
 
-  // Special command-line options for "-surface elevation,...":
+  // Special command-line options for "-surface elevation_dependent,...":
   {
     options::String T("-ice_surface_temp", "ice surface temperature parameterization");
 

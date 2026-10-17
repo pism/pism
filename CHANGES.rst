@@ -8,15 +8,89 @@ Changes since v2.3.0
   top-of-atmosphere parameterization. The terrain horizon and surface normals are computed
   from the ice surface elevation and combined with PISM's analytic solar geometry to produce
   the daily surface insolation. The horizon ray-casting is controlled by
-  `surface.debm_enhanced.horizon.*` (`n_directions`, `max_distance`, `step`, `ephemeris_dt`)
+  `surface.debm_enhanced.horizon.*` (`n_directions`, `max_distance`, `step`)
   and, because it depends on the evolving geometry, is recomputed every
   `surface.debm_enhanced.update_interval` (default 10 years). The insolation is split into a
   direct-beam component (terrain-shaded) and an isotropic diffuse component reduced by the
   sky-view factor (slope-corrected Dozier & Frew, 1990); the diffuse share is
   `surface.debm_enhanced.diffuse_fraction` (default 0.2) and the whole sky-view treatment can
   be disabled with `surface.debm_enhanced.use_sky_view_factor` (reverting to pure direct
-  beam). `horizon` and `sky_view_factor` diagnostics are available. All other parameters are
-  shared with `surface.debm_simple.*`.
+  beam). The `insolation` (daily-mean top-of-atmosphere rate, in `W m-2`), `horizon`, and
+  `sky_view_factor` diagnostics are available; `sky_view_factor` only when
+  `surface.debm_enhanced.use_sky_view_factor` is set. All other parameters are shared with
+  `surface.debm_simple.*`.
+- Add an `ismip7` surface model that uses the gradients but not the anomalies, and adds
+  runoff. It is exposed to Python as `PISM.SurfaceISMIP7`.
+- Implement the Blatter hardness inversion (`pismi -stress_balance.model blatter -inv_design
+  hardav`): `IP_BlatterHardavForwardProblem` now provides the volume design Jacobian (and
+- `inverse.design.variable` accepts the pairs `tauc_hardav` and `hardav_tauc`: `pismi` then
+  alternates between the two design variables in that order for `inverse.alternating_cycles`
+  cycles (a pair always runs at least one), stopping early below
+  `inverse.alternating_misfit_tol`. The four values `tauc`, `hardav`, `tauc_hardav` and
+  `hardav_tauc` are thus interchangeable choices of one parameter, e.g. for an ensemble that
+  samples the inversion strategy; the cycle count and the tolerance are ignored for a single
+  variable. Alternation is no longer requested by a positive `inverse.alternating_cycles`
+  alone: name the pair.
+- Implement the Blatter hardness inversion (`pismi -stress_balance.model blatter
+  -inverse.design.variable hardav`, short option `-inv_design`): `IP_BlatterHardavForwardProblem`
+  now provides the volume design Jacobian (and
+  its column-integrated transpose) for the vertically-averaged ice hardness, exploiting the
+  linearity of the effective viscosity in `B`; the hardness is passed to the Blatter solver
+  through `Inputs::averaged_hardness`. The design-variable-agnostic parts of the Blatter
+  inverse forward problems (forward solve, surface extraction, adjoint solve) were moved
+  to a shared base class `IP_BlatterForwardProblem`; the state Jacobian is now
+  re-assembled at the converged solution before adjoint solves, and a failed forward
+  solve during the minimization is reported to TAO instead of aborting the run. Added
+  the missing configuration parameters `inverse.design.param_hardav_{scale,eps}` and
+  `inverse.design.param_trunc_hardav0` (needed by any `hardav` inversion, SSA included),
+  `examples/inverse/blatter_inverse_checks.py` (adjoint and finite-difference gradient
+  checks) and a `-design hardav` mode in `examples/inverse/ismiphom_twin.py`.
+- Make Blatter inversions robust to adjoint solver failures: the `approximate` adjoint
+  now reuses the forward solver's multigrid KSP (the standalone GMRES + Jacobi solve
+  could stall after hundreds of iterations on large 3D systems), a failed `exact` or
+  `incomplete` adjoint solve falls back to it, and `pismi` recovers the last accepted
+  iterate and writes the phase's results if TAO fails anyway.
+- Add the configuration parameter `inverse.design.variable` (`tauc` or `hardav`, short
+  option `-inv_design`) selecting the design variable of a `pismi` inversion.
+- Wire up `inverse.alternating_cycles` in `pismi`: alternate `tauc` and `hardav`
+  inversions (Blatter only) in one invocation, handing results between phases through the
+  output file (`tauc`, `hardav`, `zeta_inv_<var>`, `hardav_prior`, per-phase iteration
+  histories) with early stopping controlled by `inverse.alternating_misfit_tol` and
+  restart support via `-inv_restart`. The Blatter `tauc` forward problem uses a `hardav`
+  field as column-constant hardness when one is available.
+- Add `stress_balance.averaged_hardness.enabled` (`-use_averaged_hardness`): forward runs
+  with the Blatter stress balance use the prescribed vertically-averaged hardness `hardav`
+  (e.g. from a `pismi` hardness or alternating inversion) instead of the enthalpy-derived
+  hardness. `hardav` becomes a model state variable (read on restart, regriddable with
+  `-input.regrid.vars hardav`, written to output); the `hardav` diagnostic reports it.
+- Skip the units conversion when reading a variable whose units string in the file is
+  identical to the internal one, and when reporting ranges with identical `units` and
+  `output_units`. This makes it possible to read back fields whose units are not valid
+  UDUNITS expressions, such as the ice hardness `hardav` ("Pa s^(1/n)").
+- Re-run SWIG when a wrapped C++ header changes (`USE_SWIG_DEPENDENCIES`). Previously the
+  generated Python bindings depended on the `.i` files only, so header edits could leave a
+  stale `PISM.cpp` module in the build tree (e.g. Blatter-based classes wrapped as abstract,
+  with no constructor).
+- Make `pismi` abort the whole MPI job (via `MPI_Abort()`) when it hits a fatal error,
+  instead of letting the exception unwind into the collective `MPI_Finalize()` called by
+  petsc4py at interpreter shutdown. Previously a failure such as a missing `input.file`
+  could deadlock the run under some MPI implementations, so a batch job kept its nodes
+  until the wall-clock limit. The traceback is now printed once, by rank 0.
+- Add a ISMP7 surface model that uses the gradients but not the anomalies, and adds runoff.
+- Allow the Blatter stress balance to restart from SSA velocities: if `uvel_sigma` and
+  `vvel_sigma` are not present in the input file but `u_ssa` and `v_ssa` are, use the
+  (vertically constant) SSA velocity as a depth-independent initial guess.
+- Allow the Blatter stress balance to use `uvel_sigma` and `vvel_sigma` from
+  `-input.regrid.file` as a warm-start initial guess when bootstrapping (e.g. when moving
+  to a finer grid). Previously these fields were silently ignored by the regrid loop and
+  the Blatter solver always started from zero on bootstrap.
+- Allow regridding 3D fields whose vertical coordinate is dimensionless (e.g. Blatter's
+  `z_sigma`). `InputGridInfo` previously hard-coded "meters" for any Z dimension and
+  failed with "cannot convert '1' to 'meters'" when reading sigma-coordinate fields.
+- Fix `util/pism_plot_profiling` so it no longer fails with a `KeyError` on PETSc
+  `-log_view` output that references events not declared in the file's preamble (e.g.
+  `PetscBarrier`, `MatMult MF`). The file is now executed with auto-vivifying dictionaries
+  instead of imported as a module.
 - Install a `pismi` executable from a CMake build so the inverse modeling driver can be run
   as `pismi ...` regardless of whether PISM was installed via CMake or `pip install .`
   (previously a CMake install required `python -m PISM.pismi ...`).
@@ -33,7 +107,7 @@ Changes since v2.3.0
   onto an ISMIP7-Greenland grid.
 - Add a top-level `pyproject.toml` so PISM can be built and installed via
   `pip install --no-build-isolation .` using scikit-build-core. This installs the
-  `pism` CLI, `libpism`, and the `PISM` and `siple` Python packages into the active
+  `pism` CLI, `libpism`, and the `PISM` Python package into the active
   Python environment. The standalone `cmake -B build && cmake --install build` flow
   continues to work unchanged. `petsc4py`, `mpi4py`, NetCDF, FFTW, GSL, and PETSc must
   be available on the host before invoking pip; build isolation is disabled because
@@ -54,11 +128,11 @@ Changes since v2.3.0
   CMAKE_INSTALL_PREFIX) may misbehave. If you want a clean ctest run that mirrors
   a developer build rather than a wheel build, do a separate plain-CMake configure
   into a fresh dir::
-     
+
      cmake -S . -B build-dev -DPism_BUILD_PYTHON_BINDINGS=ON
      cmake --build build-dev -j
      ctest --test-dir build-dev
-   
+
 - To add CMake build options, pass --config-settings repeatedly::
     pip install --no-build-isolation . \
     -C cmake.define.Pism_USE_PROJ=ON \
@@ -71,6 +145,15 @@ Changes since v2.3.0
   Implemented as `IPHuberMisfit2V` and wired into the TAO Tikhonov inversion path
   (`tikhonov_lmvm`, `tikhonov_blmvm`); it is not compatible with the Gauss-Newton
   SSA solver, which requires an inner-product functional.
+
+- Remove the `siple` inverse-problems library and the SSA inversion methods that
+  depended on it. `inverse.stress_balance.method` (`-inv_method`) no longer accepts
+  `sd`, `nlcg`, or `ign`; use one of the Tikhonov methods (`tikhonov_lmvm`,
+  `tikhonov_cg`, `tikhonov_blmvm`, `tikhonov_lcl`, `tikhonov_gn`) instead. The
+  `site-packages/siple` tree, `PISM.invert.ssa_siple`, `PISM.invert.sipletools`, and the
+  `Python:inversion:nlcg` regression test are gone, along with the options
+  `-inv_monitor_adjoint`, `-inv_morozov_scale`, `-inv_ls_verbose`, and `-ign_theta`,
+  which only applied to those methods.
 
 Changes from 2.3.0 to 2.3.1
 ===========================

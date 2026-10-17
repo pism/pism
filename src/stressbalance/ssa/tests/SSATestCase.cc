@@ -75,12 +75,7 @@ SSATestCase::SSATestCase(std::shared_ptr<SSA> ssa)
   double fill_value =
       units::convert(sys, m_config->get_number("output.fill_value"), "m year^-1", "m second^-1");
 
-  auto large_number = units::convert(m_sys, 1e6, "m year^-1", "m second^-1");
-
-  m_bc_values.metadata(0)["valid_range"] = { -large_number, large_number };
   m_bc_values.metadata(0)["_FillValue"]  = { fill_value };
-
-  m_bc_values.metadata(1)["valid_range"] = { -large_number, large_number };
   m_bc_values.metadata(1)["_FillValue"]  = { fill_value };
 
   m_bc_values.set(fill_value);
@@ -320,7 +315,7 @@ void SSATestCase::write(const std::string &filename) {
     std::vector<std::shared_ptr<array::Array>> vecs;
     for (auto &pair : m_ssa->spatial_diagnostics()) {
       try {
-        vecs.push_back(pair.second->compute());
+        vecs.push_back(pair.second->compute(m_geometry));
       } catch (RuntimeError &e) {
         // ignore errors: some diagnostics may need variables not present in this context
       }

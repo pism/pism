@@ -30,6 +30,7 @@ git clone --depth=1 -b v${petsc_version} https://gitlab.com/petsc/petsc.git .
   --with-valgrind=0 \
   --with-x=0 \
   --with-ssl=0 \
+  --with-64-bit-indices \
   --download-mumps \
   --download-scalapack \
   --with-shared-libraries=1 \

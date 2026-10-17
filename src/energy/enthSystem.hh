@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2022, 2023, 2025 Andreas Aschwanden and Ed Bueler
+// Copyright (C) 2009-2011, 2013, 2014, 2015, 2016, 2017, 2018, 2020, 2022, 2023, 2025, 2026 Andreas Aschwanden and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -119,4 +119,4 @@ protected:
 } // end of namespace energy
 } // end of namespace pism
 
-#endif   //  ifndef __enthSystem_hh
+#endif   //  PISM_enthSystem_hh

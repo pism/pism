@@ -23,10 +23,18 @@ import netCDF4
 import yac
 import numpy as np
 import json
-from mpi4py import MPI
 from enum import Enum
 import traceback
 from pyproj import Proj
+
+import mpi4py
+# Disable thread support: this way "from mpi4py import MPI" will call MPI_Init() instead
+# of MPI_Init_thread(). It turns out that initializing MPI using MPI_Init_thread() here
+# and using MPI_Init() in PISM may lead to hanging when using IntelMPI (Intel(R) MPI
+# Library for Linux* OS, Version 2021.17 Build 20251215 (id: 2ac2f63)) and more than 35
+# MPI processes for PISM. :-/
+mpi4py.rc.threads = False
+from mpi4py import MPI
 
 logger = logging.getLogger("pism_output")
 
@@ -440,7 +448,7 @@ class OutputFile:
         self.nc_dataset.close()
 
 
-def main(compression_level):
+def main(compression_level, single_precision):
     """Receive and process "action" messages from PISM."""
     yac_wrapper = YacWrapper()
     files = {}
@@ -522,6 +530,13 @@ def main(compression_level):
 
             case ServerActions.DEFINE_VARIABLE.value:
                 logger.debug(f"DEFINE_VARIABLE {metadata['variable_name']} in {file_name}")
+                # "-f" reduces double-precision spatial fields to single precision.
+                # Spatial fields are the ones PISM defined as YAC fields; bounds
+                # (time_bounds, x_bnds, ...) and text variables are not, and integer
+                # fields such as "mask" keep the type PISM declared.
+                if (single_precision and metadata["dtype"] == "f8"
+                        and metadata["variable_name"] in yac_wrapper.fields):
+                    metadata["dtype"] = "f4"
                 get_file(file_name).define_variable(metadata)
 
             case ServerActions.SEND_GRIDDED_VARIABLE.value:
@@ -559,6 +574,14 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
+        "-f",
+        "--float",
+        dest="single_precision",
+        action="store_true",
+        help="save double-precision spatial fields in single precision",
+    )
+
+    parser.add_argument(
         "-c",
         "--compression",
         dest="compression",
@@ -574,7 +597,7 @@ if __name__ == "__main__":
         logger = logging.getLogger("pism_output")
 
     try:
-        main(options.compression)
+        main(options.compression, options.single_precision)
     except Exception as e:
         logger.critical(f"ERROR: {e}")
         traceback.print_exc()

@@ -16,8 +16,8 @@
 // along with PISM; if not, write to the Free Software
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-#ifndef PISM_SURFACE_ELEVATION_HH
-#define PISM_SURFACE_ELEVATION_HH
+#ifndef PISM_SURFACE_ELEVATIONDEPENDENT_HH
+#define PISM_SURFACE_ELEVATIONDEPENDENT_HH
 
 #include "pism/coupler/SurfaceModel.hh"
 
@@ -25,9 +25,9 @@ namespace pism {
 namespace surface {
 
 //! \brief A class implementing a elevation-dependent temperature and mass balance model.
-class Elevation : public SurfaceModel {
+class ElevationDependent : public SurfaceModel {
 public:
-  Elevation(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::AtmosphereModel> input);
+  ElevationDependent(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::AtmosphereModel> input);
 
 protected:
 
@@ -39,7 +39,7 @@ private:
   void init_impl(const Geometry &geometry);
   void update_impl(const Geometry &geometry, double t, double dt);
 
-  MaxTimestep max_timestep_impl(double t) const;
+  MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 
   const array::Scalar& mass_flux_impl() const;
   const array::Scalar& temperature_impl() const;
@@ -57,4 +57,4 @@ private:
 } // end of namespace surface
 } // end of namespace pism
 
-#endif /* PISM_SURFACE_ELEVATION_HH */
+#endif /* PISM_SURFACE_ELEVATIONDEPENDENT_HH */

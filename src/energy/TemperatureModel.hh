@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2023, 2025 PISM Authors
+/* Copyright (C) 2016, 2017, 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -27,13 +27,13 @@ namespace energy {
 
 class TemperatureModel : public EnergyModel {
 public:
-  TemperatureModel(std::shared_ptr<const Grid> grid,
-                   std::shared_ptr<const stressbalance::StressBalance> stress_balance);
+  TemperatureModel(std::shared_ptr<const Grid> grid);
 
   const array::Array3D & temperature() const;
 
 protected:
-  void restart_impl(const File &input_file, int record);
+  void restart_impl(const File &input_file, int record,
+                    const array::Scalar &ice_thickness);
 
   void bootstrap_impl(const File &input_file,
                       const array::Scalar &ice_thickness,

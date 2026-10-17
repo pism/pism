@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2023, 2024 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2023, 2024, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -46,7 +46,7 @@ void Null::update_impl(const array::Scalar &/*load*/,
   // This model does not update bed topography
 }
 
-MaxTimestep Null::max_timestep_impl(double /*t*/) const {
+MaxTimestep Null::max_timestep_impl(double /*t*/, const CFLData */*cfl_data*/) const {
   return {};
 }
 

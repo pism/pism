@@ -30,9 +30,6 @@ seconds_per_day = 86400
 def create_geometry(grid):
     geometry = PISM.Geometry(grid)
 
-    geometry.latitude.set(0.0)
-    geometry.longitude.set(0.0)
-
     geometry.bed_elevation.set(0.0)
     geometry.sea_level_elevation.set(0.0)
 
@@ -109,7 +106,7 @@ class Constant(TestCase):
 
         check_model(model, melt_rate)
 
-        self.assertTrue(model.max_timestep(0).infinite())
+        self.assertTrue(model.max_timestep(0, None).infinite())
 
 class DischargeRoutingTest(TestCase):
 
@@ -171,7 +168,7 @@ class DischargeRoutingTest(TestCase):
 
         check_model(model, melt_rate)
 
-        self.assertTrue(model.max_timestep(0).infinite())
+        self.assertTrue(model.max_timestep(0, None).infinite())
 
     def tearDown(self):
         pass
@@ -216,7 +213,7 @@ class Given(TestCase):
 
         model.update(self.inputs, 0, 1)
 
-        self.assertTrue(model.max_timestep(0).infinite())
+        self.assertTrue(model.max_timestep(0, None).infinite())
 
         check_model(model, self.frontal_melt_rate)
 

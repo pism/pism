@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2022, 2023, 2025 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2022, 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -28,10 +28,6 @@
 #include <memory>
 
 namespace pism {
-
-namespace stressbalance {
-class StressBalance;
-}
 
 namespace energy {
 
@@ -74,10 +70,9 @@ public:
 
 class EnergyModel : public Component {
 public:
-  EnergyModel(std::shared_ptr<const Grid> grid,
-              std::shared_ptr<const stressbalance::StressBalance> stress_balance);
+  EnergyModel(std::shared_ptr<const Grid> grid);
 
-  void restart(const File &input_file, int record);
+  void restart(const File &input_file, int record, const array::Scalar &ice_thickness);
 
   /*! @brief Bootstrapping using heuristics. */
   /*!
@@ -107,9 +102,10 @@ public:
   const std::string& stdout_flags() const;
 protected:
 
-  virtual MaxTimestep max_timestep_impl(double t) const;
+  virtual MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 
-  virtual void restart_impl(const File &input_file, int record) = 0;
+  virtual void restart_impl(const File &input_file, int record,
+                            const array::Scalar &ice_thickness) = 0;
 
   virtual void bootstrap_impl(const File &input_file,
                               const array::Scalar &ice_thickness,
@@ -133,10 +129,11 @@ protected:
 
   /*! @brief Initialize enthalpy by reading it from a file, or by reading temperature and liquid
       water fraction, or by reading the temperature field alone. */
-  void init_enthalpy(const File &input_file, bool regrid, int record);
+  void init_enthalpy(const File &input_file, bool regrid, int record,
+                     const array::Scalar &ice_thickness);
 
   /*! @brief Regrid enthalpy from the -regrid_file. */
-  void regrid_enthalpy();
+  void regrid_enthalpy(const array::Scalar &ice_thickness);
 protected:
   array::Array3D m_ice_enthalpy;
   array::Array3D m_work;
@@ -146,7 +143,6 @@ protected:
 
 private:
   std::string m_stdout_flags;
-  std::shared_ptr<const stressbalance::StressBalance> m_stress_balance;
 };
 
 /*!

@@ -1,4 +1,4 @@
-// Copyright (C) 2010--2025 PISM Authors
+// Copyright (C) 2010--2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -29,6 +29,7 @@
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
 #include "pism/util/io/OutputWriter.hh"
+#include "pism/geometry/Geometry.hh"
 
 namespace pism {
 namespace grid {
@@ -71,10 +72,12 @@ public:
   static Ptr wrap(const T &input);
 
   void update(double dt);
+
+  //! Reset the accumulator or possibly record the state at the beginning of a reporting interval
   void reset();
 
   //! @brief Compute a diagnostic quantity and return a pointer to a newly-allocated Array.
-  std::shared_ptr<array::Array> compute() const;
+  std::shared_ptr<array::Array> compute(const Geometry &geometry) const;
 
   const grid::DistributedGridInfo &grid_info() const;
 
@@ -97,10 +100,12 @@ protected:
   virtual void update_impl(double dt);
   virtual void reset_impl();
 
-  virtual std::shared_ptr<array::Array> compute_impl() const = 0;
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &geometry) const = 0;
 
-  double to_internal(double x) const;
-  double to_external(double x) const;
+  /*!
+   * _FillValue in internal units
+   */
+  double fill_value() const;
 
   /*!
    * Allocate storage for an array of type `T` and copy metadata from `m_vars`.
@@ -122,8 +127,11 @@ protected:
   std::shared_ptr<const Config> m_config;
   //! metadata corresponding to NetCDF variables
   std::vector<VariableMetadata> m_vars;
+private:
   //! fill value (used often enough to justify storing it)
   double m_fill_value;
+  //! true if we need to use MKS units in output files
+  bool m_output_use_mks;
 };
 
 typedef std::map<std::string, Diagnostic::Ptr> DiagnosticList;
@@ -144,7 +152,7 @@ public:
   }
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
     auto result = m_input.duplicate();
 
     result->set_name(m_input.get_name());
@@ -245,14 +253,14 @@ protected:
     m_interval_length = 0.0;
   }
 
-  virtual std::shared_ptr<array::Array> compute_impl() const {
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
     auto result = Diagnostic::allocate<array::Scalar>("diagnostic");
 
     if (m_interval_length > 0.0) {
       result->copy_from(m_accumulator);
       result->scale(1.0 / m_interval_length);
     } else {
-      result->set(Diagnostic::to_internal(Diagnostic::m_fill_value));
+      result->set(Diagnostic::fill_value());
     }
 
     return result;

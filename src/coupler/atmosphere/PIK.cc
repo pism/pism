@@ -1,4 +1,4 @@
-// Copyright (C) 2009-2018, 2023, 2025 Ricarda Winkelmann, Torsten Albrecht, Constantine Khrulev
+// Copyright (C) 2009-2018, 2023, 2025, 2026 Ricarda Winkelmann, Torsten Albrecht, Constantine Khrulev
 //
 // This file is part of PISM.
 //
@@ -62,6 +62,12 @@ void PIK::init_impl(const Geometry &geometry) {
                  "  Huybrechts & De Wolde (1999) or multiple regression analysis of ERA INTERIM data...\n"
                  "  Uses a time-independent precipitation field read from a file.");
 
+  if (not m_grid->has_longitude_latitude()) {
+    throw RuntimeError(PISM_ERROR_LOCATION,
+                       "grid point longitudes and latitudes are not available;\n"
+                       "PIK atmosphere model cannot be used");
+  }
+
   m_reference = "Winkelmann et al.";
 
   auto precip_file = m_config->get_string("atmosphere.pik.file");
@@ -105,7 +111,7 @@ void PIK::init_impl(const Geometry &geometry) {
   }
 }
 
-MaxTimestep PIK::max_timestep_impl(double t) const {
+MaxTimestep PIK::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
   (void) t;
   return MaxTimestep("atmosphere pik");
 }
@@ -134,7 +140,7 @@ static void huybrechts_dewolde(const Geometry &geometry, array::Scalar &T_ma, ar
 
   const array::Scalar
     &h   = geometry.ice_surface_elevation,
-    &lat = geometry.latitude;
+    &lat = h.grid()->latitude();
 
   array::AccessScope list{&h, &lat, &T_ma, &T_ms};
 
@@ -154,7 +160,7 @@ static void era_interim(const Geometry &geometry, array::Scalar &T_ma, array::Sc
 
   const array::Scalar
     &h   = geometry.ice_surface_elevation,
-    &lat = geometry.latitude;
+    &lat = h.grid()->latitude();
 
   array::AccessScope list{&h, &lat, &T_ma, &T_ms};
 
@@ -174,7 +180,7 @@ static void era_interim_sin(const Geometry &geometry, array::Scalar &T_ma, array
 
   const array::Scalar
     &h   = geometry.ice_surface_elevation,
-    &lat = geometry.latitude;
+    &lat = h.grid()->latitude();
 
   array::AccessScope list{&h, &lat, &T_ma, &T_ms};
 
@@ -194,8 +200,8 @@ static void era_interim_lon(const Geometry &geometry, array::Scalar &T_ma, array
 
   const array::Scalar
     &h   = geometry.ice_surface_elevation,
-    &lat = geometry.latitude,
-    &lon = geometry.longitude;
+    &lat = h.grid()->latitude(),
+    &lon = h.grid()->longitude();
 
   array::AccessScope list{&h, &lat, &lon, &T_ma, &T_ms};
 
@@ -226,7 +232,7 @@ static void martin2011(const Geometry &geometry, array::Scalar &T_ma, array::Sca
 
   const array::Scalar
     &h   = geometry.ice_surface_elevation,
-    &lat = geometry.latitude;
+    &lat = h.grid()->latitude();
 
   array::AccessScope list{&h, &lat, &T_ma, &T_ms};
 
@@ -247,7 +253,7 @@ static void martin_huybrechts_dewolde(const Geometry &geometry, array::Scalar &T
 
   const array::Scalar
     &h   = geometry.ice_surface_elevation,
-    &lat = geometry.latitude;
+    &lat = h.grid()->latitude();
 
   array::AccessScope list{&h, &lat, &T_ma, &T_ms};
 
@@ -273,12 +279,6 @@ static void martin_huybrechts_dewolde(const Geometry &geometry, array::Scalar &T
 void PIK::update_impl(const Geometry &geometry, double t, double dt) {
   (void) t;
   (void) dt;
-
-  if (geometry.latitude.metadata().has_attribute("missing_at_bootstrap")) {
-    throw RuntimeError(PISM_ERROR_LOCATION,
-                       "latitude variable was missing at bootstrap;\n"
-                       "PIK atmosphere model depends on latitude and would return nonsense!");
-  }
 
   switch (m_parameterization) {
   case HUYBRECHTS_DEWOLDE:

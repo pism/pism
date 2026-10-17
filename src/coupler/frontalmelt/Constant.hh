@@ -38,7 +38,7 @@ private:
 
   const array::Scalar& frontal_melt_rate_impl() const;
 
-  MaxTimestep max_timestep_impl(double t) const;
+  MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 
   std::shared_ptr<array::Scalar> m_frontal_melt_rate;
 };

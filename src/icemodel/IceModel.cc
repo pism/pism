@@ -20,6 +20,7 @@
 #include <cstring>
 #include <algorithm>
 #include <memory>
+#include <functional>
 #include <petscsys.h>
 
 #include "pism/icemodel/IceModel.hh"
@@ -31,7 +32,6 @@
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/Config.hh"
-#include "pism/util/Diagnostic.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/coupler/SeaLevel.hh"
 #include "pism/coupler/OceanModel.hh"
@@ -51,12 +51,24 @@
 #include "pism/coupler/ocean/PyOceanModel.hh"
 #include "pism/util/io/SynchronousOutputWriter.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/stressbalance/ShallowStressBalance.hh"
+#include "pism/stressbalance/SSB_Modifier.hh"
 
 #if (Pism_USE_YAC == 1)
 #include "pism/util/io/YacOutputWriter.hh"
 #endif
 
 namespace pism {
+
+bool IceModel::CompareByName::operator()(const array::Array *a, const array::Array *b) const {
+  const auto &a_name = a->get_name();
+  const auto &b_name = b->get_name();
+  if (a_name != b_name) {
+    return a_name < b_name;
+  }
+  // Two arrays with the same name are distinct state variables: keep both.
+  return std::less<const array::Array *>()(a, b);
+}
 
 IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &context)
     : m_grid(grid),
@@ -69,8 +81,12 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
       m_geometry(m_grid),
       m_new_bed_elevation(true),
       m_basal_yield_stress(m_grid, "tauc"),
+      m_averaged_hardness(m_grid, "hardav"),
+      m_use_averaged_hardness(m_config->get_flag("stress_balance.averaged_hardness.enabled")),
       m_basal_melt_rate(m_grid, "bmelt"),
       m_bedtoptemp(m_grid, "bedtoptemp"),
+      m_vertical_velocity(m_grid, "wvel_rel", array::WITHOUT_GHOSTS, m_grid->z()),
+      m_strain_heating(m_grid, "strain_heating", array::WITHOUT_GHOSTS, m_grid->z()),
       m_velocity_bc_mask(m_grid, "vel_bc_mask"),
       m_velocity_bc_values(m_grid, "_bc"), // u_bc and v_bc
       m_ice_thickness_bc_mask(grid, "thk_bc_mask"),
@@ -98,6 +114,10 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
   m_output_global_attributes["source"] = pism::version();
   m_output_global_attributes["title"] = m_config->get_string("run_info.title");
   m_output_global_attributes["institution"] = m_config->get_string("run_info.institution");
+  m_output_global_attributes["group"] = m_config->get_string("run_info.group");
+  m_output_global_attributes["model"] = m_config->get_string("run_info.model");
+  m_output_global_attributes["contact_name"] = m_config->get_string("run_info.contact_name");
+  m_output_global_attributes["contact_email"] = m_config->get_string("run_info.contact_email");
   m_output_global_attributes["command"] = args_string();
 
   m_fracture = nullptr;
@@ -135,15 +155,18 @@ IceModel::IceModel(std::shared_ptr<Grid> grid, const std::shared_ptr<Context> &c
   m_snapshot_writer = m_output_writer;
   m_spatial_writer  = m_output_writer;
 
+  if (m_config->get_flag("output.asynchronous")) {
 #if (Pism_USE_YAC == 1)
-  if (pism::yac_component_defined("pism_output")) {
     auto yac_writer = std::make_shared<YacOutputWriter>(m_grid->com, *m_config,
                                                         m_grid->get_mapping_info()["proj_params"]);
 
     m_snapshot_writer = yac_writer;
     m_spatial_writer  = yac_writer;
-  }
+#else
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION, "Please build PISM with YAC to write output files asynchronously");
 #endif
+  }
 }
 
 double IceModel::dt() const {
@@ -167,9 +190,9 @@ void IceModel::reset_counters() {
       // and not a multiple of year_increment:
       last_multiple -= year_increment * static_cast<int>(year % year_increment < 0);
 
-      units::DateTime last_date{ last_multiple, 1, 1, 0, 0, 0.0 };
+      units::DateTime last_date{ last_multiple, 1, 1, 0, 0, 0.0, m_time->calendar() };
 
-      m_timestep_hit_multiples_last_time = m_time->units().time(last_date, m_time->calendar());
+      m_timestep_hit_multiples_last_time = m_time->units().time(last_date);
     } else {
       m_timestep_hit_multiples_last_time = m_time->current();
     }
@@ -199,8 +222,6 @@ void IceModel::allocate_storage() {
   m_grid->variables().add(m_geometry.ice_thickness);
   m_grid->variables().add(m_geometry.cell_type);
   m_grid->variables().add(m_geometry.sea_level_elevation);
-  m_grid->variables().add(m_geometry.longitude);
-  m_grid->variables().add(m_geometry.latitude);
 
   if (m_config->get_flag("geometry.grounded_cell_fraction")) {
     m_grid->variables().add(m_geometry.cell_grounded_fraction);
@@ -219,11 +240,19 @@ void IceModel::allocate_storage() {
     m_grid->variables().add(m_basal_yield_stress);
   }
 
-  {
-    m_bedtoptemp.metadata(0)
-        .long_name("temperature at the top surface of the bedrock thermal layer")
-        .units("kelvin");
-  }
+  m_bedtoptemp.metadata(0)
+      .long_name("temperature at the top surface of the bedrock thermal layer")
+      .units("kelvin");
+
+  m_vertical_velocity.metadata(0)
+      .long_name("vertical velocity of ice, relative to base of ice directly below")
+      .units("m s^-1")
+      .output_units("m year^-1")
+      .set_time_dependent(true);
+
+  m_strain_heating.metadata(0)
+      .long_name("rate of strain heating in ice (dissipation heating)")
+      .units("W m^-3");
 
   // basal melt rate
   m_basal_melt_rate.metadata(0)
@@ -274,14 +303,28 @@ void IceModel::allocate_storage() {
     m_ice_thickness_bc_mask.set(0.0);
   }
 
+  // Prescribed vertically-averaged ice hardness (same metadata as the "hardav"
+  // diagnostic so that inversion output can be read back directly).
+  {
+    m_averaged_hardness.metadata(0)
+        .long_name("vertically-averaged ice hardness (prescribed)")
+        .set_units_without_validation("Pa s^(1/n)");
+    m_averaged_hardness.metadata()["valid_min"] = { 0.0 };
+    m_averaged_hardness.metadata()["comment"] =
+        "units depend on the Glen exponent used by the flow law";
+  }
+
   // Add some variables to the list of "model state" fields.
   m_model_state = { &m_velocity_bc_mask,
                     &m_velocity_bc_values,
                     &m_ice_thickness_bc_mask,
-                    &m_geometry.latitude,
-                    &m_geometry.longitude,
                     &m_geometry.ice_thickness,
                     &m_geometry.ice_area_specific_volume };
+
+  if (m_use_averaged_hardness) {
+    m_model_state.insert(&m_averaged_hardness);
+    m_grid->variables().add(m_averaged_hardness);
+  }
 }
 
 //! Update the surface elevation and the flow-type mask when the geometry has changed.
@@ -336,14 +379,14 @@ void IceModel::enforce_consistency_of_geometry(ConsistencyFlag flag) {
 
 stressbalance::Inputs IceModel::stress_balance_inputs() {
   stressbalance::Inputs result;
-  if (m_config->get_flag("geometry.update.use_basal_melt_rate")) {
-    result.basal_melt_rate = &m_basal_melt_rate;
-  }
 
   result.basal_yield_stress = &m_basal_yield_stress;
   result.geometry           = &m_geometry;
   result.new_bed_elevation  = m_new_bed_elevation;
   result.enthalpy           = &m_energy_model->enthalpy();
+  if (m_use_averaged_hardness) {
+    result.averaged_hardness = &m_averaged_hardness;
+  }
   result.age                = m_age_model ? &m_age_model->age() : nullptr;
 
   result.water_column_pressure = &m_ocean->average_water_column_pressure();
@@ -363,7 +406,7 @@ stressbalance::Inputs IceModel::stress_balance_inputs() {
 energy::Inputs IceModel::energy_model_inputs() {
   energy::Inputs result;
 
-  result.basal_frictional_heating = &m_stress_balance->basal_frictional_heating();
+  result.basal_frictional_heating = &m_stress_balance.shallow->basal_frictional_heating();
   result.basal_heat_flux          = &m_btu->flux_through_top_surface(); // bedrock thermal layer
   result.cell_type                = &m_geometry.cell_type;              // geometry
   result.ice_thickness            = &m_geometry.ice_thickness;          // geometry
@@ -372,10 +415,10 @@ energy::Inputs IceModel::energy_model_inputs() {
   result.surface_liquid_fraction  = &m_surface->liquid_water_fraction(); // surface model
   result.surface_temp             = &m_surface->temperature();           // surface model
 
-  result.volumetric_heating_rate  = &m_stress_balance->volumetric_strain_heating();
-  result.u3                       = &m_stress_balance->velocity_u();
-  result.v3                       = &m_stress_balance->velocity_v();
-  result.w3                       = &m_stress_balance->velocity_w();
+  result.volumetric_heating_rate  = &m_strain_heating;
+  result.u3                       = &m_stress_balance.modifier->velocity_u();
+  result.v3                       = &m_stress_balance.modifier->velocity_v();
+  result.w3                       = &m_vertical_velocity;
 
   result.check();             // make sure all data members were set
 
@@ -405,9 +448,6 @@ double IceModel::step(bool do_mass_continuity,
 
   double current_time = m_time->current();
 
-  //! \li call pre_step_hook() to let derived classes do more
-  pre_step_hook();
-
   //! \li update the velocity field; in some cases the whole three-dimensional
   //! field is updated and in some cases just the vertically-averaged
   //! horizontal velocity is updated
@@ -433,7 +473,16 @@ double IceModel::step(bool do_mass_continuity,
 
   try {
     profiling.begin("stress_balance");
-    m_stress_balance->update(stress_balance_inputs(), updateAtDepth);
+    m_stress_balance.shallow->update(stress_balance_inputs(), updateAtDepth);
+
+    m_cfl_2d =
+        ::pism::max_timestep_cfl_2d(m_geometry.ice_thickness, m_geometry.cell_type,
+                                    m_no_model_mask.get(), m_stress_balance.shallow->velocity());
+
+    m_stress_balance.modifier->update(m_stress_balance.shallow->velocity(),
+                                      stress_balance_inputs(), updateAtDepth);
+
+
     profiling.end("stress_balance");
   } catch (RuntimeError &e) {
     std::string output_file = save_state_on_error("_stressbalance_failed", {});
@@ -443,8 +492,39 @@ double IceModel::step(bool do_mass_continuity,
     throw;
   }
 
+  if (updateAtDepth) {
+    profiling.begin("stress_balance.vertical_velocity");
+    {
+      // compute 3D vertical velocity:
+      bool use_bmr = m_config->get_flag("geometry.update.use_basal_melt_rate");
+      stressbalance::compute_vertical_velocity(
+          m_geometry.cell_type, m_stress_balance.modifier->velocity_u(),
+          m_stress_balance.modifier->velocity_v(),
+          use_bmr ? &m_basal_melt_rate : nullptr, m_vertical_velocity);
+    }
+    profiling.end("stress_balance.vertical_velocity");
 
-  m_stdout_flags += m_stress_balance->stdout_report();
+    {
+      profiling.begin("stress_balance.strain_heat");
+      stressbalance::compute_volumetric_strain_heating(
+          m_stress_balance.modifier->velocity_u(),
+          m_stress_balance.modifier->velocity_v(),
+          m_energy_model->enthalpy(),
+          m_geometry.ice_thickness, m_geometry.cell_type,
+          *m_stress_balance.shallow->flow_law(),
+          *m_ctx->enthalpy_converter(),
+          m_stress_balance.shallow->flow_enhancement_factor(),
+          m_strain_heating);
+      profiling.end("stress_balance.strain_heat");
+    }
+    m_cfl_3d =
+        ::pism::max_timestep_cfl_3d(m_geometry.ice_thickness, m_geometry.cell_type,
+                                    m_no_model_mask.get(), m_stress_balance.modifier->velocity_u(),
+                                    m_stress_balance.modifier->velocity_v(), m_vertical_velocity);
+  }
+
+  m_stdout_flags += m_stress_balance.shallow->stdout_report();
+  m_stdout_flags += m_stress_balance.modifier->stdout_report();
 
   m_stdout_flags += (updateAtDepth ? "v" : "V");
 
@@ -472,9 +552,9 @@ double IceModel::step(bool do_mass_continuity,
   if (m_age_model and updateAtDepth) {
     AgeModelInputs inputs;
     inputs.ice_thickness = &m_geometry.ice_thickness;
-    inputs.u3            = &m_stress_balance->velocity_u();
-    inputs.v3            = &m_stress_balance->velocity_v();
-    inputs.w3            = &m_stress_balance->velocity_w();
+    inputs.u3            = &m_stress_balance.modifier->velocity_u();
+    inputs.v3            = &m_stress_balance.modifier->velocity_v();
+    inputs.w3            = &m_vertical_velocity;
 
     profiling.begin("age");
     m_age_model->update(m_t_TempAge, m_dt_TempAge, inputs);
@@ -531,8 +611,8 @@ double IceModel::step(bool do_mass_continuity,
       try {
         m_geometry_evolution->flow_step(m_geometry,
                                         dt,
-                                        m_stress_balance->advective_velocity(),
-                                        m_stress_balance->diffusive_flux(),
+                                        m_stress_balance.shallow->velocity(),
+                                        m_stress_balance.modifier->diffusive_flux(),
                                         m_ice_thickness_bc_mask);
       } catch (RuntimeError &e) {
         std::string output_file = save_state_on_error("_mass_transport_failed",
@@ -613,8 +693,8 @@ double IceModel::step(bool do_mass_continuity,
 
   if (m_isochrones) {
     m_isochrones->update(current_time, dt,
-                         m_stress_balance->velocity_u(),
-                         m_stress_balance->velocity_v(),
+                         m_stress_balance.modifier->velocity_u(),
+                         m_stress_balance.modifier->velocity_v(),
                          m_geometry.ice_thickness,
                          m_geometry_evolution->top_surface_mass_balance(),
                          m_geometry_evolution->bottom_surface_mass_balance());
@@ -653,9 +733,6 @@ double IceModel::step(bool do_mass_continuity,
     m_stdout_flags += " ";
   }
 
-  //! \li call post_step_hook() to let derived classes do more
-  post_step_hook();
-
   // Done with the step; now adopt the new time. Note that this has to happen before we
   // update m_t_TempAge below.
   m_time->step(dt);
@@ -691,7 +768,7 @@ void IceModel::hydrology_step(double t, double dt) {
   hydrology::Inputs inputs;
 
   array::Scalar &sliding_speed = *m_work2d[0];
-  compute_magnitude(m_stress_balance->advective_velocity(), sliding_speed);
+  compute_magnitude(m_stress_balance.shallow->velocity(), sliding_speed);
 
   inputs.no_model_mask      = nullptr;
   inputs.geometry           = &m_geometry;
@@ -712,16 +789,6 @@ void IceModel::hydrology_step(double t, double dt) {
   }
 
   m_subglacial_hydrology->update(t, dt, inputs);
-}
-
-//! Virtual.  Does nothing in `IceModel`.  Derived classes can do more computation in each time step.
-void IceModel::pre_step_hook() {
-  // empty
-}
-
-//! Virtual.  Does nothing in `IceModel`.  Derived classes can do more computation in each time step.
-void IceModel::post_step_hook() {
-  // empty
 }
 
 /**
@@ -902,12 +969,16 @@ const Geometry& IceModel::geometry() const {
   return m_geometry;
 }
 
+const array::Scalar& IceModel::averaged_hardness() const {
+  return m_averaged_hardness;
+}
+
 const GeometryEvolution& IceModel::geometry_evolution() const {
   return *m_geometry_evolution;
 }
 
 const stressbalance::StressBalance* IceModel::stress_balance() const {
-  return this->m_stress_balance.get();
+  return &m_stress_balance;
 }
 
 const ocean::OceanModel* IceModel::ocean_model() const {
@@ -928,6 +999,10 @@ const YieldStress* IceModel::basal_yield_stress_model() const {
 
 const bed::BedDef* IceModel::bed_deformation_model() const {
   return m_beddef.get();
+}
+
+const hydrology::Hydrology* IceModel::subglacial_hydrology_model() const {
+  return m_subglacial_hydrology.get();
 }
 
 /*!
@@ -951,6 +1026,14 @@ const array::Scalar& IceModel::forced_retreat() const {
   return m_thickness_change.forced_retreat;
 }
 
+const array::Array3D& IceModel::vertical_velocity() const {
+  return m_vertical_velocity;
+}
+
+const array::Array3D &IceModel::volumetric_strain_heating() const {
+  return m_strain_heating;
+}
+
 IceModel::ThicknessChanges::ThicknessChanges(const std::shared_ptr<const Grid> &grid)
   : calving(grid, "thickness_change_due_to_calving"),
     frontal_melt(grid, "thickness_change_due_to_frontal_melt"),
@@ -961,6 +1044,14 @@ IceModel::ThicknessChanges::ThicknessChanges(const std::shared_ptr<const Grid> &
 void IceModel::set_python_ocean_model(std::shared_ptr<ocean::PyOceanModel> model) {
   m_ocean = std::make_shared<ocean::PyOceanModelAdapter>(m_grid, model);
   m_submodels["ocean model"] = m_ocean.get();
+}
+
+CFLData IceModel::max_timestep_cfl_2d() const {
+  return m_cfl_2d;
+}
+
+CFLData IceModel::max_timestep_cfl_3d() const {
+  return m_cfl_3d;
 }
 
 } // end of namespace pism

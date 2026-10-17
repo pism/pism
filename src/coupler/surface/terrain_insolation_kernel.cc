@@ -96,17 +96,6 @@ double ray_horizon(const double *dem, int Mx, int My, double dx, double dy,
   return std::isfinite(best) ? best : 0.0;
 }
 
-// Adapted from solshade's compute_slope_aspect_normals (solshade/terrain.py): equivalent to
-// its slope/aspect -> ENU normal, written directly in terms of the gradients. See the
-// per-file credits at the top of this file.
-void surface_normal(double dzdE, double dzdN, double &nE, double &nN, double &nU) {
-  // Upward normal to the surface z = f(E, N) is proportional to (-f_E, -f_N, 1).
-  double norm = std::sqrt(dzdE * dzdE + dzdN * dzdN + 1.0);
-  nE = -dzdE / norm;
-  nN = -dzdN / norm;
-  nU = 1.0 / norm;
-}
-
 // Standard topocentric solar geometry (textbook spherical astronomy). The ENU sun-vector
 // convention (E = cos(alt) sin(az), N = cos(alt) cos(az), U = sin(alt)) matches solshade's
 // solar.py; the altitude/azimuth formulas themselves are standard.
@@ -135,6 +124,12 @@ void sun_position(double latitude, double declination, double hour_angle,
   double A = std::atan2(sinA, cosA); // clockwise from north, in (-pi, pi]
   if (A < 0.0) {
     A += 2.0 * M_PI;
+    // A tiny negative angle (e.g. at hour_angle = pi, where sin(hour_angle) is not
+    // exactly zero in floating point) rounds to exactly 2*pi here; the documented range
+    // is [0, 2*pi).
+    if (A >= 2.0 * M_PI) {
+      A = 0.0;
+    }
   }
   azimuth = A;
 }
@@ -147,6 +142,9 @@ void sun_position(double latitude, double declination, double hour_angle,
 double sky_view_factor(const double *horizon, const double *azimuth, int n_dir,
                        double slope, double aspect) {
 
+  double cos_slope = std::cos(slope);
+  double sin_slope = std::sin(slope);
+
   double acc = 0.0;
   for (int k = 0; k < n_dir; ++k) {
     // Dozier & Frew use the horizon measured from the zenith. A terrain horizon below the
@@ -154,9 +152,10 @@ double sky_view_factor(const double *horizon, const double *azimuth, int n_dir,
     // horizontal.
     double h = horizon[k] > 0.0 ? horizon[k] : 0.0;
     double Hz = 0.5 * M_PI - h; // zenith angle of the visible-sky edge
+    double sin_Hz = std::sin(Hz);
 
-    acc += std::cos(slope) * std::sin(Hz) * std::sin(Hz) +
-           std::sin(slope) * std::cos(azimuth[k] - aspect) * (Hz - std::sin(Hz) * std::cos(Hz));
+    acc += cos_slope * sin_Hz * sin_Hz +
+           sin_slope * std::cos(azimuth[k] - aspect) * (Hz - sin_Hz * std::cos(Hz));
   }
 
   double svf = acc / n_dir; // (1/2pi) * integral, with d(azimuth) = 2pi/n_dir

@@ -86,7 +86,7 @@ class SteadyHydrology(TestCase):
         inputs.ice_sliding_speed = self.zero
         inputs.surface_input_rate = self.surface_input_rate
 
-        dt = self.model.max_timestep(0).value()
+        dt = self.model.max_timestep(0, None).value()
         self.model.update(0, dt, inputs)
 
         flux_magnitude = PISM.Scalar(grid, "flux_magnitude")

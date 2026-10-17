@@ -34,7 +34,7 @@ public:
   ~EISMINTII() = default;
 protected:
   void init_impl(const Geometry &geometry);
-  virtual MaxTimestep max_timestep_impl(double t) const;
+  virtual MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
   void update_impl(const Geometry &geometry, double t, double dt);
   void initialize_using_formulas();
   int m_experiment;

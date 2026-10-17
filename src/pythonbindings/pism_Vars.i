@@ -18,9 +18,13 @@
 %rename(is_available) pism::Vars::is_available_shared;
 %rename(_get) pism::Vars::get_shared;
 %rename(get_2d_scalar) pism::Vars::get_2d_scalar_shared;
+%rename(get_2d_scalar1) pism::Vars::get_2d_scalar1_shared;
+%rename(get_2d_scalar2) pism::Vars::get_2d_scalar2_shared;
 %rename(get_2d_vector) pism::Vars::get_2d_vector_shared;
 %rename(get_2d_mask) pism::Vars::get_2d_mask_shared;
 %rename(get_2d_cell_type) pism::Vars::get_2d_cell_type_shared;
+%rename(get_2d_cell_type1) pism::Vars::get_2d_cell_type1_shared;
+%rename(get_2d_cell_type2) pism::Vars::get_2d_cell_type2_shared;
 %rename(get_3d_scalar) pism::Vars::get_3d_scalar_shared;
 %rename(keys) pism::Vars::keys_shared;
 

@@ -68,7 +68,7 @@ void IceModel::update_viewers() {
       auto diag = m_available_spatial_diagnostics.find(v);
 
       if (diag != m_available_spatial_diagnostics.end()) {
-        this->view_field(diag->second->compute().get());
+        this->view_field(diag->second->compute(m_geometry).get());
       }
     }
   }

@@ -173,12 +173,11 @@ void Component::regrid(const std::string &module_name, array::Array &variable,
   }
 }
 
-MaxTimestep Component::max_timestep(double t) const {
-  return this->max_timestep_impl(t);
+MaxTimestep Component::max_timestep(double t, const CFLData *cfl_data) const {
+  return this->max_timestep_impl(t, cfl_data);
 }
 
-MaxTimestep Component::max_timestep_impl(double t) const {
-  (void) t;
+MaxTimestep Component::max_timestep_impl(double /*t*/, const CFLData */*cfl_data*/) const {
   return MaxTimestep();
 }
 

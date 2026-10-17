@@ -35,7 +35,7 @@ protected:
   double vertical_spacing_impl() const;
   double depth_impl() const;
   unsigned int Mz_impl() const;
-  MaxTimestep max_timestep_impl(double t) const;
+  MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 
   using BedThermalUnit::update_impl;
   void update_impl(const array::Scalar &bedrock_top_temperature, double t, double dt);

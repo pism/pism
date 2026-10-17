@@ -17,6 +17,11 @@ dummy.nc:
 	# rename climatic_mass_balance: we need precipitation for an atmosphere model
 	ncrename -v climatic_mass_balance,precipitation -O $@ $@
 
+	# create dummy longitude and latitude fields required by some sub-models (e.g. the
+	# SeaRISE Greenland atmosphere model)
+	ncap2 -s 'lon=0*thk; lon@units="degree_E"; lon@standard_name="longitude"' -O $@ $@
+	ncap2 -s 'lat=0*thk; lat@units="degree_N"; lat@standard_name="latitude"' -O $@ $@
+
 	# create dummy firn and snow depth fields
 	ncap2 -s "firn_depth=thk" -O $@ $@
 	ncatted -a standard_name,firn_depth,d,, -O $@ $@

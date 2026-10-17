@@ -1,4 +1,4 @@
-// Copyright (C) 2004--2012, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2025 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004--2012, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2025, 2026 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -53,7 +53,7 @@ public:
 
   void update(const YieldStressInputs &inputs, double t, double dt);
 
-  const array::Scalar& basal_material_yield_stress();
+  const array::Scalar& basal_material_yield_stress() const;
 
   std::string name() const;
 protected:

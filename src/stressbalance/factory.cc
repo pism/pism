@@ -36,9 +36,7 @@
 namespace pism {
 namespace stressbalance {
 
-std::shared_ptr<StressBalance> create(const std::string &model,
-                                      std::shared_ptr<const Grid> grid,
-                                      bool regional) {
+StressBalance create(const std::string &model, std::shared_ptr<const Grid> grid, bool regional) {
 
   auto config = grid->ctx()->config();
 
@@ -49,7 +47,7 @@ std::shared_ptr<StressBalance> create(const std::string &model,
     auto blatter = std::make_shared<Blatter>(grid, Mz, C);
     auto mod = std::make_shared<BlatterMod>(blatter);
 
-    return std::make_shared<StressBalance>(grid, blatter, mod);
+    return {blatter, mod};
   }
 
   auto ssa_method = config->get_string("stress_balance.ssa.method");
@@ -87,7 +85,7 @@ std::shared_ptr<StressBalance> create(const std::string &model,
                                   "invalid stress balance model: %s", model.c_str());
   }
 
-  return std::make_shared<StressBalance>(grid, sliding, modifier);
+  return {sliding, modifier};
 }
 
 } // end of namespace stressbalance

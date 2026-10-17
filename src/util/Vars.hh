@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2024 PISM Authors
+// Copyright (C) 2009--2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -31,6 +31,8 @@ namespace array {
 class Array3D;
 class Array;
 class CellType;
+class CellType1;
+class CellType2;
 class Scalar;
 class Scalar1;
 class Scalar2;
@@ -68,6 +70,8 @@ public:
   std::shared_ptr<array::Scalar2> get_2d_scalar2_shared(const std::string &name) const;
   std::shared_ptr<array::Vector> get_2d_vector_shared(const std::string &name) const;
   std::shared_ptr<array::CellType> get_2d_cell_type_shared(const std::string &name) const;
+  std::shared_ptr<array::CellType1> get_2d_cell_type1_shared(const std::string &name) const;
+  std::shared_ptr<array::CellType2> get_2d_cell_type2_shared(const std::string &name) const;
   std::shared_ptr<array::Array3D> get_3d_scalar_shared(const std::string &name) const;
 
   std::set<std::string> keys_shared() const;

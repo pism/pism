@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2023, 2025 PISM Authors
+/* Copyright (C) 2016, 2017, 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -52,7 +52,7 @@ unsigned int BTU_Minimal::Mz_impl() const {
   return 0;
 }
 
-MaxTimestep BTU_Minimal::max_timestep_impl(double t) const {
+MaxTimestep BTU_Minimal::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
   (void) t;
   // no time step restriction
   return MaxTimestep("minimal thermal bedrock layer");

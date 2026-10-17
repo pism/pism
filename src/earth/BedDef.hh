@@ -54,7 +54,7 @@ public:
   const array::Scalar& uplift() const;
 
 protected:
-  virtual MaxTimestep max_timestep_impl(double t) const;
+  virtual MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 
   virtual std::set<VariableMetadata> state_impl() const;
   virtual void write_state_impl(const OutputFile &output) const;
@@ -117,7 +117,7 @@ protected:
                       const array::Scalar &ice_thickness,
                       const array::Scalar &sea_level_elevation);
 
-  MaxTimestep max_timestep_impl(double t) const;
+  MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 };
 
 //! Point-wise isostasy bed deformation model.

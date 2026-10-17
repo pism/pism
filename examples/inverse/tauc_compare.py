@@ -8,7 +8,6 @@ except ImportError:
 from matplotlib import pyplot as pp
 from matplotlib import colors as mc
 from optparse import OptionParser
-from siple.reporting import endpause
 import numpy as np
 
 usage = """Usage: %prog [options]
@@ -84,4 +83,3 @@ pp.colorbar(im, ticks=t, format='$%.1f$')
 
 # pp.ion()
 pp.show()
-# endpause()

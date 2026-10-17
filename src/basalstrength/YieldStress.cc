@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2025 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -76,7 +76,7 @@ void YieldStress::update(const YieldStressInputs &inputs, double t, double dt) {
   this->update_impl(inputs, t, dt);
 }
 
-const array::Scalar& YieldStress::basal_material_yield_stress() {
+const array::Scalar& YieldStress::basal_material_yield_stress() const {
   return m_basal_yield_stress;
 }
 

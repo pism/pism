@@ -2,9 +2,8 @@
 import pylab as plt
 import numpy as np
 from argparse import ArgumentParser
-import importlib
-import sys
-import os.path
+import collections
+import types
 
 """ Produce pie charts using PISM's profiling output produced using
 the -profile option. """
@@ -15,11 +14,24 @@ options = parser.parse_args()
 
 filename = options.FILE[0]
 
-dirname, basename = os.path.split(filename)
-sys.path.insert(0, dirname)
 
-modulename = os.path.splitext(basename)[0]
-r = importlib.import_module(modulename)
+def _autodict():
+    "A dictionary that creates missing entries (recursively) on first access."
+    return collections.defaultdict(_autodict)
+
+
+# PETSc's -log_view Python output sometimes assigns into stage/event entries that were
+# never declared in the file's preamble (e.g. "PetscBarrier", "MatMult MF"), so importing
+# it as a module fails with a KeyError. Execute it instead with auto-vivifying
+# dictionaries: the empty-dict initializers ("= {}") become defaultdicts that create any
+# undeclared container on demand, while the non-empty value literals ("= {...}") are left
+# untouched.
+with open(filename) as f:
+    source = f.read().replace("= {}", "= _autodict()")
+
+namespace = {"_autodict": _autodict}
+exec(compile(source, filename, "exec"), namespace)
+r = types.SimpleNamespace(**namespace)
 
 colors = [(141, 211, 199), (255, 255, 179), (190, 186, 218), (251, 128, 114),
           (128, 177, 211), (253, 180, 98), (179, 222, 105), (252, 205, 229),

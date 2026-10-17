@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2018, 2020, 2021, 2022, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -47,7 +47,7 @@ WeatherStation::WeatherStation(std::shared_ptr<const Grid> grid)
                  "  - Reading air temperature and precipitation from '%s'...\n",
                  filename.c_str());
 
-  auto &ctx = *grid->ctx();
+  const auto &ctx = *grid->ctx();
 
   bool periodic = false;
 
@@ -75,7 +75,7 @@ void WeatherStation::init_impl(const Geometry &geometry) {
   (void) geometry;
 }
 
-MaxTimestep WeatherStation::max_timestep_impl(double t) const {
+MaxTimestep WeatherStation::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
   (void) t;
   return MaxTimestep("atmosphere weather_station");
 }

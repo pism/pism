@@ -25,6 +25,7 @@
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/pism_utilities.hh"
 #include "pism/util/Logger.hh"
+#include "pism/util/Profiling.hh"
 #include "pism/util/io/IO_Flags.hh"
 
 namespace pism {
@@ -149,17 +150,23 @@ void FractureDensity::update(double dt,
     &D_new = m_density_new,
     &A_new = m_age_new;
 
+  profiling().begin("fracture_density.ghosted_velocity");
   m_velocity.copy_from(velocity);
+  profiling().end("fracture_density.ghosted_velocity");
 
+  profiling().begin("fracture_density.strain_rates");
   stressbalance::compute_2D_principal_strain_rates(m_velocity,
                                                    geometry.cell_type,
                                                    m_strain_rates);
+  profiling().end("fracture_density.strain_rates");
 
+  profiling().begin("fracture_density.stresses");
   stressbalance::compute_2D_stresses(*m_flow_law,
                                      m_velocity,
                                      hardness,
                                      geometry.cell_type,
                                      m_deviatoric_stresses);
+  profiling().end("fracture_density.stresses");
 
   array::AccessScope list{&m_velocity, &m_strain_rates, &m_deviatoric_stresses,
                                &D, &D_new, &geometry.cell_type, &bc_mask, &A, &A_new,
@@ -226,6 +233,7 @@ void FractureDensity::update(double dt,
 
   double minH = m_config->get_number("stress_balance.ice_free_thickness_standard");
 
+  profiling().begin("fracture_density.update");
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
@@ -471,9 +479,12 @@ void FractureDensity::update(double dt,
       D_new(i, j) = D(i, j);
     }
   }
+  profiling().end("fracture_density.update");
 
+  profiling().begin("fracture_density.copy");
   A.copy_from(A_new);
   D.copy_from(D_new);
+  profiling().end("fracture_density.copy");
 }
 
 DiagnosticList FractureDensity::spatial_diagnostics_impl() const {

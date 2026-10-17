@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022, 2023, 2025 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -40,7 +40,7 @@ public:
   Blatter(std::shared_ptr<const Grid> grid, int Mz, int coarsening_factor);
   virtual ~Blatter() = default;
 
-  void update(const Inputs &inputs, bool /*full_update*/);
+  void update_impl(const Inputs &inputs, bool /*full_update*/);
 
   std::shared_ptr<array::Array3D> velocity_u_sigma() const;
   std::shared_ptr<array::Array3D> velocity_v_sigma() const;
@@ -215,6 +215,7 @@ protected:
   virtual void init_2d_parameters(const Inputs &inputs);
 
   void init_ice_hardness(const Inputs &inputs, const petsc::DM &da);
+  void init_averaged_ice_hardness(const Inputs &inputs, const petsc::DM &da);
 
   // Guts of the constructor. This method wraps PETSc calls to simplify error checking.
   PetscErrorCode setup(DM pism_da, grid::Periodicity p, int Mz, int coarsening_factor,

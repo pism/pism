@@ -684,7 +684,7 @@ class AgeModel(unittest.TestCase):
         v.set(0.0)
         w.set(0.0)
 
-        model = PISM.AgeModel(self.grid, None)
+        model = PISM.AgeModel(self.grid)
         input_options = PISM.process_input_options(ctx.com, ctx.config)
         model.init(input_options)
 
@@ -1538,6 +1538,126 @@ class OtherTests(unittest.TestCase):
 
         NORM_INFINITY = PISM.PETSc.NormType.NORM_INFINITY
         np.testing.assert_almost_equal(gl_flux.norm(NORM_INFINITY), 0.0)
+
+class DateTime(unittest.TestCase):
+
+    def test_datetime(self):
+        def to_tuple(date):
+            return date.year, date.month, date.day, date.hour, date.minute, date.second, date.calendar
+
+        with self.assertRaises(RuntimeError, msg="empty date-time spec"):
+            PISM.DateTime("", "julian")
+
+        with self.assertRaises(RuntimeError, msg="date-time spec with too many parts"):
+            PISM.DateTime("1-1-1 0:0:0 T+6", "360_day")
+
+        with self.assertRaises(RuntimeError, msg="negative years and complex calendars"):
+            PISM.DateTime("-1-1-1", "julian")
+
+        with self.assertRaises(RuntimeError, msg="date spec does not contain 3 dash-separated parts"):
+            PISM.DateTime("10-10", "365_day")
+
+        with self.assertRaises(RuntimeError, msg="one of date components is not an integer"):
+            PISM.DateTime("1-jul-15", "365_day")
+
+        with self.assertRaises(RuntimeError, msg="invalid calendar"):
+            PISM.DateTime("1-1-1", "invalid")
+
+        with self.assertRaises(RuntimeError, msg="invalid date in a valid calendar"):
+            PISM.DateTime("2026-2-29", "gregorian")
+
+        with self.assertRaises(RuntimeError, msg="huge integer year, month, or day"):
+            N = 2**33
+            PISM.DateTime(f"{N}-1-1", "365_day")
+
+        with self.assertRaises(RuntimeError, msg="invalid hour in the time spec"):
+            PISM.DateTime("1850-1-1 24:00", "365_day")
+
+        with self.assertRaises(RuntimeError, msg="invalid minute in the time spec"):
+            PISM.DateTime("1850-1-1 14:70", "365_day")
+
+        with self.assertRaises(RuntimeError, msg="invalid second in the time spec"):
+            PISM.DateTime("1850-1-1 14:30:100", "365_day")
+
+        with self.assertRaises(RuntimeError, msg="invalid (negative) hour in the time spec"):
+            PISM.DateTime("1850-1-1 -1:00", "365_day")
+
+        with self.assertRaises(RuntimeError, msg="invalid (negative) minute in the time spec"):
+            PISM.DateTime("1850-1-1 14:-10", "365_day")
+
+        with self.assertRaises(RuntimeError, msg="invalid (negative) second in the time spec"):
+            PISM.DateTime("1850-1-1 14:30:-10", "365_day")
+
+        with self.assertRaises(RuntimeError, msg="no minutes in the time spec"):
+            PISM.DateTime("1850-1-1 12", "365_day")
+
+        with self.assertRaises(RuntimeError, msg="too many colon-separated time parts"):
+            PISM.DateTime("1850-1-1 12:00:00:00", "365_day")
+
+        with self.assertRaises(RuntimeError, msg="one of time components is not an integer"):
+            PISM.DateTime("1850-1-1 12:zero", "365_day")
+
+        with self.assertRaises(RuntimeError, msg="huge integer hour"):
+            N = 2**33
+            PISM.DateTime(f"1850-1-1 {N}:0:0", "365_day")
+
+        np.testing.assert_equal(to_tuple(PISM.DateTime("2000-2-29", "gregorian")),
+                                (2000, 2, 29, 0, 0, 0.0, "gregorian")) # leap year
+
+        np.testing.assert_equal(to_tuple(PISM.DateTime("-4000-1-1", "365_day")),
+                                (-4000, 1, 1, 0, 0, 0.0, "365_day")) # negative year
+
+        np.testing.assert_equal(to_tuple(PISM.DateTime("1850-1-1 12:30:45", "365_day")),
+                                (1850, 1, 1, 12, 30, 45.0, "365_day")) # includes time
+
+        np.testing.assert_equal(to_tuple(PISM.DateTime("1850-1-1 11:45", "365_day")),
+                                (1850, 1, 1, 11, 45, 0.0, "365_day")) # includes time without seconds
+
+        np.testing.assert_equal(to_tuple(PISM.DateTime("1850-1-1   11:45", "365_day")),
+                                (1850, 1, 1, 11, 45, 0.0, "365_day")) # multiple spaces between date and time
+
+class ReferenceDate(unittest.TestCase):
+    def setUp(self):
+        suffix = "-reference_date"
+
+        self.filename_360day = filename("input" + suffix + "-360day")
+        self.filename_365day = filename("input" + suffix + "-365day")
+
+        self.old_calendar = PISM.Context().time.calendar()
+
+        self.y0 = 1000
+
+    def tearDown(self):
+        PISM.Context().time.init_calendar(self.old_calendar)
+        try:
+            os.remove(self.filename_360day)
+            os.remove(self.filename_365day)
+        except:
+            pass
+
+    def check_times(self, year_length, filename):
+        time = PISM.Context().time
+        time.init_calendar(f"{year_length}_day")
+
+        PISM.testing.create_scalar_forcing(filename, "delta_T", "kelvin",
+                                           [0, 1], times=[0, 360], time_bounds=[0, 360, 360, 720],
+                                           time_units=f"days since {self.y0}-1-1")
+
+        F = PISM.File(PISM.PETSc.COMM_SELF, filename, PISM.PISM_GUESS, PISM.PISM_READONLY)
+        info = PISM.read_time_info(time.units(), time.calendar(), F, time.variable_name())
+        F.close()
+
+        t0 = int(info.times[0])
+        t1 = (self.y0 - 1) * year_length * 86400
+
+        assert t0 == t1
+
+    def test_reference_date_360day(self):
+        self.check_times(360, self.filename_360day)
+
+    def test_reference_date_365day(self):
+        self.check_times(365, self.filename_365day)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2017, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2017, 2023, 2026 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -47,7 +47,8 @@ protected:
   // related to all (or most) tests
   int m_testname;
 
-  virtual void post_step_hook();
+  double step(bool do_mass_continuity, bool do_skip);
+
   // all tests except K
   void computeGeometryErrors(double &gvolexact, double &gareaexact, double &gdomeHexact,
                                        double &volerr, double &areaerr,

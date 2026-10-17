@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2023, 2025 PISM Authors
+/* Copyright (C) 2016, 2017, 2023, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -36,10 +36,9 @@ static const double ST     = 1.67e-5;
 static const double Tmin   = 223.15; // K
 
 TemperatureModel_Verification::TemperatureModel_Verification(
-    std::shared_ptr<const Grid> grid,
-    std::shared_ptr<const stressbalance::StressBalance> stress_balance, int testname,
+    std::shared_ptr<const Grid> grid, int testname,
     bool bedrock_is_ice)
-    : TemperatureModel(grid, stress_balance),
+    : TemperatureModel(grid),
       m_testname(testname),
       m_bedrock_is_ice(bedrock_is_ice) {
   // empty

@@ -29,7 +29,7 @@ build-dir = "build/{wheel_tag}"
 # The Python source tree lives under the unusually-named `site-packages/`
 # directory. Tell scikit-build-core where the real packages are so editable
 # installs map import paths correctly.
-wheel.packages = ["site-packages/PISM", "site-packages/siple"]
+wheel.packages = ["site-packages/PISM"]
 
 [tool.scikit-build.cmake.define]
 Pism_BUILD_PYTHON_BINDINGS = "ON"

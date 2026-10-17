@@ -32,7 +32,7 @@ public:
 private:
   void init_impl(const Geometry &geometry);
 
-  MaxTimestep max_timestep_impl(double t) const;
+  MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
   void update_impl(const Geometry &geometry, double t, double dt);
 
   enum Parameterization {MARTIN, HUYBRECHTS_DEWOLDE, MARTIN_HUYBRECHTS_DEWOLDE,

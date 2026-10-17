@@ -93,7 +93,7 @@ they have names different from the ones listed in :ref:`sec-spatial_vars` and us
 To reduce the amount of post-processing output files require PISM can follow these
 conventions.
 
-Setting :config:`output.ISMIP6` makes PISM save diagnostics using MKS units and recognize
+Setting :config:`output.ISMIP` makes PISM save diagnostics using MKS units and recognize
 ISMIP6 variable names.
 
 To save *all* the diagnostics requested by ISMIP6 use the short-cut
@@ -103,7 +103,7 @@ To save *all* the diagnostics requested by ISMIP6 use the short-cut
    pism -spatial_vars ismip6 ...
 
 The list of variables is stored in the configuration parameter
-:config:`output.ISMIP6_spatial_variables` and contains variables Greenland projections are
+:config:`output.ISMIP_spatial_variables` and contains variables Greenland projections are
 required to provide. (Add ``base,ligroundf`` to this list for Antarctic projections.)
 
 To save all the time series supported by PISM, omit the ``-scalar_vars`` option:

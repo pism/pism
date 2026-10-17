@@ -1,4 +1,4 @@
-/* Copyright (C) 2024, 2025 PISM Authors
+/* Copyright (C) 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -210,7 +210,7 @@ public:
   }
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const {
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
     auto result = allocate<array::Scalar>("ssa_residual_mag");
     result->metadata(0) = m_vars[0];
 

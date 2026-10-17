@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -21,10 +21,12 @@
 #define GEOMETRY_H
 
 #include "pism/util/array/CellType.hh"
+#include <memory>
 
 namespace pism {
 
 class Grid;
+class OutputFile;
 
 class Geometry {
 public:
@@ -35,11 +37,6 @@ public:
    * surface elevation.
    */
   void ensure_consistency(double ice_free_thickness_threshold);
-
-  // This is grid information, which is not (strictly speaking) ice geometry, but it should be
-  // available everywhere we use ice geometry.
-  array::Scalar latitude;
-  array::Scalar longitude;
 
   // Part of ice geometry, but managed by the bed model and the ocean model. From the point of view
   // of the code updating ice geometry, these are inputs. These fields should be filled in before
@@ -56,10 +53,12 @@ public:
   array::Scalar cell_grounded_fraction;
   array::Scalar2 ice_surface_elevation;
 
-  void dump(const char *filename) const;
+  std::shared_ptr<OutputFile> dump(const char *filename) const;
 };
 
 void ice_bottom_surface(const Geometry &geometry, array::Scalar &result);
+void ice_mass_not_displacing_seawater(const Geometry &geometry, double thickness_threshold,
+                                      array::Scalar &result);
 
 double ice_volume(const Geometry &geometry, double thickness_threshold);
 double ice_area_floating(const Geometry &geometry, double thickness_threshold);

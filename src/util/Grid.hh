@@ -42,6 +42,12 @@ class Logger;
 class Vars;
 class VariableMetadata;
 
+class Grid;
+
+namespace array {
+class Scalar;
+}
+
 namespace petsc {
 class DM;
 } // end of namespace petsc
@@ -152,9 +158,18 @@ public:
 private:
   Parameters() = delete;
 };
-} // namespace grid
 
-class Grid;
+/*!
+ * Allocate storage for grid point longitudes. Does not perform initialization.
+ */
+std::shared_ptr<array::Scalar> allocate_longitude(std::shared_ptr<const Grid> grid);
+
+/*!
+ * Allocate storage for grid point latitudes. Does not perform initialization.
+ */
+std::shared_ptr<array::Scalar> allocate_latitude(std::shared_ptr<const Grid> grid);
+
+} // namespace grid
 
 class GridPoint {
 public:
@@ -358,6 +373,13 @@ public:
 
   const VariableMetadata& get_mapping_info() const;
   void set_mapping_info(const VariableMetadata &info);
+
+  void set_longitude_latitude(std::shared_ptr<const array::Scalar> lon,
+                              std::shared_ptr<const array::Scalar> lat);
+  bool has_longitude_latitude() const;
+
+  const array::Scalar& longitude() const;
+  const array::Scalar& latitude() const;
 
   double dz_min() const;
   double dz_max() const;

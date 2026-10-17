@@ -32,7 +32,7 @@ public:
   virtual ~Constant() = default;
 
 private:
-  MaxTimestep max_timestep_impl(double t) const;
+  MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
   void update_impl(const Inputs &inputs, double t, double dt);
   void init_impl(const Geometry &geometry);
 

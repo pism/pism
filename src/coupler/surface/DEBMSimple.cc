@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2022, 2023, 2024, 2025 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2022, 2023, 2024, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -31,7 +31,6 @@
 #include "pism/util/array/CellType.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/pism_utilities.hh"
-#include "pism/util/Vars.hh"
 #include "pism/util/array/Forcing.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/io/IO_Flags.hh"
@@ -177,6 +176,12 @@ void DEBMSimple::init_impl(const Geometry &geometry) {
                    "  Outputs: SMB and ice upper surface temperature.\n");
   }
 
+  if (not m_grid->has_longitude_latitude()) {
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "grid point longitudes and latitudes are not available;\n"
+                                  "the dEBM-simple surface model cannot be used");
+  }
+
   // initializing the model state
   InputOptions input = process_input_options(m_grid->com, m_config);
 
@@ -213,8 +218,8 @@ void DEBMSimple::init_impl(const Geometry &geometry) {
   }
 }
 
-MaxTimestep DEBMSimple::max_timestep_impl(double my_t) const {
-  return m_atmosphere->max_timestep(my_t);
+MaxTimestep DEBMSimple::max_timestep_impl(double t, const CFLData *cfl_data) const {
+  return m_atmosphere->max_timestep(t, cfl_data);
 }
 
 double DEBMSimple::compute_next_balance_year_start(double time) {
@@ -298,6 +303,8 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
   const auto &H                = geometry.ice_thickness;
   const auto &surface_altitude = geometry.ice_surface_elevation;
 
+  const auto &latitude = m_grid->latitude();
+
   array::AccessScope list
     { &mask,
       &H,
@@ -312,7 +319,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
       &m_offset_melt,
       &m_surface_albedo,
       &m_transmissivity,
-      &geometry.latitude,
+      &latitude,
       &surface_altitude
     };
 
@@ -338,7 +345,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
     for (auto p : m_grid->points()) {
       const int i = p.i(), j = p.j();
 
-      double latitude = geometry.latitude(i, j);
+      double lat = latitude(i, j);
 
       // Get the temperature time series from an atmosphere model and its modifiers
       m_atmosphere->temp_time_series(i, j, T);
@@ -374,7 +381,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
         if (sigmalapserate != 0.0) {
           // apply standard deviation lapse rate on top of prescribed values
           for (int k = 0; k < N; ++k) {
-            S[k] += sigmalapserate * (latitude - sigmabaselat);
+            S[k] += sigmalapserate * (lat - sigmabaselat);
           }
           (*m_air_temp_sd)(i, j) = S[0]; // ensure correct SD reporting
         } else if (m_sd_use_param and mask.icy(i, j)) {
@@ -388,7 +395,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
 
       // insolation energy reaching the surface during each sub-step (analytic in
       // dEBM-simple; a prescribed field in dEBM-enhanced)
-      this->insolation_energy_series(i, j, orbital, ts, dtseries, latitude, E);
+      this->insolation_energy_series(i, j, orbital, dtseries, lat, E);
 
       {
         double next_snow_depth_reset = m_next_balance_year_start;
@@ -429,7 +436,7 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
           if (not mask::ice_free_ocean(cell_type)) {
 
             melt_info = m_model.melt_from_insolation(orbital[k].solar_declination,
-                                                     latitude,
+                                                     lat,
                                                      E[k],
                                                      dtseries,
                                                      S[k],
@@ -516,17 +523,11 @@ void DEBMSimple::update_insolation_input(double t, double dt,
   (void)list;
 }
 
-void DEBMSimple::insolation_energy_series(int i, int j,
+void DEBMSimple::insolation_energy_series(int /*i*/, int /*j*/,
                                           const std::vector<DEBMSimpleOrbitalParameters> &orbital,
-                                          const std::vector<double> &ts,
                                           double dt_sub,
                                           double latitude,
                                           std::vector<double> &result) const {
-  // analytic top-of-atmosphere insolation energy per sub-step (depends on time and
-  // latitude, not on the prescribed field); identical to the original dEBM-simple behavior.
-  (void)i;
-  (void)j;
-  (void)ts;
   for (size_t k = 0; k < orbital.size(); ++k) {
     result[k] = m_model.insolation_energy(orbital[k].solar_declination,
                                           orbital[k].distance_factor,
@@ -612,11 +613,13 @@ public:
   }
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
 
     auto result = allocate<array::Scalar>("insolation");
 
-    const auto *latitude = m_grid->variables().get_2d_scalar("latitude");
+    // note: DEBMSimple cannot be used if m_grid-latitude() is not available, so we don't
+    // need to call m_grid->has_longitude_latitude() here
+    const auto &latitude = m_grid->latitude();
     auto ctx = m_grid->ctx();
 
     {
@@ -624,14 +627,14 @@ protected:
 
       auto orbital = M.orbital_parameters(ctx->time()->current());
 
-      array::AccessScope list{latitude, result.get()};
+      array::AccessScope list{&latitude, result.get()};
 
       for (auto p : m_grid->points()) {
         const int i = p.i(), j = p.j();
 
         (*result)(i, j) = M.insolation_diagnostic(orbital.solar_declination,
                                                   orbital.distance_factor,
-                                                  (*latitude)(i, j));
+                                                  latitude(i, j));
       }
     }
 
@@ -675,8 +678,7 @@ public:
         .output_units(external_units);
     m_vars[0].set_string("cell_methods", "time: mean");
 
-    double fill_value = units::convert(m_sys, m_fill_value, external_units, internal_units);
-    m_vars[0].set_number("_FillValue", fill_value);
+    m_vars[0]["_FillValue"] = { fill_value() };
   }
 
 protected:
@@ -730,7 +732,7 @@ public:
         .units(internal_units)
         .output_units(external_units);
     m_vars[0].set_string("cell_methods", "time: mean");
-    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
+    m_vars[0]["_FillValue"] = { fill_value() };
   }
 
 protected:
@@ -783,7 +785,7 @@ public:
         .units(internal_units)
         .output_units(external_units);
     m_vars[0].set_string("cell_methods", "time: mean");
-    m_vars[0].set_number("_FillValue", to_internal(m_fill_value));
+    m_vars[0]["_FillValue"] = { fill_value() };
   }
 
 protected:

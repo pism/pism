@@ -107,7 +107,7 @@ class OceanConstant(TestCase):
 
         check_model(model, T_melting, mass_flux, average_water_column_pressure)
 
-        self.assertTrue(model.max_timestep(0).infinite())
+        self.assertTrue(model.max_timestep(0, None).infinite())
 
 class OceanPIK(TestCase):
     def test_pik(self):
@@ -144,7 +144,7 @@ class OceanPIK(TestCase):
 
         check_model(model, T_melting, mass_flux, average_water_column_pressure)
 
-        self.assertTrue(model.max_timestep(0).infinite())
+        self.assertTrue(model.max_timestep(0, None).infinite())
 
 class GivenTest(TestCase):
     "Test the Given class"
@@ -177,7 +177,7 @@ class GivenTest(TestCase):
         model.init(self.geometry)
         model.update(self.inputs, 0, 1)
 
-        self.assertTrue(model.max_timestep(0).infinite())
+        self.assertTrue(model.max_timestep(0, None).infinite())
 
         check_model(model, self.temperature, self.mass_flux,
                     self.average_water_column_pressure)
@@ -229,7 +229,7 @@ class GivenTHTest(TestCase):
         model.init(self.geometry)
         model.update(self.inputs, 0, 1)
 
-        self.assertTrue(model.max_timestep(0).infinite())
+        self.assertTrue(model.max_timestep(0, None).infinite())
 
         check_model(model, self.temperature, self.mass_flux, self.average_water_column_pressure)
 

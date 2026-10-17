@@ -1,4 +1,4 @@
-// Copyright (C) 2008-2016, 2023, 2024, 2025 PISM Authors
+// Copyright (C) 2008-2016, 2023, 2024, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -63,7 +63,7 @@ void IBSurfaceModel::init_impl(const Geometry &geometry) {
   }
 }
 
-MaxTimestep IBSurfaceModel::max_timestep_impl(double t) const {
+MaxTimestep IBSurfaceModel::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
   (void)t;
   return {};
 }

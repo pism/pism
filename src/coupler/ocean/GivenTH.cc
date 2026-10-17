@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -72,7 +72,7 @@ GivenTH::GivenTH(std::shared_ptr<const Grid> g)
     m_theta_ocean = std::make_shared<array::Forcing>(m_grid,
                                                 file,
                                                 "theta_ocean",
-                                                "", // no standard name
+                                                "sea_water_potential_temperature",
                                                 buffer_size,
                                                 opt.periodic,
                                                 LINEAR);
@@ -80,7 +80,7 @@ GivenTH::GivenTH(std::shared_ptr<const Grid> g)
     m_salinity_ocean = std::make_shared<array::Forcing>(m_grid,
                                                    file,
                                                    "salinity_ocean",
-                                                   "", // no standard name
+                                                   "sea_water_salinity",
                                                    buffer_size,
                                                    opt.periodic,
                                                    LINEAR);
@@ -190,7 +190,7 @@ void GivenTH::update_impl(const Inputs &inputs, double t, double dt) {
                                         *m_water_column_pressure);
 }
 
-MaxTimestep GivenTH::max_timestep_impl(double t) const {
+MaxTimestep GivenTH::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
   (void) t;
 
   return MaxTimestep("ocean th");

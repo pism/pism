@@ -38,7 +38,7 @@ protected:
   const array::Scalar& accumulation_impl() const;
   const array::Scalar& melt_impl() const;
   const array::Scalar& runoff_impl() const;
-  MaxTimestep max_timestep_impl(double t) const;
+  MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 protected:
   // time-dependent inputs
   std::shared_ptr<array::Forcing> m_mass_flux_anomaly;

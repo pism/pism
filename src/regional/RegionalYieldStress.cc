@@ -117,8 +117,8 @@ DiagnosticList RegionalYieldStress::spatial_diagnostics_impl() const {
                  m_input->spatial_diagnostics());
 }
 
-MaxTimestep RegionalYieldStress::max_timestep_impl(double t) const {
-  auto dt = m_input->max_timestep(t);
+MaxTimestep RegionalYieldStress::max_timestep_impl(double t, const CFLData *cfl_data) const {
+  auto dt = m_input->max_timestep(t, cfl_data);
 
   if (dt.finite()) {
     return MaxTimestep(dt.value(), name());

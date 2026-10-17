@@ -1,4 +1,4 @@
-// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2024, 2025 Constantine Khroulev and Ed Bueler
+// Copyright (C) 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2024, 2025, 2026 Constantine Khroulev and Ed Bueler
 //
 // This file is part of PISM.
 //
@@ -27,6 +27,9 @@
 
 namespace pism {
 
+class EnthalpyConverter;
+class IceBasalResistancePlasticLaw;
+
 namespace rheology {
 class FlowLaw;
 } // end of namespace rheology
@@ -44,7 +47,7 @@ public:
   const Geometry *geometry;
   bool new_bed_elevation;
 
-  const array::Scalar *basal_melt_rate;
+  const array::Scalar *averaged_hardness; // optional (used by the Blatter solver)
   const array::Scalar *basal_yield_stress;
   const array::Scalar *water_column_pressure;
   const array::Scalar1 *fracture_density;
@@ -64,88 +67,15 @@ public:
 };
 
 //! The class defining PISM's interface to the shallow stress balance code.
-/*!
-  Generally all the nontrivial fields are updated by a call to update().  The rest
-  of the methods generally provide access to precomputed results.  The following
-  diagram shows where these results are generally used in the rest of PISM.  (It
-  does not show the call graph, as would doxygen.)
-
-  \image html stressbalance-out.png "\b Methods of StressBalance, and the uses of their results.  Dotted edges show scalars and dashed edges show fields.  Dashed boxes inside the StressBalance object are important methods which may be present in shallow cases.  The age time step has inputs which are a strict subset of the inputs of the energy time step."
-
-  this command fails: \dotfile stressbalance-out.dot
-*/
-class StressBalance : public Component
+class StressBalance
 {
 public:
-  StressBalance(std::shared_ptr<const Grid> g,
-                std::shared_ptr<ShallowStressBalance> sb,
-                std::shared_ptr<SSB_Modifier> ssb_mod);
-  virtual ~StressBalance();
-
-  //! \brief Initialize the StressBalance object.
-  void init();
-
-  //! \brief Update all the fields if (full_update), only update diffusive flux
-  //! and max. diffusivity otherwise.
-  void update(const Inputs &inputs, bool full_update);
-
-  //! \brief Get the thickness-advective (SSA) 2D velocity.
-  const array::Vector& advective_velocity() const;
-
-  //! \brief Get the diffusive (SIA) vertically-averaged flux on the staggered grid.
-  const array::Staggered& diffusive_flux() const;
-
-  //! \brief Get the max diffusivity (for the adaptive time-stepping).
-  double max_diffusivity() const;
-
-  CFLData max_timestep_cfl_2d() const;
-  CFLData max_timestep_cfl_3d() const;
-
-  // for the energy/age time step:
-
-  //! \brief Get components of the the 3D velocity field.
-  const array::Array3D& velocity_u() const;
-  const array::Array3D& velocity_v() const;
-  const array::Array3D& velocity_w() const;
-
-  //! \brief Get the basal frictional heating.
-  const array::Scalar& basal_frictional_heating() const;
-
-  const array::Array3D& volumetric_strain_heating() const;
-
-  //! \brief Produce a report string for the standard output.
-  std::string stdout_report() const;
-
-  //! \brief Returns a pointer to a shallow stress balance solver implementation.
-  const ShallowStressBalance* shallow() const;
-
-  //! \brief Returns a pointer to a stress balance modifier implementation.
-  const SSB_Modifier* modifier() const;
-protected:
-  virtual DiagnosticList spatial_diagnostics_impl() const;
-  virtual TSDiagnosticList scalar_diagnostics_impl() const;
-
-  virtual std::set<VariableMetadata> state_impl() const;
-  virtual void write_state_impl(const OutputFile &output) const;
-
-  virtual void compute_vertical_velocity(const array::CellType1 &mask,
-                                         const array::Array3D &u,
-                                         const array::Array3D &v,
-                                         const array::Scalar *bmr,
-                                         array::Array3D &result);
-  virtual void compute_volumetric_strain_heating(const Inputs &inputs);
-
-  CFLData m_cfl_2d, m_cfl_3d;
-
-  array::Array3D m_w, m_strain_heating;
-
-  std::shared_ptr<ShallowStressBalance> m_shallow_stress_balance;
-  std::shared_ptr<SSB_Modifier> m_modifier;
+  std::shared_ptr<ShallowStressBalance> shallow;
+  std::shared_ptr<SSB_Modifier> modifier;
 };
 
-std::shared_ptr<StressBalance> create(const std::string &model_name,
-                                      std::shared_ptr<const Grid> grid,
-                                      bool regional);
+StressBalance create(const std::string &model_name, std::shared_ptr<const Grid> grid,
+                     bool regional);
 
 struct PrincipalStrainRates {
   double eigen1;
@@ -167,6 +97,24 @@ void compute_2D_stresses(const rheology::FlowLaw &flow_law,
                          const array::Scalar &hardness,
                          const array::CellType1 &cell_type,
                          array::Array2D<DeviatoricStresses> &result);
+
+void compute_vertical_velocity(const array::CellType1 &cell_type, const array::Array3D &u,
+                               const array::Array3D &v, const array::Scalar *basal_melt_rate,
+                               array::Array3D &result);
+
+void compute_basal_frictional_heating(const IceBasalResistancePlasticLaw &sliding_law,
+                                      const array::Vector &basal_velocity,
+                                      const array::Scalar &tauc, const array::CellType &mask,
+                                      array::Scalar &result);
+
+void compute_volumetric_strain_heating(const array::Array3D &u, const array::Array3D &v,
+                                       const array::Array3D &enthalpy,
+                                       const array::Scalar &thickness,
+                                       const array::CellType1 &cell_type,
+                                       const rheology::FlowLaw &flow_law,
+                                       const EnthalpyConverter &EC,
+                                       double enhancement_factor,
+                                       array::Array3D &result);
 
 } // end of namespace stressbalance
 } // end of namespace pism

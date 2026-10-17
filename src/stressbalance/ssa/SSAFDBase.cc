@@ -1561,7 +1561,7 @@ public:
   }
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const {
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
     auto result = allocate<array::Staggered>("nuH");
 
     result->copy_from(model->integrated_viscosity());
@@ -1592,7 +1592,7 @@ public:
   }
 
 protected:
-  std::shared_ptr<array::Array> compute_impl() const {
+  std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
     auto result = allocate<array::Vector>("taud");
 
     result->copy_from(model->driving_stress());
@@ -1615,7 +1615,7 @@ public:
   }
 
 protected:
-  virtual std::shared_ptr<array::Array> compute_impl() const {
+  virtual std::shared_ptr<array::Array> compute_impl(const Geometry &/*geometry*/) const {
     auto result = allocate<array::Scalar>("taud_mag");
     result->metadata(0) = m_vars[0];
 

@@ -57,7 +57,10 @@ void define_variables(const OutputFile &file,
     }
 
     if (use_internal_units) {
-      var.output_units(var["units"]);
+      // Note: set_units_without_validation sets both "units" and "output_units" to the
+      // provided value. Here we don't need to validate units (we did it earlier), plus
+      // some fields (e.g. hardav) use units not supported by UDUNITS.
+      var.set_units_without_validation(var["units"]);
     }
 
     auto var_name = var.get_name();

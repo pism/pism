@@ -1,4 +1,4 @@
-/* Copyright (C) 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2020, 2021, 2022, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -35,6 +35,7 @@
 #include "pism/geometry/Geometry.hh"
 #include "pism/stressbalance/StressBalance.hh"
 #include "pism/util/array/Array3D.hh"
+#include "pism/util/array/Scalar.hh"
 #include "pism/util/pism_options.hh"
 #include "pism/util/pism_utilities.hh" // pism::printf()
 #include "pism/util/fem/Quadrature.hh"
@@ -582,10 +583,45 @@ void Blatter::init_2d_parameters(const Inputs &inputs) {
   m_parameters.update_ghosts();
 }
 
+void Blatter::init_averaged_ice_hardness(const Inputs &inputs, const petsc::DM &da) {
+
+  assert(inputs.averaged_hardness != nullptr);
+
+  const auto &averaged_hardness = *inputs.averaged_hardness;
+
+  // solver's vertical grid:
+  int Mz_sigma = 0;
+  {
+    DMDALocalInfo info;
+    int ierr = DMDAGetLocalInfo(da, &info); PISM_CHK(ierr, "DMDAGetLocalInfo");
+    info = grid_transpose(info);
+    Mz_sigma = info.mz;
+  }
+
+  DataAccess<double***> hardness(da, 3, NOT_GHOSTED);
+
+  array::AccessScope list{&averaged_hardness};
+
+  for (auto p : m_grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    for (int k = 0; k < Mz_sigma; ++k) {
+      hardness[j][i][k] = averaged_hardness(i, j); // STORAGE_ORDER
+    } // end of the loop over sigma levels
+  } // end of the loop over grid points
+}
+
 /*!
  * Set 3D parameters on the finest grid.
  */
 void Blatter::init_ice_hardness(const Inputs &inputs, const petsc::DM &da) {
+
+  if (inputs.averaged_hardness != nullptr) {
+    init_averaged_ice_hardness(inputs, da);
+    return;
+  }
+
+  assert(inputs.enthalpy != nullptr);
 
   const auto *enthalpy = inputs.enthalpy;
   // PISM's vertical grid:
@@ -679,6 +715,8 @@ void Blatter::init_impl() {
     File input_file(m_grid->com, opts.filename, io::PISM_GUESS, io::PISM_READONLY);
     bool u_sigma_found = input_file.variable_exists("uvel_sigma");
     bool v_sigma_found = input_file.variable_exists("vvel_sigma");
+    bool u_ssa_found = input_file.variable_exists("u_ssa");
+    bool v_ssa_found = input_file.variable_exists("v_ssa");
     unsigned int start = input_file.nrecords() - 1;
 
     if (u_sigma_found and v_sigma_found) {
@@ -688,12 +726,72 @@ void Blatter::init_impl() {
       m_v_sigma->read(input_file, start);
 
       set_initial_guess(*m_u_sigma, *m_v_sigma);
+    } else if (u_ssa_found and v_ssa_found) {
+      m_log->message(3, "Restarting from u_ssa and v_ssa...\n");
+
+      // The SSA velocity is vertically constant (2D). Read it and use it as a
+      // depth-independent initial guess by filling every sigma level of the 3D guess
+      // with the local SSA value. read() converts the file's units (e.g. "m year-1")
+      // to the "m s^-1" declared on these fields.
+      array::Scalar u_ssa(m_grid, "u_ssa");
+      array::Scalar v_ssa(m_grid, "v_ssa");
+      u_ssa.metadata(0).units("m s^-1");
+      v_ssa.metadata(0).units("m s^-1");
+
+      u_ssa.read(input_file, start);
+      v_ssa.read(input_file, start);
+
+      int Mz = m_u_sigma->levels().size();
+
+      array::AccessScope list{&u_ssa, &v_ssa, m_u_sigma.get(), m_v_sigma.get()};
+
+      for (auto p : m_grid->points()) {
+        const int i = p.i(), j = p.j();
+
+        auto *u = m_u_sigma->get_column(i, j);
+        auto *v = m_v_sigma->get_column(i, j);
+
+        for (int k = 0; k < Mz; ++k) {
+          u[k] = u_ssa(i, j);
+          v[k] = v_ssa(i, j);
+        }
+      }
+
+      set_initial_guess(*m_u_sigma, *m_v_sigma);
     } else {
       throw RuntimeError(PISM_ERROR_LOCATION,
                          "uvel_sigma and vvel_sigma not found");
     }
   } else {
-    int ierr = VecSet(m_x, 0.0); PISM_CHK(ierr, "VecSet");
+    // Bootstrap path: try uvel_sigma/vvel_sigma from -input.regrid.file as a
+    // warm start, if both are listed in -input.regrid.vars (or the list is
+    // empty, meaning "all") and present in the file. Otherwise start from zero.
+    auto regrid_filename = m_config->get_string("input.regrid.file");
+    auto regrid_vars     = set_split(m_config->get_string("input.regrid.vars"), ',');
+
+    bool regridded_guess = false;
+    if (not regrid_filename.empty() and
+        (regrid_vars.empty() or
+         (set_member("uvel_sigma", regrid_vars) and
+          set_member("vvel_sigma", regrid_vars)))) {
+
+      File regrid_file(m_grid->com, regrid_filename, io::PISM_GUESS, io::PISM_READONLY);
+      if (regrid_file.variable_exists("uvel_sigma") and
+          regrid_file.variable_exists("vvel_sigma")) {
+        m_log->message(2,
+                       "  blatter: regridding uvel_sigma and vvel_sigma from %s"
+                       " for the initial guess...\n",
+                       regrid_filename.c_str());
+        m_u_sigma->regrid(regrid_file, io::Default::Nil());
+        m_v_sigma->regrid(regrid_file, io::Default::Nil());
+        set_initial_guess(*m_u_sigma, *m_v_sigma);
+        regridded_guess = true;
+      }
+    }
+
+    if (not regridded_guess) {
+      int ierr = VecSet(m_x, 0.0); PISM_CHK(ierr, "VecSet");
+    }
   }
 }
 
@@ -987,9 +1085,8 @@ static void enable_ew(::SNES snes) {
   ierr = SNESKSPSetUseEW(snes, PETSC_TRUE); PISM_CHK(ierr, "SNESKSPSetUseEW");
 }
 
-void Blatter::update(const Inputs &inputs, bool full_update) {
+void Blatter::update_impl(const Inputs &inputs, bool /*full_update*/) {
   PetscErrorCode ierr;
-  (void) full_update;
 
   {
     double
@@ -1099,7 +1196,8 @@ void Blatter::update(const Inputs &inputs, bool full_update) {
   // put basal velocity in m_velocity to use it in the next call
   get_basal_velocity(m_velocity);
 
-  compute_basal_frictional_heating(m_velocity, *inputs.basal_yield_stress,
+  compute_basal_frictional_heating(*m_basal_sliding_law,
+                                   m_velocity, *inputs.basal_yield_stress,
                                    inputs.geometry->cell_type,
                                    m_basal_frictional_heating);
 

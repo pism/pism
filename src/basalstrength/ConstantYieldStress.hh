@@ -38,7 +38,7 @@ private:
 
   void update_impl(const YieldStressInputs &inputs, double t, double dt);
 
-  MaxTimestep max_timestep_impl(double t) const;
+  MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 };
 
 } // end of namespace pism

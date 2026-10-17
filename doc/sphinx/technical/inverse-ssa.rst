@@ -318,10 +318,6 @@ Several minimization algorithms are available for solving
    * - ``tikhonov_gn``
      - PISM (custom)
      - Gauss-Newton with adaptive Tikhonov parameter selection
-   * - ``sd``, ``nlcg``, ``ign``
-     - siple
-     - Iterative gradient methods (steepest descent, NLCG, inexact GN);
-       require the optional ``siple`` Python package
 
 The TAO-based methods are implemented through the ``IPTaoTikhonovProblem``
 class template (``include/pism/inverse/IPTaoTikhonovProblem.hh``), which

@@ -1,4 +1,4 @@
-// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017, 2018, 2022, 2023 Jed Brown, Ed Bueler and Constantine Khroulev
+// Copyright (C) 2004-2011, 2013, 2014, 2015, 2016, 2017, 2018, 2022, 2023, 2026 Jed Brown, Ed Bueler and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -23,6 +23,8 @@
 #include "pism/util/Mask.hh"
 
 #include "pism/util/error_handling.hh"
+#include "pism/util/array/Array3D.hh"
+#include "pism/util/ColumnInterpolation.hh"
 
 namespace pism {
 namespace energy {
@@ -65,11 +67,11 @@ tempSystemCtx::tempSystemCtx(const std::vector<double>& storage_grid,
   m_iceR    = m_iceK * m_dt / (m_dz*m_dz);
 }
 
-void tempSystemCtx::initThisColumn(int i, int j, bool is_marginal, MaskValue mask,
-                                   double ice_thickness) {
+void tempSystemCtx::initThisColumn(int i, int j, bool is_marginal,
+                                   double ice_thickness,
+                                   const double *w, const double *strain_heating) {
 
   m_is_marginal = is_marginal;
-  m_mask = mask;
 
   init_column(i, j, ice_thickness);
 
@@ -79,10 +81,11 @@ void tempSystemCtx::initThisColumn(int i, int j, bool is_marginal, MaskValue mas
 
   coarse_to_fine(m_u3, m_i, m_j, m_u.data());
   coarse_to_fine(m_v3, m_i, m_j, m_v.data());
-  coarse_to_fine(m_w3, m_i, m_j, m_w.data());
-  coarse_to_fine(m_strain_heating3, m_i, m_j, m_strain_heating.data());
-  coarse_to_fine(m_T3, m_i, m_j, m_T.data());
 
+  m_interp->coarse_to_fine(w, m_ks, m_w.data());
+  m_interp->coarse_to_fine(strain_heating, m_ks, m_strain_heating.data());
+
+  coarse_to_fine(m_T3, m_i, m_j, m_T.data());
   coarse_to_fine(m_T3, m_i, m_j+1, m_T_n.data());
   coarse_to_fine(m_T3, m_i+1, m_j, m_T_e.data());
   coarse_to_fine(m_T3, m_i, m_j-1, m_T_s.data());
@@ -122,7 +125,7 @@ double tempSystemCtx::compute_lambda() {
   return result;
 }
 
-void tempSystemCtx::solveThisColumn(std::vector<double> &x) {
+void tempSystemCtx::solveThisColumn(bool ocean, std::vector<double> &x) {
 
   TridiagonalSystem &S = *m_solver;
 
@@ -135,7 +138,7 @@ void tempSystemCtx::solveThisColumn(std::vector<double> &x) {
     S.D(0) = 1.0;
     S.U(0) = 0.0;
     // if floating and no ice then worry only about bedrock temps
-    if (mask::ocean(m_mask)) {
+    if (ocean) {
       // essentially no ice but floating ... ask OceanCoupler
       S.RHS(0) = m_Tshelfbase;
     } else { // top of bedrock sees atmosphere
@@ -143,7 +146,7 @@ void tempSystemCtx::solveThisColumn(std::vector<double> &x) {
     }
   } else { // m_ks > 0; there is ice
     // for w, always difference *up* from base, but make it implicit
-    if (mask::ocean(m_mask)) {
+    if (ocean) {
       // just apply Dirichlet condition to base of column of ice in an ice shelf
       // note that L[0] is not used
       S.D(0) = 1.0;

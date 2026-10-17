@@ -1,4 +1,4 @@
-// Copyright (C) 2018, 2019, 2021, 2022, 2023, 2024, 2025 Andy Aschwanden and Constantine Khroulev
+// Copyright (C) 2018, 2019, 2021, 2022, 2023, 2024, 2025, 2026 Andy Aschwanden and Constantine Khroulev
 //
 // This file is part of PISM.
 //
@@ -56,7 +56,7 @@ void DischargeRouting::init_impl(const Geometry &geometry) {
     File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
     m_theta_ocean = std::make_shared<array::Forcing>(m_grid, file, "theta_ocean",
-                                                     "", // no standard name
+                                                     "sea_water_potential_temperature",
                                                      buffer_size, opt.periodic, LINEAR);
   }
 
@@ -157,7 +157,7 @@ const array::Scalar &DischargeRouting::frontal_melt_rate_impl() const {
   return m_frontal_melt_rate;
 }
 
-MaxTimestep DischargeRouting::max_timestep_impl(double t) const {
+MaxTimestep DischargeRouting::max_timestep_impl(double t, const CFLData */*cfl_data*/) const {
 
   auto dt = m_theta_ocean->max_timestep(t);
 
