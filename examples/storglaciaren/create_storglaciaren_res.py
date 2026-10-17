@@ -33,6 +33,11 @@ a `spatial_ref` grid-mapping variable carrying the EPSG:3006 CRS, and CF-style
 projection coordinates `x`, `y`. PISM reads the projection from the grid-mapping
 variable's `crs_wkt`.
 
+The domain extent is read from the `x_bnds`/`y_bnds` of a PISM grid file (`--grid`, by
+default the RGI 7.0 domain file fetched by `preprocess.sh`). The RES rasters are padded or
+cropped to that box on their native 10 m lattice, snapping outward to whole cells so the
+output always covers the requested domain (use `--no-grid` to keep the RES raster extent).
+
 The RES survey only covers the glacier itself, so outside it the bed (and hence the
 surface) is filled with a public DEM, resampled onto the 10 m grid (disable with
 `--no-fill`). Two fill sources are available (`--dem-source`):
@@ -69,7 +74,7 @@ from urllib.request import Request, urlopen
 import numpy as np
 import rioxarray  # noqa: F401  -- registers the `.rio` accessor
 import xarray as xr
-from pyproj import Transformer
+from pyproj import CRS as ProjCRS, Transformer
 from rasterio.enums import Resampling
 from rioxarray.merge import merge_arrays
 
@@ -83,7 +88,10 @@ CRS = "EPSG:3006"  # SWEREF99 TM
 BED_FILES = {"filtered": "SGBED_Filtered.tif", "raw": "SGBED.tif"}
 THICKNESS_FILE = "SGIT.tif"
 
-DEFAULT_OUTPUT = "storglaciaren_res.nc"
+DEFAULT_OUTPUT = "pism_storglaciaren_g10m.nc"
+
+# PISM grid file defining the model domain (one cell whose x_bnds/y_bnds span the domain).
+DEFAULT_GRID = "grid_RGI2000-v7.0-C-08-00658.nc"
 
 # Copernicus GLO-30 (COP30) global DEM, public on AWS Open Data (no authentication).
 # Tiles are 1 deg x 1 deg, named by their SW corner; elevations are orthometric (EGM2008).
@@ -139,6 +147,70 @@ def load_raster(path: Path) -> xr.DataArray:
     if "band" in da.dims:
         da = da.squeeze("band", drop=True)
     return da
+
+
+def read_grid_bounds(path: Path) -> tuple[float, float, float, float]:
+    """Return the domain (xmin, ymin, xmax, ymax) of the PISM grid file *path*, in CRS.
+
+    The extent comes from the cell bounds named by the `bounds` attribute of `x` and `y`
+    (falling back to the coordinates +- half a cell). The projection is read from the
+    `crs_wkt` of the grid-mapping variable; bounds in another CRS are transformed to CRS.
+    """
+    with xr.open_dataset(path) as ds:
+        extent = []
+        for axis in ("x", "y"):
+            coord = ds[axis]
+            bounds_name = coord.attrs.get("bounds")
+            if bounds_name and bounds_name in ds.variables:
+                values = ds[bounds_name].values
+                extent.append((float(values.min()), float(values.max())))
+            elif coord.size > 1:
+                half = abs(float(coord[1] - coord[0])) / 2
+                extent.append((float(coord.min()) - half, float(coord.max()) + half))
+            else:
+                raise ValueError(f"{path}: cannot determine the {axis} extent "
+                                 f"(no bounds variable and a single {axis} value)")
+
+        mapping_names = {v.attrs.get("grid_mapping") or v.encoding.get("grid_mapping")
+                         for v in ds.variables.values()} - {None}
+        wkts = [ds[name].attrs["crs_wkt"] for name in mapping_names
+                if name in ds.variables and "crs_wkt" in ds[name].attrs]
+
+    (xmin, xmax), (ymin, ymax) = extent
+    if not wkts:
+        print(f"  note: {path.name} has no grid mapping; assuming its bounds are in {CRS}")
+        return xmin, ymin, xmax, ymax
+
+    file_crs = ProjCRS.from_user_input(wkts[0])
+    if not file_crs.equals(ProjCRS.from_user_input(CRS), ignore_axis_order=True):
+        print(f"  transforming domain bounds from {file_crs.name} to {CRS}")
+        t = Transformer.from_crs(file_crs, CRS, always_xy=True)
+        xmin, ymin, xmax, ymax = t.transform_bounds(xmin, ymin, xmax, ymax, densify_pts=21)
+    return xmin, ymin, xmax, ymax
+
+
+def regrid_to_bounds(da: xr.DataArray, bounds) -> xr.DataArray:
+    """Pad (with NaN) or crop *da* to *bounds* on its own cell lattice.
+
+    The box is snapped outward to whole cells, so no data are resampled and the result
+    covers *bounds* completely.
+    """
+    xmin, ymin, xmax, ymax = bounds
+    new_coords, spacing = {}, []
+    for axis, (lo, hi) in (("x", (xmin, xmax)), ("y", (ymin, ymax))):
+        c = da[axis].values
+        step = c[1] - c[0]
+        d = abs(step)
+        edge = c[0] - d / 2 if step > 0 else c[-1] - d / 2  # a cell edge on the lattice
+        eps = 1e-6
+        lo_edge = edge + np.floor((lo - edge) / d + eps) * d
+        hi_edge = edge + np.ceil((hi - edge) / d - eps) * d
+        centers = lo_edge + d / 2 + d * np.arange(round((hi_edge - lo_edge) / d))
+        new_coords[axis] = centers if step > 0 else centers[::-1]
+        spacing.append(d)
+
+    out = da.reindex(new_coords, method="nearest", tolerance=min(spacing) / 4)
+    return out.rio.write_transform(out.rio.transform(recalc=True))
 
 
 def cop30_tile_name(lat: int, lon: int) -> str:
@@ -360,6 +432,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--url", default=DATA_URL, help="dataset archive URL")
     parser.add_argument("--workdir", type=Path, default=Path("res_data"),
                         help="directory for the downloaded/extracted files")
+    parser.add_argument("--grid", type=Path, default=Path(DEFAULT_GRID),
+                        help="PISM grid file whose x_bnds/y_bnds define the domain extent")
+    parser.add_argument("--no-grid", dest="use_grid", action="store_false",
+                        help="keep the RES raster extent instead of reading --grid")
     parser.add_argument("--dem-source", choices=DEM_SOURCES, default="cop30",
                         help="DEM used to fill the off-survey area (arcticdem = 10 m, "
                              "ellipsoidal heights; cop30 = ~30 m, EGM2008)")
@@ -387,6 +463,13 @@ def main(argv: list[str] | None = None) -> None:
 
     bed = load_raster(bed_path)
     thickness = load_raster(thk_path)
+
+    if args.use_grid:
+        bounds = read_grid_bounds(args.grid)
+        print(f"  domain from {args.grid.name}: x {bounds[0]:.0f}..{bounds[2]:.0f}, "
+              f"y {bounds[1]:.0f}..{bounds[3]:.0f} ({CRS})")
+        bed = regrid_to_bounds(bed, bounds)
+        thickness = regrid_to_bounds(thickness, bounds)
 
     fill_dem = None
     if args.fill:
