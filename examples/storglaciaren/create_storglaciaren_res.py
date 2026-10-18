@@ -28,6 +28,8 @@ aligns them onto a common grid, and writes a NetCDF file with::
     bed        (standard_name bedrock_altitude,           m)
     thickness  (standard_name land_ice_thickness,         m)
     surface    (standard_name surface_altitude,           m) = bed + thickness
+    ftt_mask   (bool, units 1) = 1 everywhere, so PISM applies its force-to-thickness
+               adjustment over the whole domain
 
 a `spatial_ref` grid-mapping variable carrying the EPSG:3006 CRS, and CF-style
 projection coordinates `x`, `y`. PISM reads the projection from the grid-mapping
@@ -380,11 +382,18 @@ def build_dataset(bed: xr.DataArray, thickness: xr.DataArray,
 
     surface = bed + thk
 
+    # Force-to-thickness mask, 1 everywhere, as pism-terra's glacier boot files write it
+    # for forcing_mask="all". The attrs are replaced wholesale so it does not inherit
+    # surface_altitude metadata from its template.
+    ftt_mask = xr.ones_like(surface)
+    ftt_mask.attrs = {"units": "1"}
+
     ds = xr.Dataset(
         {
             "bed": bed.astype("f4"),
             "thickness": thk.astype("f4"),
             "surface": surface.astype("f4"),
+            "ftt_mask": ftt_mask.astype("bool"),
         }
     )
 
@@ -408,6 +417,7 @@ def build_dataset(bed: xr.DataArray, thickness: xr.DataArray,
                                  dtype="float32")
     for name in ("x", "y"):
         ds[name].encoding.update(_FillValue=None, dtype="float64")
+    ds["ftt_mask"].encoding.update(_FillValue=None)
 
     ds.attrs.update(
         Conventions="CF-1.8",
