@@ -44,7 +44,7 @@ for ebm in pdd debm_simple debm_enhanced; do
             -surface.debm_simple.interpret_precip_as_snow no  \
             -surface.debm_simple.refreeze 0.6  \
             -surface.debm_simple.refreeze_ice_melt no  \
-            -surface.debm_simple.std_dev.value 5.0  \
+            -surface.debm_simple.std_dev 5.0  \
             -surface.models $ebm  \
             -surface.pdd.factor_ice 0.00879120879120879 \
             -surface.pdd.factor_snow 0.0032967032967033 \

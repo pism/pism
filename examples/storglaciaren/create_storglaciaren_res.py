@@ -18,7 +18,7 @@
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 """Download the Tarfala / Storglaciären radio-echo-sounding (RES) dataset and turn it
-into a PISM-bootstrappable NetCDF file with a CF grid mapping.
+into PISM-bootstrappable NetCDF files (2025 and 1994 surfaces) with a CF grid mapping.
 
 The dataset (Wang et al., 2026; doi:10.17043/tarfala-storglaciaren-res-3, ODC-By v1.0)
 provides 10 m gridded ice thickness and bed elevation GeoTIFFs on SWEREF99 TM
@@ -30,10 +30,34 @@ aligns them onto a common grid, and writes a NetCDF file with::
     surface    (standard_name surface_altitude,           m) = bed + thickness
     ftt_mask   (bool, units 1) = 1 everywhere, so PISM applies its force-to-thickness
                adjustment over the whole domain
+    tillwat    (m) = 1 where surface > 1400 m, 0 below; the initial till water PISM
+               reads when bootstrapping
 
 a `spatial_ref` grid-mapping variable carrying the EPSG:3006 CRS, and CF-style
 projection coordinates `x`, `y`. PISM reads the projection from the grid-mapping
 variable's `crs_wkt`.
+
+Two such files are written, both on the same bed:
+
+    pism_storglaciaren_2025_g10m.nc  RES ice thickness (2025 surface)
+    pism_storglaciaren_1994_g10m.nc  1994 surface DEM (`zSurf.txt.gz` on the `X.txt.gz` /
+                                     `Y.txt.gz` grid, RT90 2.5 gon V = EPSG:3021, where X is
+                                     northing and Y easting) resampled bilinearly onto the
+                                     10 m grid; thickness = max(surface_1994 - bed, 0)
+
+Where the 1994 DEM has no value (off its glacier outline, and along its edge) or lies
+below the bed (mostly on steep margins), the 2025 surface is used, so ice present in 2025
+is not dropped and ice-free ground keeps surface = bed.
+
+Two force-to-thickness files are written next to the output, for use with
+`-surface.force_to_thickness.file`::
+
+    pism_forcing_mask_all_g10m.nc      ftt_mask = 1 everywhere
+    pism_forcing_mask_glacier_g10m.nc  ftt_mask = 1 where the 1994 thickness == 0 (outside
+                                       the 1994 glacier)
+
+PISM reads the target thickness from the same file as the mask, so each also holds
+`thickness` (the 1994 thickness, the force-to-thickness target).
 
 The domain extent is read from the `x_bnds`/`y_bnds` of a PISM grid file (`--grid`, by
 default the RGI 7.0 domain file fetched by `preprocess.sh`). The RES rasters are padded or
@@ -60,7 +84,7 @@ Examples
 --------
     ./create_storglaciaren_res.py
     ./create_storglaciaren_res.py --dem-source arcticdem
-    ./create_storglaciaren_res.py --bed raw -o sg_res_raw.nc
+    ./create_storglaciaren_res.py --bed raw --output-dir raw_bed
 """
 from __future__ import annotations
 
@@ -90,7 +114,18 @@ CRS = "EPSG:3006"  # SWEREF99 TM
 BED_FILES = {"filtered": "SGBED_Filtered.tif", "raw": "SGBED.tif"}
 THICKNESS_FILE = "SGIT.tif"
 
-DEFAULT_OUTPUT = "pism_storglaciaren_g10m.nc"
+# Output names; the grid spacing is filled in as g{resolution}m.
+OUTPUT_PATTERN = "pism_storglaciaren_{year}_g{resolution:.0f}m.nc"
+
+# 1994 surface DEM: three whitespace-separated text grids of the same shape. The Swedish
+# RT90 grid uses "inverse" notation: X is the northing (constant along rows) and Y the
+# easting (constant along columns).
+SURFACE_1994 = {"x": "Y.txt.gz", "y": "X.txt.gz", "surface": "zSurf.txt.gz"}
+CRS_1994 = "EPSG:3021"  # RT90 2.5 gon V
+
+# Initial till water: TILLWAT_VALUE where the surface is above TILLWAT_ELEVATION, 0 below.
+TILLWAT_ELEVATION = 1400.0  # m
+TILLWAT_VALUE = 2.0  # m
 
 # PISM grid file defining the model domain (one cell whose x_bnds/y_bnds span the domain).
 DEFAULT_GRID = "grid_RGI2000-v7.0-C-08-00658.nc"
@@ -361,8 +396,34 @@ def fetch_fill_dem(source: str, reference: xr.DataArray, workdir: Path,
     raise ValueError(f"unknown DEM source {source!r}")
 
 
+def load_surface_1994(directory: Path, reference: xr.DataArray) -> xr.DataArray:
+    """Read the 1994 surface DEM from *directory* and resample it onto *reference*'s grid.
+
+    The text grids are on RT90 (EPSG:3021) cell centres. The result is bilinear on the
+    reference grid, NaN where the DEM has no value (off the 1994 glacier).
+    """
+    x = np.loadtxt(directory / SURFACE_1994["x"])[0, :]
+    y = np.loadtxt(directory / SURFACE_1994["y"])[:, 0]
+    z = np.loadtxt(directory / SURFACE_1994["surface"])
+    surface = xr.DataArray(z, dims=("y", "x"), coords={"y": y, "x": x})
+    surface = surface.rio.write_crs(CRS_1994).rio.write_nodata(np.nan)
+    return surface.rio.reproject_match(reference, resampling=Resampling.bilinear)
+
+
+def thickness_from_surface(ds: xr.Dataset, surface: xr.DataArray) -> xr.DataArray:
+    """Return max(*surface* - bed, 0) on *ds*'s grid.
+
+    *ds*'s surface is used where *surface* is NaN or lies below the bed. The latter happens
+    mostly on steep margins (probably a small horizontal offset between the DEMs); falling
+    back keeps the ice that *ds* has there instead of dropping it.
+    """
+    surface = surface.where(surface >= ds["bed"], ds["surface"])
+    return (surface - ds["bed"]).clip(min=0.0)
+
+
 def build_dataset(bed: xr.DataArray, thickness: xr.DataArray,
-                  fill_dem: xr.DataArray | None = None) -> xr.Dataset:
+                  fill_dem: xr.DataArray | None = None,
+                  title: str = "Storglaciaren radio-echo-sounding bed and ice thickness") -> xr.Dataset:
     """Assemble the PISM bootstrapping dataset from bed and thickness rasters."""
     # Put thickness on the bed grid if the two rasters do not already share it.
     if bed.rio.transform() != thickness.rio.transform() or bed.shape != thickness.shape:
@@ -388,12 +449,19 @@ def build_dataset(bed: xr.DataArray, thickness: xr.DataArray,
     ftt_mask = xr.ones_like(surface)
     ftt_mask.attrs = {"units": "1"}
 
+    # Initial till water from the surface elevation. No standard_name: PISM refuses a boot
+    # file in which two variables share one, and tillwat is read by name.
+    tillwat = xr.where(surface > TILLWAT_ELEVATION, TILLWAT_VALUE, 0.0)
+    tillwat.attrs = {"units": "m",
+                     "long_name": "effective thickness of subglacial water stored in till"}
+
     ds = xr.Dataset(
         {
             "bed": bed.astype("f4"),
             "thickness": thk.astype("f4"),
             "surface": surface.astype("f4"),
             "ftt_mask": ftt_mask.astype("bool"),
+            "tillwat": tillwat.astype("f4"),
         }
     )
 
@@ -413,15 +481,18 @@ def build_dataset(bed: xr.DataArray, thickness: xr.DataArray,
 
     # Clean encoding: NaN-aware fill value for the floating-point fields, compression.
     for name in ("bed", "thickness", "surface"):
+        # a _FillValue attr inherited from a reprojected source would clash with the encoding
+        ds[name].attrs.pop("_FillValue", None)
         ds[name].encoding.update(_FillValue=np.float32(-9999.0), zlib=True, complevel=4,
                                  dtype="float32")
     for name in ("x", "y"):
         ds[name].encoding.update(_FillValue=None, dtype="float64")
     ds["ftt_mask"].encoding.update(_FillValue=None)
+    ds["tillwat"].encoding.update(_FillValue=None, zlib=True, complevel=4, dtype="float32")
 
     ds.attrs.update(
         Conventions="CF-1.8",
-        title="Storglaciaren radio-echo-sounding bed and ice thickness",
+        title=title,
         source=DATA_URL,
         reference="Wang et al. (2026), doi:10.17043/tarfala-storglaciaren-res-3",
         license="ODC-By v1.0",
@@ -430,13 +501,43 @@ def build_dataset(bed: xr.DataArray, thickness: xr.DataArray,
     return ds
 
 
+def forcing_mask_dataset(ds: xr.Dataset, kind: str) -> xr.Dataset:
+    """Return a force-to-thickness file for *kind* ("all" or "glacier") built from *ds*.
+
+    ``all`` sets ``ftt_mask`` to 1 everywhere; ``glacier`` sets it to 1 where *ds*'s
+    thickness is zero (outside the glacier) and 0 on the glacier. PISM reads the target
+    thickness from the same file as the mask, so ``thickness`` is carried along.
+    """
+    thk = ds["thickness"]
+    if kind == "all":
+        mask = xr.ones_like(thk)
+    elif kind == "glacier":
+        mask = xr.where(thk == 0.0, 1, 0)
+    else:
+        raise ValueError(f"unknown forcing mask {kind!r}")
+    # attrs replaced wholesale so the mask does not inherit land_ice_thickness metadata
+    mask.attrs = {"units": "1"}
+
+    out = xr.Dataset({"thickness": thk, "ftt_mask": mask.astype("bool")}, attrs=ds.attrs)
+    out = out.rio.write_crs(CRS).rio.set_spatial_dims(x_dim="x", y_dim="y")
+    out["thickness"].encoding.update(ds["thickness"].encoding)
+    out["ftt_mask"].encoding.update(_FillValue=None)
+    for name in ("x", "y"):
+        out[name].encoding.update(_FillValue=None, dtype="float64")
+    out.attrs["title"] = f"Storglaciaren force-to-thickness mask ({kind})"
+    return out
+
+
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=__doc__.splitlines()[0],
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("-o", "--output", type=Path, default=Path(DEFAULT_OUTPUT),
-                        help="output NetCDF file")
+    parser.add_argument("--output-dir", type=Path, default=Path("."),
+                        help="directory for the output NetCDF files")
+    parser.add_argument("--surface-1994-dir", type=Path, default=Path("."),
+                        help="directory holding the 1994 DEM (" +
+                             ", ".join(SURFACE_1994.values()) + ")")
     parser.add_argument("--bed", choices=sorted(BED_FILES), default="filtered",
                         help="which bed raster to use (filtered = Gaussian-smoothed)")
     parser.add_argument("--url", default=DATA_URL, help="dataset archive URL")
@@ -497,8 +598,34 @@ def main(argv: list[str] | None = None) -> None:
     print(f"  bed coverage: {100 * valid:.1f}% of cells have a value"
           + ("" if args.fill else " (rest are off-survey nodata; drop --no-fill to complete)"))
 
-    ds.to_netcdf(args.output)
-    print(f"Wrote {args.output}")
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    resolution = abs(ds.rio.resolution()[0])
+    output_2025 = args.output_dir / OUTPUT_PATTERN.format(year=2025, resolution=resolution)
+    ds.to_netcdf(output_2025)
+    print(f"Wrote {output_2025}")
+
+    # 1994: same bed (already DEM-filled), thickness from the 1994 surface.
+    print(f"  resampling the 1994 surface DEM ({CRS_1994}) onto the {resolution:.0f} m grid")
+    surface_1994 = load_surface_1994(args.surface_1994_dir, ds["surface"])
+    thickness_1994 = thickness_from_surface(ds, surface_1994)
+    ds_1994 = build_dataset(ds["bed"], thickness_1994,
+                            title="Storglaciaren 1994 surface on the radio-echo-sounding bed")
+    on_ice = ds["thickness"] > 0
+    change = (ds_1994["surface"] - ds["surface"]).where(on_ice)
+    print(f"  1994 minus 2025 surface on the 2025 glacier: mean {float(change.mean()):.1f} m; "
+          f"1994 DEM missing on {int((on_ice & surface_1994.isnull()).sum())} of "
+          f"{int(on_ice.sum())} 2025 ice cells (2025 surface used there)")
+    output_1994 = args.output_dir / OUTPUT_PATTERN.format(year=1994, resolution=resolution)
+    ds_1994.to_netcdf(output_1994)
+    print(f"Wrote {output_1994}")
+
+    for kind in ("all", "glacier"):
+        mask_file = args.output_dir / f"pism_forcing_mask_{kind}_g{resolution:.0f}m.nc"
+        # mask and target thickness both describe the 1994 glacier
+        mask_ds = forcing_mask_dataset(ds_1994, kind)
+        mask_ds.to_netcdf(mask_file)
+        share = 100 * float(mask_ds["ftt_mask"].mean())
+        print(f"Wrote {mask_file} (ftt_mask = 1 on {share:.1f}% of cells)")
 
 
 if __name__ == "__main__":
