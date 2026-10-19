@@ -37,6 +37,8 @@
 #include "pism/util/Logger.hh"
 #include "pism/util/io/IO_Flags.hh"
 
+#include "pism/pism_config.hh"
+
 namespace pism {
 namespace surface {
 
@@ -57,6 +59,11 @@ DEBMSimple::DEBMSimple(std::shared_ptr<const Grid> g,
 
   auto insolation_model = m_config->get_string("surface.debm_simple.insolation_model");
   if (insolation_model == "terrain_shaded") {
+#if (Pism_USE_PROJ==0)
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "please build PISM with PROJ to use terrain-shaded insolation");
+#endif
+
     m_insolation = std::make_shared<DEBMTerrainShadedInsolation>(
         m_grid, DEBMSimpleAtmosphereTransmissivity(*m_config));
   } else {
