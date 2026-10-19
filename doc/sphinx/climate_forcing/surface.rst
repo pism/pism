@@ -668,7 +668,7 @@ step length.
 
 Here `\sigma` can be
 
-- constant in time and space (the default; set using :config:`surface.debm_simple.std_dev`),
+- constant in time and space (the default; set using :config:`surface.debm_simple.std_dev.value`),
 - read from a file containing the two dimensional variable :var:`air_temp_sd` that can be
   constant in time or time-dependent (units: *kelvin*; specify the file name using
   :config:`surface.debm_simple.std_dev.file`), or
@@ -714,7 +714,7 @@ values.
 
    * - `\sigma`
      - :eq:`eq-debm-t-eff`
-     - :config:`surface.debm_simple.std_dev` and others at the end of
+     - :config:`surface.debm_simple.std_dev.value` and others at the end of
        :ref:`sec-debm-temperature-driven-melt`
 
    * - `\theta`
