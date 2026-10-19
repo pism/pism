@@ -105,10 +105,13 @@ std::set<VariableMetadata> RegionalYieldStress::state_impl() const {
 }
 
 void RegionalYieldStress::write_state_impl(const OutputFile &output) const {
-  m_input->write_state(output);
-  // Write basal yield stress that includes the modification containing high yield stress
-  // in "no model" areas, overwriting the field written by m_input.
+  // Write the basal yield stress that includes the modification containing high yield
+  // stress in "no model" areas *first*: OutputWriter writes a time-dependent variable at
+  // most once per time record, so the copy of "tauc" written by m_input below is
+  // skipped. (Writing it after m_input would have the opposite effect: the file would
+  // contain the yield stress without the regional modification.)
   m_basal_yield_stress.write(output);
+  m_input->write_state(output);
 }
 
 DiagnosticList RegionalYieldStress::spatial_diagnostics_impl() const {
