@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2020, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -96,8 +96,8 @@ InitializationHelper::InitializationHelper(std::shared_ptr<const Grid> grid, std
                  m_runoff.get()};
 }
 
-void InitializationHelper::init_impl(const Geometry &geometry) {
-  m_input_model->init(geometry);
+void InitializationHelper::init_impl(const Inputs &inputs) {
+  m_input_model->init(inputs);
 
   InputOptions opts = process_input_options(m_grid->com, m_config);
 
@@ -113,7 +113,7 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
   } else {
     m_log->message(2, "* Performing a 'fake' surface model time-step for bootstrapping...\n");
 
-    init_step(this, geometry, time());
+    init_step(this, inputs, time());
   }
 
   // Support regridding. This is needed to ensure that initialization using "-i" is equivalent to
@@ -123,8 +123,8 @@ void InitializationHelper::init_impl(const Geometry &geometry) {
   }
 }
 
-void InitializationHelper::update_impl(const Geometry &geometry, double t, double dt) {
-  m_input_model->update(geometry, t, dt);
+void InitializationHelper::update_impl(const Inputs &inputs, double t, double dt) {
+  m_input_model->update(inputs, t, dt);
 
   // store outputs of the input model
   m_mass_flux.copy_from(m_input_model->mass_flux());

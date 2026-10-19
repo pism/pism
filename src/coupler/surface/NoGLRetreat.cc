@@ -41,15 +41,15 @@ NoGLRetreat::NoGLRetreat(std::shared_ptr<const Grid> grid,
   m_runoff       = allocate_runoff(grid);
 }
 
-void NoGLRetreat::init_impl(const Geometry &geometry) {
-  m_input_model->init(geometry);
+void NoGLRetreat::init_impl(const Inputs &inputs) {
+  m_input_model->init(inputs);
 
   m_log->message(2,
                  "* Initializing a SMB adjustment preventing grounding line retreat...\n");
 
-  const auto &ice_thickness = geometry.ice_thickness;
-  const auto &sea_level     = geometry.sea_level_elevation;
-  const auto &bed           = geometry.bed_elevation;
+  const auto &ice_thickness = inputs.geometry->ice_thickness;
+  const auto &sea_level     = inputs.geometry->sea_level_elevation;
+  const auto &bed           = inputs.geometry->bed_elevation;
 
   double rho_i = m_config->get_number("constants.ice.density");
   double rho_w = m_config->get_number("constants.sea_water.density");
@@ -78,12 +78,12 @@ void NoGLRetreat::init_impl(const Geometry &geometry) {
   }
 }
 
-void NoGLRetreat::update_impl(const Geometry &geometry, double t, double dt) {
+void NoGLRetreat::update_impl(const Inputs &inputs, double t, double dt) {
 
-  m_input_model->update(geometry, t, dt);
+  m_input_model->update(inputs, t, dt);
 
   const auto &mass_flux     = m_input_model->mass_flux();
-  const auto &ice_thickness = geometry.ice_thickness;
+  const auto &ice_thickness = inputs.geometry->ice_thickness;
 
   double rho_i = m_config->get_number("constants.ice.density");
 

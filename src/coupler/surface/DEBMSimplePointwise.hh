@@ -1,4 +1,4 @@
-// Copyright (C) 2009--2025 PISM Authors
+// Copyright (C) 2009--2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -22,12 +22,9 @@
 #include <memory>
 #include <array>
 
-#include "pism/util/Mask.hh"
-#include "pism/util/ScalarForcing.hh"
-
 namespace pism {
 
-class Context;
+class Config;
 class Time;
 
 namespace surface {
@@ -53,12 +50,12 @@ struct DEBMSimpleChanges {
   double smb;
 };
 
-struct DEBMSimpleOrbitalParameters {
-  // Solar declination, radians
-  double solar_declination;
-  // Square of the ratio of the mean sun-earth distance to the current sun-earth distance
-  // (d_bar / d)^2
-  double distance_factor;
+class DEBMSimpleAtmosphereTransmissivity {
+public:
+  DEBMSimpleAtmosphereTransmissivity(const Config &config);
+  double operator()(double surface_elevation) const;
+private:
+  double m_slope, m_intercept;
 };
 
 //! A dEBM-simple implementation
@@ -71,20 +68,19 @@ struct DEBMSimpleOrbitalParameters {
 */
 class DEBMSimplePointwise {
 public:
-  DEBMSimplePointwise(const Context &ctx);
+  DEBMSimplePointwise(const Config &config);
 
-  double albedo(double melt_rate, MaskValue cell_type) const;
+  double albedo(double melt_rate) const;
 
-  DEBMSimpleOrbitalParameters orbital_parameters(double time) const;
+  //! Insolation energy (J m^-2) at the top of atmosphere over time interval `dt`.
+  double toa_insolation_energy(double declination, double distance_factor, double latitude,
+                               double dt) const;
 
-  DEBMSimpleMelt melt(double declination,
-                      double distance_factor,
-                      double dt,
-                      double T_std_deviation,
-                      double T,
-                      double surface_elevation,
-                      double lat,
-                      double albedo) const;
+  //! Melt (and its components) given the insolation *energy* (J m^-2) reaching the
+  //! surface over `dt`. `declination` and `latitude` set the daily melt-period length
+  //! that weights the temperature- and offset-driven melt terms.
+  DEBMSimpleMelt melt(double declination, double latitude, double insolation_energy, double dt,
+                      double T_std_deviation, double T, double albedo) const;
 
   DEBMSimpleChanges step(double ice_thickness, double max_melt, double snow_depth,
                          double accumulation) const;
@@ -92,26 +88,15 @@ public:
   // public because it is a diagnostic field
   double atmosphere_transmissivity(double elevation) const;
 
-  double insolation_diagnostic(double declination,
+  double toa_insolation_diagnostic(double declination,
                     double distance_factor,
                     double latitude_degrees) const;
 
   // implementation details (exposed as "public" methods for testing)
   static double CalovGreveIntegrand(double sigma, double temperature);
-  static double hour_angle(double phi, double latitude, double declination);
-  static double solar_longitude(double year_fraction, double eccentricity,
-                                double perihelion_longitude);
-  static double distance_factor_present_day(double year_fraction);
-  static double distance_factor_paleo(double eccentricity, double true_anomaly);
-  static double solar_declination_present_day(double year_fraction);
-  static double solar_declination_paleo(double obliquity,
-                                        double solar_longitude);
-  static double insolation(double solar_constant, double distance_factor, double hour_angle,
-                           double latitude, double declination);
 
-  double eccentricity(double time) const;
-  double obliquity(double time) const;
-  double perihelion_longitude(double time) const;
+  static double toa_insolation_rate(double solar_constant, double distance_factor,
+                                    double hour_angle, double latitude, double declination);
 
 private:
   //! refreeze melted ice
@@ -126,14 +111,9 @@ private:
 
   double m_albedo_max;
   double m_albedo_min;
-  double m_albedo_ocean;
 
   //! slope used in the linear parameterization of the albedo as a function of melt
   double m_albedo_slope;
-
-  //! slope used in the linear parameterization of transmissivity
-  double m_transmissivity_slope;
-  double m_transmissivity_intercept;
 
   // tuning parameters of the melt equation
   double m_melt_c1;
@@ -150,17 +130,8 @@ private:
   //! minimum solar elevation angle above which melt is possible
   double m_phi;
 
-  std::unique_ptr<ScalarForcing> m_eccentricity;
-  std::unique_ptr<ScalarForcing> m_obliquity;
-  std::unique_ptr<ScalarForcing> m_perihelion_longitude;
-
-  bool m_paleo;
-
-  double m_constant_eccentricity;
-  double m_constant_perihelion_longitude;
-  double m_constant_obliquity;
-
-  std::shared_ptr<const Time> m_time;
+  // atmosphere transmissivity model
+  DEBMSimpleAtmosphereTransmissivity m_transmissivity;
 };
 
 } // end of namespace surface

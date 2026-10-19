@@ -52,9 +52,7 @@ IBSurfaceModel::IBSurfaceModel(std::shared_ptr<const pism::Grid> grid)
   ice_top_bc_wc.metadata(0).long_name("Water content of the Dirichlet B.C.").units("1");
 }
 
-void IBSurfaceModel::init_impl(const Geometry &geometry) {
-  (void)geometry;
-
+void IBSurfaceModel::init_impl(const surface::Inputs &/*inputs*/) {
   m_log->message(2, "* Initializing the IceBin interface surface model IBSurfaceModel.\n"
                     "  IceBin changes its state when surface conditions change.\n");
 
@@ -68,11 +66,7 @@ MaxTimestep IBSurfaceModel::max_timestep_impl(double t, const CFLData */*cfl_dat
   return {};
 }
 
-void IBSurfaceModel::update_impl(const Geometry &geometry, double t, double dt) {
-  (void)geometry;
-  (void)t;
-  (void)dt;
-
+void IBSurfaceModel::update_impl(const surface::Inputs &/*inputs*/, double /*t*/, double /*dt*/) {
   // compute naive estimates of accumulation, melt, and runoff
   dummy_accumulation(massxfer, *m_accumulation);
   dummy_melt(massxfer, *m_melt);

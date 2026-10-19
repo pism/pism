@@ -1,4 +1,4 @@
-// Copyright (C) 2019, 2021, 2023 PISM Authors
+// Copyright (C) 2019, 2021, 2023, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -29,8 +29,8 @@ public:
   ISMIP6(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere::AtmosphereModel> input);
   virtual ~ISMIP6() = default;
 protected:
-  void init_impl(const Geometry &geometry);
-  void update_impl(const Geometry &geometry, double t, double dt);
+  void init_impl(const Inputs &inputs);
+  void update_impl(const Inputs &inputs, double t, double dt);
 
   const array::Scalar &temperature_impl() const;
   const array::Scalar &mass_flux_impl() const;

@@ -38,8 +38,7 @@ ElevationDependent::ElevationDependent(std::shared_ptr<const Grid> grid, std::sh
   m_mass_flux   = allocate_mass_flux(grid);
 }
 
-void ElevationDependent::init_impl(const Geometry &geometry) {
-  (void) geometry;
+void ElevationDependent::init_impl(const Inputs &/*inputs*/) {
 
   bool limits_set = false;
 
@@ -134,12 +133,12 @@ MaxTimestep ElevationDependent::max_timestep_impl(double t, const CFLData */*cfl
   return MaxTimestep("surface 'elevation'");
 }
 
-void ElevationDependent::update_impl(const Geometry &geometry, double t, double dt) {
+void ElevationDependent::update_impl(const Inputs &inputs, double t, double dt) {
   (void) t;
   (void) dt;
 
-  compute_mass_flux(geometry.ice_surface_elevation, *m_mass_flux);
-  compute_temperature(geometry.ice_surface_elevation, *m_temperature);
+  compute_mass_flux(inputs.geometry->ice_surface_elevation, *m_mass_flux);
+  compute_temperature(inputs.geometry->ice_surface_elevation, *m_temperature);
 
   dummy_accumulation(*m_mass_flux, *m_accumulation);
   dummy_melt(*m_mass_flux, *m_melt);

@@ -28,6 +28,10 @@
 
 namespace pism {
 
+namespace array {
+class Array;
+}
+
 namespace units {
 class Unit;
 class System;
@@ -65,6 +69,9 @@ void regrid_spatial_variable(const VariableMetadata &variable,
                              const File &file,
                              const Logger &log,
                              double *output);
+
+void regrid(const Config &config, const std::string &module_name,
+            array::Array &variable, bool regrid_by_default);
 
 void read_spatial_variable(const VariableMetadata &variable,
                            const Grid& grid, const File &file,

@@ -43,8 +43,8 @@ then
   pism \
     ${common_options} \
     -surface debm_simple \
-    -surface.debm_simple.paleo.enabled \
-    -surface.debm_simple.paleo.file ${orbital_parameters} \
+    -orbital_parameters.paleo.enabled \
+    -orbital_parameters.paleo.file ${orbital_parameters} \
     ;
 fi
 

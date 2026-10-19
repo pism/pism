@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2025 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -48,8 +48,8 @@ public:
   const array::Scalar& air_temp_sd() const;
 
 protected:
-  virtual void init_impl(const Geometry &geometry);
-  virtual void update_impl(const Geometry &geometry, double t, double dt);
+  virtual void init_impl(const Inputs &inputs);
+  virtual void update_impl(const Inputs &inputs, double t, double dt);
   virtual MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 
   virtual std::set<VariableMetadata> state_impl() const;

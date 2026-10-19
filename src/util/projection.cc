@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -36,8 +36,11 @@
 #include "pism/pism_config.hh"
 #include "pism/util/pism_utilities.hh"
 
+#include "pism/util/LonLatCalculator.hh"
+
 #if (Pism_USE_PROJ==1)
 #include "pism/util/Proj.hh"
+#include <geodesic.h>
 #endif
 
 namespace pism {
@@ -507,7 +510,86 @@ static void compute_lon_lat_bounds(const std::string &projection,
   }
 }
 
+/*!
+ * Compute the azimuth corresponding to the direction of the Y axis on the grid (vector
+ * (0, 1)), in radians.
+ *
+ * This is the angle between the current meridian and Y axis of the grid, increasing
+ * clockwise.
+ *
+ * This function computes the angle "A".
+ *
+ * Y axis     * north pole         | north pole *          Y axis
+ * ^         /                     |             \         ^
+ * |        /                      |              \        |
+ * |       /                       |               \       |
+ * |  A   /                        |                \  A   |
+ * |     /                         |                 \     |
+ * |    /                          |                  \    |
+ * |   /                           |                   \   |
+ * |  /                            |                    \  |
+ * | /                             |                     \ |
+ * |/                              |                      \|
+ * +------------> X axis           |                       +-----------> X axis
+ *
+ * In the figure on the left "A" is negative. In the figure on the right "A" is positive.
+ *
+ * We use it to compute the direction on the grid corresponding to a given azimuth "alpha".
+ *
+ * Given a direction with azimuth "alpha", the angle between the Y axis and this direction
+ * ("alpha" radian east of north) is equal to "alpha - A".
+ *
+ * See https://proj.org/en/stable/geodesic.html
+ */
+void compute_y_azimuth(array::Scalar &output) {
+  auto grid = output.grid();
+
+  std::string proj_string = grid->get_mapping_info()["proj_params"];
+
+  double a;
+  double invf;
+  // get ellipsoid information from PROJ:
+  {
+    PJ_CONTEXT *C = proj_context_create();
+    PJ *P         = proj_create(C, proj_string.c_str());
+    proj_ellipsoid_get_parameters(C, proj_get_ellipsoid(C, P), &a, 0, 0, &invf);
+    proj_destroy(P);
+    proj_context_destroy(C);
+  }
+
+  LonLatCalculator calc(proj_string);
+
+  geod_geodesic g;
+  geod_init(&g, a, invf != 0 ? 1 / invf : 0);
+
+  double dx = grid->dx();
+
+  array::AccessScope list{&output};
+  for (auto p : grid->points()) {
+    const int i = p.i(), j = p.j();
+
+    double x = grid->x(i);
+    double y = grid->y(j);
+
+    auto pt = calc.lonlat(x, y);
+    double lon1 = pt[0], lat1 = pt[1];
+
+    pt = calc.lonlat(x + dx, y);
+    double lon2 = pt[0], lat2 = pt[1];
+
+    double A_degrees = 0.0;
+    geod_inverse(&g, lat1, lon1, lat2, lon2, nullptr, &A_degrees, nullptr);
+
+    output(i, j) = proj_torad(A_degrees - 90.0);
+  }
+}
+
 #else
+
+void compute_direction_north(array::Scalar &/*output*/) {
+  throw RuntimeError(PISM_ERROR_LOCATION, "Cannot compute direction north."
+                     " Please rebuild PISM with PROJ.");
+}
 
 void compute_cell_areas(const std::string &projection, array::Scalar &result) {
   (void) projection;

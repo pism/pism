@@ -52,6 +52,7 @@ add_library (boundary OBJECT
   ./ocean/sea_level/Delta_SL_2D.cc
   ./ocean/sea_level/Factory.cc
   ./surface/Initialization.cc
+  ./surface/Insolation.cc
   ./surface/localMassBalance.cc
   ./surface/SurfaceModel.cc
   ./surface/Cache.cc
@@ -72,4 +73,8 @@ add_library (boundary OBJECT
   ./surface/NoGLRetreat.cc
   ./surface/DEBMSimple.cc
   ./surface/DEBMSimplePointwise.cc
+  ./surface/DEBMTerrainShadedInsolation.cc
+  ./surface/terrain_insolation_kernel.cc
   )
+
+add_subdirectory (surface/tests)
