@@ -12,6 +12,31 @@ Changes since v2.3.0
   petsc4py at interpreter shutdown. Previously a failure such as a missing `input.file`
   could deadlock the run under some MPI implementations, so a batch job kept its nodes
   until the wall-clock limit. The traceback is now printed once, by rank 0.
+- Add `stress_balance.ssa.fem.dirichlet_scale` (default 1e9, unchanged), the scaling of the
+  identity blocks `SSAFEM` puts into the Jacobian at Dirichlet nodes and, when
+  `stress_balance.calving_front_stress_bc` is set, at ice-free nodes. This was previously
+  reachable only through the command-line option `-ssa_fe_dirichlet_scale` (still accepted),
+  so it was not recorded in output files and could not be set from a configuration file.
+  Lower it if an incomplete-factorization preconditioner fails on a domain with many
+  ice-free nodes (`DIVERGED_PC_FAILED` / `SUBPC_ERROR`); the Blatter solver uses 1 for the
+  same purpose.
+- **Breaking:** the SSAFEM solver now uses the `ssafem_` PETSc option prefix, and the SSA
+  inversion's adjoint solver uses `inv_adj_` (matching the Blatter inverse solver). Both
+  previously read *unprefixed* options, so they shared one namespace and could not be
+  configured independently -- a global `-ksp_rtol`, for instance, would loosen the adjoint
+  solve that sets the accuracy of the inversion's gradient. Configure them with
+  `-ssafem_ksp_*`, `-ssafem_pc_*`, `-ssafem_snes_*` and `-inv_adj_ksp_*`, `-inv_adj_pc_*`.
+  Scripts passing bare `-ksp_*`/`-pc_*`/`-snes_*` to an SSAFEM run have to be updated:
+  those options are now silently ignored (run with `-options_left` to catch this).
+
+- Fix `pismi -remove_sia`, which failed with "Variable 'uvelsurf' ... contains values
+  matching the _FillValue attribute". `uvelsurf` and `vvelsurf` are diagnostics and carry
+  `_FillValue` over ice-free cells by construction, which `Array.regrid()` rejects. `pismi`
+  now reads these fields (and `u_ssa`/`v_ssa`) through `File.read_variable()` and masks the
+  missing cells itself: the SIA correction is skipped where the surface velocity is absent,
+  leaving the observations there untouched. Note that this path does not interpolate, so
+  the file has to be on the model grid; `pismi` stops with an explicit message if it is not.
+
 - Add a ISMP7 surface model that uses the gradients but not the anomalies, and adds runoff.
 - Allow the Blatter stress balance to restart from SSA velocities: if `uvel_sigma` and
   `vvel_sigma` are not present in the input file but `u_ssa` and `v_ssa` are, use the
