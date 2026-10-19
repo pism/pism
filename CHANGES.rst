@@ -100,6 +100,9 @@ Changes since v2.3.0
   calendar in an input file. This resulted in a "shift" in time between intended time of a
   forcing and effective of a forcing.
 
+- Fix `issue 594`_: `pism_async_writer` and `pism_ismip7_writer` hanging when the
+  `netCDF4` package is built with parallel I/O support.
+
 Changes from 2.3.0 to 2.3.1
 ===========================
 
@@ -1321,6 +1324,7 @@ Miscellaneous
 .. _issue 568: https://github.com/pism/pism/issues/568
 .. _issue 569: https://github.com/pism/pism/issues/569
 .. _issue 509: https://github.com/pism/pism/issues/509
+.. _issue 594: https://github.com/pism/pism/issues/594
 .. _ocean models: http://www.pism.io/docs/climate_forcing/ocean.html
 .. _pull request 547: https://github.com/pism/pism/pull/547
 .. _YAC: https://dkrz-sw.gitlab-pages.dkrz.de/yac/index.html
