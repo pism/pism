@@ -619,6 +619,11 @@ static void compute_lon_lat_bounds(const std::string &projection,
                      " Please rebuild PISM with PROJ.");
 }
 
+void compute_y_azimuth(array::Scalar &output) {
+  throw RuntimeError(PISM_ERROR_LOCATION,
+                     "Cannot compute azimuth corresponding to the \"Y\" direction on the grid."
+                     " Please rebuild PISM with PROJ.");
+}
 #endif
 
 void compute_longitude(const std::string &projection, array::Scalar &result) {
