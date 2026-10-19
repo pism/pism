@@ -1,5 +1,11 @@
 .. default-role:: literal
 
+Changes from 2.3.3 to 2.3.4
+===========================
+
+- Fix `issue 594`_: `pism_async_writer` hanging with parallel `netCDF4` module or when
+  using MPICH-based MPI with many MPI processes.
+
 Changes from 2.3.2 to 2.3.3
 ===========================
 
@@ -1246,6 +1252,7 @@ Miscellaneous
 .. _issue 569: https://github.com/pism/pism/issues/569
 .. _issue 509: https://github.com/pism/pism/issues/509
 .. _issue 578: https://github.com/pism/pism/issues/578
+.. _issue 594: https://github.com/pism/pism/issues/594
 .. _ocean models: http://www.pism.io/docs/climate_forcing/ocean.html
 .. _pull request 547: https://github.com/pism/pism/pull/547
 .. _YAC: https://dkrz-sw.gitlab-pages.dkrz.de/yac/index.html
