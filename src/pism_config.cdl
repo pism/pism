@@ -2532,11 +2532,6 @@ netcdf pism_config {
     pism_config:surface.debm_simple.solar_constant_type = "number";
     pism_config:surface.debm_simple.solar_constant_units = "W m^-2";
 
-    pism_config:surface.debm_simple.std_dev = 5.0;
-    pism_config:surface.debm_simple.std_dev_doc = "Standard deviation of daily near-surface air temperature variation";
-    pism_config:surface.debm_simple.std_dev_type = "number";
-    pism_config:surface.debm_simple.std_dev_units = "kelvin";
-
     pism_config:surface.debm_simple.std_dev.file = "";
     pism_config:surface.debm_simple.std_dev.file_doc = "The file to read :var:`air_temp_sd` (standard deviation of air temperature) from";
     pism_config:surface.debm_simple.std_dev.file_option = "debm_simple_sd_file";
@@ -2559,6 +2554,11 @@ netcdf pism_config {
     pism_config:surface.debm_simple.std_dev.periodic = "no";
     pism_config:surface.debm_simple.std_dev.periodic_doc = "If true, interpret forcing data as periodic in time";
     pism_config:surface.debm_simple.std_dev.periodic_type = "flag";
+
+    pism_config:surface.debm_simple.std_dev.value = 5.0;
+    pism_config:surface.debm_simple.std_dev.value_doc = "Standard deviation of daily near-surface air temperature variation";
+    pism_config:surface.debm_simple.std_dev.value_type = "number";
+    pism_config:surface.debm_simple.std_dev.value_units = "kelvin";
 
     pism_config:surface.debm_simple.tau_a_intercept = 0.65;
     pism_config:surface.debm_simple.tau_a_intercept_doc = "Intercept in the parametrization of atmosphere transmissivity";

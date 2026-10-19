@@ -106,7 +106,7 @@ DEBMSimple::DEBMSimple(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere
                                                      "", // no standard name
                                                      buffer_size, periodic, LINEAR);
   } else {
-    double temp_std_dev = m_config->get_number("surface.debm_simple.std_dev");
+    double temp_std_dev = m_config->get_number("surface.debm_simple.std_dev.value");
 
     m_air_temp_sd = array::Forcing::Constant(m_grid, "air_temp_sd", temp_std_dev);
     m_log->message(2, "  Using constant standard deviation of near-surface air temperature.\n");
