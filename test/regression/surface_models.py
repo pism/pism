@@ -9,21 +9,23 @@ import sys
 import os
 import numpy as np
 from unittest import TestCase, SkipTest
-
+from numpy.testing import assert_array_almost_equal, assert_almost_equal
 from PISM.util import convert
+
+ctx = PISM.Context()
 
 # set run duration to 1 second so that all forcing used here spans the duration of the run
 time = PISM.Context().time
 time.set_start(0)
 time.set_end(1)
 
-config = PISM.Context().config
+config = ctx.config
 
 seconds_per_year = 365 * 86400
 # ensure that this is the correct year length
 config.set_string("time.calendar", "365_day")
 
-log = PISM.Context().log
+log = ctx.log
 # silence models' initialization messages
 log.set_threshold(1)
 
@@ -135,6 +137,8 @@ class Given(TestCase):
         self.output_filename = filename("surface_given_output_")
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
+        self.inputs = PISM.SurfaceInputs()
+        self.inputs.geometry = self.geometry
 
         self.T = 272.15
         self.M = 1001.0
@@ -159,9 +163,9 @@ class Given(TestCase):
 
         model = PISM.SurfaceGiven(self.grid, atmosphere)
 
-        model.init(self.geometry)
+        model.init(self.inputs)
 
-        model.update(self.geometry, 0, 1)
+        model.update(self.inputs, 0, 1)
 
         check_model(model, self.T, 0.0, self.M, accumulation=self.M)
 
@@ -180,6 +184,8 @@ class DeltaT(TestCase):
         self.model = surface_simple(self.grid)
         self.dT = -5.0
         self.geometry = PISM.Geometry(self.grid)
+        self.inputs = PISM.SurfaceInputs()
+        self.inputs.geometry = self.geometry
 
         create_scalar_forcing(self.filename, "delta_T", "kelvin",
                               [self.dT], [0], time_bounds=[0, 1])
@@ -191,8 +197,8 @@ class DeltaT(TestCase):
 
         modifier = PISM.SurfaceDeltaT(self.grid, self.model)
 
-        modifier.init(self.geometry)
-        modifier.update(self.geometry, 0, 1)
+        modifier.init(self.inputs)
+        modifier.update(self.inputs, 0, 1)
 
         check_modifier(self.model, modifier, T=self.dT)
 
@@ -213,6 +219,8 @@ class ElevationChange(TestCase):
         self.dz       = 1500.0      # m
 
         self.geometry = PISM.Geometry(self.grid)
+        self.inputs = PISM.SurfaceInputs()
+        self.inputs.geometry = self.geometry
 
         # save current surface elevation to use it as a "reference" surface elevation
         self.geometry.ice_surface_elevation.dump(self.filename)
@@ -231,13 +239,13 @@ class ElevationChange(TestCase):
         model    = surface_simple(self.grid)
         modifier = PISM.SurfaceElevationChange(self.grid, model)
 
-        modifier.init(self.geometry)
+        modifier.init(self.inputs)
 
         # change surface elevation
         self.geometry.ice_surface_elevation.shift(self.dz)
 
         # check changes in outputs
-        modifier.update(self.geometry, 0, 1)
+        modifier.update(self.inputs, 0, 1)
 
         ice_density = config.get_number("constants.ice.density")
 
@@ -264,13 +272,13 @@ class ElevationChange(TestCase):
         model    = surface_simple(self.grid)
         modifier = PISM.SurfaceElevationChange(self.grid, model)
 
-        modifier.init(self.geometry)
+        modifier.init(self.inputs)
 
         # change surface elevation
         self.geometry.ice_surface_elevation.shift(self.dz)
 
         # check changes in outputs
-        modifier.update(self.geometry, 0, 1)
+        modifier.update(self.inputs, 0, 1)
 
         SMB = sample(model.mass_flux())
         C = config.get_number("surface.elevation_change.smb.exp_factor")
@@ -295,13 +303,13 @@ class ElevationDependent(TestCase):
     def setUp(self):
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
+        self.inputs = PISM.SurfaceInputs()
+        self.inputs.geometry = self.geometry
         self.output_filename = filename("surface_elevation_output_")
 
         # change geometry just to make this a bit more interesting
         self.geometry.ice_thickness.set(1000.0)
         self.geometry.ensure_consistency(0.0)
-
-        ctx = PISM.Context()
 
         # make a copy of the configuration database so we can re-initialize it from
         # options and then restore it
@@ -309,16 +317,15 @@ class ElevationDependent(TestCase):
         self.config.import_from(ctx.config)
 
     def tearDown(self):
-        ctx = PISM.Context()
         ctx.config.import_from(self.config)
 
     def test_elevation_1(self):
         "Model 'elevation_dependent', test 1"
         model = PISM.SurfaceElevationDependent(self.grid, PISM.AtmosphereUniform(self.grid))
 
-        model.init(self.geometry)
+        model.init(self.inputs)
 
-        model.update(self.geometry, 0, 1)
+        model.update(self.inputs, 0, 1)
 
         T            = 268.15
         omega        = 0.0
@@ -349,7 +356,6 @@ class ElevationDependent(TestCase):
         options.setValue("-climatic_mass_balance",
                          "{},{},{},{},{}".format(M_min, M_max, z_min, z_ela, z_max))
 
-        ctx = PISM.Context()
         PISM.set_config_from_options(ctx.config)
 
         T = PISM.util.convert(0.5 * (T_min + T_max), "degree_Celsius", "kelvin")
@@ -357,9 +363,9 @@ class ElevationDependent(TestCase):
 
         model = PISM.SurfaceElevationDependent(self.grid, PISM.AtmosphereUniform(self.grid))
 
-        model.init(self.geometry)
+        model.init(self.inputs)
 
-        model.update(self.geometry, 0, 1)
+        model.update(self.inputs, 0, 1)
 
         check_model(model, T=T, SMB=SMB, omega=0, mass=0, thickness=0, accumulation=SMB)
 
@@ -367,6 +373,8 @@ class TemperatureIndex1(TestCase):
     def setUp(self):
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
+        self.inputs = PISM.SurfaceInputs()
+        self.inputs.geometry = self.geometry
         self.atmosphere = PISM.AtmosphereUniform(self.grid)
         self.output_filename = filename("surface_pdd_output_")
 
@@ -376,9 +384,9 @@ class TemperatureIndex1(TestCase):
 
         model = PISM.SurfaceTemperatureIndex(self.grid, self.atmosphere)
 
-        model.init(self.geometry)
+        model.init(self.inputs)
 
-        model.update(self.geometry, 0, 1)
+        model.update(self.inputs, 0, 1)
 
         T = config.get_number("atmosphere.uniform.temperature", "kelvin")
         omega = 0.0
@@ -405,6 +413,8 @@ class TemperatureIndex2(TestCase):
         self.grid = shallow_grid()
 
         self.geometry = PISM.Geometry(self.grid)
+        self.inputs = PISM.SurfaceInputs()
+        self.inputs.geometry = self.geometry
         # make sure that there's ice to melt
         self.geometry.ice_thickness.set(1000.0)
 
@@ -435,9 +445,9 @@ class TemperatureIndex2(TestCase):
         "Model 'pdd'"
         model = PISM.SurfaceTemperatureIndex(self.grid, PISM.AtmosphereUniform(self.grid))
 
-        model.init(self.geometry)
+        model.init(self.inputs)
 
-        model.update(self.geometry, 0, self.dt)
+        model.update(self.inputs, 0, self.dt)
 
         check_model(model, T=self.T, SMB=self.SMB, omega=0.0, mass=0.0, thickness=0.0,
                     melt=40, runoff=16)
@@ -448,6 +458,8 @@ class PIK(TestCase):
         self.output_filename = filename("surface_pik_output_")
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
+        self.inputs = PISM.SurfaceInputs()
+        self.inputs.geometry = self.geometry
 
         self.M = 1001.0
         self.T = 233.13
@@ -469,9 +481,9 @@ class PIK(TestCase):
         "Model 'pik'"
         model = PISM.SurfacePIK(self.grid, PISM.AtmosphereUniform(self.grid))
 
-        model.init(self.geometry)
+        model.init(self.inputs)
 
-        model.update(self.geometry, 0, 1)
+        model.update(self.inputs, 0, 1)
 
         check_model(model, self.T, 0.0, self.M, accumulation=self.M)
 
@@ -489,6 +501,8 @@ class Simple(TestCase):
         self.output_filename = filename("surface_simple_output_")
         self.atmosphere = PISM.AtmosphereUniform(self.grid)
         self.geometry = PISM.Geometry(self.grid)
+        self.inputs = PISM.SurfaceInputs()
+        self.inputs.geometry = self.geometry
 
     def test_simple(self):
         "Model 'simple'"
@@ -496,9 +510,9 @@ class Simple(TestCase):
 
         model = PISM.SurfaceSimple(self.grid, atmosphere)
 
-        model.init(self.geometry)
+        model.init(self.inputs)
 
-        model.update(self.geometry, 0, 1)
+        model.update(self.inputs, 0, 1)
 
         T = sample(atmosphere.air_temperature())
         M = sample(atmosphere.precipitation())
@@ -517,6 +531,8 @@ class Anomaly(TestCase):
         self.output_filename = filename("surface_anomaly_output_")
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
+        self.inputs = PISM.SurfaceInputs()
+        self.inputs.geometry = self.geometry
         self.model = surface_simple(self.grid)
         self.dSMB = -(config.get_number("atmosphere.uniform.precipitation", "kg m-2 s-1") + 5.0)
         self.dT = 2.0
@@ -542,8 +558,8 @@ class Anomaly(TestCase):
 
         modifier = PISM.SurfaceAnomaly(self.grid, self.model)
 
-        modifier.init(self.geometry)
-        modifier.update(self.geometry, 0, 1)
+        modifier.init(self.inputs)
+        modifier.update(self.inputs, 0, 1)
 
         # once anomaly is applied the SMB is negative, so the new accumulation is zero
         dA = 0.0 - sample(self.model.accumulation())
@@ -566,6 +582,8 @@ class Cache(TestCase):
         self.output_filename = filename("surface_cache_output_")
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
+        self.inputs = PISM.SurfaceInputs()
+        self.inputs.geometry = self.geometry
 
         self.simple = surface_simple(self.grid)
 
@@ -584,7 +602,7 @@ class Cache(TestCase):
 
         modifier = PISM.SurfaceCache(self.grid, self.delta_T)
 
-        modifier.init(self.geometry)
+        modifier.init(self.inputs)
 
         dt = seconds_per_year
 
@@ -592,7 +610,7 @@ class Cache(TestCase):
         ts = np.arange(float(N)) * dt
         diff = []
         for t in ts:
-            modifier.update(self.geometry, t, dt)
+            modifier.update(self.inputs, t, dt)
 
             original = sample(self.simple.temperature())
             cached = sample(modifier.temperature())
@@ -628,6 +646,8 @@ class ForceThickness(TestCase):
     def setUp(self):
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
+        self.inputs = PISM.SurfaceInputs()
+        self.inputs.geometry = self.geometry
         self.model = surface_simple(self.grid)
         self.filename = filename("surface_force_to_thickness_input_")
         self.output_filename = filename("surface_force_to_thickness_output_")
@@ -656,11 +676,11 @@ class ForceThickness(TestCase):
         "Modifier ForceThickness"
         modifier = PISM.SurfaceForceThickness(self.grid, self.model)
 
-        modifier.init(self.geometry)
+        modifier.init(self.inputs)
 
         self.geometry.ice_thickness.set(self.H + self.dH)
 
-        modifier.update(self.geometry, 0, 1)
+        modifier.update(self.inputs, 0, 1)
 
         dA   = 0.0 - sample(self.model.accumulation())
         dM   = dA - self.dSMB
@@ -680,6 +700,8 @@ class EISMINTII(TestCase):
     def setUp(self):
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
+        self.inputs = PISM.SurfaceInputs()
+        self.inputs.geometry = self.geometry
         self.output_filename = filename("surface_eismint_output_")
 
     def test_eismintii(self):
@@ -688,9 +710,9 @@ class EISMINTII(TestCase):
         for experiment in "ABCDEFGHIJKL":
             model = PISM.SurfaceEISMINTII(self.grid, ord(experiment))
 
-            model.init(self.geometry)
+            model.init(self.inputs)
 
-            model.update(self.geometry, 0, 1)
+            model.update(self.inputs, 0, 1)
 
             write_state(model, self.geometry, self.output_filename)
             probe_interface(model)
@@ -707,6 +729,8 @@ class Initialization(TestCase):
     def setUp(self):
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
+        self.inputs = PISM.SurfaceInputs()
+        self.inputs.geometry = self.geometry
         self.output_filename = filename("surface_init_output_")
         self.model = surface_simple(self.grid)
 
@@ -715,9 +739,9 @@ class Initialization(TestCase):
 
         modifier = PISM.SurfaceInitialization(self.grid, self.model)
 
-        modifier.init(self.geometry)
+        modifier.init(self.inputs)
 
-        modifier.update(self.geometry, 0, 1)
+        modifier.update(self.inputs, 0, 1)
 
         write_state(modifier, self.geometry, self.output_filename)
         probe_interface(modifier)
@@ -839,10 +863,12 @@ class ISMIP6(TestCase):
 
     def setUp(self):
 
-        self.ctx = PISM.Context()
+        self.ctx = ctx
 
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
+        self.inputs = PISM.SurfaceInputs()
+        self.inputs.geometry = self.geometry
 
         self.geometry.ice_surface_elevation.set(100.0)
 
@@ -862,12 +888,12 @@ class ISMIP6(TestCase):
 
         model = PISM.SurfaceISMIP6(self.grid, atmosphere)
 
-        model.init(self.geometry)
+        model.init(self.inputs)
 
         t = self.ctx.time.current()
         dt = model.max_timestep(t, None).value()
 
-        model.update(self.geometry, t, dt)
+        model.update(self.inputs, t, dt)
 
     def tearDown(self):
         os.remove(self.reference_file)
@@ -981,10 +1007,12 @@ class ISMIP7(TestCase):
 
     def setUp(self):
 
-        self.ctx = PISM.Context()
+        self.ctx = ctx
 
         self.grid = shallow_grid()
         self.geometry = PISM.Geometry(self.grid)
+        self.inputs = PISM.SurfaceInputs()
+        self.inputs.geometry = self.geometry
 
         self.geometry.ice_surface_elevation.set(self.H)
 
@@ -1006,12 +1034,12 @@ class ISMIP7(TestCase):
 
         model = PISM.SurfaceISMIP7(self.grid, PISM.AtmosphereUniform(self.grid))
 
-        model.init(self.geometry)
+        model.init(self.inputs)
 
         t = self.ctx.time.current()
         dt = model.max_timestep(t, None).value()
 
-        model.update(self.geometry, t, dt)
+        model.update(self.inputs, t, dt)
 
         dz = self.H - self.H_ref
 
@@ -1046,6 +1074,90 @@ class ISMIP7(TestCase):
         for p in ["surface.ismip7.file", "surface.ismip7.gradient.file",
                   "surface.ismip7.reference.file"]:
             config.set_string(p, "")
+
+
+class DEBMSimplePointwise(TestCase):
+    def setUp(self):
+        self.debm = PISM.SurfaceDEBMSimplePointwise(config)
+
+    def test_CalovGreveIntegrand(self):
+        """
+        Test the CalovGreveIntegrand
+        """
+
+        sigma = np.array([2.0, 0.0, 1.0])
+        temperature = np.array([0.0, 2.0, -1.0])
+
+        cgi = np.vectorize(self.debm.CalovGreveIntegrand)(sigma, temperature)
+
+        assert_array_almost_equal(np.array([0.7979, 2.0000, 0.0833]), cgi, decimal=4)
+
+    def test_insolation(self):
+        """
+        Test insolation
+        """
+
+        solar_constant = np.array([1361.0])
+        distance_factor = np.array([1.1])
+        hour_angle = np.array([0.8])
+        latitude = np.array([np.pi / 4])
+        declination = np.array([np.pi / 8])
+
+        insolation = np.vectorize(self.debm.toa_insolation_rate)(solar_constant, distance_factor,
+                                                                 hour_angle, latitude, declination)
+
+        assert_array_almost_equal(np.array([1282.10500694]), insolation, decimal=4)
+
+    def test_albedo(self):
+        """
+        Test albedo
+        """
+
+        melt_rate = 1. / 3.15569259747e7
+        albedo = self.debm.albedo(melt_rate)
+
+        assert_almost_equal(0.7972189470997155, albedo, decimal=4)
+
+    def test_atmospshere_transmissivity(self):
+        """
+        Test atmosphere transmissivity
+        """
+
+        elevation = np.array([0.0, 1000.0, 2000.0])
+        transmissivity = np.vectorize(self.debm.atmosphere_transmissivity)(elevation)
+        assert_array_almost_equal(np.array([0.65, 0.682, 0.714]), transmissivity, decimal=4)
+
+    def test_melt(self):
+        """
+        Test melt
+        """
+
+        time = 0.
+        dt = 1.0 / 12
+        temp = 323.0
+        temp_sd = 12.0
+        surface_elevation = 1000
+        latitude = np.pi/4 * 3
+        albedo = 0.47
+
+        orbital_parameters = PISM.OrbitalParameterCalculator(ctx.ctx).compute(time)
+        declination = orbital_parameters.solar_declination
+        distance_factor = orbital_parameters.distance_factor
+
+        transmissivity = self.debm.atmosphere_transmissivity(surface_elevation)
+
+        toa_insolation_energy = self.debm.toa_insolation_energy(declination, distance_factor,
+                                                                latitude, dt)
+        surface_insolation_energy = transmissivity * toa_insolation_energy
+
+        melt_info = self.debm.melt(declination, latitude,
+                                   surface_insolation_energy, dt,
+                                   temp_sd, temp, albedo)
+
+        assert_almost_equal(3.41058271637613e-08, melt_info.insolation_melt, decimal=4)
+        assert_almost_equal(1.3995243305283176e-07, melt_info.temperature_melt, decimal=4)
+        assert_almost_equal(-9.003261572844215e-09, melt_info.offset_melt, decimal=4)
+        assert_almost_equal(1.6505499864374886e-07, melt_info.total_melt, decimal=4)
 
 
 if __name__ == "__main__":

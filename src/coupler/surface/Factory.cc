@@ -1,4 +1,4 @@
-/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023 PISM Authors
+/* Copyright (C) 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2023, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -32,7 +32,6 @@
 #include "pism/coupler/surface/ISMIP7Climate.hh"
 #include "pism/coupler/surface/NoGLRetreat.hh"
 #include "pism/coupler/surface/DEBMSimple.hh"
-#include "pism/coupler/surface/DEBMEnhanced.hh"
 #include "pism/coupler/surface/Simple.hh"
 #include "pism/coupler/surface/TemperatureIndex.hh"
 
@@ -51,7 +50,6 @@ Factory::Factory(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere::Atmo
   add_surface_model<PIK>("pik");
   add_surface_model<Simple>("simple");
   add_surface_model<DEBMSimple>("debm_simple");
-  add_surface_model<DEBMEnhanced>("debm_enhanced");
 
   add_modifier<Anomaly>("anomaly");
   add_modifier<Cache>("cache");

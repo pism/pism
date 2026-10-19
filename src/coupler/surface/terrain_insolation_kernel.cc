@@ -17,22 +17,27 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "pism/coupler/surface/terrain_insolation_kernel.hh"
+#include "pism/util/SunPosition.hh"
 
+#include <cassert>
 #include <cmath>
 #include <limits>
+#include <vector>
 
-// Credits
-// -------
-// ray_horizon() and surface_normal() are C++ re-implementations of algorithms from the
-// "solshade" package by Aman Chokshi (https://github.com/amanchokshi/solshade, MIT License,
-// (c) 2025 Aman Chokshi; Chokshi et al., Journal of Open Source Software,
-// doi:10.21105/joss.09944): compute_horizon_map / _compute_horizon and
-// compute_slope_aspect_normals (solshade/terrain.py).
+// References
+// ----------
 //
-// sky_view_factor() implements Dozier & Frew (1990)
+// ray_horizon() is a C++ re-implementations of the algorithm from the "solshade" package
+// by Aman Chokshi (https://github.com/amanchokshi/solshade, MIT License, (c) 2025 Aman
+// Chokshi;
 //
-// sun_position() is standard topocentric solar geometry; only the East-North-Up sun-vector
-// convention follows solshade (solshade/solar.py).
+// Chokshi et al., Journal of Open Source Software, doi:10.21105/joss.09944):
+// compute_horizon_map / _compute_horizon and compute_slope_aspect_normals
+// (solshade/terrain.py).
+//
+// J. Dozier and J. Frew, “Rapid calculation of terrain parameters for radiation modeling
+// from digital elevation data,” IEEE Transactions on Geoscience and Remote Sensing, vol.
+// 28, no. 5, pp. 963–969, 1990, doi: 10.1109/36.58986.
 
 namespace pism {
 namespace surface {
@@ -42,6 +47,10 @@ static inline double clip(double x, double lo, double hi) {
   return x < lo ? lo : (x > hi ? hi : x);
 }
 
+/*!
+ * Sample a row-major array `dem` with size `Mx` columns by `My` rows at location
+ * `fi`,`fj` ("fractional" indexes in X and Y directions) using bilinear interpolation.
+ */
 double sample_bilinear(const double *dem, int Mx, int My, double fi, double fj) {
   // Clamp to the valid index range (samples on or just outside the boundary fall back to
   // the edge value). This mirrors the clamping in Grid::compute_point_neighbors.
@@ -65,21 +74,41 @@ double sample_bilinear(const double *dem, int Mx, int My, double fi, double fj) 
          (1.0 - a) * b * z01 + a * b * z11;
 }
 
-// Adapted from solshade's compute_horizon_map / _compute_horizon (solshade/terrain.py).
-// See the per-file credits at the top of this file.
+/*!
+ * Compute the horizon map at a grid point.
+ *
+ * @param[in] dem row-major array containing the surface elevation DEM
+ * @param[in] Mx grid size in the X direction
+ * @param[in] My grid size in the Y direction
+ * @param[in] dx grid spacing in the X direction
+ * @param[in] dy grid spacing in the Y direction
+ * @param[in] i0 X-index of a grid point
+ * @param[in] j0 Y-index of a grid point
+ * @param[in] azimuth direction (clockwise from the direction of the Y axis) to consider
+ * @param[in] step step length (meters)
+ * @param[in] max_distance maximum distance to consider (meters)
+ *
+ * Returns the altitude angle of the horizon in direction corresponding to `azimuth`, in
+ * radian.
+ *
+ * Adapted from solshade's compute_horizon_map / _compute_horizon (solshade/terrain.py).
+ */
 double ray_horizon(const double *dem, int Mx, int My, double dx, double dy,
                    int i0, int j0, double azimuth, double step, double max_distance) {
   const double z0 = dem[j0 * Mx + i0];
 
-  // Azimuth clockwise from north: horizontal direction (East, North) = (sin, cos).
-  const double sE = std::sin(azimuth);
-  const double cN = std::cos(azimuth);
+  assert(step > 0.0);
 
-  double best = -std::numeric_limits<double>::infinity();
+  // Azimuth A is measured clockwise from the Y direction, so the (x,y) vector in the
+  // direction A has the form (x, y) = (sin(A), cos(A)).
+  const double v_x = std::sin(azimuth);
+  const double v_y = std::cos(azimuth);
+
+  double max_slope = -std::numeric_limits<double>::infinity();
 
   for (double d = step; d <= max_distance; d += step) {
-    double fi = i0 + sE * d / dx;
-    double fj = j0 + cN * d / dy;
+    double fi = i0 + v_x * d / dx;
+    double fj = j0 + v_y * d / dy;
 
     // Stop the ray once it leaves the (non-periodic) physical domain.
     if (fi < 0.0 || fi > Mx - 1 || fj < 0.0 || fj > My - 1) {
@@ -87,71 +116,43 @@ double ray_horizon(const double *dem, int Mx, int My, double dx, double dy,
     }
 
     double z = sample_bilinear(dem, Mx, My, fi, fj);
-    double angle = std::atan2(z - z0, d);
-    if (angle > best) {
-      best = angle;
-    }
+
+    max_slope = std::fmax(max_slope, (z - z0) / d);
   }
 
-  return std::isfinite(best) ? best : 0.0;
+  return std::isfinite(max_slope) ? std::atan(max_slope) : 0.0;
 }
 
-// Standard topocentric solar geometry (textbook spherical astronomy). The ENU sun-vector
-// convention (E = cos(alt) sin(az), N = cos(alt) cos(az), U = sin(alt)) matches solshade's
-// solar.py; the altitude/azimuth formulas themselves are standard.
 void sun_position(double latitude, double declination, double hour_angle,
                   double &altitude, double &azimuth) {
-  const double sl = std::sin(latitude), cl = std::cos(latitude);
-  const double sd = std::sin(declination), cd = std::cos(declination);
-  const double sH = std::sin(hour_angle), cH = std::cos(hour_angle);
-
-  double sin_alt = clip(sl * sd + cl * cd * cH, -1.0, 1.0);
-  altitude = std::asin(sin_alt);
-
-  double cos_alt = std::cos(altitude);
-
-  // Degenerate geometry: sun at the zenith, or observer at a geographic pole. Azimuth is
-  // undefined; return 0 (irrelevant for the cosine projection at the zenith, and PISM
-  // domains are not located exactly at a pole).
-  if (cos_alt < 1e-8 || cl < 1e-8) {
-    azimuth = 0.0;
-    return;
-  }
-
-  double sinA = -cd * sH / cos_alt;
-  double cosA = (sd - sl * sin_alt) / (cl * cos_alt);
-
-  double A = std::atan2(sinA, cosA); // clockwise from north, in (-pi, pi]
-  if (A < 0.0) {
-    A += 2.0 * M_PI;
-    // A tiny negative angle (e.g. at hour_angle = pi, where sin(hour_angle) is not
-    // exactly zero in floating point) rounds to exactly 2*pi here; the documented range
-    // is [0, 2*pi).
-    if (A >= 2.0 * M_PI) {
-      A = 0.0;
-    }
-  }
-  azimuth = A;
+  SunPositionCalculator(declination).set_latitude(latitude).compute(hour_angle, altitude, azimuth);
 }
 
-// Implements the slope-corrected sky-view factor of Dozier & Frew (1990), "Rapid
-// calculation of terrain parameters for radiation modeling from digital elevation data",
-// IEEE Trans. Geosci. Remote Sens. 28(5):963-969, doi:10.1109/36.58986. The same
-// formulation is used by TopoCalc (https://github.com/USDA-ARS-NWRC/topocalc). Not from
-// solshade.
+/*!
+ * Implements the slope-corrected sky-view factor of Dozier & Frew (1990).
+ *
+ * @param[in] horizon array of `n_dir` elements containing horizon altitudes in directions
+ *                    in `azimuth`, in radians
+ * @param[in] azimuth array of `n_dir` elements containing azimuth directions, in radians
+ * @param[in] n_dir lengths of arrays `horizon` and `azimuth`
+ * @param[in] slope slope at the current location
+ * @param[in] aspect aspect at the current location (radians, clockwise from the north)
+ *
+ * Returns the sky view factor between 0 and 1.
+ */
 double sky_view_factor(const double *horizon, const double *azimuth, int n_dir,
                        double slope, double aspect) {
 
   double cos_slope = std::cos(slope);
   double sin_slope = std::sin(slope);
 
+  // Note: this code implements equation (7b) in Dozier and Frew.
   double acc = 0.0;
   for (int k = 0; k < n_dir; ++k) {
     // Dozier & Frew use the horizon measured from the zenith. A terrain horizon below the
-    // horizontal (negative elevation, e.g. on a peak) adds no sky, so clamp at the
+    // horizontal (negative elevation, e.g. at a peak) adds no sky, so clamp at the
     // horizontal.
-    double h = horizon[k] > 0.0 ? horizon[k] : 0.0;
-    double Hz = 0.5 * M_PI - h; // zenith angle of the visible-sky edge
+    double Hz = M_PI_2 - std::fmax(horizon[k], 0.0); // zenith angle of the visible-sky edge
     double sin_Hz = std::sin(Hz);
 
     acc += cos_slope * sin_Hz * sin_Hz +

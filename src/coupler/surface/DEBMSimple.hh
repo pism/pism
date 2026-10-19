@@ -22,8 +22,10 @@
 #include <memory>
 #include <vector>
 
-#include "pism/coupler/surface/DEBMSimplePointwise.hh"
 #include "pism/coupler/SurfaceModel.hh"
+#include "pism/coupler/surface/DEBMSimplePointwise.hh"
+#include "pism/coupler/surface/Insolation.hh"
+#include "pism/util/OrbitalParameters.hh"
 
 namespace pism {
 
@@ -32,6 +34,7 @@ class AccessScope;
 }
 
 namespace surface {
+
 
 //! @brief A class implementing a temperature-index (positive degree-day) scheme
 //! to compute melt and runoff, and thus surface mass balance, from
@@ -67,32 +70,15 @@ public:
 
   const DEBMSimplePointwise& pointwise_model() const;
 
+  const OrbitalParameterCalculator &orbital_parameters() const;
+
 protected:
-  // Overridable seams used by dEBM-enhanced (DEBMEnhanced) to substitute a prescribed
-  // insolation field for the analytic dEBM-simple insolation. The base-class
-  // implementations reproduce standard dEBM-simple behavior.
-
-  virtual void init_impl(const Geometry &geometry);
-
-  //! Hook called once per update, before the per-cell loop. The base class does nothing;
-  //! dEBM-enhanced updates its insolation forcing and registers it for access.
-  virtual void update_insolation_input(double t, double dt,
-                                       const std::vector<double> &ts,
-                                       array::AccessScope &list);
-
-  //! Insolation *energy* (J m^-2) reaching the surface during each sub-step at the cell
-  //! (i, j). The base class computes it from orbital parameters (analytic dEBM-simple);
-  //! dEBM-enhanced interpolates a prescribed daily field.
-  virtual void insolation_energy_series(int i, int j,
-                                        const std::vector<DEBMSimpleOrbitalParameters> &orbital,
-                                        double dt_sub,
-                                        double latitude,
-                                        std::vector<double> &result) const;
+  virtual void init_impl(const Inputs &inputs);
 
   virtual DiagnosticList spatial_diagnostics_impl() const;
 
 private:
-  virtual void update_impl(const Geometry &geometry, double t, double dt);
+  virtual void update_impl(const Inputs &inputs, double t, double dt);
   virtual MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 
   virtual std::set<VariableMetadata> state_impl() const;
@@ -108,6 +94,10 @@ private:
   unsigned int timeseries_length(double dt) const;
 
   DEBMSimplePointwise m_model;
+
+  std::shared_ptr<Insolation> m_insolation;
+  
+  OrbitalParameterCalculator m_orbital_parameters;
 
   double m_next_balance_year_start;
 
@@ -159,6 +149,8 @@ private:
   bool m_sd_use_param;
   double m_sd_param_a;
   double m_sd_param_b;
+
+  double m_albedo_ocean;
 
   //! interpret all the precipitation as snow (no rain)
   bool m_precip_as_snow;

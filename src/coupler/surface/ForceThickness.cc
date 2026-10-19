@@ -61,9 +61,9 @@ ForceThickness::ForceThickness(std::shared_ptr<const Grid> g, std::shared_ptr<Su
   m_runoff       = allocate_runoff(g);
 }
 
-void ForceThickness::init_impl(const Geometry &geometry) {
+void ForceThickness::init_impl(const Inputs &inputs) {
 
-  m_input_model->init(geometry);
+  m_input_model->init(inputs);
 
   m_log->message(2, "* Initializing force-to-thickness mass-balance modifier...\n");
 
@@ -250,14 +250,14 @@ void ForceThickness::adjust_mass_flux(double time,
   // no communication needed
 }
 
-void ForceThickness::update_impl(const Geometry &geometry, double t, double dt) {
-  m_input_model->update(geometry, t, dt);
+void ForceThickness::update_impl(const Inputs &inputs, double t, double dt) {
+  m_input_model->update(inputs, t, dt);
 
   m_mass_flux->copy_from(m_input_model->mass_flux());
 
   adjust_mass_flux(t,
-                   geometry.ice_thickness,
-                   geometry.cell_type,
+                   inputs.geometry->ice_thickness,
+                   inputs.geometry->cell_type,
                    *m_mass_flux);
   
   dummy_accumulation(*m_mass_flux, *m_accumulation);

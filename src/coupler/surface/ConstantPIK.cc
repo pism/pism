@@ -39,8 +39,7 @@ PIK::PIK(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atmospher
   m_temperature = allocate_temperature(grid);
 }
 
-void PIK::init_impl(const Geometry &geometry) {
-  (void) geometry;
+void PIK::init_impl(const Inputs &/*inputs*/) {
 
   m_log->message(2,
                  "* Initializing the constant-in-time surface processes model PIK.\n"
@@ -76,12 +75,12 @@ MaxTimestep PIK::max_timestep_impl(double t, const CFLData */*cfl_data*/) const 
   return MaxTimestep("surface PIK");
 }
 
-void PIK::update_impl(const Geometry &geometry, double t, double dt) {
+void PIK::update_impl(const Inputs &inputs, double t, double dt) {
   (void) t;
   (void) dt;
 
   const array::Scalar
-    &surface_elevation = geometry.ice_surface_elevation,
+    &surface_elevation = inputs.geometry->ice_surface_elevation,
     &latitude          = m_grid->latitude();
 
   array::AccessScope list{ m_temperature.get(), &surface_elevation, &latitude };

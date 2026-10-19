@@ -496,7 +496,7 @@ the solar altitude angle of `\Phi` degrees is approximated by
 
 where
 
-- `S_0` is the solar constant :config:`surface.debm_simple.solar_constant` :cite:`Kopp2011`,
+- `S_0` is the solar constant :config:`constants.solar_constant` :cite:`Kopp2011`,
 - `\bar d / d` is the ratio of the mean earth-sun distance `\bar d` to the current
   earth-sun distance (the inverse of the earth-sun distance in units of `\bar d`),
 - `h_{\Phi}` is the hour angle when the sun has an elevation angle of at least `\Phi`,
@@ -513,7 +513,7 @@ have the period of one year and are approximated using trigonometric expansions 
 Trigonometric expansions for `\bar d / d` and `\delta` mentioned above are not applicable
 when modeling times far from present; in this case we use more general (and more
 computationally expensive) formulas (:cite:`Liou2002`, chapter 2). Set
-:config:`surface.debm_simple.paleo.enabled` to switch to using the "paleo" mode.
+:config:`orbital_parameters.paleo.enabled` to switch to using the "paleo" mode.
 
 In this case
 
@@ -524,15 +524,15 @@ In this case
 
 The values of these three orbital parameters (eccentricity, obliquity, perihelion
 longitude) are set using the following configuration parameters (prefix:
-``surface.debm_simple.paleo.``):
+``orbital_parameters.paleo.``):
 
 .. pism-parameters::
-   :prefix: surface.debm_simple.paleo.
+   :prefix: orbital_parameters.paleo.
    :exclude: .+(enabled|file|periodic)$
 
 Alternatively, PISM can read in scalar time series of variables :var:`eccentricity`,
 :var:`obliquity`, and :var:`perihelion_longitude` from a file specified using
-:config:`surface.debm_simple.paleo.file`.
+:config:`orbital_parameters.paleo.file`.
 
 .. note::
 
@@ -555,8 +555,8 @@ Alternatively, PISM can read in scalar time series of variables :var:`eccentrici
    .. This implies that the true anomaly of the earth in the heliocentric system is the same
       as the true anomaly of the sun in the geocentric system.
 
-   The parameter :config:`surface.debm_simple.paleo.perihelion_longitude` and the
-   ``perihelion_longitude`` variable in :config:`surface.debm_simple.paleo.file` should
+   The parameter :config:`orbital_parameters.paleo.perihelion_longitude` and the
+   ``perihelion_longitude`` variable in :config:`orbital_parameters.paleo.file` should
    use the *geocentric* definition, i.e. the one equal to approximately `283^{\circ}` on
    January 1, 2000.
 
@@ -668,7 +668,7 @@ step length.
 
 Here `\sigma` can be
 
-- constant in time and space (the default; set using :config:`surface.debm_simple.std_dev`),
+- constant in time and space (the default; set using :config:`surface.debm_simple.std_dev.value`),
 - read from a file containing the two dimensional variable :var:`air_temp_sd` that can be
   constant in time or time-dependent (units: *kelvin*; specify the file name using
   :config:`surface.debm_simple.std_dev.file`), or
@@ -714,7 +714,7 @@ values.
 
    * - `\sigma`
      - :eq:`eq-debm-t-eff`
-     - :config:`surface.debm_simple.std_dev` and others at the end of
+     - :config:`surface.debm_simple.std_dev.value` and others at the end of
        :ref:`sec-debm-temperature-driven-melt`
 
    * - `\theta`
@@ -788,10 +788,10 @@ approximated using centred differences of the ice surface elevation (one-sided a
 edge).
 
 The *terrain horizon* `H(A, x, y)` is the elevation angle of the local skyline in azimuth
-direction `A`. For each of :config:`surface.debm_enhanced.horizon.n_directions` azimuths
+direction `A`. For each of :config:`terrain_shaded_insolation.horizon.n_directions` azimuths
 `A_k = 2\pi k / N_{\text{dir}}` a ray is marched outward from the cell in steps of
-:config:`surface.debm_enhanced.horizon.step` up to
-:config:`surface.debm_enhanced.horizon.max_distance`, sampling the surface elevation
+:config:`terrain_shaded_insolation.horizon.step` up to
+:config:`terrain_shaded_insolation.horizon.max_distance`, sampling the surface elevation
 `z(d)` using bilinear interpolation. The horizon is the largest elevation angle along the
 ray,
 
@@ -801,7 +801,7 @@ ray,
    H(A_k, x, y) = \max_{d}\ \arctan\left(\frac{z(d) - z(x, y)}{d}\right),
 
 with rays stopped at the domain boundary. The horizon field is recomputed every
-:config:`surface.debm_enhanced.update_interval` as the geometry evolves (set it to `0` to
+:config:`terrain_shaded_insolation.update_interval` as the geometry evolves (set it to `0` to
 recompute every time step), and is available as the ``horizon`` diagnostic.
 
 Sun position
@@ -832,7 +832,7 @@ Terrain-shaded daily insolation
 
 The surface insolation that replaces `\bar S_{\Phi}` is the daily mean of a direct and a
 diffuse component. The hour angle is swept over a full day (so the result is independent of
-longitude), sampled at steps of :config:`surface.debm_enhanced.insolation_dt`:
+longitude), sampled at steps of :config:`terrain_shaded_insolation.dt`:
 
 .. math::
    :label: eq-debm-enhanced-insolation
@@ -850,8 +850,8 @@ with
    \quad \text{if } a > 0, \text{ else } 0,
    
 where `T = 86400\,\text{s}`, `S_0` is the solar constant
-(:config:`surface.debm_simple.solar_constant`), `f` is the diffuse fraction
-(:config:`surface.debm_enhanced.diffuse_fraction`), and `\sigma` is the sky-view factor.
+(:config:`constants.solar_constant`), `f` is the diffuse fraction
+(:config:`terrain_shaded_insolation.diffuse_fraction`), and `\sigma` is the sky-view factor.
 
 - The **direct beam** projects onto the tilted surface through the cosine of incidence
   `\hat{\mathbf n}\cdot\hat{\mathbf s}` (clamped at zero for back-facing slopes) and is set
@@ -870,16 +870,15 @@ afterwards by the dEBM-simple melt core, exactly as for `\bar S_{\Phi}` in
 Sky-view factor
 ###############
 
-When :config:`surface.debm_enhanced.use_sky_view_factor` is set (the default), the sky-view
+When :config:`terrain_shaded_insolation.diffuse_fraction` is not zero, the sky-view
 factor `\sigma(y, x)` --- the fraction of the overlying sky hemisphere visible from a cell,
 accounting for both the cell's own slope and the surrounding horizon --- is computed using
-the slope-corrected formulation of Dozier and Frew (1990) and stored as the
+the slope-corrected formulation of :cite:`Dozier1990` and stored as the
 ``sky_view_factor`` diagnostic. It enters the diffuse term of
 :eq:`eq-debm-enhanced-insolation`.
 
-If :config:`surface.debm_enhanced.use_sky_view_factor` is *not* set, the diffuse fraction
-`f` is forced to zero and :eq:`eq-debm-enhanced-insolation` reduces to pure terrain-shaded
-direct beam.
+If the diffuse fraction is zero :eq:`eq-debm-enhanced-insolation` reduces to pure
+terrain-shaded direct beam.
 
 Approximations
 ==============
@@ -893,16 +892,16 @@ Approximations
   boundaries and at sunrise/sunset.
 - A single declination and distance factor (the update-interval midpoint) are used across
   each update, and the horizon lags the evolving geometry between recomputations
-  (:config:`surface.debm_enhanced.update_interval`).
+  (:config:`terrain_shaded_insolation.update_interval`).
 - Rays are clamped at the domain boundary, so near-edge cells differ slightly from an
   offline pipeline that emits "no data" there.
 
 .. rubric:: Parameters
 
-Prefix: ``surface.debm_enhanced.``
+Prefix: ``terrain_shaded_insolation.``
 
 .. pism-parameters::
-   :prefix: surface.debm_enhanced.
+   :prefix: terrain_shaded_insolation.
 
 
                    

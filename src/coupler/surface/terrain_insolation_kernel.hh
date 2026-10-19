@@ -19,6 +19,8 @@
 #ifndef PISM_TERRAIN_INSOLATION_KERNEL_H
 #define PISM_TERRAIN_INSOLATION_KERNEL_H
 
+#include <vector>
+
 namespace pism {
 namespace surface {
 namespace terrain {
@@ -57,6 +59,7 @@ double ray_horizon(const double *dem, int Mx, int My, double dx, double dy,
 //! [0, 2*pi).
 void sun_position(double latitude, double declination, double hour_angle,
                   double &altitude, double &azimuth);
+
 
 //! Sky-view factor: the fraction of isotropic diffuse sky irradiance received by a tilted,
 //! horizon-obstructed surface relative to an unobstructed horizontal surface, in [0, 1].

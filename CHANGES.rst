@@ -3,22 +3,23 @@
 Changes since v2.3.0
 ====================
 
-- Add the `debm_enhanced` surface model: dEBM-simple with the insolation-driven melt
-  computed from a terrain-shaded surface-insolation field instead of the analytic
-  top-of-atmosphere parameterization. The terrain horizon and surface normals are computed
-  from the ice surface elevation and combined with PISM's analytic solar geometry to produce
-  the daily surface insolation. The horizon ray-casting is controlled by
-  `surface.debm_enhanced.horizon.*` (`n_directions`, `max_distance`, `step`)
-  and, because it depends on the evolving geometry, is recomputed every
-  `surface.debm_enhanced.update_interval` (default 10 years). The insolation is split into a
-  direct-beam component (terrain-shaded) and an isotropic diffuse component reduced by the
-  sky-view factor (slope-corrected Dozier & Frew, 1990); the diffuse share is
-  `surface.debm_enhanced.diffuse_fraction` (default 0.2) and the whole sky-view treatment can
-  be disabled with `surface.debm_enhanced.use_sky_view_factor` (reverting to pure direct
-  beam). The `insolation` (daily-mean top-of-atmosphere rate, in `W m-2`), `horizon`, and
-  `sky_view_factor` diagnostics are available; `sky_view_factor` only when
-  `surface.debm_enhanced.use_sky_view_factor` is set. All other parameters are shared with
-  `surface.debm_simple.*`.
+- Add a `terrain_shaded` insolation model to the `debm_simple` surface model; enable it by
+  setting `surface.debm_simple.insolation_model` to `terrain_shaded`. This replaces the
+  computation of the insolation-driven melt.
+
+  Terrain horizon altitude angle and surface normal vector are computed using modeled ice
+  surface elevation. The horizon altitude computation is controlled by parameters with the
+  prefix `terrain_shaded_insolation.horizon.*`. To reduce computational cost it is
+  recomputed every `terrain_shaded_insolation.update_interval` (default 10 years).
+
+  Insolation reaching the surface is split into a direct-beam component (terrain-shaded)
+  and an isotropic diffuse component reduced by the sky-view factor (slope-corrected
+  Dozier & Frew, 1990); the diffuse share is `terrain_shaded_insolation.diffuse_fraction`.
+  Setting it to zero reduces the model to pure direct beam.
+
+  The `insolation` (daily-mean insolation reaching the surface (rate), in `W m-2`),
+  `horizon`, and `sky_view_factor` diagnostics are available; `sky_view_factor` only when
+  `terrain_shaded_insolation.diffuse_fraction` is positive.
 - Add an `ismip7` surface model that uses the gradients but not the anomalies, and adds
   runoff. It is exposed to Python as `PISM.SurfaceISMIP7`.
 - Implement the Blatter hardness inversion (`pismi -stress_balance.model blatter -inv_design
@@ -76,7 +77,6 @@ Changes since v2.3.0
   petsc4py at interpreter shutdown. Previously a failure such as a missing `input.file`
   could deadlock the run under some MPI implementations, so a batch job kept its nodes
   until the wall-clock limit. The traceback is now printed once, by rank 0.
-- Add a ISMP7 surface model that uses the gradients but not the anomalies, and adds runoff.
 - Allow the Blatter stress balance to restart from SSA velocities: if `uvel_sigma` and
   `vvel_sigma` are not present in the input file but `u_ssa` and `v_ssa` are, use the
   (vertically constant) SSA velocity as a depth-independent initial guess.
@@ -160,6 +160,9 @@ Changes since v2.3.0
   in an input file and PISM's internal time *if* PISM's calendar is different from the
   calendar in an input file. This resulted in a "shift" in time between intended time of a
   forcing and effective of a forcing.
+
+- Fix `issue 594`_: `pism_async_writer` and `pism_ismip7_writer` hanging when the
+  `netCDF4` package is built with parallel I/O support.
 
 Changes from 2.3.0 to 2.3.1
 ===========================
@@ -1382,6 +1385,7 @@ Miscellaneous
 .. _issue 568: https://github.com/pism/pism/issues/568
 .. _issue 569: https://github.com/pism/pism/issues/569
 .. _issue 509: https://github.com/pism/pism/issues/509
+.. _issue 594: https://github.com/pism/pism/issues/594
 .. _ocean models: http://www.pism.io/docs/climate_forcing/ocean.html
 .. _pull request 547: https://github.com/pism/pism/pull/547
 .. _YAC: https://dkrz-sw.gitlab-pages.dkrz.de/yac/index.html

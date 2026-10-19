@@ -1,4 +1,4 @@
-/* Copyright (C) 2014, 2015, 2016, 2017, 2019, 2021, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2014, 2015, 2016, 2017, 2019, 2021, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -20,10 +20,8 @@
 
 #include "pism/util/NetCDFConfig.hh"
 #include "VariableMetadata.hh"
-#include "pism/util/io/IO_Flags.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/io/File.hh"
-#include "pism/util/io/OutputWriter.hh"
 #include "pism/util/io/io_helpers.hh"
 
 namespace pism {

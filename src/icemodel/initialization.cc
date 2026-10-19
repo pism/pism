@@ -154,7 +154,10 @@ void IceModel::model_state_setup(InputOptions input_options) {
 
   // Now surface elevation is initialized, so we can initialize surface models (some use
   // elevation-based parameterizations of surface temperature and/or mass balance).
-  m_surface->init(m_geometry);
+  {
+    surface::Inputs inputs{&m_geometry};
+    m_surface->init(inputs);
+  }
 
   if (m_subglacial_hydrology) {
 

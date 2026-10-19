@@ -38,6 +38,10 @@ class AtmosphereModel;
 //! layer.
 namespace surface {
 
+struct Inputs {
+  const Geometry *geometry;
+};
+
 //! \brief The interface of PISM's surface models.
 class SurfaceModel : public Component {
 public:
@@ -47,10 +51,10 @@ public:
 
   virtual ~SurfaceModel() = default;
 
-  void init(const Geometry &geometry);
+  void init(const Inputs &inputs);
 
   // the interface:
-  void update(const Geometry &geometry, double t, double dt);
+  void update(const Inputs &inputs, double t, double dt);
 
   const array::Scalar& accumulation() const;
   const array::Scalar& layer_mass() const;
@@ -72,8 +76,8 @@ protected:
   virtual const array::Scalar& runoff_impl() const;
   virtual const array::Scalar& temperature_impl() const;
 
-  virtual void init_impl(const Geometry &geometry);
-  virtual void update_impl(const Geometry &geometry, double t, double dt);
+  virtual void init_impl(const Inputs &inputs);
+  virtual void update_impl(const Inputs &inputs, double t, double dt);
 
   virtual std::set<VariableMetadata> state_impl() const;
   virtual void write_state_impl(const OutputFile &output) const;
