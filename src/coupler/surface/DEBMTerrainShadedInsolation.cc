@@ -62,11 +62,17 @@ namespace surface {
 
 void DEBMTerrainShadedInsolation::init_impl(const InputOptions &options,
                                             const array::Scalar1 &surface_elevation) {
-
-  // FIXME: fix restarting using bootstrapping + regridding: it has to match restarting
-  // with INIT_RESTART, but does not since so far we cannot recover m_t_last when
-  // regridding horizon altitude.
-
+  // initialize m_t_last
+  //
+  // note: this takes care of cases of
+  //
+  // - re-starting from a PISM output file using "-input.file in.nc"
+  // - re-starting from a PISM output file using "-input.file in.nc -bootstrap -regrid_file in.nc",
+  //   i.e. same as "-input.file in.nc", but with bootstrapping
+  //
+  // The remaining case "-input.file in.nc -bootstrap -regrid_file in2.nc", i.e.
+  // regridding from a different file, will use t_last from in.nc, which may not be what
+  // the user intends. I don't know how to make this better, though.
   if (options.type == INIT_RESTART) {
     File input_file(m_grid->com, options.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
@@ -76,16 +82,41 @@ void DEBMTerrainShadedInsolation::init_impl(const InputOptions &options,
     auto t =
         io::read_timeseries_variable(input_file, m_time_name, time().units(), m_sys, t_last, 1);
     m_t_last = t[0];
+  } else if (options.type == INIT_BOOTSTRAP) {
+    File input_file(m_grid->com, options.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 
+    auto t_length = input_file.nrecords(m_time_name, "" /*no standard name*/, m_sys);
+    auto t_last   = t_length > 0 ? t_length - 1 : 0;
+
+    if (input_file.variable_exists(m_time_name)) {
+      auto t =
+          io::read_timeseries_variable(input_file, m_time_name, time().units(), m_sys, t_last, 1);
+      m_t_last = t[0];
+    } else {
+      m_t_last = time().current();
+    }
+  } else {
+    m_t_last = time().current();
+  }
+
+  // initialize m_horizon
+  if (options.type == INIT_RESTART) {
     m_log->message(2, "    reading %s from %s ... \n",
-                 m_horizon->metadata().get_string("long_name").c_str(), options.filename.c_str());
+                   m_horizon->metadata().get_string("long_name").c_str(), options.filename.c_str());
     // re-starting
     m_horizon->read(options.filename, options.record); // fails if not found!
   } else {
-    update_shading(surface_elevation);
-    update_daily_insolation(time().current(), surface_elevation);
-    m_t_last = time().current();
+    auto n = m_horizon->state_counter();
+    regrid("terrain-shaded insolation", *m_horizon, REGRID_WITHOUT_REGRID_VARS);
+    if (n == m_horizon->state_counter()) {
+      // m_horizon was not read in using re-gridding: compute using current surface elevation
+      update_shading(surface_elevation);
+      // update m_t_last since we just updated m_horizon:
+      m_t_last = time().current();
+    }
   }
+
+  update_daily_insolation(time().current(), surface_elevation);
 }
 
 void DEBMTerrainShadedInsolation::update_impl(double t, double dt,
@@ -343,7 +374,7 @@ private:
 void DEBMTerrainShadedInsolation::update_shading(const array::Scalar1 &surface_elevation) {
   auto log = m_grid->ctx()->log();
 
-  log->message(2, "* Updating the horizon map...\n");
+  log->message(2, "    Updating the horizon altitude map...\n");
   double start = get_time(m_grid->com);
 
   const auto &profiling = m_grid->ctx()->profiling();
@@ -428,7 +459,7 @@ void DEBMTerrainShadedInsolation::update_shading(const array::Scalar1 &surface_e
   profiling.end("insolation.horizon_altitude");
 
   double end = get_time(m_grid->com);
-  log->message(2, "* Updated the horizon map in %f s.\n", end - start);
+  log->message(2, "    Updated the horizon altitude map in %f s.\n", end - start);
 }
 
 //! Periodic linear interpolation of a horizon column at the given azimuth (radians).
