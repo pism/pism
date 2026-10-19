@@ -4,6 +4,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Build, install, run
 
+This requires the `pism` conda environment installed using `conda env create -f environment-dev.yml`.
+
+- Build: `CMAKE_BUILD_PARALLEL_LEVEL=8 python -m pip install --no-build-isolation -v .`
+- Test: `cmake -S . -B build-dev -DPism_BUILD_PYTHON_BINDINGS=ON && cmake --build build-dev -j &&  ctest --test-dir build-dev`
+
+
+This is the traditional way.
+
 ```bash
 cmake -B build [options]            # configure
 cmake --build build -j              # compile
