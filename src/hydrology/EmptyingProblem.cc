@@ -187,7 +187,6 @@ void EmptyingProblem::update(const Geometry &geometry,
                              bool recompute_potential) {
 
   const double
-    eps = 1e-16,
     cell_area    = m_grid->cell_area(),
     u_max        = m_speed,
     v_max        = m_speed,
@@ -277,9 +276,13 @@ void EmptyingProblem::update(const Geometry &geometry,
         m_tmp(i, j) = 0.0;
       }
 
-      if (m_tmp(i, j) < -eps) {
-        throw RuntimeError::formatted(PISM_ERROR_LOCATION, "W(%d, %d) = %f < 0",
-                                      i, j, m_tmp(i, j));
+      // The explicit upwind emptying scheme is monotone only up to roundoff and its
+      // fixed-speed CFL estimate, so it can undershoot slightly negative. Water thickness
+      // cannot be negative, so clamp it to zero. (We must NOT throw here: this loop runs on
+      // every rank, and a negative would occur only on the rank owning that cell, so a
+      // per-rank throw would deadlock the other ranks at the next ghost exchange.)
+      if (m_tmp(i, j) < 0.0) {
+        m_tmp(i, j) = 0.0;
       }
 
       // accumulate the water flux
