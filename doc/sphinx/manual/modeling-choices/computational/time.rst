@@ -104,6 +104,12 @@ interpretation of "monthly" and "yearly" reporting with :opt:`-spatial_times`,
    This does **not** affect unit conversion: the factor used to convert `m/s` to
    `m/\text{year}` does not depend on the calendar choice.
 
+.. caution::
+
+   Mixing calendars across forcings is currently not supported. Make sure all
+   time-dependent forcings (atmosphere, surface, ocean, etc) use the calendar selected
+   using :config:`time.calendar`.
+
 .. list-table:: Calendars supported by PISM. Please see CalCalcs_ documentation for
                 details
    :name: tab-calendars
