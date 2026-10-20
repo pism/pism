@@ -5,3 +5,7 @@ table.docutils.citation td.label {
 table.docutils.citation td {
     text-align: justify;
 }
+
+dl.field-list > dt {
+    word-break: keep-all;
+}
