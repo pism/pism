@@ -3,6 +3,10 @@
 Changes since v2.3.0
 ====================
 
+- Add configuration parameter `time.ignore_input_file` to simplify initialization when an
+  input file contains time information incompatible with current modeling choices (e.g.
+  uses a different calendar).
+
 - Add a `terrain_shaded` insolation model to the `debm_simple` surface model; enable it by
   setting `surface.debm_simple.insolation_model` to `terrain_shaded`. This replaces the
   computation of the insolation-driven melt.
