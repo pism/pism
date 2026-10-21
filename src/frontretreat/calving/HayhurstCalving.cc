@@ -72,7 +72,7 @@ void HayhurstCalving::init() {
 }
 
 void HayhurstCalving::update(const array::CellType1 &cell_type,
-                             const array::Scalar &ice_thickness,
+                             const array::Scalar1 &ice_thickness,
                              const array::Scalar &sea_level,
                              const array::Scalar &bed_elevation) {
 
@@ -86,7 +86,7 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
     unit_scaling  = pow(1e-6, m_exponent_r) * convert(m_sys, 1.0, "m year-1", "m second-1");
 
   array::AccessScope list{&ice_thickness, &cell_type, &m_calving_rate, &sea_level,
-                               &bed_elevation};
+                          &bed_elevation};
 
   for (auto pt : m_grid->points()) {
     const int i = pt.i(), j = pt.j();
@@ -133,7 +133,7 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
                               (1.0 - pow(omega, 2.8)) *
                               pow(sigma_0 - m_sigma_threshold, m_exponent_r) * H);
 
-    } else { // end of "if (ice_free_ocean and next_to_floating)"
+    } else { // end of "if (icy and water_depth > 0)"
       m_calving_rate(i, j) = 0.0;
     }
   }   // end of loop over grid points
@@ -155,7 +155,8 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
     if (cell_type.ice_free(i, j) and cell_type.next_to_ice(i, j) ) {
 
       auto R = m_calving_rate.star(i, j);
-      auto M = cell_type.star(i, j);
+      auto M = cell_type.star_int(i, j);
+      auto H = ice_thickness.star(i, j);
 
       int N = 0;
       double R_sum = 0.0;
@@ -163,11 +164,14 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
       for (auto d : {North, East, South, West}) {
         if (mask::icy(M[d])) {
           R_sum += R[d];
+
           // Get ice thickness from the neighboring icy cell
-          if (d == North && j+1 < m_grid->My()) H_sum += ice_thickness(i, j+1);
-          else if (d == East && i+1 < m_grid->Mx()) H_sum += ice_thickness(i+1, j);
-          else if (d == South && j-1 >= 0) H_sum += ice_thickness(i, j-1);
-          else if (d == West && i-1 >= 0) H_sum += ice_thickness(i-1, j);
+          if ((d == North and j + 1 < (int)m_grid->My()) or
+              (d == East  and i + 1 < (int)m_grid->Mx()) or
+              (d == South and j - 1 >= 0) or
+              (d == West  and i - 1 >= 0)) {
+            H_sum += H[d];
+          }
           N++;
         }
       }

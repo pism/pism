@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2021, 2022, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -37,7 +37,7 @@ public:
 
   void init();
 
-  void update(const array::CellType1 &cell_type, const array::Scalar &ice_thickness,
+  void update(const array::CellType1 &cell_type, const array::Scalar1 &ice_thickness,
               const array::Scalar &sea_level, const array::Scalar &bed_elevation);
 
   const array::Scalar &calving_rate() const;
