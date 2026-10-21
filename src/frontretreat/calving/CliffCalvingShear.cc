@@ -48,12 +48,9 @@ void CliffCalvingShear::init() {
   m_log->message(2,
                  "* Initializing the 'Shear stress cliff calving' mechanism...\n");
 
-  m_C0 = m_config->get_number("calving.cliff_calving_shear.C0");
-  m_max_cliff_calving_rate = m_config->get_number("calving.cliff_calving_shear.max_cliff_calving_rate");
-
-  // Convert from m/year to m/s
-  m_C0 = convert(m_sys, m_C0, "m year-1", "m second-1");
-  m_max_cliff_calving_rate = convert(m_sys, m_max_cliff_calving_rate, "m year-1", "m second-1");
+  m_C0 = m_config->get_number("calving.cliff_calving_shear.C0", "m second-1");
+  m_max_cliff_calving_rate =
+      m_config->get_number("calving.cliff_calving_shear.max_cliff_calving_rate", "m second-1");
 
   m_log->message(2,
                  "  Scaling factor C0: %3.3f m/yr.\n",
@@ -69,22 +66,19 @@ void CliffCalvingShear::init() {
                    "  Using floatation thickness for cliff height calculation.\n");
   }
 
-  if (fabs(m_grid->dx() - m_grid->dy()) / std::min(m_grid->dx(), m_grid->dy()) > 1e-2) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "-calving cliff_calving_shear using a non-square grid cell is not implemented (yet);\n"
-                                  "dx = %f, dy = %f, relative difference = %f",
-                                  m_grid->dx(), m_grid->dy(),
-                                  fabs(m_grid->dx() - m_grid->dy()) / std::max(m_grid->dx(), m_grid->dy()));
+  double dx = m_grid->dx(), dy = m_grid->dy();
+  if (fabs(dx - dy) / std::min(dx, dy) > 1e-2) {
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION,
+        "-calving cliff_calving_shear using a non-square grid cell is not implemented (yet);\n"
+        "dx = %f, dy = %f, relative difference = %f",
+        dx, dy, fabs(dx - dy) / std::max(dx, dy));
   }
-
 }
 
 void CliffCalvingShear::update(const array::CellType1 &cell_type,
-                             const array::Scalar &ice_thickness,
-                             const array::Scalar &sea_level,
-                             const array::Scalar &bed_elevation) {
-
-  using std::min;
+                               const array::Scalar1 &ice_thickness, const array::Scalar &sea_level,
+                               const array::Scalar &bed_elevation) {
 
   const double
     ice_density   = m_config->get_number("constants.ice.density"),
@@ -93,10 +87,11 @@ void CliffCalvingShear::update(const array::CellType1 &cell_type,
   GeometryCalculator gc(*m_config);
 
   array::AccessScope list{&ice_thickness, &cell_type, &m_calving_rate, &sea_level,
-                               &bed_elevation};
+                          &bed_elevation};
 
   // Initialize tracking variables
-  int num_calving_cells = 0;
+  // FIXME: the "log summary" will not work correctly in parallel
+  int num_calving_cells   = 0;
   int num_extreme_calving = 0;
   double max_calving_rate = 0.0;
   int max_rate_i = 0, max_rate_j = 0;
@@ -109,17 +104,12 @@ void CliffCalvingShear::update(const array::CellType1 &cell_type,
     // have grounded ice neighbors after the mass continuity step
     if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_grounded_ice(i, j)) {
       // Get the ice thickness, surface elevation, and mask in all neighboring grid cells
-      stencils::Star<double> H;   // TO DO: change H to type Scalar1 (array::Scalar1) then we can use the star stencil directly, but need  to change this also in the call to the calving update function!!!
-      H.c = ice_thickness(i, j);
-      H.e = ice_thickness(i+1, j);
-      H.w = ice_thickness(i-1, j);
-      H.n = ice_thickness(i, j+1);
-      H.s = ice_thickness(i, j-1);
+      auto H = ice_thickness.star(i, j);
       stencils::Star<double> surface_elevation;
       for (auto d : {North, East, South, West}) {
         surface_elevation[d] = H[d] + bed_elevation(i, j);
       }
-      stencils::Star<int> M = cell_type.star_int(i, j);
+      auto M = cell_type.star_int(i, j);
 
       // Calculate cliff height using either floatation thickness calculated from water depth
       // or threshold thickness calculated from ice thickness and surface elevation of neighbouring icy cells.
@@ -147,23 +137,25 @@ void CliffCalvingShear::update(const array::CellType1 &cell_type,
       }
 
       // Calculate the parameters for the calving law given in [\ref Schlemm2019]
-      const double F = cliff_height,
-                  Fs = 115 * pow(w-0.356, 4) + 21,
-                  Fc = 75-49*w,
-                  s = 0.17 * pow(9.1, w) + 1.76,
-                  Fscaled = std::max(0.0,F-Fc)/Fs;
+      // clang-format off
+      const double
+        F  = cliff_height,
+        Fs = 115 * pow(w - 0.356, 4) + 21,
+        Fc = 75-49*w,
+        s  = 0.17 * pow(9.1, w) + 1.76,
+        Fscaled = std::max(0.0, F - Fc) / Fs;
+      // clang-format on
 
       // Calculate the calving rate [\ref Schlemm2019] if cell is grounded
-      double C_unbuttressed;
-      C_unbuttressed = (mask::grounded_ice(m) ?
-                         m_C0 * pow(Fscaled, s):
-                         0.0);
+
+      double C_unbuttressed = (mask::grounded_ice(m) ? m_C0 * pow(Fscaled, s) : 0.0);
 
       // Apply mélange buttressing [\ref Schlemm2021]
       // check value of max_cliff_calving to prevent division by zero
-      m_calving_rate(i, j) =  (std::abs(m_max_cliff_calving_rate) < 1e-12 ?
-                        0.0 :
-                        C_unbuttressed / (1.0 + C_unbuttressed / m_max_cliff_calving_rate));
+      m_calving_rate(i, j) =
+          (std::abs(m_max_cliff_calving_rate) < 1e-12 ?
+               0.0 :
+               C_unbuttressed / (1.0 + C_unbuttressed / m_max_cliff_calving_rate));
 
       // Track calving statistics
       if (m_calving_rate(i, j) > 0.0) {
@@ -214,7 +206,7 @@ const array::Scalar &CliffCalvingShear::calving_rate() const {
 }
 
 DiagnosticList CliffCalvingShear::diagnostics_impl() const {
-  return {{"cliff_calving_shear_rate", Diagnostic::wrap(m_calving_rate)}};
+  return { { "cliff_calving_shear_rate", Diagnostic::wrap(m_calving_rate) } };
 }
 
 } // end of namespace calving

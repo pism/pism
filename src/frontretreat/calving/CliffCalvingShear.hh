@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2021, 2022, 2025 PISM Authors
+/* Copyright (C) 2016--2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -37,7 +37,7 @@ public:
 
   void init();
 
-  void update(const array::CellType1 &cell_type, const array::Scalar &ice_thickness,
+  void update(const array::CellType1 &cell_type, const array::Scalar1 &ice_thickness,
               const array::Scalar &sea_level, const array::Scalar &bed_elevation);
 
   const array::Scalar & calving_rate() const;
@@ -45,13 +45,17 @@ public:
 protected:
   DiagnosticList diagnostics_impl() const;
   
-protected:
-  array::Scalar1 m_calving_rate;  //!< calving rate field
+  //! calving rate field
+  array::Scalar1 m_calving_rate;
 
-  double m_C0,                     //!< scaling factor for calving rate
-         m_max_cliff_calving_rate; //!< maximum cliff calving rate due to mélange buttressing
+  //! scaling factor for calving rate
+  double m_C0;
 
-  bool m_use_floatation_thickness; //!< if true, use floatation thickness instead of modelled ice thickness
+  //! maximum cliff calving rate due to mélange buttressing
+  double m_max_cliff_calving_rate;
+
+  //! if true, use floatation thickness instead of modelled ice thickness
+  bool m_use_floatation_thickness;
 };
 
 } // end of namespace calving
