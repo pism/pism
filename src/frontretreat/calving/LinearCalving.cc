@@ -108,8 +108,7 @@ void LinearCalving::update(const array::CellType1 &cell_type,
 
   const double
     ice_density   = m_config->get_number("constants.ice.density"),
-    water_density = m_config->get_number("constants.sea_water.density"),
-    gravity       = m_config->get_number("constants.standard_gravity");
+    water_density = m_config->get_number("constants.sea_water.density");
 
   GeometryCalculator gc(*m_config);
 
