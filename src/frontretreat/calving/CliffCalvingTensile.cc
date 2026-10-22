@@ -19,6 +19,7 @@
 
 #include "pism/frontretreat/calving/CliffCalvingTensile.hh"
 
+#include "pism/geometry/part_grid_threshold_thickness.hh"
 #include "pism/util/Grid.hh"
 #include "pism/util/error_handling.hh"
 #include "pism/util/array/CellType.hh"
@@ -26,7 +27,7 @@
 #include "pism/util/stencils.hh"
 #include "pism/util/Mask.hh"
 #include "pism/util/Logger.hh"
-#include "pism/geometry/part_grid_threshold_thickness.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace calving {
@@ -85,12 +86,10 @@ void CliffCalvingTensile::update(const array::CellType1 &cell_type,
                            &bed_elevation };
 
   // Add statistics tracking
-  // FIXME: the "log summary" will not work correctly in parallel
   double max_calving_rate = 0.0;
   double max_cliff_height = 0.0;
   int num_calving_cells = 0;
   int num_extreme_calving = 0;
-  int max_rate_i = 0, max_rate_j = 0;
 
   for (auto pt : m_grid->points()) {
     const int i = pt.i(), j = pt.j();
@@ -141,15 +140,10 @@ void CliffCalvingTensile::update(const array::CellType1 &cell_type,
         if (m_calving_rate(i, j) > max_calving_rate) {
           max_calving_rate = m_calving_rate(i, j);
           max_cliff_height = cliff_height;
-          max_rate_i = i;
-          max_rate_j = j;
         }
         // Log very high calving rates that might cause instability
         if (m_calving_rate(i, j) > 1e-5) {  // More than ~315 m/year
           num_extreme_calving++;
-          m_log->message(3,
-                     "! High tensile cliff calving rate at (i,j) = (%d,%d): %.2f m/year (H=%.1f m)\n",
-                     i, j, m_calving_rate(i, j) * 31557600.0, cliff_height);
         }
       }
 
@@ -159,21 +153,26 @@ void CliffCalvingTensile::update(const array::CellType1 &cell_type,
   }   // end of loop over grid points
 
   // Print summary statistics
-  if (num_calving_cells > 0) {
-    m_log->message(3,
-                 "* Tensile cliff calving summary:\n"
-                 "  - Active calving cells: %d\n"
-                 "  - Cells with extreme rates (>315 m/year): %d\n"
-                 "  - Maximum rate: %.2f m/year at (i,j)=(%d,%d)\n"
-                 "  - Maximum cliff height: %.1f m\n",
-                 num_calving_cells,
-                 num_extreme_calving,
-                 max_calving_rate * 365.25,
-                 max_rate_i, max_rate_j,
-                 max_cliff_height);
-  } else {
-    m_log->message(3, "* No active tensile cliff calving cells at this time step (maximum cliff height: %.1f m).\n",
-                   max_cliff_height);
+  {
+    num_calving_cells = GlobalSum(m_grid->com, num_calving_cells);
+    if (num_calving_cells > 0) {
+      num_extreme_calving = GlobalSum(m_grid->com, num_extreme_calving);
+      max_calving_rate    = GlobalMax(m_grid->com, max_calving_rate);
+      max_cliff_height    = GlobalMax(m_grid->com, max_cliff_height);
+      m_log->message(3,
+                     "* Tensile cliff calving summary:\n"
+                     "  - Active calving cells: %d\n"
+                     "  - Cells with extreme rates (>315 m/year): %d\n"
+                     "  - Maximum rate: %.2f m/year\n"
+                     "  - Maximum cliff height: %.1f m\n",
+                     num_calving_cells, num_extreme_calving, max_calving_rate * 365.25,
+                     max_cliff_height);
+    } else {
+      m_log->message(
+          3,
+          "* No active tensile cliff calving cells at this time step (maximum cliff height: %.1f m).\n",
+          max_cliff_height);
+    }
   }
 }
 

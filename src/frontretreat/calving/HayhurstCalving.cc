@@ -24,6 +24,7 @@
 #include "pism/util/array/CellType.hh"
 #include "pism/util/Logger.hh"
 #include "pism/util/stencils.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace calving {
@@ -147,7 +148,6 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
   // Add statistics tracking for ice-ocean boundary cells
   double max_calving_rate = 0.0;
   double max_cliff_height = 0.0;
-  int max_rate_i = 0, max_rate_j = 0;
 
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
@@ -184,20 +184,22 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
         if (m_calving_rate(i, j) > max_calving_rate) {
           max_calving_rate = m_calving_rate(i, j);
           max_cliff_height = avg_H;
-          max_rate_i = i;
-          max_rate_j = j;
         }
       }
     }
-  }
+  } // end of the loop over grid points
 
   // Print summary statistics
-  if (max_calving_rate > 0.0) {
-    m_log->message(3,
-                "* Hayhurst calving summary: max rate = %.2f m/year at (i,j) = (%d,%d), max cliff height = %.1f m\n",
-                max_calving_rate * 31557600.0, max_rate_i, max_rate_j, max_cliff_height);
-  } else {
-    m_log->message(3, "* No active Hayhurst calving cells at this time step.\n");
+  {
+    max_calving_rate    = GlobalMax(m_grid->com, max_calving_rate);
+    if (max_calving_rate > 0.0) {
+      max_cliff_height    = GlobalMax(m_grid->com, max_cliff_height);
+      m_log->message(
+          3, "* Hayhurst calving summary: max rate = %.2f m/year, max cliff height = %.1f m\n",
+          max_calving_rate * 31557600.0, max_cliff_height);
+    } else {
+      m_log->message(3, "* No active Hayhurst calving cells at this time step.\n");
+    }
   }
 }
 

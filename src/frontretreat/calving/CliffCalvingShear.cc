@@ -27,6 +27,7 @@
 #include "pism/util/Mask.hh"
 #include "pism/util/Logger.hh"
 #include "pism/geometry/part_grid_threshold_thickness.hh"
+#include "pism/util/pism_utilities.hh"
 
 namespace pism {
 namespace calving {
@@ -85,22 +86,20 @@ void CliffCalvingShear::update(const array::CellType1 &cell_type,
 
   GeometryCalculator gc(*m_config);
 
-  array::AccessScope list{&ice_thickness, &cell_type, &m_calving_rate, &sea_level,
-                          &bed_elevation};
+  array::AccessScope list{ &ice_thickness, &cell_type, &m_calving_rate, &sea_level,
+                           &bed_elevation };
 
   // Initialize tracking variables
-  // FIXME: the "log summary" will not work correctly in parallel
   int num_calving_cells   = 0;
   int num_extreme_calving = 0;
   double max_calving_rate = 0.0;
-  int max_rate_i = 0, max_rate_j = 0;
   double max_cliff_height = 0.0;
 
   for (auto pt : m_grid->points()) {
     const int i = pt.i(), j = pt.j();
 
-    // Find partially filled or empty grid boxes on the icefree ocean, which
-    // have grounded ice neighbors after the mass continuity step
+    // Find partially filled or empty grid boxes on the ice-free ocean that have grounded
+    // ice neighbors
     if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_grounded_ice(i, j)) {
       // Get the ice thickness, surface elevation, and mask in all neighboring grid cells
       auto H = ice_thickness.star(i, j);
@@ -110,26 +109,33 @@ void CliffCalvingShear::update(const array::CellType1 &cell_type,
       }
       auto M = cell_type.star_int(i, j);
 
-      // Calculate cliff height using either floatation thickness calculated from water depth
-      // or threshold thickness calculated from ice thickness and surface elevation of neighbouring icy cells.
+      // Calculate cliff height using either floatation thickness calculated from water
+      // depth or threshold thickness calculated from ice thickness and surface elevation
+      // of neighboring icy cells.
       const double water_depth = sea_level(i, j) - bed_elevation(i, j);
       double cliff_height;
       double w;
-      int m;
+      int mask;
       if (m_use_floatation_thickness) {
         // Calculate floatation thickness: thickness of ice that would float in this water depth
         const double H_flotation = water_depth * (water_density / ice_density);
+
         // Calculate mask of the partially filled grid cell where we apply calving
-        m = gc.mask(sea_level(i, j), bed_elevation(i, j), H_flotation);
+        mask = gc.mask(sea_level(i, j), bed_elevation(i, j), H_flotation);
+
         // Calculate cliff height and relative water depth using floatation thickness
         cliff_height = H_flotation - water_depth;
         w = water_depth / H_flotation;
       } else {
         // Get the ice thickness in the partially filled grid cell where we apply calving.
-        // It is calculated as the average of the ice thickness and surface elevation of the adjacent icy cells.
-        const double H_threshold = part_grid_threshold_thickness(M, H, surface_elevation, bed_elevation(i, j));
+        // It is calculated as the average of the ice thickness and surface elevation of
+        // the adjacent icy cells.
+        const double H_threshold =
+            part_grid_threshold_thickness(M, H, surface_elevation, bed_elevation(i, j));
+
         // Calculate mask of the partially filled grid cell where we apply calving
-        m = gc.mask(sea_level(i, j), bed_elevation(i, j), H_threshold);
+        mask = gc.mask(sea_level(i, j), bed_elevation(i, j), H_threshold);
+
         // Calculate cliff height and relative water depth using threshold thickness
         cliff_height = H_threshold - water_depth;
         w = water_depth / H_threshold;
@@ -138,18 +144,18 @@ void CliffCalvingShear::update(const array::CellType1 &cell_type,
       // Calculate the parameters for the calving law given in [\ref Schlemm2019]
       // clang-format off
       const double
-        F  = cliff_height,
-        Fs = 115 * pow(w - 0.356, 4) + 21,
-        Fc = 75-49*w,
-        s  = 0.17 * pow(9.1, w) + 1.76,
+        F       = cliff_height,
+        Fs      = 115 * pow(w - 0.356, 4) + 21,
+        Fc      = 75 - 49 * w,
+        s       = 0.17 * pow(9.1, w) + 1.76,
         Fscaled = std::max(0.0, F - Fc) / Fs;
       // clang-format on
 
       // Calculate the calving rate [\ref Schlemm2019] if cell is grounded
-
-      double C_unbuttressed = (mask::grounded_ice(m) ? m_C0 * pow(Fscaled, s) : 0.0);
+      double C_unbuttressed = (mask::grounded_ice(mask) ? m_C0 * pow(Fscaled, s) : 0.0);
 
       // Apply mélange buttressing [\ref Schlemm2021]
+      //
       // check value of max_cliff_calving to prevent division by zero
       m_calving_rate(i, j) =
           (std::abs(m_max_cliff_calving_rate) < 1e-12 ?
@@ -169,8 +175,6 @@ void CliffCalvingShear::update(const array::CellType1 &cell_type,
 
         if (rate_per_year > convert(m_sys, max_calving_rate, "m second-1", "m year-1")) {
           max_calving_rate = m_calving_rate(i, j);
-          max_rate_i = i;
-          max_rate_j = j;
         }
 
         // Track maximum cliff height
@@ -182,21 +186,26 @@ void CliffCalvingShear::update(const array::CellType1 &cell_type,
   }   // end of loop over grid points
 
   // Log summary
-  if (num_calving_cells > 0) {
-    m_log->message(3,
-                 "* Shear cliff calving summary:\n"
-                 "  - Active calving cells: %d\n"
-                 "  - Cells with extreme rates (>315 m/year): %d\n"
-                 "  - Maximum rate: %.2f m/year at (i,j)=(%d,%d)\n"
-                 "  - Maximum cliff height: %.1f m\n",
-                 num_calving_cells,
-                 num_extreme_calving,
-                 convert(m_sys, max_calving_rate, "m second-1", "m year-1"),
-                 max_rate_i, max_rate_j,
-                 max_cliff_height);
-  } else {
-    m_log->message(3, "* No active shear cliff calving cells at this time step (maximum cliff height: %.1f m).\n",
-                   max_cliff_height);
+  {
+    num_calving_cells = GlobalSum(m_grid->com, num_calving_cells);
+    if (num_calving_cells > 0) {
+      num_extreme_calving = GlobalSum(m_grid->com, num_extreme_calving);
+      max_calving_rate    = GlobalMax(m_grid->com, max_calving_rate);
+      max_cliff_height    = GlobalMax(m_grid->com, max_cliff_height);
+      m_log->message(3,
+                     "* Shear cliff calving summary:\n"
+                     "  - Active calving cells: %d\n"
+                     "  - Cells with extreme rates (>315 m/year): %d\n"
+                     "  - Maximum rate: %.2f m/year\n"
+                     "  - Maximum cliff height: %.1f m\n",
+                     num_calving_cells, num_extreme_calving,
+                     convert(m_sys, max_calving_rate, "m second-1", "m year-1"), max_cliff_height);
+    } else {
+      m_log->message(
+          3,
+          "* No active shear cliff calving cells at this time step (maximum cliff height: %.1f m).\n",
+          max_cliff_height);
+    }
   }
 }
 
