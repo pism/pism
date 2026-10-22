@@ -63,7 +63,7 @@ ISMIP7::ISMIP7(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
     {
       m_mass_flux_reference =
           std::make_shared<array::Forcing>(m_grid, file, "climatic_mass_balance",
-                                           "", // no standard name
+                                           "land_ice_surface_specific_mass_balance_flux",
                                            buffer_size, opt.periodic);
 
       m_mass_flux_reference->metadata(0)
@@ -86,13 +86,14 @@ ISMIP7::ISMIP7(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
     {
       m_runoff_reference =
           std::make_shared<array::Forcing>(m_grid, file, "runoff_rate",
-                                           "", // no standard name
+                                           "land_ice_runoff_flux",
                                            buffer_size, opt.periodic);
 
       m_runoff_reference->metadata(0)
-          .long_name("reference runoff")
-          .units("kg m^-2 s^-1")
-          .output_units("kg m^-2 year^-1");
+        .long_name("reference runoff")
+        .standard_name("land_ice_runoff_flux")
+        .units("kg m^-2 s^-1")
+        .output_units("kg m^-2 year^-1");
     }
 
     
@@ -143,8 +144,7 @@ ISMIP7::ISMIP7(std::shared_ptr<const Grid> grid, std::shared_ptr<atmosphere::Atm
   }
 }
 
-void ISMIP7::init_impl(const Geometry &geometry) {
-  (void) geometry;
+void ISMIP7::init_impl(const Inputs &/*inputs*/) {
 
   m_log->message(2, "* Initializing the ISMIP7 surface model...\n");
 
@@ -178,10 +178,10 @@ void ISMIP7::init_impl(const Geometry &geometry) {
   }
 }
 
-void ISMIP7::update_impl(const Geometry &geometry, double t, double dt) {
+void ISMIP7::update_impl(const Inputs &inputs, double t, double dt) {
 
   // inputs
-  const array::Scalar &h       = geometry.ice_surface_elevation;
+  const array::Scalar &h       = inputs.geometry->ice_surface_elevation;
   const array::Scalar &h_ref   = m_surface_reference;
 
   array::Forcing &T_ref   = *m_temperature_reference;

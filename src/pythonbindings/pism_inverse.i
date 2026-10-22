@@ -12,6 +12,7 @@
 %{
 #include "inverse/IP_SSATaucForwardProblem.hh"
 #include "inverse/IP_SSAHardavForwardProblem.hh"
+#include "inverse/IP_BlatterForwardProblem.hh"
 #include "inverse/IP_BlatterHardavForwardProblem.hh"
 #include "inverse/IP_BlatterTaucForwardProblem.hh"
 #include "inverse/IPDesignVariableParameterization.hh"
@@ -110,6 +111,11 @@
 
 %template(_IP_SSAHardavTaoTikhonovSolver) pism::taoutil::TaoBasicSolver<pism::inverse::IP_SSAHardavTaoTikhonovProblem>;
 
+
+//################### IP_BlatterForwardProblem (base) ###############
+
+%shared_ptr(pism::inverse::IP_BlatterForwardProblem)
+%include "inverse/IP_BlatterForwardProblem.hh"
 
 //################### IP_BlatterTauc... #############################
 

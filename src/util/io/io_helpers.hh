@@ -28,7 +28,12 @@
 
 namespace pism {
 
+namespace array {
+class Array;
+}
+
 namespace units {
+class Unit;
 class System;
 }
 
@@ -65,10 +70,17 @@ void regrid_spatial_variable(const VariableMetadata &variable,
                              const Logger &log,
                              double *output);
 
+void regrid(const Config &config, const std::string &module_name,
+            array::Array &variable, bool regrid_by_default);
+
 void read_spatial_variable(const VariableMetadata &variable,
                            const Grid& grid, const File &file,
                            unsigned int time, double *output);
 
+/*!
+ * Read a 1D variable `name` from a `file`, converting data from units in the file to
+ * `units` using `unit_system`.
+ */
 std::vector<double> read_1d_variable(const File &file, const std::string &name,
                                      const std::string &units,
                                      std::shared_ptr<units::System> unit_system);
@@ -82,9 +94,12 @@ std::vector<double> read_bounds(const File &file, const std::string &bounds_vari
                                 const std::string &units,
                                 std::shared_ptr<units::System> unit_system);
 
-void read_time_info(std::shared_ptr<units::System> unit_system, const File &file,
-                    const std::string &time_name, const std::string &time_units,
-                    std::vector<double> &times, std::vector<double> &bounds);
+struct TimeInfo {
+  std::vector<double> times, bounds;
+};
+
+TimeInfo read_time_info(const units::Unit &time_units, const std::string &calendar, const File &file,
+                        const std::string &time_name);
 
 VariableMetadata read_attributes(const File &file, const std::string &variable_name,
                                  std::shared_ptr<units::System> unit_system);

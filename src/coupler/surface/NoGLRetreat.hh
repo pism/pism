@@ -1,4 +1,4 @@
-/* Copyright (C) 2021 PISM Authors
+/* Copyright (C) 2021, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -32,8 +32,8 @@ public:
 
   const array::Scalar& smb_adjustment() const;
 protected:
-  void init_impl(const Geometry &geometry);
-  void update_impl(const Geometry &geometry, double t, double dt);
+  void init_impl(const Inputs &inputs);
+  void update_impl(const Inputs &inputs, double t, double dt);
 
   const array::Scalar& mass_flux_impl() const;
   const array::Scalar& accumulation_impl() const;

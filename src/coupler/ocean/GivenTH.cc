@@ -72,7 +72,7 @@ GivenTH::GivenTH(std::shared_ptr<const Grid> g)
     m_theta_ocean = std::make_shared<array::Forcing>(m_grid,
                                                 file,
                                                 "theta_ocean",
-                                                "", // no standard name
+                                                "sea_water_potential_temperature",
                                                 buffer_size,
                                                 opt.periodic,
                                                 LINEAR);
@@ -80,7 +80,7 @@ GivenTH::GivenTH(std::shared_ptr<const Grid> g)
     m_salinity_ocean = std::make_shared<array::Forcing>(m_grid,
                                                    file,
                                                    "salinity_ocean",
-                                                   "", // no standard name
+                                                   "sea_water_salinity",
                                                    buffer_size,
                                                    opt.periodic,
                                                    LINEAR);

@@ -772,6 +772,11 @@ netcdf pism_config {
     pism_config:constants.sea_water.specific_heat_capacity_type = "number";
     pism_config:constants.sea_water.specific_heat_capacity_units = "Joule / (kg kelvin)";
 
+    pism_config:constants.solar_constant = 1361.0;
+    pism_config:constants.solar_constant_doc = "Mean solar electromagnetic radiation (total solar irradiance) per unit area :cite:`Kopp2011`";
+    pism_config:constants.solar_constant_type = "number";
+    pism_config:constants.solar_constant_units = "W m^-2";
+
     pism_config:constants.standard_gravity = 9.81;
     pism_config:constants.standard_gravity_doc = "acceleration due to gravity on Earth geoid";
     pism_config:constants.standard_gravity_type = "number";
@@ -1482,7 +1487,7 @@ netcdf pism_config {
     pism_config:inverse.adjoint.method_type = "keyword";
 
     pism_config:inverse.alternating_cycles = 0;
-    pism_config:inverse.alternating_cycles_doc = "Number of (tauc->hardav) alternation cycles in pismi.py; 0 = single-design-var run. (Parsed but not yet wired; the loop body is implemented alongside Blatter-hardav forward-problem Jacobian math.)";
+    pism_config:inverse.alternating_cycles_doc = "Number of alternation cycles run by pismi.py in one invocation when ``inverse.design.variable`` is a pair (``tauc_hardav``, ``hardav_tauc``); a pair runs at least one cycle. Each cycle inverts for the two variables in that order, each with the other held fixed at its latest value; phases hand results to each other through the output file. Ignored for a single design variable, which is always a plain inversion.";
     pism_config:inverse.alternating_cycles_type = "integer";
     pism_config:inverse.alternating_cycles_units = "count";
 
@@ -1515,6 +1520,16 @@ netcdf pism_config {
     pism_config:inverse.design.param_option = "inv_design_param";
     pism_config:inverse.design.param_type = "keyword";
 
+    pism_config:inverse.design.param_hardav_eps = 1e5;
+    pism_config:inverse.design.param_hardav_eps_doc = "tiny ice hardness used as a substitute for 0 in some hardav parameterizations";
+    pism_config:inverse.design.param_hardav_eps_type = "number";
+    pism_config:inverse.design.param_hardav_eps_units = "Pascal second^(1/3)";
+
+    pism_config:inverse.design.param_hardav_scale = 1e8;
+    pism_config:inverse.design.param_hardav_scale_doc = "typical size of vertically-averaged ice hardness B = A^(-1/n) (about 7e7 Pa s^(1/3) for the default isothermal softness)";
+    pism_config:inverse.design.param_hardav_scale_type = "number";
+    pism_config:inverse.design.param_hardav_scale_units = "Pascal second^(1/3)";
+
     pism_config:inverse.design.param_tauc_eps = 100;
     pism_config:inverse.design.param_tauc_eps_doc = "tiny yield stress used as a substitute for 0 in some tauc parameterizations";
     pism_config:inverse.design.param_tauc_eps_type = "number";
@@ -1525,10 +1540,21 @@ netcdf pism_config {
     pism_config:inverse.design.param_tauc_scale_type = "number";
     pism_config:inverse.design.param_tauc_scale_units = "Pascal";
 
+    pism_config:inverse.design.param_trunc_hardav0 = 1e6;
+    pism_config:inverse.design.param_trunc_hardav0_doc = "transition point of change to linear behaviour for the ``trunc`` parameterization of hardav";
+    pism_config:inverse.design.param_trunc_hardav0_type = "number";
+    pism_config:inverse.design.param_trunc_hardav0_units = "Pascal second^(1/3)";
+
     pism_config:inverse.design.param_trunc_tauc0 = 1000;
     pism_config:inverse.design.param_trunc_tauc0_doc = "transition point of change to linear behaviour for design variable parameterization type ``trunc``";
     pism_config:inverse.design.param_trunc_tauc0_type = "number";
     pism_config:inverse.design.param_trunc_tauc0_units = "Pascal";
+
+    pism_config:inverse.design.variable = "tauc";
+    pism_config:inverse.design.variable_choices = "tauc,hardav,tauc_hardav,hardav_tauc";
+    pism_config:inverse.design.variable_doc = "Design variable of a pismi inversion: basal yield stress ``tauc``, vertically-averaged ice hardness ``hardav``, or a pair (``tauc_hardav``, ``hardav_tauc``) to alternate between the two in that order for ``inverse.alternating_cycles`` cycles (at least one), each phase holding the other variable fixed at its latest value. Alternation requires ``stress_balance.model = blatter``.";
+    pism_config:inverse.design.variable_option = "inv_design";
+    pism_config:inverse.design.variable_type = "keyword";
 
     pism_config:inverse.file = "";
     pism_config:inverse.file_doc = "Input file name for observations";
@@ -1997,6 +2023,35 @@ netcdf pism_config {
     pism_config:ocean.th.temperature_as_thermal_forcing_option = "th_temperature_as_thermal_forcing";
     pism_config:ocean.th.temperature_as_thermal_forcing_type = "flag";
 
+    pism_config:orbital_parameters.paleo.eccentricity =  0.0167;
+    pism_config:orbital_parameters.paleo.eccentricity_doc = "Eccentricity of the Earth's orbit";
+    pism_config:orbital_parameters.paleo.eccentricity_type = "number";
+    pism_config:orbital_parameters.paleo.eccentricity_units = "1";
+
+    pism_config:orbital_parameters.paleo.enabled = "false";
+    pism_config:orbital_parameters.paleo.enabled_doc = "If true, use orbital parameters to compute top of the atmosphere insolation";
+    pism_config:orbital_parameters.paleo.enabled_option = "debm_simple_paleo";
+    pism_config:orbital_parameters.paleo.enabled_type = "flag";
+
+    pism_config:orbital_parameters.paleo.file = "";
+    pism_config:orbital_parameters.paleo.file_doc = "File containing orbital parameters (:var:`eccentricity`, :var:`obliquity`, :var:`perihelion_longitude`) for paleo-simulations";
+    pism_config:orbital_parameters.paleo.file_option = "debm_simple_paleo_file";
+    pism_config:orbital_parameters.paleo.file_type = "string";
+
+    pism_config:orbital_parameters.paleo.obliquity =  23.44;
+    pism_config:orbital_parameters.paleo.obliquity_doc = "Mean obliquity (axial tilt) of the Earth";
+    pism_config:orbital_parameters.paleo.obliquity_type = "number";
+    pism_config:orbital_parameters.paleo.obliquity_units = "degree";
+
+    pism_config:orbital_parameters.paleo.perihelion_longitude =  282.94719;
+    pism_config:orbital_parameters.paleo.perihelion_longitude_doc = "Mean longitude of the perihelion relative to the vernal equinox, in the geocentric ecliptic coordinate system";
+    pism_config:orbital_parameters.paleo.perihelion_longitude_type = "number";
+    pism_config:orbital_parameters.paleo.perihelion_longitude_units = "degree";
+
+    pism_config:orbital_parameters.paleo.periodic = "no";
+    pism_config:orbital_parameters.paleo.periodic_doc = "If true, interpret forcing data as periodic in time";
+    pism_config:orbital_parameters.paleo.periodic_type = "flag";
+
     pism_config:output.ISMIP = "false";
     pism_config:output.ISMIP_doc = "Follow ISMIP conventions (units, variable names, \"standard names\") when writing output variables.";
     pism_config:output.ISMIP_type = "flag";
@@ -2267,7 +2322,7 @@ netcdf pism_config {
     pism_config:run_info.model_doc = "Model name. This string is written to output files as the ``model`` global attribute.";
     pism_config:run_info.model_option = "model";
     pism_config:run_info.model_type = "string";
-    
+
     pism_config:run_info.title = "";
     pism_config:run_info.title_doc = "Free-form string containing a concise description of the current run. This string is written to output files as the ``title`` global attribute.";
     pism_config:run_info.title_option = "title";
@@ -2285,6 +2340,11 @@ netcdf pism_config {
 
     pism_config:stress_balance.blatter.Glen_exponent_units = "pure number";
     pism_config:stress_balance.blatter.Glen_exponent_type = "number";
+    pism_config:stress_balance.averaged_hardness.enabled = "no";
+    pism_config:stress_balance.averaged_hardness.enabled_doc = "Use the prescribed 2D field ``hardav`` (vertically-averaged ice hardness B = A^(-1/n), e.g. from a ``pismi -inv_design hardav`` inversion) instead of the hardness derived from enthalpy. ``hardav`` is a model state variable: it is read from the input file, can be regridded with ``-input.regrid.vars hardav``, and is written to output files. Supported by the Blatter stress balance only.";
+    pism_config:stress_balance.averaged_hardness.enabled_option = "use_averaged_hardness";
+    pism_config:stress_balance.averaged_hardness.enabled_type = "flag";
+
     pism_config:stress_balance.blatter.Glen_exponent = 3.0;
     pism_config:stress_balance.blatter.Glen_exponent_doc = "Glen exponent in ice flow law for the Blatter stress balance solver";
 
@@ -2322,7 +2382,7 @@ netcdf pism_config {
     pism_config:stress_balance.blatter.relative_convergence_option = "blatter_picard_rtol";
     pism_config:stress_balance.blatter.relative_convergence_type = "number";
     pism_config:stress_balance.blatter.relative_convergence_units = "1";
-    
+
     pism_config:stress_balance.blatter.use_eta_transform_type = "flag";
     pism_config:stress_balance.blatter.use_eta_transform = "no";
     pism_config:stress_balance.blatter.use_eta_transform_doc = "Use the `\\eta` transform to improve the accuracy of the surface gradient approximation near grounded margins (see :cite:`BLKCB` for details).";
@@ -2617,6 +2677,12 @@ netcdf pism_config {
     pism_config:surface.debm_simple.c2_type = "number";
     pism_config:surface.debm_simple.c2_units = "W m^-2";
 
+    pism_config:surface.debm_simple.insolation_model = "simple";
+    pism_config:surface.debm_simple.insolation_model_doc = "Insolation model: ``simple`` is the uniform-in-space insolation reaching the surface, :cite:`Zeitzetal2021`; ``terrain_shaded`` models insolation reaching the surface as a combination of isotropic diffuse sky radiation (using the sky view factor) and a direct beam contribution. Both models use a linear model of atmospheric transmissivity described in :cite:`Zeitzetal2021`.";
+    pism_config:surface.debm_simple.insolation_model_type = "keyword";
+    pism_config:surface.debm_simple.insolation_model_choices = "simple,terrain_shaded";
+    pism_config:surface.debm_simple.insolation_model_option = "insolation";
+
     pism_config:surface.debm_simple.interpret_precip_as_snow = "no";
     pism_config:surface.debm_simple.interpret_precip_as_snow_doc = "If true, interpret *all* precipitation as snow";
     pism_config:surface.debm_simple.interpret_precip_as_snow_type = "flag";
@@ -2630,35 +2696,6 @@ netcdf pism_config {
     pism_config:surface.debm_simple.melting_threshold_temp_doc = "Threshold temperature below which no melting occurs";
     pism_config:surface.debm_simple.melting_threshold_temp_type = "number";
     pism_config:surface.debm_simple.melting_threshold_temp_units = "kelvin";
-
-    pism_config:surface.debm_simple.paleo.eccentricity =  0.0167;
-    pism_config:surface.debm_simple.paleo.eccentricity_doc = "Eccentricity of the Earth's orbit";
-    pism_config:surface.debm_simple.paleo.eccentricity_type = "number";
-    pism_config:surface.debm_simple.paleo.eccentricity_units = "1";
-
-    pism_config:surface.debm_simple.paleo.enabled = "false";
-    pism_config:surface.debm_simple.paleo.enabled_doc = "If true, use orbital parameters to compute top of the atmosphere insolation";
-    pism_config:surface.debm_simple.paleo.enabled_option = "debm_simple_paleo";
-    pism_config:surface.debm_simple.paleo.enabled_type = "flag";
-
-    pism_config:surface.debm_simple.paleo.file = "";
-    pism_config:surface.debm_simple.paleo.file_doc = "File containing orbital parameters (:var:`eccentricity`, :var:`obliquity`, :var:`perihelion_longitude`) for paleo-simulations";
-    pism_config:surface.debm_simple.paleo.file_option = "debm_simple_paleo_file";
-    pism_config:surface.debm_simple.paleo.file_type = "string";
-
-    pism_config:surface.debm_simple.paleo.obliquity =  23.44;
-    pism_config:surface.debm_simple.paleo.obliquity_doc = "Mean obliquity (axial tilt) of the Earth";
-    pism_config:surface.debm_simple.paleo.obliquity_type = "number";
-    pism_config:surface.debm_simple.paleo.obliquity_units = "degree";
-
-    pism_config:surface.debm_simple.paleo.perihelion_longitude =  282.94719;
-    pism_config:surface.debm_simple.paleo.perihelion_longitude_doc = "Mean longitude of the perihelion relative to the vernal equinox, in the geocentric ecliptic coordinate system";
-    pism_config:surface.debm_simple.paleo.perihelion_longitude_type = "number";
-    pism_config:surface.debm_simple.paleo.perihelion_longitude_units = "degree";
-
-    pism_config:surface.debm_simple.paleo.periodic = "no";
-    pism_config:surface.debm_simple.paleo.periodic_doc = "If true, interpret forcing data as periodic in time";
-    pism_config:surface.debm_simple.paleo.periodic_type = "flag";
 
     pism_config:surface.debm_simple.phi =  17.5;
     pism_config:surface.debm_simple.phi_doc = "Threshold solar elevation angle above which melt is possible";
@@ -2678,16 +2715,6 @@ netcdf pism_config {
     pism_config:surface.debm_simple.refreeze_ice_melt = "no";
     pism_config:surface.debm_simple.refreeze_ice_melt_doc = "If set to 'yes', refreeze :config:`surface.debm_simple.refreeze` fraction of melted ice, otherwise all of the melted ice runs off.";
     pism_config:surface.debm_simple.refreeze_ice_melt_type = "flag";
-
-    pism_config:surface.debm_simple.solar_constant = 1361.0;
-    pism_config:surface.debm_simple.solar_constant_doc = "Mean solar electromagnetic radiation (total solar irradiance) per unit area :cite:`Kopp2011`";
-    pism_config:surface.debm_simple.solar_constant_type = "number";
-    pism_config:surface.debm_simple.solar_constant_units = "W m^-2";
-
-    pism_config:surface.debm_simple.std_dev = 5.0;
-    pism_config:surface.debm_simple.std_dev_doc = "Standard deviation of daily near-surface air temperature variation";
-    pism_config:surface.debm_simple.std_dev_type = "number";
-    pism_config:surface.debm_simple.std_dev_units = "kelvin";
 
     pism_config:surface.debm_simple.std_dev.file = "";
     pism_config:surface.debm_simple.std_dev.file_doc = "The file to read :var:`air_temp_sd` (standard deviation of air temperature) from";
@@ -2711,6 +2738,11 @@ netcdf pism_config {
     pism_config:surface.debm_simple.std_dev.periodic = "no";
     pism_config:surface.debm_simple.std_dev.periodic_doc = "If true, interpret forcing data as periodic in time";
     pism_config:surface.debm_simple.std_dev.periodic_type = "flag";
+
+    pism_config:surface.debm_simple.std_dev.value = 5.0;
+    pism_config:surface.debm_simple.std_dev.value_doc = "Standard deviation of daily near-surface air temperature variation";
+    pism_config:surface.debm_simple.std_dev.value_type = "number";
+    pism_config:surface.debm_simple.std_dev.value_units = "kelvin";
 
     pism_config:surface.debm_simple.tau_a_intercept = 0.65;
     pism_config:surface.debm_simple.tau_a_intercept_doc = "Intercept in the parametrization of atmosphere transmissivity";
@@ -2905,7 +2937,7 @@ netcdf pism_config {
     pism_config:surface.ismip7.gradient.periodic = "no";
     pism_config:surface.ismip7.gradient.periodic_doc = "If true, interpret forcing data as periodic in time";
     pism_config:surface.ismip7.gradient.periodic_type = "flag";
-    
+
     pism_config:surface.ismip7.periodic = "no";
     pism_config:surface.ismip7.periodic_doc = "If true, interpret forcing data as periodic in time";
     pism_config:surface.ismip7.periodic_type = "flag";
@@ -3071,6 +3103,39 @@ netcdf pism_config {
     pism_config:surface.temp_to_runoff_a_doc = "a in runoff=a * temp + b";
     pism_config:surface.temp_to_runoff_a_type = "number";
     pism_config:surface.temp_to_runoff_a_units = "K^-1";
+
+    pism_config:terrain_shaded_insolation.diffuse_fraction = 0.2;
+    pism_config:terrain_shaded_insolation.diffuse_fraction_doc = "Fraction of insolation treated as isotropic diffuse sky radiation (scaled by the sky-view factor); the remainder is direct beam subject to terrain shading.";
+    pism_config:terrain_shaded_insolation.diffuse_fraction_type = "number";
+    pism_config:terrain_shaded_insolation.diffuse_fraction_units = "1";
+    pism_config:terrain_shaded_insolation.diffuse_fraction_valid_max = 1.0;
+    pism_config:terrain_shaded_insolation.diffuse_fraction_valid_min = 0.0;
+
+    pism_config:terrain_shaded_insolation.dt = 600;
+    pism_config:terrain_shaded_insolation.dt_doc = "Sub-daily time step used to integrate the terrain-shaded surface insolation over each day";
+    pism_config:terrain_shaded_insolation.dt_type = "number";
+    pism_config:terrain_shaded_insolation.dt_units = "seconds";
+
+    pism_config:terrain_shaded_insolation.horizon.max_distance = 5000;
+    pism_config:terrain_shaded_insolation.horizon.max_distance_doc = "Maximum ray-march distance for the horizon altitude angle computation";
+    pism_config:terrain_shaded_insolation.horizon.max_distance_type = "number";
+    pism_config:terrain_shaded_insolation.horizon.max_distance_units = "m";
+
+    pism_config:terrain_shaded_insolation.horizon.n_directions = 360;
+    pism_config:terrain_shaded_insolation.horizon.n_directions_doc = "Number of azimuth directions (clockwise from north) sampled to estimate the horizon altitude angle";
+    pism_config:terrain_shaded_insolation.horizon.n_directions_type = "integer";
+    pism_config:terrain_shaded_insolation.horizon.n_directions_units = "count";
+
+    pism_config:terrain_shaded_insolation.horizon.step = 100;
+    pism_config:terrain_shaded_insolation.horizon.step_doc = "Ray-march step length for the horizon altitude angle computation";
+    pism_config:terrain_shaded_insolation.horizon.step_type = "number";
+    pism_config:terrain_shaded_insolation.horizon.step_units = "m";
+
+    pism_config:terrain_shaded_insolation.update_interval = 10.0;
+    pism_config:terrain_shaded_insolation.update_interval_doc = "Interval between updates of the horizon altitude angle. Set to zero to recompute it at every time step.";
+    pism_config:terrain_shaded_insolation.update_interval_type = "number";
+    pism_config:terrain_shaded_insolation.update_interval_units = "365days";
+    pism_config:terrain_shaded_insolation.update_interval_valid_min = 0.0;
 
     pism_config:time.calendar = "365_day";
     pism_config:time.calendar_choices = "standard,gregorian,proleptic_gregorian,noleap,365_day,360_day,julian";

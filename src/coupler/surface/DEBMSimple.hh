@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2022, 2023, 2025 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2022, 2023, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -20,12 +20,21 @@
 #define PISM_DEBM_SIMPLE_H
 
 #include <memory>
+#include <vector>
 
-#include "pism/coupler/surface/DEBMSimplePointwise.hh"
 #include "pism/coupler/SurfaceModel.hh"
+#include "pism/coupler/surface/DEBMSimplePointwise.hh"
+#include "pism/coupler/surface/Insolation.hh"
+#include "pism/util/OrbitalParameters.hh"
 
 namespace pism {
+
+namespace array {
+class AccessScope;
+}
+
 namespace surface {
+
 
 //! @brief A class implementing a temperature-index (positive degree-day) scheme
 //! to compute melt and runoff, and thus surface mass balance, from
@@ -60,15 +69,20 @@ public:
   const array::Scalar &atmosphere_transmissivity() const;
 
   const DEBMSimplePointwise& pointwise_model() const;
+
+  const OrbitalParameterCalculator &orbital_parameters() const;
+
+protected:
+  virtual void init_impl(const Inputs &inputs);
+
+  virtual DiagnosticList spatial_diagnostics_impl() const;
+
 private:
-  virtual void init_impl(const Geometry &geometry);
-  virtual void update_impl(const Geometry &geometry, double t, double dt);
+  virtual void update_impl(const Inputs &inputs, double t, double dt);
   virtual MaxTimestep max_timestep_impl(double t, const CFLData *cfl_data) const;
 
   virtual std::set<VariableMetadata> state_impl() const;
   virtual void write_state_impl(const OutputFile &output) const;
-
-  virtual DiagnosticList spatial_diagnostics_impl() const;
 
   virtual const array::Scalar &mass_flux_impl() const;
   virtual const array::Scalar &temperature_impl() const;
@@ -80,6 +94,10 @@ private:
   unsigned int timeseries_length(double dt) const;
 
   DEBMSimplePointwise m_model;
+
+  std::shared_ptr<Insolation> m_insolation;
+  
+  OrbitalParameterCalculator m_orbital_parameters;
 
   double m_next_balance_year_start;
 
@@ -131,6 +149,8 @@ private:
   bool m_sd_use_param;
   double m_sd_param_a;
   double m_sd_param_b;
+
+  double m_albedo_ocean;
 
   //! interpret all the precipitation as snow (no rain)
   bool m_precip_as_snow;

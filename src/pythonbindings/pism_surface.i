@@ -1,5 +1,6 @@
 %{
 #include "coupler/surface/ISMIP6Climate.hh"
+#include "coupler/surface/ISMIP7Climate.hh"
 #include "coupler/surface/EISMINTII.hh"
 #include "coupler/surface/Delta_T.hh"
 #include "coupler/surface/ConstantPIK.hh"
@@ -15,6 +16,8 @@
 #include "coupler/surface/Factory.hh"
 #include "coupler/surface/DEBMSimplePointwise.hh"
 %}
+
+%rename(SurfaceInputs) pism::surface::Inputs;
 
 %shared_ptr(pism::surface::SurfaceModel)
 %include "coupler/SurfaceModel.hh"
@@ -34,6 +37,10 @@
 %shared_ptr(pism::surface::ISMIP6)
 %rename(SurfaceISMIP6) pism::surface::ISMIP6;
 %include "coupler/surface/ISMIP6Climate.hh"
+
+%shared_ptr(pism::surface::ISMIP7)
+%rename(SurfaceISMIP7) pism::surface::ISMIP7;
+%include "coupler/surface/ISMIP7Climate.hh"
 
 %shared_ptr(pism::surface::PIK)
 %rename(SurfacePIK) pism::surface::PIK;

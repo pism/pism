@@ -17,12 +17,14 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include <algorithm> // std::min
+#include <memory>
 
 #include "pism/coupler/surface/DEBMSimple.hh"
 
+#include "pism/coupler/surface/Insolation.hh"
+
 #include "pism/coupler/AtmosphereModel.hh"
 #include "pism/util/Grid.hh"
-#include "pism/util/Mask.hh"
 #include "pism/util/Time.hh"
 #include "pism/util/io/File.hh"
 
@@ -35,14 +37,18 @@
 #include "pism/util/Logger.hh"
 #include "pism/util/io/IO_Flags.hh"
 
+#include "pism/pism_config.hh"
+
 namespace pism {
 namespace surface {
 
-///// PISM surface model implementing a dEBM-Simple scheme.
+///// PISM surface model implementing the dEBM-Simple scheme.
 
-DEBMSimple::DEBMSimple(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere::AtmosphereModel> input)
-  : SurfaceModel(g, std::move(input)),
-      m_model(*g->ctx()),
+DEBMSimple::DEBMSimple(std::shared_ptr<const Grid> g,
+                       std::shared_ptr<atmosphere::AtmosphereModel> input)
+    : SurfaceModel(g, std::move(input)),
+      m_model(*g->ctx()->config()),
+      m_orbital_parameters(*g->ctx()),
       m_mass_flux(m_grid, "climatic_mass_balance"),
       m_snow_depth(m_grid, "snow_depth"),
       m_temperature_driven_melt(m_grid, "debm_temperature_driven_melt_flux"),
@@ -50,6 +56,21 @@ DEBMSimple::DEBMSimple(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere
       m_offset_melt(m_grid, "debm_offset_melt_flux"),
       m_surface_albedo(m_grid, "surface_albedo"),
       m_transmissivity(m_grid, "atmosphere_transmissivity") {
+
+  auto insolation_model = m_config->get_string("surface.debm_simple.insolation_model");
+  if (insolation_model == "terrain_shaded") {
+#if (Pism_USE_PROJ==0)
+    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
+                                  "please build PISM with PROJ to use terrain-shaded insolation");
+#endif
+
+    m_insolation = std::make_shared<DEBMTerrainShadedInsolation>(
+        m_grid, DEBMSimpleAtmosphereTransmissivity(*m_config));
+  } else {
+    m_insolation = std::make_shared<DEBMSimpleInsolation>(m_grid, m_model);
+  }
+
+  m_albedo_ocean = m_config->get_number("surface.debm_simple.albedo_ocean");
 
   m_sd_use_param = m_config->get_flag("surface.debm_simple.std_dev.param.enabled");
   m_sd_param_a   = m_config->get_number("surface.debm_simple.std_dev.param.a");
@@ -68,7 +89,8 @@ DEBMSimple::DEBMSimple(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere
   // note: does not need to be calendar-aware
   m_year_length = units::convert(g->ctx()->unit_system(), 1.0, "years", "seconds");
 
-  m_n_per_year = static_cast<unsigned int>(m_config->get_number("surface.debm_simple.max_evals_per_year"));
+  m_n_per_year =
+      static_cast<unsigned int>(m_config->get_number("surface.debm_simple.max_evals_per_year"));
 
   auto albedo_input = m_config->get_string("surface.debm_simple.albedo_input.file");
   if (not albedo_input.empty()) {
@@ -106,7 +128,7 @@ DEBMSimple::DEBMSimple(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere
                                                      "", // no standard name
                                                      buffer_size, periodic, LINEAR);
   } else {
-    double temp_std_dev = m_config->get_number("surface.debm_simple.std_dev");
+    double temp_std_dev = m_config->get_number("surface.debm_simple.std_dev.value");
 
     m_air_temp_sd = array::Forcing::Constant(m_grid, "air_temp_sd", temp_std_dev);
     m_log->message(2, "  Using constant standard deviation of near-surface air temperature.\n");
@@ -164,10 +186,10 @@ DEBMSimple::DEBMSimple(std::shared_ptr<const Grid> g, std::shared_ptr<atmosphere
   m_transmissivity.set(0.0);
 }
 
-void DEBMSimple::init_impl(const Geometry &geometry) {
+void DEBMSimple::init_impl(const Inputs &inputs) {
 
   // call the default implementation (not the interface method init())
-  SurfaceModel::init_impl(geometry);
+  SurfaceModel::init_impl(inputs);
 
   {
     m_log->message(2,
@@ -183,15 +205,15 @@ void DEBMSimple::init_impl(const Geometry &geometry) {
   }
 
   // initializing the model state
-  InputOptions input = process_input_options(m_grid->com, m_config);
+  InputOptions options = process_input_options(m_grid->com, m_config);
 
   auto default_albedo =  m_config->get_number("surface.debm_simple.albedo_max");
-  if (input.type == INIT_RESTART) {
-    m_snow_depth.read(input.filename, input.record);
-    m_surface_albedo.read(input.filename, input.record);
-  } else if (input.type == INIT_BOOTSTRAP) {
-    m_snow_depth.regrid(input.filename, io::Default(0.0));
-    m_surface_albedo.regrid(input.filename, io::Default(default_albedo));
+  if (options.type == INIT_RESTART) {
+    m_snow_depth.read(options.filename, options.record);
+    m_surface_albedo.read(options.filename, options.record);
+  } else if (options.type == INIT_BOOTSTRAP) {
+    m_snow_depth.regrid(options.filename, io::Default(0.0));
+    m_surface_albedo.regrid(options.filename, io::Default(default_albedo));
   } else {
     m_snow_depth.set(0.0);
     m_surface_albedo.set(default_albedo);
@@ -208,6 +230,14 @@ void DEBMSimple::init_impl(const Geometry &geometry) {
     m_input_albedo->init(filename, periodic);
   }
 
+  {
+    auto filename = m_config->get_string("surface.debm_simple.std_dev.file");
+    if (not filename.empty()) {
+      bool periodic = m_config->get_flag("surface.debm_simple.std_dev.periodic");
+      m_air_temp_sd->init(filename, periodic);
+    }
+  }
+
   // finish up
   {
     m_next_balance_year_start = compute_next_balance_year_start(time().current());
@@ -216,10 +246,12 @@ void DEBMSimple::init_impl(const Geometry &geometry) {
     m_melt->set(0.0);
     m_runoff->set(0.0);
   }
+
+  m_insolation->init(options, inputs.geometry->ice_surface_elevation);
 }
 
 MaxTimestep DEBMSimple::max_timestep_impl(double t, const CFLData *cfl_data) const {
-  return m_atmosphere->max_timestep(t, cfl_data);
+  return std::min(m_atmosphere->max_timestep(t, cfl_data), m_insolation->max_timestep(t, cfl_data));
 }
 
 double DEBMSimple::compute_next_balance_year_start(double time) {
@@ -270,38 +302,41 @@ double DEBMSimple::snow_accumulation(double T, double P) const {
 }
 
 
-void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
+void DEBMSimple::update_impl(const Inputs &inputs, double t, double dt) {
 
   const double melting_point = 273.15;
 
   // update to ensure that temperature and precipitation time series are correct:
-  m_atmosphere->update(geometry, t, dt);
+  m_atmosphere->update(*inputs.geometry, t, dt);
 
   // Use near-surface air temperature as the top-of-the-ice temperature:
   m_temperature->copy_from(m_atmosphere->air_temperature());
+
+  m_insolation->update(t, dt, inputs.geometry->ice_surface_elevation);
 
   // Set up air temperature and precipitation time series
   int N = static_cast<int>(timeseries_length(dt));
 
   const double dtseries = dt / N;
-  std::vector<double> ts(N), T(N), S(N), P(N), Alb(N);
-  std::vector<DEBMSimpleOrbitalParameters> orbital(N);
+  std::vector<double> ts(N), air_temp(N), air_temp_std_dev(N), precip(N), Alb(N),
+      surface_insolation_energy(N);
+  std::vector<OrbitalParameters> orbital(N);
 
   for (int k = 0; k < N; ++k) {
     ts[k] = t + k * dtseries;
 
     // pre-compute orbital parameters which depend on time and *not* on the map-plane
     // location
-    orbital[k] = m_model.orbital_parameters(ts[k]);
+    orbital[k] = m_orbital_parameters.compute(ts[k]);
   }
 
   // update standard deviation time series
   m_air_temp_sd->update(t, dt);
   m_air_temp_sd->init_interpolation(ts);
 
-  const auto &mask             = geometry.cell_type;
-  const auto &H                = geometry.ice_thickness;
-  const auto &surface_altitude = geometry.ice_surface_elevation;
+  const auto &mask             = inputs.geometry->cell_type;
+  const auto &H                = inputs.geometry->ice_thickness;
+  const auto &surface_altitude = inputs.geometry->ice_surface_elevation;
 
   const auto &latitude = m_grid->latitude();
 
@@ -320,7 +355,8 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
       &m_surface_albedo,
       &m_transmissivity,
       &latitude,
-      &surface_altitude
+      &surface_altitude,
+      m_insolation.get()
     };
 
   if ((bool)m_input_albedo) {
@@ -345,22 +381,22 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
       double lat = latitude(i, j);
 
       // Get the temperature time series from an atmosphere model and its modifiers
-      m_atmosphere->temp_time_series(i, j, T);
+      m_atmosphere->temp_time_series(i, j, air_temp);
 
       if (mask.ice_free_ocean(i, j)) {
         // ignore precipitation over ice-free ocean
         for (int k = 0; k < N; ++k) {
-          P[k] = 0.0;
+          precip[k] = 0.0;
         }
       } else {
         // elsewhere, get precipitation from the atmosphere model
-        m_atmosphere->precip_time_series(i, j, P);
+        m_atmosphere->precip_time_series(i, j, precip);
 
         // Use temperature time series to remove rainfall from precipitation and convert to
         // m/s ice equivalent.
         for (int k = 0; k < N; ++k) {
-          P[k] = snow_accumulation(T[k],  // air temperature (input)
-                                   P[k] / ice_density); // precipitation rate (input, gets overwritten)
+          precip[k] = snow_accumulation(air_temp[k],  // air temperature (input)
+                                   precip[k] / ice_density); // precipitation rate (input, gets overwritten)
         }
       }
 
@@ -373,22 +409,26 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
         // interpolate temperature standard deviation time series
         //
         // Note: this works when m_air_temp_sd is constant in time.
-        m_air_temp_sd->interp(i, j, S);
+        m_air_temp_sd->interp(i, j, air_temp_std_dev);
 
         if (sigmalapserate != 0.0) {
           // apply standard deviation lapse rate on top of prescribed values
           for (int k = 0; k < N; ++k) {
-            S[k] += sigmalapserate * (lat - sigmabaselat);
+            air_temp_std_dev[k] += sigmalapserate * (lat - sigmabaselat);
           }
-          (*m_air_temp_sd)(i, j) = S[0]; // ensure correct SD reporting
+          (*m_air_temp_sd)(i, j) = air_temp_std_dev[0]; // ensure correct SD reporting
         } else if (m_sd_use_param and mask.icy(i, j)) {
           // apply standard deviation parameterization over ice if in use
           for (int k = 0; k < N; ++k) {
-            S[k] = std::max(m_sd_param_a * (T[k] - melting_point) + m_sd_param_b, 0.0);
+            air_temp_std_dev[k] = std::max(m_sd_param_a * (air_temp[k] - melting_point) + m_sd_param_b, 0.0);
           }
-          (*m_air_temp_sd)(i, j) = S[0]; // ensure correct SD reporting
+          (*m_air_temp_sd)(i, j) = air_temp_std_dev[0]; // ensure correct SD reporting
         }
       }
+
+      // insolation energy reaching the surface during each sub-step
+      m_insolation->surface_insolation_energy_series(i, j, orbital, dtseries,
+                                                     surface_insolation_energy);
 
       {
         double next_snow_depth_reset = m_next_balance_year_start;
@@ -400,8 +440,6 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
           snow          = m_snow_depth(i, j),
           surfelev      = surface_altitude(i, j),
           albedo        = m_surface_albedo(i, j);
-
-        auto cell_type = static_cast<MaskValue>(mask.as_int(i, j));
 
         double
           A   = 0.0,            // accumulation
@@ -423,19 +461,20 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
             }
           }
 
-          auto accumulation = P[k] * dtseries;
+          auto accumulation = precip[k] * dtseries;
 
           DEBMSimpleMelt melt_info{};
-          if (not mask::ice_free_ocean(cell_type)) {
-
+          bool ice_free_ocean = mask.ice_free_ocean(i, j);
+          if (not ice_free_ocean) {
+            // clang-format off
             melt_info = m_model.melt(orbital[k].solar_declination,
-                                     orbital[k].distance_factor,
-                                     dtseries,
-                                     S[k],
-                                     T[k],
-                                     surfelev,
                                      lat,
+                                     surface_insolation_energy[k],
+                                     dtseries,
+                                     air_temp_std_dev[k],
+                                     air_temp[k],
                                      (bool)m_input_albedo ? Alb[k] : albedo);
+            // clang-format on
           }
 
           auto changes = m_model.step(ice_thickness,
@@ -445,8 +484,10 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
 
           if ((bool) m_input_albedo) {
             albedo = Alb[k];
+          } else if (ice_free_ocean) {
+            albedo = m_albedo_ocean;
           } else {
-            albedo = m_model.albedo(changes.melt / dtseries, cell_type);
+            albedo = m_model.albedo(changes.melt / dtseries);
           }
 
           // update ice thickness
@@ -506,7 +547,6 @@ void DEBMSimple::update_impl(const Geometry &geometry, double t, double dt) {
     compute_next_balance_year_start(time().current());
 }
 
-
 const array::Scalar &DEBMSimple::mass_flux_impl() const {
   return m_mass_flux;
 }
@@ -557,6 +597,9 @@ const array::Scalar &DEBMSimple::atmosphere_transmissivity() const {
 
 std::set<VariableMetadata> DEBMSimple::state_impl() const {
   auto variables = array::metadata({&m_snow_depth, &m_surface_albedo});
+
+  variables = pism::combine(variables, m_insolation->state());
+
   return pism::combine(variables, SurfaceModel::state_impl());
 }
 
@@ -564,10 +607,15 @@ void DEBMSimple::write_state_impl(const OutputFile &output) const {
   SurfaceModel::write_state_impl(output);
   m_snow_depth.write(output);
   m_surface_albedo.write(output);
+  m_insolation->write_state(output);
 }
 
 const DEBMSimplePointwise& DEBMSimple::pointwise_model() const {
   return m_model;
+}
+
+const OrbitalParameterCalculator &DEBMSimple::orbital_parameters() const {
+  return m_orbital_parameters;
 }
 
 namespace diagnostics {
@@ -589,7 +637,7 @@ protected:
 
     auto result = allocate<array::Scalar>("insolation");
 
-    // note: DEBMSimple cannot be used if m_grid-latitude() is not available, so we don't
+    // note: DEBMSimple cannot be used if m_grid->latitude() is not available, so we don't
     // need to call m_grid->has_longitude_latitude() here
     const auto &latitude = m_grid->latitude();
     auto ctx = m_grid->ctx();
@@ -597,16 +645,16 @@ protected:
     {
       const auto& M = model->pointwise_model();
 
-      auto orbital = M.orbital_parameters(ctx->time()->current());
+      auto orbital = model->orbital_parameters().compute(ctx->time()->current());
 
       array::AccessScope list{&latitude, result.get()};
 
       for (auto p : m_grid->points()) {
         const int i = p.i(), j = p.j();
 
-        (*result)(i, j) = M.insolation_diagnostic(orbital.solar_declination,
-                                                  orbital.distance_factor,
-                                                  latitude(i, j));
+        (*result)(i, j) = M.toa_insolation_diagnostic(orbital.solar_declination,
+                                                      orbital.distance_factor,
+                                                      latitude(i, j));
       }
     }
 
@@ -806,6 +854,9 @@ DiagnosticList DEBMSimple::spatial_diagnostics_impl() const {
   };
 
   result = pism::combine(result, SurfaceModel::spatial_diagnostics_impl());
+
+  // note the argument order: allow m_insolation to override diagnostics from above
+  result = pism::combine(m_insolation->spatial_diagnostics(), result);
 
   return result;
 }

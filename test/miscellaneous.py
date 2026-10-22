@@ -14,6 +14,7 @@ import PISM
 import PISM.testing
 import os
 import numpy as np
+from numpy.testing import assert_almost_equal, assert_array_almost_equal
 import unittest
 from PISM.testing import filename
 
@@ -1538,6 +1539,221 @@ class OtherTests(unittest.TestCase):
 
         NORM_INFINITY = PISM.PETSc.NormType.NORM_INFINITY
         np.testing.assert_almost_equal(gl_flux.norm(NORM_INFINITY), 0.0)
+
+
+class DateTime(unittest.TestCase):
+
+    def test_datetime(self):
+        def to_tuple(date):
+            return date.year, date.month, date.day, date.hour, date.minute, date.second, date.calendar
+
+        with self.assertRaises(RuntimeError, msg="empty date-time spec"):
+            PISM.DateTime("", "julian")
+
+        with self.assertRaises(RuntimeError, msg="date-time spec with too many parts"):
+            PISM.DateTime("1-1-1 0:0:0 T+6", "360_day")
+
+        with self.assertRaises(RuntimeError, msg="negative years and complex calendars"):
+            PISM.DateTime("-1-1-1", "julian")
+
+        with self.assertRaises(RuntimeError, msg="date spec does not contain 3 dash-separated parts"):
+            PISM.DateTime("10-10", "365_day")
+
+        with self.assertRaises(RuntimeError, msg="one of date components is not an integer"):
+            PISM.DateTime("1-jul-15", "365_day")
+
+        with self.assertRaises(RuntimeError, msg="invalid calendar"):
+            PISM.DateTime("1-1-1", "invalid")
+
+        with self.assertRaises(RuntimeError, msg="invalid date in a valid calendar"):
+            PISM.DateTime("2026-2-29", "gregorian")
+
+        with self.assertRaises(RuntimeError, msg="huge integer year, month, or day"):
+            N = 2**33
+            PISM.DateTime(f"{N}-1-1", "365_day")
+
+        with self.assertRaises(RuntimeError, msg="invalid hour in the time spec"):
+            PISM.DateTime("1850-1-1 24:00", "365_day")
+
+        with self.assertRaises(RuntimeError, msg="invalid minute in the time spec"):
+            PISM.DateTime("1850-1-1 14:70", "365_day")
+
+        with self.assertRaises(RuntimeError, msg="invalid second in the time spec"):
+            PISM.DateTime("1850-1-1 14:30:100", "365_day")
+
+        with self.assertRaises(RuntimeError, msg="invalid (negative) hour in the time spec"):
+            PISM.DateTime("1850-1-1 -1:00", "365_day")
+
+        with self.assertRaises(RuntimeError, msg="invalid (negative) minute in the time spec"):
+            PISM.DateTime("1850-1-1 14:-10", "365_day")
+
+        with self.assertRaises(RuntimeError, msg="invalid (negative) second in the time spec"):
+            PISM.DateTime("1850-1-1 14:30:-10", "365_day")
+
+        with self.assertRaises(RuntimeError, msg="no minutes in the time spec"):
+            PISM.DateTime("1850-1-1 12", "365_day")
+
+        with self.assertRaises(RuntimeError, msg="too many colon-separated time parts"):
+            PISM.DateTime("1850-1-1 12:00:00:00", "365_day")
+
+        with self.assertRaises(RuntimeError, msg="one of time components is not an integer"):
+            PISM.DateTime("1850-1-1 12:zero", "365_day")
+
+        with self.assertRaises(RuntimeError, msg="huge integer hour"):
+            N = 2**33
+            PISM.DateTime(f"1850-1-1 {N}:0:0", "365_day")
+
+        np.testing.assert_equal(to_tuple(PISM.DateTime("2000-2-29", "gregorian")),
+                                (2000, 2, 29, 0, 0, 0.0, "gregorian")) # leap year
+
+        np.testing.assert_equal(to_tuple(PISM.DateTime("-4000-1-1", "365_day")),
+                                (-4000, 1, 1, 0, 0, 0.0, "365_day")) # negative year
+
+        np.testing.assert_equal(to_tuple(PISM.DateTime("1850-1-1 12:30:45", "365_day")),
+                                (1850, 1, 1, 12, 30, 45.0, "365_day")) # includes time
+
+        np.testing.assert_equal(to_tuple(PISM.DateTime("1850-1-1 11:45", "365_day")),
+                                (1850, 1, 1, 11, 45, 0.0, "365_day")) # includes time without seconds
+
+        np.testing.assert_equal(to_tuple(PISM.DateTime("1850-1-1   11:45", "365_day")),
+                                (1850, 1, 1, 11, 45, 0.0, "365_day")) # multiple spaces between date and time
+
+class ReferenceDate(unittest.TestCase):
+    def setUp(self):
+        suffix = "-reference_date"
+
+        self.filename_360day = filename("input" + suffix + "-360day")
+        self.filename_365day = filename("input" + suffix + "-365day")
+
+        self.old_calendar = PISM.Context().time.calendar()
+
+        self.y0 = 1000
+
+    def tearDown(self):
+        PISM.Context().time.init_calendar(self.old_calendar)
+        try:
+            os.remove(self.filename_360day)
+            os.remove(self.filename_365day)
+        except:
+            pass
+
+    def check_times(self, year_length, filename):
+        time = PISM.Context().time
+        time.init_calendar(f"{year_length}_day")
+
+        PISM.testing.create_scalar_forcing(filename, "delta_T", "kelvin",
+                                           [0, 1], times=[0, 360], time_bounds=[0, 360, 360, 720],
+                                           time_units=f"days since {self.y0}-1-1")
+
+        F = PISM.File(PISM.PETSc.COMM_SELF, filename, PISM.PISM_GUESS, PISM.PISM_READONLY)
+        info = PISM.read_time_info(time.units(), time.calendar(), F, time.variable_name())
+        F.close()
+
+        t0 = int(info.times[0])
+        t1 = (self.y0 - 1) * year_length * 86400
+
+        assert t0 == t1
+
+    def test_reference_date_360day(self):
+        self.check_times(360, self.filename_360day)
+
+    def test_reference_date_365day(self):
+        self.check_times(365, self.filename_365day)
+
+
+class Orbital(unittest.TestCase):
+    def setUp(self):
+        self.orb = PISM.OrbitalParameterCalculator(ctx.ctx)
+
+    def test_orbital_parameters(self):
+        """
+        Test orbital parameters
+        """
+        time = 2022.25
+
+        orbital_parameters = self.orb.compute(time)
+
+        assert_almost_equal(-0.4024197463537702, orbital_parameters.solar_declination, decimal=4)
+        assert_almost_equal(1.0350505747618992, orbital_parameters.distance_factor, decimal=4)
+
+    def test_solar_longitude(self):
+        """
+        Test solar longitude
+        """
+        year_fraction = np.array([0.0, 1.0 / 12.0, 1.0])
+        eccentricity = np.array([0.9, 1.0, 1.0])
+        perhelion_longitude = np.array([np.pi / 8.0, -np.pi, 0.0])
+
+        solar_longitude = np.vectorize(self.orb.solar_longitude)(
+            year_fraction, eccentricity, perhelion_longitude
+        )
+        assert_array_almost_equal(
+            np.array([-2.4174, -0.1785, 3.6222]), solar_longitude, decimal=4
+        )
+
+    def test_solar_declination_present_day(self):
+        """
+        Test solar declination present day
+        """
+        year_fraction = np.array([0.0, 1.0 / 12.0, 1.0])
+
+        solar_declination = np.vectorize(self.orb.solar_declination_present_day)(year_fraction)
+        assert_array_almost_equal(
+            np.array([-0.402449, -0.30673297, -0.402449]), solar_declination, decimal=4
+        )
+
+    def test_solar_declination_paleo(self):
+        """
+        Test solar declination paleo
+        """
+
+        obliquity = np.array([np.pi / 4])
+        solar_longitude = np.array([np.pi * 3 / 4])
+
+        solar_declination = np.vectorize(self.orb.solar_declination_paleo)(obliquity, solar_longitude)
+        assert_array_almost_equal(
+            np.array([0.523599]), solar_declination, decimal=4
+        )
+
+    def test_distance_factor_present_day(self):
+        """
+        Test distance factor present day
+        """
+        year_fraction = np.array([0.0, 1.0 / 12.0, 1.0])
+
+        d = np.vectorize(self.orb.distance_factor_present_day)(year_fraction)
+        assert_array_almost_equal(np.array([1.03505, 1.03081244, 1.03505   ]), d, decimal=4)
+
+    def test_distance_factor_paleo(self):
+        """
+        Test distance factor paleo
+        """
+
+        eccentricity = np.array([0.0167, 0.03])
+        earth_true_anomaly = np.deg2rad(np.array([102.94719, -44.3]))
+
+        d = np.vectorize(self.orb.distance_factor_paleo)(eccentricity, earth_true_anomaly)
+        assert_array_almost_equal([0.993084, 1.045283], d)
+
+
+class SunPosition(unittest.TestCase):
+    def test_hour_angle(self):
+        """
+        Test the calculation of the hour angle
+        """
+
+        phi = np.array([0.0, np.pi / 4.0, np.pi / 2.0])
+        latitude = np.array([-np.pi / 2.0, 0.0, np.pi / 4.0])
+        declination = np.array([np.pi / 8.0, 0.0, 0.0])
+
+        def hour_angle(phi, lat, decl):
+            sun_position = PISM.SunPositionCalculator(decl)
+            return sun_position.set_latitude(lat).hour_angle(phi)
+
+        hour_angle = np.vectorize(hour_angle)(phi, latitude, declination)
+        assert_array_almost_equal(np.array([0.0, 0.78539816, 0.0]), hour_angle, decimal=4)
+
+
 
 if __name__ == "__main__":
     unittest.main()

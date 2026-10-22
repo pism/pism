@@ -73,7 +73,7 @@ Pico::Pico(std::shared_ptr<const Grid> grid)
     m_theta_ocean = std::make_shared<array::Forcing>(m_grid,
                                                 file,
                                                 "theta_ocean",
-                                                "", // no standard name
+                                                "sea_water_potential_temperature",
                                                 buffer_size,
                                                 opt.periodic,
                                                 LINEAR);
@@ -81,7 +81,7 @@ Pico::Pico(std::shared_ptr<const Grid> grid)
     m_salinity_ocean = std::make_shared<array::Forcing>(m_grid,
                                                    file,
                                                    "salinity_ocean",
-                                                   "", // no standard name
+                                                   "sea_water_salinity",
                                                    buffer_size,
                                                    opt.periodic,
                                                    LINEAR);

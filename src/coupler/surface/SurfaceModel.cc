@@ -287,31 +287,31 @@ const array::Scalar& SurfaceModel::layer_thickness_impl() const {
   return *m_layer_thickness;
 }
 
-void SurfaceModel::init(const Geometry &geometry) {
-  this->init_impl(geometry);
+void SurfaceModel::init(const Inputs &inputs) {
+  this->init_impl(inputs);
 }
 
-void SurfaceModel::init_impl(const Geometry &geometry) {
+void SurfaceModel::init_impl(const Inputs &inputs) {
   if (m_atmosphere) {
-    m_atmosphere->init(geometry);
+    m_atmosphere->init(*inputs.geometry);
   }
 
   if (m_input_model) {
-    m_input_model->init(geometry);
+    m_input_model->init(inputs);
   }
 }
 
-void SurfaceModel::update(const Geometry &geometry, double t, double dt) {
-  this->update_impl(geometry, t, dt);
+void SurfaceModel::update(const Inputs &inputs, double t, double dt) {
+  this->update_impl(inputs, t, dt);
 }
 
-void SurfaceModel::update_impl(const Geometry &geometry, double t, double dt) {
+void SurfaceModel::update_impl(const Inputs &inputs, double t, double dt) {
   if (m_atmosphere) {
-    m_atmosphere->update(geometry, t, dt);
+    m_atmosphere->update(*inputs.geometry, t, dt);
   }
 
   if (m_input_model) {
-    m_input_model->update(geometry, t, dt);
+    m_input_model->update(inputs, t, dt);
   }
 }
 

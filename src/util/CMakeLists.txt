@@ -13,6 +13,8 @@ add_library (util OBJECT
   Mask.cc
   MaxTimestep.cc
   NetCDFConfig.cc
+  OrbitalParameters.cc
+  SunPosition.cc
   Profiling.cc
   ScalarForcing.cc
   TerminationReason.cc
@@ -46,6 +48,7 @@ add_library (util OBJECT
   io/OutputWriter.cc
   io/SynchronousOutputWriter.cc
   io/input_helpers.cc
+  io/io_helpers.cc
   io/output_helpers.cc
   node_types.cc
   options.cc

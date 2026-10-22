@@ -47,7 +47,7 @@ WeatherStation::WeatherStation(std::shared_ptr<const Grid> grid)
                  "  - Reading air temperature and precipitation from '%s'...\n",
                  filename.c_str());
 
-  auto &ctx = *grid->ctx();
+  const auto &ctx = *grid->ctx();
 
   bool periodic = false;
 

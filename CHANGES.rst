@@ -167,6 +167,71 @@ Changes since v2.3.0
   hydrology was not passed to the ocean model, so PICOP dereferenced an uninitialized
   `Inputs::hydrology` pointer when reading subglacial discharge. The `ocean::Inputs` fields
   now default to `nullptr` so a missing input is caught rather than causing undefined behavior.
+- Add a `terrain_shaded` insolation model to the `debm_simple` surface model; enable it by
+  setting `surface.debm_simple.insolation_model` to `terrain_shaded`. This replaces the
+  computation of the insolation-driven melt.
+
+  Terrain horizon altitude angle and surface normal vector are computed using modeled ice
+  surface elevation. The horizon altitude computation is controlled by parameters with the
+  prefix `terrain_shaded_insolation.horizon.*`. To reduce computational cost it is
+  recomputed every `terrain_shaded_insolation.update_interval` (default 10 years).
+
+  Insolation reaching the surface is split into a direct-beam component (terrain-shaded)
+  and an isotropic diffuse component reduced by the sky-view factor (slope-corrected
+  Dozier & Frew, 1990); the diffuse share is `terrain_shaded_insolation.diffuse_fraction`.
+  Setting it to zero reduces the model to pure direct beam.
+
+  The `insolation` (daily-mean insolation reaching the surface (rate), in `W m-2`),
+  `horizon`, and `sky_view_factor` diagnostics are available; `sky_view_factor` only when
+  `terrain_shaded_insolation.diffuse_fraction` is positive.
+- Add an `ismip7` surface model that uses the gradients but not the anomalies, and adds
+  runoff. It is exposed to Python as `PISM.SurfaceISMIP7`.
+- Implement the Blatter hardness inversion (`pismi -stress_balance.model blatter -inv_design
+  hardav`): `IP_BlatterHardavForwardProblem` now provides the volume design Jacobian (and
+- `inverse.design.variable` accepts the pairs `tauc_hardav` and `hardav_tauc`: `pismi` then
+  alternates between the two design variables in that order for `inverse.alternating_cycles`
+  cycles (a pair always runs at least one), stopping early below
+  `inverse.alternating_misfit_tol`. The four values `tauc`, `hardav`, `tauc_hardav` and
+  `hardav_tauc` are thus interchangeable choices of one parameter, e.g. for an ensemble that
+  samples the inversion strategy; the cycle count and the tolerance are ignored for a single
+  variable. Alternation is no longer requested by a positive `inverse.alternating_cycles`
+  alone: name the pair.
+- Implement the Blatter hardness inversion (`pismi -stress_balance.model blatter
+  -inverse.design.variable hardav`, short option `-inv_design`): `IP_BlatterHardavForwardProblem`
+  now provides the volume design Jacobian (and
+  its column-integrated transpose) for the vertically-averaged ice hardness, exploiting the
+  linearity of the effective viscosity in `B`; the hardness is passed to the Blatter solver
+  through `Inputs::averaged_hardness`. The design-variable-agnostic parts of the Blatter
+  inverse forward problems (forward solve, surface extraction, adjoint solve) were moved
+  to a shared base class `IP_BlatterForwardProblem`; the state Jacobian is now
+  re-assembled at the converged solution before adjoint solves, and a failed forward
+  solve during the minimization is reported to TAO instead of aborting the run. Added
+  the missing configuration parameters `inverse.design.param_hardav_{scale,eps}` and
+  `inverse.design.param_trunc_hardav0` (needed by any `hardav` inversion, SSA included),
+  `examples/inverse/blatter_inverse_checks.py` (adjoint and finite-difference gradient
+  checks) and a `-design hardav` mode in `examples/inverse/ismiphom_twin.py`.
+- Make Blatter inversions robust to adjoint solver failures: the `approximate` adjoint
+  now reuses the forward solver's multigrid KSP (the standalone GMRES + Jacobi solve
+  could stall after hundreds of iterations on large 3D systems), a failed `exact` or
+  `incomplete` adjoint solve falls back to it, and `pismi` recovers the last accepted
+  iterate and writes the phase's results if TAO fails anyway.
+- Add the configuration parameter `inverse.design.variable` (`tauc` or `hardav`, short
+  option `-inv_design`) selecting the design variable of a `pismi` inversion.
+- Wire up `inverse.alternating_cycles` in `pismi`: alternate `tauc` and `hardav`
+  inversions (Blatter only) in one invocation, handing results between phases through the
+  output file (`tauc`, `hardav`, `zeta_inv_<var>`, `hardav_prior`, per-phase iteration
+  histories) with early stopping controlled by `inverse.alternating_misfit_tol` and
+  restart support via `-inv_restart`. The Blatter `tauc` forward problem uses a `hardav`
+  field as column-constant hardness when one is available.
+- Add `stress_balance.averaged_hardness.enabled` (`-use_averaged_hardness`): forward runs
+  with the Blatter stress balance use the prescribed vertically-averaged hardness `hardav`
+  (e.g. from a `pismi` hardness or alternating inversion) instead of the enthalpy-derived
+  hardness. `hardav` becomes a model state variable (read on restart, regriddable with
+  `-input.regrid.vars hardav`, written to output); the `hardav` diagnostic reports it.
+- Skip the units conversion when reading a variable whose units string in the file is
+  identical to the internal one, and when reporting ranges with identical `units` and
+  `output_units`. This makes it possible to read back fields whose units are not valid
+  UDUNITS expressions, such as the ice hardness `hardav` ("Pa s^(1/n)").
 - Re-run SWIG when a wrapped C++ header changes (`USE_SWIG_DEPENDENCIES`). Previously the
   generated Python bindings depended on the `.i` files only, so header edits could leave a
   stale `PISM.cpp` module in the build tree (e.g. Blatter-based classes wrapped as abstract,
@@ -176,7 +241,6 @@ Changes since v2.3.0
   petsc4py at interpreter shutdown. Previously a failure such as a missing `input.file`
   could deadlock the run under some MPI implementations, so a batch job kept its nodes
   until the wall-clock limit. The traceback is now printed once, by rank 0.
-- Add a ISMP7 surface model that uses the gradients but not the anomalies, and adds runoff.
 - Allow the Blatter stress balance to restart from SSA velocities: if `uvel_sigma` and
   `vvel_sigma` are not present in the input file but `u_ssa` and `v_ssa` are, use the
   (vertically constant) SSA velocity as a depth-independent initial guess.
@@ -246,9 +310,6 @@ Changes since v2.3.0
   (`tikhonov_lmvm`, `tikhonov_blmvm`); it is not compatible with the Gauss-Newton
   SSA solver, which requires an inner-product functional.
 
-- Added a new surface coupler `-surface.models ismip7` derived from ISMIP6. This coupler
-  only uses direct forcing and forcing gradients, skipping anomalies.
-
 - Remove the `siple` inverse-problems library and the SSA inversion methods that
   depended on it. `inverse.stress_balance.method` (`-inv_method`) no longer accepts
   `sd`, `nlcg`, or `ign`; use one of the Tikhonov methods (`tikhonov_lmvm`,
@@ -257,6 +318,15 @@ Changes since v2.3.0
   `Python:inversion:nlcg` regression test are gone, along with the options
   `-inv_monitor_adjoint`, `-inv_morozov_scale`, `-inv_ls_verbose`, and `-ign_theta`,
   which only applied to those methods.
+
+- Fix processing of reference dates in time units of time-dependent inputs (climate
+  forcing, etc). Before this change PISM incorrectly computed time offsets between times
+  in an input file and PISM's internal time *if* PISM's calendar is different from the
+  calendar in an input file. This resulted in a "shift" in time between intended time of a
+  forcing and effective of a forcing.
+
+- Fix `issue 594`_: `pism_async_writer` and `pism_ismip7_writer` hanging when the
+  `netCDF4` package is built with parallel I/O support.
 
 Changes from 2.3.0 to 2.3.1
 ===========================
@@ -1480,6 +1550,7 @@ Miscellaneous
 .. _issue 568: https://github.com/pism/pism/issues/568
 .. _issue 569: https://github.com/pism/pism/issues/569
 .. _issue 509: https://github.com/pism/pism/issues/509
+.. _issue 594: https://github.com/pism/pism/issues/594
 .. _ocean models: http://www.pism.io/docs/climate_forcing/ocean.html
 .. _pull request 547: https://github.com/pism/pism/pull/547
 .. _YAC: https://dkrz-sw.gitlab-pages.dkrz.de/yac/index.html

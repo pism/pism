@@ -1,4 +1,4 @@
-// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2024, 2025 PISM Authors
+// Copyright (C) 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2024, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -70,10 +70,10 @@ Anomaly::Anomaly(std::shared_ptr<const Grid> g, std::shared_ptr<SurfaceModel> in
   m_runoff       = allocate_runoff(g);
 }
 
-void Anomaly::init_impl(const Geometry &geometry) {
+void Anomaly::init_impl(const Inputs &inputs) {
 
   if (m_input_model) {
-    m_input_model->init(geometry);
+    m_input_model->init(inputs);
   }
 
   m_log->message(2,
@@ -88,8 +88,8 @@ void Anomaly::init_impl(const Geometry &geometry) {
   m_climatic_mass_balance_anomaly->init(opt.filename, opt.periodic);
 }
 
-void Anomaly::update_impl(const Geometry &geometry, double t, double dt) {
-  m_input_model->update(geometry, t, dt);
+void Anomaly::update_impl(const Inputs &inputs, double t, double dt) {
+  m_input_model->update(inputs, t, dt);
 
   m_climatic_mass_balance_anomaly->update(t, dt);
   m_ice_surface_temp_anomaly->update(t, dt);

@@ -1,4 +1,4 @@
-// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023, 2024, 2025 PISM Authors
+// Copyright (C) 2012, 2013, 2014, 2015, 2016, 2017, 2019, 2020, 2023, 2024, 2025, 2026 PISM Authors
 //
 // This file is part of PISM.
 //
@@ -122,7 +122,7 @@ void NC4File::def_var_impl(const std::string &name,
   std::vector<int> dimids;
   int stat = 0, varid = -1;
 
-  for (auto d : dims) {
+  for (const auto& d : dims) {
     int dimid = -1;
     stat = nc_inq_dimid(m_file_id, d.c_str(), &dimid); check(PISM_ERROR_LOCATION, stat);
     dimids.push_back(dimid);

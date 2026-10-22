@@ -34,8 +34,7 @@ EISMINTII::EISMINTII(std::shared_ptr<const Grid> g, int experiment)
   // empty
 }
 
-void EISMINTII::init_impl(const Geometry &geometry) {
-  (void) geometry;
+void EISMINTII::init_impl(const Inputs &/*inputs*/) {
 
   using units::convert;
 
@@ -140,10 +139,7 @@ void EISMINTII::initialize_using_formulas() {
   m_mass_flux->scale(m_config->get_number("constants.ice.density"));
 }
 
-void EISMINTII::update_impl(const Geometry &geometry, double t, double dt) {
-  (void) t;
-  (void) dt;
-  (void) geometry;
+void EISMINTII::update_impl(const Inputs &/*inputs*/, double /*t*/, double /*dt*/) {
 
   dummy_accumulation(*m_mass_flux, *m_accumulation);
   dummy_melt(*m_mass_flux, *m_melt);
