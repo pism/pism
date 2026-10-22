@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2021, 2022, 2025 PISM Authors
+/* Copyright (C) 2016--2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,16 +17,17 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef CLIFFCALVINGTENSILE_H
-#define CLIFFCALVINGTENSILE_H
+#ifndef PISM_CLIFFCALVINGTENSILE_H
+#define PISM_CLIFFCALVINGTENSILE_H
 
 #include "pism/util/Component.hh"
 #include "pism/util/array/Scalar.hh"
-#include "pism/util/array/CellType.hh"
 
 namespace pism {
 
-class Geometry;
+namespace array {
+class CellType1;
+}
 
 namespace calving {
 
@@ -37,24 +38,24 @@ public:
 
   void init();
 
-  void update(const array::CellType1 &cell_type, const array::Scalar &ice_thickness,
+  void update(const array::CellType1 &cell_type, const array::Scalar1 &ice_thickness,
               const array::Scalar &sea_level, const array::Scalar &bed_elevation);
 
-  const array::Scalar & calving_rate() const;
+  const array::Scalar &calving_rate() const;
 
 protected:
   DiagnosticList diagnostics_impl() const;
   
-protected:
   array::Scalar1 m_calving_rate; 
 
-  double m_I,                    
-         m_alpha;
+  double m_I;
+  double m_alpha;
 
-  bool m_use_floatation_thickness; //!< if true, use floatation thickness instead of modelled ice thickness
+  //! if true, use floatation thickness instead of modelled ice thickness
+  bool m_use_floatation_thickness;
 };
 
 } // end of namespace calving
 } // end of namespace pism
 
-#endif /* CLIFFCALVINGTENSILE_H */  
+#endif /* PISM_CLIFFCALVINGTENSILE_H */

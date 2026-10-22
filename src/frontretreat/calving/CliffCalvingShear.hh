@@ -17,16 +17,17 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef CLIFFCALVINGSHEAR_H
-#define CLIFFCALVINGSHEAR_H
+#ifndef PISM_CLIFFCALVINGSHEAR_H
+#define PISM_CLIFFCALVINGSHEAR_H
 
 #include "pism/util/Component.hh"
 #include "pism/util/array/Scalar.hh"
-#include "pism/util/array/CellType.hh"
 
 namespace pism {
 
-class Geometry;
+namespace array {
+class CellType1;
+}
 
 namespace calving {
 
@@ -40,7 +41,7 @@ public:
   void update(const array::CellType1 &cell_type, const array::Scalar1 &ice_thickness,
               const array::Scalar &sea_level, const array::Scalar &bed_elevation);
 
-  const array::Scalar & calving_rate() const;
+  const array::Scalar &calving_rate() const;
 
 protected:
   DiagnosticList diagnostics_impl() const;
@@ -61,4 +62,4 @@ protected:
 } // end of namespace calving
 } // end of namespace pism
 
-#endif /* CLIFFCALVINGSHEAR_H */
+#endif /* PISM_CLIFFCALVINGSHEAR_H */
