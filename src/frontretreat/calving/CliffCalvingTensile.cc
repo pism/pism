@@ -32,29 +32,32 @@ namespace pism {
 namespace calving {
 
 CliffCalvingTensile::CliffCalvingTensile(std::shared_ptr<const Grid> grid)
-  : Component(grid),
-    m_calving_rate(grid, "tensile_cliff_calving_rate"),
-    m_I(0.0),
-    m_alpha(0.0)
+    : Component(grid), m_calving_rate(grid, "tensile_cliff_calving_rate"), m_I(0.0), m_alpha(0.0) {
 
-{
+  m_I = m_config->get_number("calving.cliff_calving_tensile.I", "m second-1");
+  m_alpha = m_config->get_number("calving.cliff_calving_tensile.alpha");
+
+  m_use_floatation_thickness =
+      m_config->get_flag("calving.grounded_calving.use_floatation_thickness");
+
   m_calving_rate.metadata(0)
       .long_name("horizontal calving rate due to tensile stress failure")
       .units("m s^-1")
       .output_units("m year^-1");
+
+  double dx = m_grid->dx(), dy = m_grid->dy();
+  if (fabs(dx - dy) / std::min(dx, dy) > 1e-2) {
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION,
+        "-calving cliff_calving_tensile using a non-square grid cell is not implemented (yet);\n"
+        "dx = %f, dy = %f, relative difference = %f",
+        dx, dy, fabs(dx - dy) / std::max(dx, dy));
+  }
 }
 
 void CliffCalvingTensile::init() {
-
   m_log->message(2,
                  "* Initializing the 'Tensile stress cliff calving' mechanism...\n");
-
-  m_I = m_config->get_number("calving.cliff_calving_tensile.I");
-  m_alpha = m_config->get_number("calving.cliff_calving_tensile.alpha");
-
-  // Convert from m/day to m/s
-  m_I = convert(m_sys, m_I, "m day-1", "m second-1");
-
   m_log->message(2,
                  "  Scaling factor I: %3.3e m/day.\n",
                  convert(m_sys, m_I, "m second-1", "m day-1"));
@@ -62,30 +65,15 @@ void CliffCalvingTensile::init() {
                  "  Exponent: %3.3f.\n",
                  m_alpha);
 
-  // Read floatation thickness option
-  m_use_floatation_thickness = m_config->get_flag("calving.grounded_calving.use_floatation_thickness");
   if (m_use_floatation_thickness) {
-    m_log->message(2,
-                   "  Using floatation thickness for cliff height calculation.\n");
+    m_log->message(2, "  Using floatation thickness for cliff height calculation.\n");
   }
-
-
-  if (fabs(m_grid->dx() - m_grid->dy()) / std::min(m_grid->dx(), m_grid->dy()) > 1e-2) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "-calving cliff_calving_tensile using a non-square grid cell is not implemented (yet);\n"
-                                  "dx = %f, dy = %f, relative difference = %f",
-                                  m_grid->dx(), m_grid->dy(),
-                                  fabs(m_grid->dx() - m_grid->dy()) / std::max(m_grid->dx(), m_grid->dy()));
-  }
-
 }
 
 void CliffCalvingTensile::update(const array::CellType1 &cell_type,
-                             const array::Scalar &ice_thickness,
-                             const array::Scalar &sea_level,
-                             const array::Scalar &bed_elevation) {
-
-  using std::min;
+                                 const array::Scalar1 &ice_thickness,
+                                 const array::Scalar &sea_level,
+                                 const array::Scalar &bed_elevation) {
 
   const double
     ice_density   = m_config->get_number("constants.ice.density"),
@@ -93,10 +81,11 @@ void CliffCalvingTensile::update(const array::CellType1 &cell_type,
 
   GeometryCalculator gc(*m_config);
 
-  array::AccessScope list{&ice_thickness, &cell_type, &m_calving_rate, &sea_level,
-                               &bed_elevation};
+  array::AccessScope list{ &ice_thickness, &cell_type, &m_calving_rate, &sea_level,
+                           &bed_elevation };
 
   // Add statistics tracking
+  // FIXME: the "log summary" will not work correctly in parallel
   double max_calving_rate = 0.0;
   double max_cliff_height = 0.0;
   int num_calving_cells = 0;
@@ -110,21 +99,17 @@ void CliffCalvingTensile::update(const array::CellType1 &cell_type,
     // have grounded ice neighbors after the mass continuity step
     if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_grounded_ice(i, j)) {
       // Get the ice thickness, surface elevation, and mask in all neighboring grid cells
-      stencils::Star<double> H;   // TO DO: change H to type Scalar1 (array::Scalar1) then we can use the star stencil directly, but need  to change this also in the call to the calving update function!!!
-      H.c = ice_thickness(i, j);
-      H.e = ice_thickness(i+1, j);
-      H.w = ice_thickness(i-1, j);
-      H.n = ice_thickness(i, j+1);
-      H.s = ice_thickness(i, j-1);
+      auto H = ice_thickness.star(i, j);
+
       stencils::Star<double> surface_elevation;
       for (auto d : {North, East, South, West}) {
         surface_elevation[d] = H[d] + bed_elevation(i, j);
       }
-      stencils::Star<int> M = cell_type.star_int(i, j);
+      auto M = cell_type.star_int(i, j);
 
-
-      // Calculate cliff height using either floatation thickness calculated from water depth
-      // or threshold thickness calculated from ice thickness and surface elevation of neighbouring icy cells
+      // Calculate cliff height using either floatation thickness calculated from water
+      // depth or threshold thickness calculated from ice thickness and surface elevation
+      // of neighbouring icy cells
       const double water_depth = sea_level(i, j) - bed_elevation(i, j);
       double cliff_height;
       int m;
@@ -137,22 +122,18 @@ void CliffCalvingTensile::update(const array::CellType1 &cell_type,
         cliff_height = H_flotation - water_depth;
       } else {
         // Calculate threshold thickness using part_grid_threshold_thickness
-        const double H_threshold = part_grid_threshold_thickness(M,
-                                                                H,
-                                                                surface_elevation  ,
-                                                                 bed_elevation(i, j));
+        const double H_threshold =
+            part_grid_threshold_thickness(M, H, surface_elevation, bed_elevation(i, j));
         // Calculate mask of the partially filled grid cell where we apply calving
         m = gc.mask(sea_level(i, j), bed_elevation(i, j), H_threshold);
         // Calculate cliff height (ice thickness above sea level)
         cliff_height = H_threshold - water_depth;
       }
 
-
       // Calculate the calving rate [\ref Crawford2021] if cell is grounded
       // and cliff height is greater than 135 m
-      m_calving_rate(i, j) = (mask::grounded_ice(m) && cliff_height > 135.0 ?
-                         m_I * pow(cliff_height, m_alpha):
-                         0.0);
+      m_calving_rate(i, j) =
+          (mask::grounded_ice(m) && cliff_height > 135.0 ? m_I * pow(cliff_height, m_alpha) : 0.0);
 
       // Track statistics
       if (m_calving_rate(i, j) > 0.0) {
@@ -201,7 +182,7 @@ const array::Scalar &CliffCalvingTensile::calving_rate() const {
 }
 
 DiagnosticList CliffCalvingTensile::diagnostics_impl() const {
-  return {{"cliff_calving_tensile_rate", Diagnostic::wrap(m_calving_rate)}};
+  return { { "cliff_calving_tensile_rate", Diagnostic::wrap(m_calving_rate) } };
 }
 
 } // end of namespace calving

@@ -32,30 +32,32 @@ namespace pism {
 namespace calving {
 
 LinearCalving::LinearCalving(std::shared_ptr<const Grid> grid)
-  : Component(grid),
-    m_calving_rate(grid, "linear_calving_rate"),
-    m_a(0.0),
-    m_b(0.0)
+    : Component(grid), m_calving_rate(grid, "linear_calving_rate"), m_a(0.0), m_b(0.0) {
 
-{
+  m_use_floatation_thickness = m_config->get_flag("calving.grounded_calving.use_floatation_thickness");
+
+  m_a = m_config->get_number("calving.linear_calving.a", "m second-1");
+  m_b = m_config->get_number("calving.linear_calving.b", "m second-1");
+
   m_calving_rate.metadata(0)
       .long_name("horizontal calving rate with a linear dependence on the cliff height")
       .units("m s^-1")
       .output_units("m year^-1");
+
+  double dx = m_grid->dx(), dy = m_grid->dy();
+  if (fabs(dx - dy) / std::min(dx, dy) > 1e-2) {
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION,
+        "-calving linear_calving using a non-square grid cell is not implemented (yet);\n"
+        "dx = %f, dy = %f, relative difference = %f",
+        dx, dy, fabs(dx - dy) / std::max(dx, dy));
+  }
 }
 
 void LinearCalving::init() {
 
   m_log->message(2,
                  "* Initializing the 'Linear calving' mechanism...\n");
-
-  m_a = m_config->get_number("calving.linear_calving.a");
-  m_b = m_config->get_number("calving.linear_calving.b");
-
-  // Convert from m/year to m/s
-  m_b = convert(m_sys, m_b, "m year-1", "m second-1");
-  m_a = convert(m_sys, m_a, "year-1", "second-1");
-
   m_log->message(2,
                  "  Coefficient a: %3.3f year^-1.\n", 
                  convert(m_sys, m_a, "second-1", "year-1"));
@@ -63,21 +65,10 @@ void LinearCalving::init() {
                  "  Constant b: %3.3f m year^-1.\n",
                  convert(m_sys, m_b, "m second-1", "m year-1"));
 
-  // Read floatation thickness option
-  m_use_floatation_thickness = m_config->get_flag("calving.grounded_calving.use_floatation_thickness");
   if (m_use_floatation_thickness) {
     m_log->message(2,
                    "  Using floatation thickness for cliff height calculation.\n");
   }
-
-  if (fabs(m_grid->dx() - m_grid->dy()) / std::min(m_grid->dx(), m_grid->dy()) > 1e-2) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "-calving linear_calving using a non-square grid cell is not implemented (yet);\n"
-                                  "dx = %f, dy = %f, relative difference = %f",
-                                  m_grid->dx(), m_grid->dy(),
-                                  fabs(m_grid->dx() - m_grid->dy()) / std::max(m_grid->dx(), m_grid->dy()));
-  }
-
 }
 
 /*!
@@ -99,23 +90,19 @@ void LinearCalving::init() {
  * @param sea_level Sea level field
  * @param bed_elevation Bed elevation field
  */
-void LinearCalving::update(const array::CellType1 &cell_type,
-                             const array::Scalar &ice_thickness,
-                             const array::Scalar &sea_level,
-                             const array::Scalar &bed_elevation) {
-
-  using std::min;
-
+void LinearCalving::update(const array::CellType1 &cell_type, const array::Scalar1 &ice_thickness,
+                           const array::Scalar &sea_level, const array::Scalar &bed_elevation) {
   const double
     ice_density   = m_config->get_number("constants.ice.density"),
     water_density = m_config->get_number("constants.sea_water.density");
 
   GeometryCalculator gc(*m_config);
 
-  array::AccessScope list{&ice_thickness, &cell_type, &m_calving_rate, &sea_level,
-                               &bed_elevation};
+  array::AccessScope list{ &ice_thickness, &cell_type, &m_calving_rate, &sea_level,
+                           &bed_elevation };
 
   // Add statistics tracking
+  // FIXME: the "log summary" will not work correctly in parallel
   double max_calving_rate = 0.0;
   double max_cliff_height = 0.0;
   int num_calving_cells = 0;
@@ -129,20 +116,17 @@ void LinearCalving::update(const array::CellType1 &cell_type,
     // have grounded ice neighbors after the mass continuity step
     if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_grounded_ice(i, j)) {
       // Get the ice thickness, surface elevation, and mask in all neighboring grid cells
-      stencils::Star<double> H;   // TO DO: change H to type Scalar1 (array::Scalar1) then we can use the star stencil directly, but need  to change this also in the call to the calving update function!!!
-      H.c = ice_thickness(i, j);
-      H.e = ice_thickness(i+1, j);
-      H.w = ice_thickness(i-1, j);
-      H.n = ice_thickness(i, j+1);
-      H.s = ice_thickness(i, j-1);
+      auto H = ice_thickness.star(i, j);
+
       stencils::Star<double> surface_elevation;
       for (auto d : {North, East, South, West}) {
         surface_elevation[d] = H[d] + bed_elevation(i, j);
       }
-      stencils::Star<int> M = cell_type.star_int(i, j);
+      auto M = cell_type.star_int(i, j);
 
-      // Calculate cliff height using either floatation thickness calculated from water depth
-      // or threshold thickness calculated from ice thickness and surface elevation of neighbouring icy cells.
+      // Calculate cliff height using either floatation thickness calculated from water
+      // depth or threshold thickness calculated from ice thickness and surface elevation
+      // of neighbouring icy cells.
       const double water_depth = sea_level(i, j) - bed_elevation(i, j);
       double cliff_height;
       int m;
@@ -155,36 +139,37 @@ void LinearCalving::update(const array::CellType1 &cell_type,
         cliff_height = H_flotation - water_depth;
       } else {
         // Get the ice thickness in the partially filled grid cell where we apply calving.
-        // It is calculated as the average of the ice thickness and surface elevation of the adjacent icy cells.
-        const double H_threshold = part_grid_threshold_thickness(M, H, surface_elevation, bed_elevation(i, j));
+        // It is calculated as the average of the ice thickness and surface elevation of
+        // the adjacent icy cells.
+        const double H_threshold =
+            part_grid_threshold_thickness(M, H, surface_elevation, bed_elevation(i, j));
         // Calculate mask of the partially filled grid cell where we apply calving
         m = gc.mask(sea_level(i, j), bed_elevation(i, j), H_threshold);
         // Calculate cliff height (ice thickness above sea level)
         cliff_height = H_threshold - water_depth;
       }
       // Calculate the calving rate [\ref Parsons2025] if cell is grounded
-      m_calving_rate(i, j) = (mask::grounded_ice(m)  ?
-                         std::max(0.0, m_a * cliff_height + m_b):
-                         0.0);
+      m_calving_rate(i, j) =
+          (mask::grounded_ice(m) ? std::max(0.0, m_a * cliff_height + m_b) : 0.0);
 
-      // Track statistics                   
+      // Track statistics
       if (m_calving_rate(i, j) > 0.0) {
         num_calving_cells++;
         if (m_calving_rate(i, j) > max_calving_rate) {
           max_calving_rate = m_calving_rate(i, j);
           max_cliff_height = cliff_height;
-          max_rate_i = i;
-          max_rate_j = j;
+          max_rate_i       = i;
+          max_rate_j       = j;
         }
         // Log very high calving rates that might cause instability
-        if (m_calving_rate(i, j) > 1e-5) {  // More than ~315 m/year
+        if (m_calving_rate(i, j) > 1e-5) { // More than ~315 m/year
           num_extreme_calving++;
           m_log->message(3,
-                     "! High linear calving rate at (i,j) = (%d,%d): %.2f m/year (H=%.1f m)\n",
-                     i, j, m_calving_rate(i, j) * 31557600.0, cliff_height);
+                         "! High linear calving rate at (i,j) = (%d,%d): %.2f m/year (H=%.1f m)\n",
+                         i, j, m_calving_rate(i, j) * 31557600.0, cliff_height);
         }
       }
-                         
+
     } else {
       m_calving_rate(i, j) = 0.0;
     }
@@ -214,7 +199,7 @@ const array::Scalar &LinearCalving::calving_rate() const {
 }
 
 DiagnosticList LinearCalving::diagnostics_impl() const {
-  return {{"linear_calving_rate", Diagnostic::wrap(m_calving_rate)}};
+  return { { "linear_calving_rate", Diagnostic::wrap(m_calving_rate) } };
 }
 
 } // end of namespace calving

@@ -37,34 +37,17 @@ CliffCalvingShear::CliffCalvingShear(std::shared_ptr<const Grid> grid)
     m_C0(0.0),
     m_max_cliff_calving_rate(0.0)
 {
+  m_C0 = m_config->get_number("calving.cliff_calving_shear.C0", "m second-1");
+
+  m_max_cliff_calving_rate =
+      m_config->get_number("calving.cliff_calving_shear.max_cliff_calving_rate", "m second-1");
+
+  m_use_floatation_thickness = m_config->get_flag("calving.grounded_calving.use_floatation_thickness");
+
   m_calving_rate.metadata(0)
       .long_name("horizontal calving rate due to shear stress failure")
       .units("m s^-1")
       .output_units("m year^-1");
-}
-
-void CliffCalvingShear::init() {
-
-  m_log->message(2,
-                 "* Initializing the 'Shear stress cliff calving' mechanism...\n");
-
-  m_C0 = m_config->get_number("calving.cliff_calving_shear.C0", "m second-1");
-  m_max_cliff_calving_rate =
-      m_config->get_number("calving.cliff_calving_shear.max_cliff_calving_rate", "m second-1");
-
-  m_log->message(2,
-                 "  Scaling factor C0: %3.3f m/yr.\n",
-                 convert(m_sys, m_C0, "m second-1", "m year-1"));
-  m_log->message(2,
-                 "  Maximum cliff calving rate: %3.3f m/yr.\n",
-                 convert(m_sys, m_max_cliff_calving_rate, "m second-1", "m year-1"));
-
-  // Read floatation thickness option
-  m_use_floatation_thickness = m_config->get_flag("calving.grounded_calving.use_floatation_thickness");
-  if (m_use_floatation_thickness) {
-    m_log->message(2,
-                   "  Using floatation thickness for cliff height calculation.\n");
-  }
 
   double dx = m_grid->dx(), dy = m_grid->dy();
   if (fabs(dx - dy) / std::min(dx, dy) > 1e-2) {
@@ -73,6 +56,22 @@ void CliffCalvingShear::init() {
         "-calving cliff_calving_shear using a non-square grid cell is not implemented (yet);\n"
         "dx = %f, dy = %f, relative difference = %f",
         dx, dy, fabs(dx - dy) / std::max(dx, dy));
+  }
+}
+
+void CliffCalvingShear::init() {
+  m_log->message(2,
+                 "* Initializing the 'Shear stress cliff calving' mechanism...\n");
+  m_log->message(2,
+                 "  Scaling factor C0: %3.3f m/yr.\n",
+                 convert(m_sys, m_C0, "m second-1", "m year-1"));
+  m_log->message(2,
+                 "  Maximum cliff calving rate: %3.3f m/yr.\n",
+                 convert(m_sys, m_max_cliff_calving_rate, "m second-1", "m year-1"));
+
+  if (m_use_floatation_thickness) {
+    m_log->message(2,
+                   "  Using floatation thickness for cliff height calculation.\n");
   }
 }
 

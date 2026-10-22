@@ -26,8 +26,6 @@
 
 namespace pism {
 
-class Geometry;
-
 namespace calving {
 
 class HayhurstCalving : public Component {
@@ -45,12 +43,14 @@ public:
 protected:
   DiagnosticList spatial_diagnostics_impl() const;
   
-protected:
   array::Scalar1 m_calving_rate;
 
-  double m_B_tilde, m_exponent_r, m_sigma_threshold;
+  double m_B_tilde;
+  double m_exponent_r;
+  double m_sigma_threshold;
 
-  bool m_use_floatation_thickness; //!< if true, use floatation thickness instead of modelled ice thickness
+  //! if true, use floatation thickness instead of modelled ice thickness
+  bool m_use_floatation_thickness;
 
 };
 
