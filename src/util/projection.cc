@@ -247,12 +247,7 @@ std::string grid_name(const pism::File &file, const std::string &variable_name,
  * Return true if `string` contains "epsg:" or "EPSG:", otherwise false.
  */
 static bool contains_epsg(const std::string &string) {
-  for (const auto &auth : { "epsg:", "EPSG:" }) {
-    if (string.find(auth) != std::string::npos) {
-      return true;
-    }
-  }
-  return false;
+  return (string.find("epsg:") != std::string::npos or string.find("EPSG:") != std::string::npos);
 }
 
 /*!
