@@ -752,7 +752,7 @@ class CARRA2Bias(TestCase):
         self.assertAlmostEqual(self.p["sin_gradient"], 0.12e-3)
 
     def test_carra2_bias_within_range(self):
-        "Modifier 'carra2_bias': bias removed at an elevation inside the range"
+        "Modifier 'carra2_bias': bias added at an elevation inside the range"
         z = 1500.0
         modifier = self.modifier(z)
 
@@ -765,8 +765,8 @@ class CARRA2Bias(TestCase):
         np.testing.assert_almost_equal(fractions, np.array(ts) / year)
 
         check_modifier(self.model, modifier, self.geometry,
-                       T=-self.bias(z, 0.5 / year),
-                       ts=ts, Ts=-self.bias(z, fractions), Ps=np.zeros(len(ts)))
+                       T=self.bias(z, 0.5 / year),
+                       ts=ts, Ts=self.bias(z, fractions), Ps=np.zeros(len(ts)))
 
     def test_carra2_bias_held_beyond_thresholds(self):
         "Modifier 'carra2_bias': constant in elevation below z_min and above z_max"
@@ -777,8 +777,8 @@ class CARRA2Bias(TestCase):
             modifier = self.modifier(z)
             modifier.update(self.geometry, 0, 1)
             check_modifier(self.model, modifier, self.geometry,
-                           T=-self.bias(z_held, 0.5 / year),
-                           ts=ts, Ts=-self.bias(z_held, np.array(ts) / year),
+                           T=self.bias(z_held, 0.5 / year),
+                           ts=ts, Ts=self.bias(z_held, np.array(ts) / year),
                            Ps=np.zeros(len(ts)))
 
     def test_carra2_bias_averages_over_a_step(self):
@@ -789,7 +789,7 @@ class CARRA2Bias(TestCase):
 
         p = self.p
         annual_mean = p["background"] + p["excess"] * np.exp(-z / p["scale_height"])
-        check_difference(modifier.air_temperature(), self.model.air_temperature(), -annual_mean)
+        check_difference(modifier.air_temperature(), self.model.air_temperature(), annual_mean)
 
     def test_carra2_bias_rejects_bad_parameters(self):
         "Modifier 'carra2_bias': a non-positive scale height or z_min >= z_max is an error"

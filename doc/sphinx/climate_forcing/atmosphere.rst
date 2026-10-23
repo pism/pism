@@ -208,12 +208,12 @@ Elevation- and season-dependent temperature bias
 :|options|: ``-atmosphere ...,carra2_bias``
 :|implementation|: ``pism::atmosphere::CARRA2Bias``
 
-This modifier removes a bias that depends on the surface elevation and the time of year
-from the near-surface air temperature of an atmosphere model:
+This modifier adds a correction that depends on the surface elevation and the time of
+year to the near-surface air temperature of an atmosphere model:
 
 .. math::
 
-   T &= T_{\text{input}} - b(z, t),
+   T &= T_{\text{input}} + b(z, t),
 
    b(z, t) &= b_{\infty} + A \exp\left(-\frac{z}{H}\right)
               + (c_0 + c_1 z) \cos(2 \pi t) + (s_0 + s_1 z) \sin(2 \pi t),
@@ -228,8 +228,9 @@ is constant in elevation there but keeps its yearly cycle.
 The default parameters are a fit of the difference between CARRA2's free-air temperature
 carried down to the terrain (a straight-line fit through its pressure levels, evaluated at
 the surface) and its 2 m air temperature, on glacier cells of the S4F Alaska domain, for
-2005. Use this modifier with an input atmosphere model that provides such a free-air
-temperature.
+2005. Use this modifier with an input atmosphere model that provides a 2 m air
+temperature such as CARRA2's: adding :math:`b` (positive with the defaults) raises it to
+the free-air temperature at the surface.
 
 The near-surface air temperature field uses the bias averaged over each time step; the
 temperature time series used by surface models such as ``pdd`` and ``debm_simple`` use

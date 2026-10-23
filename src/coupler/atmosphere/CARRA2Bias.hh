@@ -26,7 +26,7 @@
 namespace pism {
 namespace atmosphere {
 
-//! @brief Remove an elevation- and season-dependent bias from the near-surface air
+//! @brief Add an elevation- and season-dependent bias correction to the near-surface air
 //! temperature.
 //!
 //! The bias is the difference between a free-air temperature carried down to the terrain
@@ -40,8 +40,9 @@ namespace atmosphere {
 //! year. Below `z_min` and above `z_max` the elevation is held at the threshold, so the
 //! bias is constant in elevation there (but keeps its seasonal cycle).
 //!
-//! This modifier returns @f$ T - b(z, t) @f$, where @f$ T @f$ is the air temperature of
-//! the input model.
+//! This modifier returns @f$ T + b(z, t) @f$, where @f$ T @f$ is the air temperature of
+//! the input model, a 2 m air temperature such as CARRA2's: @f$ b > 0 @f$ warms it toward
+//! the free-air temperature at the surface.
 class CARRA2Bias : public AtmosphereModel {
 public:
   CARRA2Bias(std::shared_ptr<const Grid> g, std::shared_ptr<AtmosphereModel> in);

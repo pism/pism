@@ -73,7 +73,7 @@ void CARRA2Bias::init_impl(const Geometry &geometry) {
   m_log->message(2,
                  "* Initializing the elevation- and season-dependent air temperature bias "
                  "correction 'carra2_bias'...\n"
-                 "  T = T_input - b(z, t), with z the surface elevation and t the fraction of the year:\n"
+                 "  T = T_input + b(z, t), with z the surface elevation and t the fraction of the year:\n"
                  "  b = %.2f K + %.2f K exp(-z / %.0f m)\n"
                  "      + (%.2f K + %.3f K/km z) cos(2 pi t) + (%.2f K + %.3f K/km z) sin(2 pi t),\n"
                  "  with z held at %.0f m below and at %.0f m above these elevations.\n",
@@ -126,7 +126,7 @@ void CARRA2Bias::update_impl(const Geometry &geometry, double t, double dt) {
   for (auto p : m_grid->points()) {
     const int i = p.i(), j = p.j();
 
-    T(i, j) -= bias(m_surface(i, j), cos_t, sin_t);
+    T(i, j) += bias(m_surface(i, j), cos_t, sin_t);
   }
 }
 
@@ -163,7 +163,7 @@ void CARRA2Bias::temp_time_series_impl(int i, int j, std::vector<double> &result
   double z = m_surface(i, j);
 
   for (size_t k = 0; k < result.size(); ++k) {
-    result[k] -= bias(z, m_cos_values[k], m_sin_values[k]);
+    result[k] += bias(z, m_cos_values[k], m_sin_values[k]);
   }
 }
 
