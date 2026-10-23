@@ -3,6 +3,13 @@
 Changes since v2.3.0
 ====================
 
+- Add three new calving mechanisms for ice cliff calving: `cliff_calving_shear` (calving
+  parameterization based on shear failure of ice cliffs), `cliff_calving_tensile` (calving
+  parameterization based on tensile failure of ice cliffs), and `linear_calving` (linear
+  calving parameterization with linear dependence on cliff height). Use `-calving
+  cliff_calving_shear`, `-calving cliff_calving_tensile`, or `-calving linear_calving` to
+  enable these mechanisms. See the manual for details.
+
 - Add configuration parameter `time.ignore_input_file` to simplify initialization when an
   input file contains time information incompatible with current modeling choices (e.g.
   uses a different calendar).
@@ -242,13 +249,6 @@ Changes since v2.2.3
 
 Changes since v2.2.0
 ====================
-
-- Add three new calving mechanisms for ice cliff calving: `cliff_calving_shear` (calving
-  parameterization based on shear failure of ice cliffs), `cliff_calving_tensile` (calving
-  parameterization based on tensile failure of ice cliffs), and `linear_calving` (linear
-  calving parameterization with linear dependence on cliff height). Use `-calving
-  cliff_calving_shear`, `-calving cliff_calving_tensile`, or `-calving linear_calving` to
-  enable these mechanisms. See the manual for details.
 
 - Fixed a minor bug: EISMINT II simplified geometry experiments should use the "cold"
   (temperature-based) energy conservation model. In PISM 2.2.0 the EISMINT II default of
