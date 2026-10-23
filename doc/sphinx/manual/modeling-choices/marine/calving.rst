@@ -111,8 +111,9 @@ Antartic ice shelves, it does not work for outlet glaciers that flow in narrow f
 Along valleys with nearly parallel walls the transverse component of the velocity is
 close to zero and the transversal strain rate is therefore also close to zero and noisy.
 
-Instead of the product of the eigen strain rates, :cite:`Morlighem2016` propose a calving
-law where the calving rate `c` is functionally related to tensile stresses:
+Instead of the product of the eigen strain rates, Morlighem and others
+:cite:`Morlighem2016` propose a calving law where the calving rate `c` is functionally
+related to tensile stresses:
 
 .. math::
    :label: eq-calv3
@@ -120,7 +121,7 @@ law where the calving rate `c` is functionally related to tensile stresses:
    c = |\mathbf{u}| \frac{\tilde{\sigma}}{\sigma_{max}},
 
 where `\tilde{\sigma}` is the tensile von Mises stress and `\sigma_{max}` is a threshold
-that has units `Pa` (see :config:`calving.vonmises_calving.sigma_max`). As the tensile
+that has units *pascal* (see :config:`calving.vonmises_calving.sigma_max`). As the tensile
 fracture strength is much smaller than the compressive fracture strength, the effective
 tensile strain rate is defined as
 
@@ -158,10 +159,10 @@ creep damage parameter, which accounts for both tensile and shear stresses.
 The calving rate is calculated based on the maximum tensile stress at the ice front and
 takes into account:
 
-- The water depth relative to ice thickness
-- A damage threshold stress
-- A damage rate parameter
-- A damage law exponent
+- the water depth relative to ice thickness,
+- a damage threshold stress,
+- a damage rate parameter and
+- a damage law exponent.
 
 The calving rate is computed as:
 
@@ -171,14 +172,15 @@ The calving rate is computed as:
    c = |\mathbf{u}| \frac{\tilde{B} (\sigma_0 - \sigma_{th})^r}{\sigma_{th}}
 
 where:
+
 - `c` is the calving rate
 - `|\mathbf{u}|` is the ice velocity magnitude
-- `\tilde{B}` is the effective damage rate parameter (default: 65.0 MPa^r/year)
+- `\tilde{B}` is the effective damage rate parameter (default: 65.0 `\text{MPa}^r/\text{year}`)
 - `\sigma_0` is the maximum tensile stress
 - `\sigma_{th}` is the damage threshold stress (default: 0.17 MPa)
 - `r` is the damage law exponent (default: 0.43)
 
-The maximum tensile stress `\sigma_0` is approximated as:
+The maximum tensile stress `\sigma_0` is approximated by:
 
 .. math::
    :label: eq-hayhurst-sigma
@@ -186,25 +188,28 @@ The maximum tensile stress `\sigma_0` is approximated as:
    \sigma_0 = (0.4 - 0.45 (\omega - 0.065)^2) \rho_i g H
 
 where:
-- `\omega` is the ratio of water depth to ice thickness
-- `\rho_i` is the ice density
-- `g` is the gravitational acceleration
-- `H` is the ice thickness
+
+- `\omega` is the ratio of water depth to ice thickness,
+- `\rho_i` is the ice density,
+- `g` is the gravitational acceleration,
+- `H` is the ice thickness.
 
 .. note::
 
-   The calving parameterization was derived for grounded ice but is also applied to floating ice cells
-   (where `\omega > \rho_i/\rho_w`). Without this modification, the formation of an ice shelf would effectively
-   stop calving. To prevent this, the ice thickness `H` is adjusted to include the freeboard height and
-   `\omega` is recalculated, ensuring continued calving at the grounding line.
+   The calving parameterization was derived for grounded ice but is also applied to
+   floating ice cells (where `\omega > \rho_i/\rho_w`). Without this modification, the
+   formation of an ice shelf would effectively stop calving. To prevent this, the ice
+   thickness `H` is adjusted to include the freeboard height and `\omega` is recalculated,
+   ensuring continued calving at the grounding line.
 
 .. note::
 
-   In the calculation of the calving rate, modelled ice thickness can be replaced by floatation thickness using the option 
-   :config:`calving.grounded_calving.use_floatation_thickness`. This can be useful for runs on coarse grids, where
-   modelled ice cliffs may be too high yielding unrealistic calving rates. Using the floatation thickness gives a minimal 
-   estimate of cliff height and therefore also a minimal estimate of calving rate.
-
+   In the calculation of the calving rate, modelled ice thickness can be replaced by
+   floatation thickness using the option
+   :config:`calving.grounded_calving.use_floatation_thickness`. This can be useful for
+   runs on coarse grids, where modelled ice cliffs may be too high yielding unrealistic
+   calving rates. Using the floatation thickness gives a minimal estimate of cliff height
+   and therefore also a minimal estimate of calving rate.
 
 .. rubric:: Parameters
 
@@ -225,39 +230,43 @@ grounded ice cliffs that form when ice shelves collapse, exposing grounded ice t
 The calving rate is calculated based on the cliff height and water depth, with a maximum rate
 limited by mélange buttressing :cite:`Schlemm2021`. The parameterization takes into account:
 
-- The height of the ice cliff above water level
-- The ratio of water depth to ice thickness
-- A maximum calving rate due to mélange buttressing
+- the height of the ice cliff above water level,
+- the ratio of water depth to ice thickness and
+- a maximum calving rate due to mélange buttressing.
 
 The calving rate is computed as:
 
 .. math::
    :label: eq-cliff-shear
 
-   c = \frac{C_0 (F-F_c)^s}{F_s (1 + C_0 (F-F_c)^s / c_{max})}
+   c = \frac{C_0 (F-F_c)^s}{F_s (1 + C_0 (F-F_c)^s / c_\text{max})}
 
 where:
+
 - `c` is the calving rate
 - `C_0` is a scaling factor (default: 90 m/year)
 - `F` is the cliff height above water level
 - `F_c` is a critical cliff height threshold
 - `F_s` is a scaling factor
 - `s` is an exponent
-- `c_{max}` is the maximum calving rate due to mélange buttressing (default: 3000 m/year)
+- `c_\text{max}` is the maximum calving rate due to mélange buttressing (default: 3000 m/year)
 
 .. note::
 
-   The maximum calving rate parameter (`c_{max}`) controls the effect of mélange buttressing.
-   Setting this parameter to a very large value (e.g., 100 km/year) effectively disables
-   mélange buttressing, resulting in nearly unbuttressed cliff calving rates. However, this should
-   be used with caution as it can lead to unrealistically high calving rates :cite:`Schlemm2021`.
+   The maximum calving rate parameter `c_\text{max}` controls the effect of mélange
+   buttressing. Setting this parameter to a very large value (e.g., 100 km/year)
+   effectively disables mélange buttressing, resulting in nearly unbuttressed cliff
+   calving rates. However, this should be used with caution as it can lead to
+   unrealistically high calving rates :cite:`Schlemm2021`.
 
 .. note::
 
-   In the calculation of the calving rate, modelled ice thickness can be replaced by floatation thickness using the option 
-   :config:`calving.grounded_calving.use_floatation_thickness`. This can be useful for runs on coarse grids, where
-   modelled ice cliffs may be too high yielding unrealistic calving rates. Using the floatation thickness gives a minimal 
-   estimate of cliff height and therefore also a minimal estimate of calving rate.
+   In the calculation of the calving rate, modelled ice thickness can be replaced by
+   floatation thickness using the option
+   :config:`calving.grounded_calving.use_floatation_thickness`. This can be useful for
+   runs on coarse grids, where modelled ice cliffs may be too high yielding unrealistic
+   calving rates. Using the floatation thickness gives a minimal estimate of cliff height
+   and therefore also a minimal estimate of calving rate.
 
 .. rubric:: Parameters
 
@@ -271,16 +280,17 @@ Prefix: ``calving.cliff_calving_shear.``
 Cliff calving due to tensile failure
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The option :opt:`-calving cliff_calving_tensile` implements a parameterization for calving of ice cliffs
-based on tensile stress failure :cite:`Crawford2021`. This mechanism models calving of grounded ice
-cliffs that form when ice shelves collapse, with a focus on tensile failure at the cliff face.
+The option :opt:`-calving cliff_calving_tensile` implements a parameterization for calving
+of ice cliffs based on tensile stress failure :cite:`Crawford2021`. This mechanism models
+calving of grounded ice cliffs that form when ice shelves collapse, with a focus on
+tensile failure at the cliff face.
 
-The calving rate is calculated based on the cliff height, with a minimum threshold height required
-for calving to occur. The parameterization takes into account:
+The calving rate is calculated based on the cliff height, with a minimum threshold height
+required for calving to occur. The parameterization takes into account:
 
-- The height of the ice cliff above water level
-- A minimum cliff height threshold (135 m)
-- A power law relationship between cliff height and calving rate
+- the height of the ice cliff above water level,
+- a minimum cliff height threshold (135 m) and
+- a power law relationship between cliff height and calving rate
 
 The calving rate is computed as:
 
@@ -290,25 +300,29 @@ The calving rate is computed as:
    c = I H_c^\alpha
 
 where:
+
 - `c` is the calving rate
-- `I` is a scaling factor (default: 3.7e-16 m/s)
+- `I` is a scaling factor
 - `H_c` is the cliff height above water level
-- `\alpha` is an exponent (default: 6.9)
+- `\alpha` is an exponent
 
 Calving only occurs when the cliff height exceeds 135 meters.
 
 .. note::
 
-   The parameters `I` and `\alpha` depend on ice temperature and bed conditions (frozen, slippery, or normal).
-   The default values provided are calibrated for cold ice (-20°C) with a frozen bed.
-   Different values may be needed for warmer ice or different bed conditions :cite:`Crawford2021`.
+   The parameters `I` and `\alpha` depend on ice temperature and bed conditions (frozen,
+   slippery, or normal). The default values provided are calibrated for cold ice (-20°C)
+   with a frozen bed. Different values may be needed for warmer ice or different bed
+   conditions :cite:`Crawford2021`.
 
 .. note::
 
-   In the calculation of the calving rate, modelled ice thickness can be replaced by floatation thickness using the option 
-   :config:`calving.grounded_calving.use_floatation_thickness`. This can be useful for runs on coarse grids, where
-   modelled ice cliffs may be too high yielding unrealistic calving rates. Using the floatation thickness gives a minimal 
-   estimate of cliff height and therefore also a minimal estimate of calving rate.
+   In the calculation of the calving rate, modelled ice thickness can be replaced by
+   floatation thickness using the option
+   :config:`calving.grounded_calving.use_floatation_thickness`. This can be useful for
+   runs on coarse grids, where modelled ice cliffs may be too high yielding unrealistic
+   calving rates. Using the floatation thickness gives a minimal estimate of cliff height
+   and therefore also a minimal estimate of calving rate.
 
 .. rubric:: Parameters
 
@@ -322,12 +336,14 @@ Prefix: ``calving.cliff_calving_tensile.``
 Linear calving with linear dependence on cliff height
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The option :opt:`-calving linear_calving` implements a parameterization for calving of ice cliffs
-based on a linear relationship between calving rate and cliff height :cite:`Parsons2025` derived from 
-observations of tidewater glaciers around the Antarctic Peninsula.
+The option :opt:`-calving linear_calving` implements a parameterization for calving of ice
+cliffs based on a linear relationship between calving rate and cliff height
+:cite:`Parsons2025` derived from observations of tidewater glaciers around the Antarctic
+Peninsula.
 
-The calving rate is calculated based on the cliff height using a linear relationship, providing
-a simpler alternative to the power-law relationships used in other cliff calving mechanisms.
+The calving rate is calculated based on the cliff height using a linear relationship,
+providing a simpler alternative to the power-law relationships used in other cliff calving
+mechanisms.
 
 The calving rate is computed as:
 
@@ -337,26 +353,29 @@ The calving rate is computed as:
    c = a H_c + b
 
 where:
-- `c` is the calving rate
-- `a` is the linear coefficient (default: 39.08 year^-1)
-- `H_c` is the cliff height above water level
-- `b` is the constant offset (default: -456.87 m/year)
+
+- `c` is the calving rate,
+- `a` is the linear coefficient,
+- `H_c` is the cliff height above water level and
+- `b` is the constant offset.
 
 The calving rate is set to zero if the calculated value is negative, ensuring physically
 meaningful results.
 
 .. note::
 
-   The parameters `a` and `b` might need to be calibrated
-   for specific regions and climatic conditions. The default values are
-   based on observational data of tidewater glaciers around the Antarctic Peninsula :cite:`Parsons2025`.
+   Parameters `a` and `b` might need to be calibrated for specific regions and climatic
+   conditions. The default values are based on observational data of tidewater glaciers
+   around the Antarctic Peninsula :cite:`Parsons2025`.
 
 .. note::
 
-   In the calculation of the calving rate, modelled ice thickness can be replaced by floatation thickness using the option 
-   :config:`calving.grounded_calving.use_floatation_thickness`. This can be useful for runs on coarse grids, where
-   modelled ice cliffs may be too high yielding unrealistic calving rates. Using the floatation thickness gives a minimal 
-   estimate of cliff height and therefore also a minimal estimate of calving rate.
+   In the calculation of the calving rate, modelled ice thickness can be replaced by
+   floatation thickness using the option
+   :config:`calving.grounded_calving.use_floatation_thickness`. This can be useful for
+   runs on coarse grids, where modelled ice cliffs may be too high yielding unrealistic
+   calving rates. Using the floatation thickness gives a minimal estimate of cliff height
+   and therefore also a minimal estimate of calving rate.
 
 .. rubric:: Parameters
 
