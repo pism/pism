@@ -32,6 +32,8 @@
 namespace pism {
 namespace calving {
 
+static const double high_calving_rate = 1e-5; // m/s
+
 LinearCalving::LinearCalving(std::shared_ptr<const Grid> grid)
     : Component(grid), m_calving_rate(grid, "linear_calving_rate"), m_a(0.0), m_b(0.0) {
 
@@ -111,13 +113,14 @@ void LinearCalving::update(const array::CellType1 &cell_type, const array::Scala
   for (auto pt : m_grid->points()) {
     const int i = pt.i(), j = pt.j();
 
-    // Find partially filled or empty grid boxes on the icefree ocean, which
-    // have grounded ice neighbors after the mass continuity step
+    // Find partially filled or empty grid boxes on the ice-free ocean that have grounded
+    // ice neighbors
     if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_grounded_ice(i, j)) {
       // Get the ice thickness, surface elevation, and mask in all neighboring grid cells
       auto H = ice_thickness.star(i, j);
 
-      stencils::Star<double> surface_elevation;
+      // at an ice-free ocean location surface elevation is equal to sea level
+      stencils::Star<double> surface_elevation(sea_level(i, j));
       for (auto d : {North, East, South, West}) {
         surface_elevation[d] = H[d] + bed_elevation(i, j);
       }
@@ -128,12 +131,14 @@ void LinearCalving::update(const array::CellType1 &cell_type, const array::Scala
       // of neighbouring icy cells.
       const double water_depth = sea_level(i, j) - bed_elevation(i, j);
       double cliff_height;
-      int m;
+      int mask;
       if (m_use_floatation_thickness) {
         // Calculate floatation thickness: thickness of ice that would float in this water depth
         const double H_flotation = water_depth * (water_density / ice_density);
+
         // Calculate mask of the partially filled grid cell where we apply calving
-        m = gc.mask(sea_level(i, j), bed_elevation(i, j), H_flotation);
+        mask = gc.mask(sea_level(i, j), bed_elevation(i, j), H_flotation);
+
         // Calculate cliff height using floatation thickness
         cliff_height = H_flotation - water_depth;
       } else {
@@ -142,27 +147,24 @@ void LinearCalving::update(const array::CellType1 &cell_type, const array::Scala
         // the adjacent icy cells.
         const double H_threshold =
             part_grid_threshold_thickness(M, H, surface_elevation, bed_elevation(i, j));
+
         // Calculate mask of the partially filled grid cell where we apply calving
-        m = gc.mask(sea_level(i, j), bed_elevation(i, j), H_threshold);
+        mask = gc.mask(sea_level(i, j), bed_elevation(i, j), H_threshold);
+
         // Calculate cliff height (ice thickness above sea level)
         cliff_height = H_threshold - water_depth;
       }
       // Calculate the calving rate [\ref Parsons2025] if cell is grounded
       m_calving_rate(i, j) =
-          (mask::grounded_ice(m) ? std::max(0.0, m_a * cliff_height + m_b) : 0.0);
+          (mask::grounded_ice(mask) ? std::max(0.0, m_a * cliff_height + m_b) : 0.0);
+
+      max_cliff_height = std::max(max_cliff_height, cliff_height);
+      max_calving_rate = std::max(max_calving_rate, m_calving_rate(i, j));
 
       // Track statistics
-      if (m_calving_rate(i, j) > 0.0) {
-        num_calving_cells++;
-        if (m_calving_rate(i, j) > max_calving_rate) {
-          max_calving_rate = m_calving_rate(i, j);
-          max_cliff_height = cliff_height;
-        }
-        // Log very high calving rates that might cause instability
-        if (m_calving_rate(i, j) > 1e-5) { // More than ~315 m/year
-          num_extreme_calving++;
-        }
-      }
+      num_calving_cells += m_calving_rate(i, j) > 0 ? 1 : 0;
+      // Log very high (more than ~315 m/year) calving rates that might cause instability
+      num_extreme_calving += (m_calving_rate(i, j) > high_calving_rate) ? 1 : 0;
 
     } else {
       m_calving_rate(i, j) = 0.0;
@@ -182,7 +184,8 @@ void LinearCalving::update(const array::CellType1 &cell_type, const array::Scala
                      "  - Cells with extreme rates (>315 m/year): %d\n"
                      "  - Maximum rate: %.2f m/year\n"
                      "  - Maximum cliff height: %.1f m\n",
-                     num_calving_cells, num_extreme_calving, max_calving_rate * 31557600.0,
+                     num_calving_cells, num_extreme_calving,
+                     units::convert(m_sys, max_calving_rate, "m second-1", "m year-1"),
                      max_cliff_height);
     } else {
       m_log->message(

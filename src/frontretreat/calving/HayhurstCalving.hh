@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef HAYHURSTCALVING_H
-#define HAYHURSTCALVING_H
+#ifndef PISM_HAYHURSTCALVING_H
+#define PISM_HAYHURSTCALVING_H
 
 #include "pism/util/Component.hh"
 #include "pism/util/array/Scalar.hh"
@@ -57,4 +57,4 @@ protected:
 } // end of namespace calving
 } // end of namespace pism
 
-#endif /* HAYHURSTCALVING_H */
+#endif /* PISM_HAYHURSTCALVING_H */
