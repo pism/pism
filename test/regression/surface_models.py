@@ -1037,7 +1037,8 @@ class ISMIP7(TestCase):
         model.init(self.inputs)
 
         t = self.ctx.time.current()
-        dt = model.max_timestep(t, None).value()
+        # the forcing is constant in time, so max_timestep() is unbounded: use a finite step
+        dt = 10.0
 
         model.update(self.inputs, t, dt)
 
@@ -1051,11 +1052,12 @@ class ISMIP7(TestCase):
         assert SMB < 0.0
 
         # runoff comes from the forcing, *not* from the SMB: unlike the other surface
-        # models, ISMIP7 does not derive it using dummy_runoff()
+        # models, ISMIP7 does not derive it using dummy_runoff(). The forcing gives a
+        # rate; runoff() returns the amount over the step, R * dt.
         assert abs(R - (-SMB)) > 1.0
 
         check_model(model, T=T, omega=0.0, SMB=SMB,
-                    accumulation=max(SMB, 0.0), melt=max(-SMB, 0.0), runoff=R)
+                    accumulation=max(SMB, 0.0), melt=max(-SMB, 0.0), runoff=R * dt)
 
         write_state(model, self.geometry, self.output_filename)
         probe_interface(model)
