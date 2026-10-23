@@ -68,7 +68,7 @@
 # Note: the CITATION.cff format does not allow for extra information, so
 # "contribution-areas" below are commented out. These lines *are* needed to generate the
 # list of authors in the manual, though. Each author should have a list of contribution
-# areas *one one line*, indented so that the substitution "s/# contrib/contrib/g" will
+# areas *on one line*, indented so that the substitution "s/# contrib/contrib/g" will
 # produce a valid YAML document.
 #
 # See doc/sphinx/Makefile and doc/sphinx/authorship.py for details.
