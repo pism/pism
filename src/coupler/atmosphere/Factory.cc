@@ -29,6 +29,7 @@
 #include "pism/coupler/atmosphere/PrecipitationScaling.hh"
 #include "pism/coupler/atmosphere/PIK.hh"
 #include "pism/coupler/atmosphere/Anomaly.hh"
+#include "pism/coupler/atmosphere/CARRA2Bias.hh"
 #include "pism/coupler/atmosphere/CosineYearlyCycle.hh"
 #include "pism/coupler/atmosphere/WeatherStation.hh"
 #include "pism/coupler/atmosphere/Uniform.hh"
@@ -50,6 +51,7 @@ Factory::Factory(std::shared_ptr<const Grid> g)
   add_model<Uniform>("uniform");
 
   add_modifier<Anomaly>("anomaly");
+  add_modifier<CARRA2Bias>("carra2_bias");
   add_modifier<PrecipitationScaling>("precip_scaling");
   add_modifier<Frac_P>("frac_P");
   add_modifier<Delta_P>("delta_P");
