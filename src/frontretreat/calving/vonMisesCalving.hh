@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef VONMISESCALVING_H
-#define VONMISESCALVING_H
+#ifndef PISM_VONMISESCALVING_H
+#define PISM_VONMISESCALVING_H
 
 #include "pism/frontretreat/calving/StressCalving.hh"
 
@@ -54,4 +54,4 @@ protected:
 } // end of namespace calving
 } // end of namespace pism
 
-#endif /* VONMISESCALVING_H */
+#endif /* PISM_VONMISESCALVING_H */

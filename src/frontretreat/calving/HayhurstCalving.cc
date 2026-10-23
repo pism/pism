@@ -62,22 +62,18 @@ void HayhurstCalving::init() {
                    "  Using floatation thickness for cliff height calculation.\n");
   }
 
-  if (fabs(m_grid->dx() - m_grid->dy()) / std::min(m_grid->dx(), m_grid->dy()) > 1e-2) {
-    throw RuntimeError::formatted(PISM_ERROR_LOCATION,
-                                  "-calving hayhurst_calving using a non-square grid cell is not implemented (yet);\n"
-                                  "dx = %f, dy = %f, relative difference = %f",
-                                  m_grid->dx(), m_grid->dy(),
-                                  fabs(m_grid->dx() - m_grid->dy()) / std::max(m_grid->dx(), m_grid->dy()));
+  double dx = m_grid->dx(), dy = m_grid->dy();
+  if (fabs(dx - dy) / std::min(dx, dy) > 1e-2) {
+    throw RuntimeError::formatted(
+        PISM_ERROR_LOCATION,
+        "-calving hayhurst_calving using a non-square grid cell is not implemented (yet);\n"
+        "dx = %f, dy = %f, relative difference = %f",
+        dx, dy, fabs(dx - dy) / std::max(dx, dy));
   }
-
 }
 
-void HayhurstCalving::update(const array::CellType1 &cell_type,
-                             const array::Scalar1 &ice_thickness,
-                             const array::Scalar &sea_level,
-                             const array::Scalar &bed_elevation) {
-
-  using std::min;
+void HayhurstCalving::update(const array::CellType1 &cell_type, const array::Scalar1 &ice_thickness,
+                             const array::Scalar &sea_level, const array::Scalar &bed_elevation) {
 
   const double
     ice_density   = m_config->get_number("constants.ice.density"),
@@ -124,6 +120,7 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
       }
 
       // [\ref Mercenier2018] maximum tensile stress approximation
+      // NOLINTBEGIN(readability-magic-numbers)
       double sigma_0 = (0.4 - 0.45 * pow(omega - 0.065, 2.0)) * ice_density * gravity * H;
 
       // ensure that sigma_0 - m_sigma_threshold >= 0
@@ -133,6 +130,7 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
       m_calving_rate(i, j) = (m_B_tilde * unit_scaling *
                               (1.0 - pow(omega, 2.8)) *
                               pow(sigma_0 - m_sigma_threshold, m_exponent_r) * H);
+      // NOLINTEND(readability-magic-numbers)
 
     } else { // end of "if (icy and water_depth > 0)"
       m_calving_rate(i, j) = 0.0;
@@ -191,12 +189,12 @@ void HayhurstCalving::update(const array::CellType1 &cell_type,
 
   // Print summary statistics
   {
-    max_calving_rate    = GlobalMax(m_grid->com, max_calving_rate);
+    max_calving_rate = GlobalMax(m_grid->com, max_calving_rate);
     if (max_calving_rate > 0.0) {
-      max_cliff_height    = GlobalMax(m_grid->com, max_cliff_height);
+      max_cliff_height = GlobalMax(m_grid->com, max_cliff_height);
       m_log->message(
           3, "* Hayhurst calving summary: max rate = %.2f m/year, max cliff height = %.1f m\n",
-          max_calving_rate * 31557600.0, max_cliff_height);
+          units::convert(m_sys, max_calving_rate, "m second-1", "m year-1"), max_cliff_height);
     } else {
       m_log->message(3, "* No active Hayhurst calving cells at this time step.\n");
     }
@@ -208,7 +206,7 @@ const array::Scalar &HayhurstCalving::calving_rate() const {
 }
 
 DiagnosticList HayhurstCalving::spatial_diagnostics_impl() const {
-  return {{"hayhurst_calving_rate", Diagnostic::wrap(m_calving_rate)}};
+  return { { "hayhurst_calving_rate", Diagnostic::wrap(m_calving_rate) } };
 }
 
 } // end of namespace calving

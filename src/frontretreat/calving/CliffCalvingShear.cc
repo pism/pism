@@ -32,6 +32,8 @@
 namespace pism {
 namespace calving {
 
+static const double high_calving_rate = 1e-5; // m/s
+
 CliffCalvingShear::CliffCalvingShear(std::shared_ptr<const Grid> grid)
   : Component(grid),
     m_calving_rate(grid, "shear_cliff_calving_rate"),
@@ -103,7 +105,9 @@ void CliffCalvingShear::update(const array::CellType1 &cell_type,
     if (cell_type.ice_free_ocean(i, j) and cell_type.next_to_grounded_ice(i, j)) {
       // Get the ice thickness, surface elevation, and mask in all neighboring grid cells
       auto H = ice_thickness.star(i, j);
-      stencils::Star<double> surface_elevation;
+
+      // at an ice-free ocean location surface elevation is equal to sea level
+      stencils::Star<double> surface_elevation(sea_level(i, j));
       for (auto d : {North, East, South, West}) {
         surface_elevation[d] = H[d] + bed_elevation(i, j);
       }
@@ -157,29 +161,18 @@ void CliffCalvingShear::update(const array::CellType1 &cell_type,
       // Apply mélange buttressing [\ref Schlemm2021]
       //
       // check value of max_cliff_calving to prevent division by zero
+      const double eps = 1e-12;
       m_calving_rate(i, j) =
-          (std::abs(m_max_cliff_calving_rate) < 1e-12 ?
+          (std::abs(m_max_cliff_calving_rate) < eps ?
                0.0 :
                C_unbuttressed / (1.0 + C_unbuttressed / m_max_cliff_calving_rate));
 
-      // Track calving statistics
-      if (m_calving_rate(i, j) > 0.0) {
-        num_calving_cells++;
+      // Track maximum cliff height
+      max_cliff_height = std::max(max_cliff_height, F);
+      max_calving_rate = std::max(max_calving_rate, m_calving_rate(i, j));
 
-        // Convert rate to m/year for comparison
-        double rate_per_year = convert(m_sys, m_calving_rate(i, j), "m second-1", "m year-1");
-
-        if (rate_per_year > 315.0) {  // Same threshold as tensile calving
-          num_extreme_calving++;
-        }
-
-        if (rate_per_year > convert(m_sys, max_calving_rate, "m second-1", "m year-1")) {
-          max_calving_rate = m_calving_rate(i, j);
-        }
-
-        // Track maximum cliff height
-        max_cliff_height = std::max(max_cliff_height, F);
-      }
+      num_calving_cells += m_calving_rate(i, j) > 0.0 ? 1 : 0;
+      num_extreme_calving += m_calving_rate(i, j) > high_calving_rate ? 1 : 0;
     } else {
       m_calving_rate(i, j) = 0.0;
     }
