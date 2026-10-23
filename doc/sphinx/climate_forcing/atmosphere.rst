@@ -200,6 +200,48 @@ Prefix: ``atmosphere.delta_T.``
 .. pism-parameters::
    :prefix: atmosphere.delta_T.
 
+.. _sec-atmosphere-carra2-bias:
+
+Elevation- and season-dependent temperature bias
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+:|options|: ``-atmosphere ...,carra2_bias``
+:|implementation|: ``pism::atmosphere::CARRA2Bias``
+
+This modifier removes a bias that depends on the surface elevation and the time of year
+from the near-surface air temperature of an atmosphere model:
+
+.. math::
+
+   T &= T_{\text{input}} - b(z, t),
+
+   b(z, t) &= b_{\infty} + A \exp\left(-\frac{z}{H}\right)
+              + (c_0 + c_1 z) \cos(2 \pi t) + (s_0 + s_1 z) \sin(2 \pi t),
+
+where :math:`z` is the ice surface elevation (:var:`usurf`) and :math:`t` the fraction of the
+calendar year. The bias has an annual mean that decays exponentially with elevation toward
+:math:`b_{\infty}`, and one yearly cycle whose amplitude and phase change linearly with
+elevation. Below :config:`atmosphere.carra2_bias.z_min` and above
+:config:`atmosphere.carra2_bias.z_max` the elevation is held at the threshold, so the bias
+is constant in elevation there but keeps its yearly cycle.
+
+The default parameters are a fit of the difference between CARRA2's free-air temperature
+carried down to the terrain (a straight-line fit through its pressure levels, evaluated at
+the surface) and its 2 m air temperature, on glacier cells of the S4F Alaska domain, for
+2005. Use this modifier with an input atmosphere model that provides such a free-air
+temperature.
+
+The near-surface air temperature field uses the bias averaged over each time step; the
+temperature time series used by surface models such as ``pdd`` and ``debm_simple`` use
+the bias at each of their sub-steps, so they resolve the yearly cycle.
+
+.. rubric:: Parameters
+
+Prefix: ``atmosphere.carra2_bias.``
+
+.. pism-parameters::
+   :prefix: atmosphere.carra2_bias.
+
 .. _sec-atmosphere-delta-p:
 
 Scalar precipitation offsets
