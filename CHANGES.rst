@@ -186,8 +186,6 @@ Changes since v2.3.0
   `terrain_shaded_insolation.diffuse_fraction` is positive.
 - Add an `ismip7` surface model that uses the gradients but not the anomalies, and adds
   runoff. It is exposed to Python as `PISM.SurfaceISMIP7`.
-- Implement the Blatter hardness inversion (`pismi -stress_balance.model blatter -inv_design
-  hardav`): `IP_BlatterHardavForwardProblem` now provides the volume design Jacobian (and
 - `inverse.design.variable` accepts the pairs `tauc_hardav` and `hardav_tauc`: `pismi` then
   alternates between the two design variables in that order for `inverse.alternating_cycles`
   cycles (a pair always runs at least one), stopping early below
@@ -400,7 +398,6 @@ Changes since v2.2.3
 - Require YAC 3.14.0 or newer.
 
 
->>>>>>> dev
 Changes since v2.2.0
 ====================
 
