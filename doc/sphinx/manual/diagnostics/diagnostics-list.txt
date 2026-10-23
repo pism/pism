@@ -516,6 +516,7 @@ Spatially-variable fields
 
    :Units: kg m^-2 s^-1
    :Description: mass flux at the basal surface of ice shelves
+   :Comment: positive mass flux corresponds to ice loss into the ocean
 
 #. ``shelfbtemp``
 
