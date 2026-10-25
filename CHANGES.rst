@@ -3,6 +3,11 @@
 Changes since v2.3.0
 ====================
 
+- With serial NetCDF output (`output.format` `netcdf3` or `netcdf4_serial`), a failure to
+  read or write a variable now stops the run with an error message that names the
+  variable and the file. Previously such a failure on rank 0 could leave the other ranks
+  waiting forever, so the run hung without printing an error.
+
 - Add configuration parameter `time.ignore_input_file` to simplify initialization when an
   input file contains time information incompatible with current modeling choices (e.g.
   uses a different calendar).

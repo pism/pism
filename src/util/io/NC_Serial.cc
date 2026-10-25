@@ -45,9 +45,22 @@ static void check(const ErrorLocation &where, int return_code) {
 }
 
 //! call MPI_Abort() if a NetCDF call failed
-static void check_and_abort(MPI_Comm com, const ErrorLocation &where, int return_code) {
+/*!
+ * Use this instead of check() where only rank 0 makes the NetCDF call while the other
+ * ranks wait for it in point-to-point communication: an exception thrown on rank 0 alone
+ * would leave them waiting forever, and the error message would never be printed.
+ */
+static void check_and_abort(MPI_Comm com, const ErrorLocation &where, int return_code,
+                            const std::string &context = "") {
   if (return_code != NC_NOERR) {
-    fprintf(stderr, "%s:%d: %s\n", where.filename, where.line_number, nc_strerror(return_code));
+    // where.filename is NULL unless PISM is built with Pism_DEBUG
+    if (where.filename != nullptr) {
+      fprintf(stderr, "PISM ERROR: %s:%d: ", where.filename, where.line_number);
+    } else {
+      fprintf(stderr, "PISM ERROR: ");
+    }
+    fprintf(stderr, "%s%s%s\n", nc_strerror(return_code), context.empty() ? "" : " while ",
+            context.c_str());
     MPI_Abort(com, -1);
   }
 }
@@ -345,7 +358,8 @@ void NC_Serial::get_var_double(const std::string &variable_name,
 
       stat = nc_get_vara_double(m_file_id, varid, nc_start.data(), nc_count.data(),
                                 processor_0_buffer.data());
-      check(PISM_ERROR_LOCATION, stat);
+      check_and_abort(m_com, PISM_ERROR_LOCATION, stat,
+                      "reading '" + variable_name + "' from " + m_filename);
 
       if (r != 0) {
         MPI_Send(processor_0_buffer.data(), (int)local_chunk_size, MPI_DOUBLE, r, data_tag, m_com);
@@ -433,7 +447,8 @@ void NC_Serial::put_vara_double_impl(const std::string &variable_name,
 
       stat = nc_put_vara_double(m_file_id, varid, nc_start.data(), nc_count.data(),
                                 processor_0_buffer.data());
-      check(PISM_ERROR_LOCATION, stat);
+      check_and_abort(m_com, PISM_ERROR_LOCATION, stat,
+                      "writing '" + variable_name + "' to " + m_filename);
     } // end of the for loop
   } else {
     MPI_Send(start.data(), ndims, MPI_UNSIGNED, 0, start_tag, m_com);
