@@ -699,3 +699,105 @@ class ElevationChange(TestCase):
 
         check_modifier(model, modifier, self.geometry, T=self.dT, P=dP,
                        ts=[0.5], Ts=[self.dT], Ps=[dP])
+
+class CARRA2Bias(TestCase):
+    "Modifier 'carra2_bias': an elevation- and season-dependent temperature bias"
+
+    prefix = "atmosphere.carra2_bias."
+
+    def setUp(self):
+        self.grid = shallow_grid()
+        self.geometry = PISM.Geometry(self.grid)
+        self.geometry.ice_thickness.set(1000.0)
+
+        config.set_number("atmosphere.uniform.temperature", 250.0)
+        self.model = PISM.AtmosphereUniform(self.grid)
+
+        names = ["background", "excess", "scale_height", "cos", "cos_gradient",
+                 "sin", "sin_gradient", "z_min", "z_max"]
+        self.saved = {name: config.get_number(self.prefix + name) for name in names}
+
+        self.p = {name: config.get_number(self.prefix + name) for name in names}
+        # convert to kelvin per meter
+        for name in ["cos_gradient", "sin_gradient"]:
+            self.p[name] = config.get_number(self.prefix + name, "kelvin m^-1")
+
+    def tearDown(self):
+        for name, value in self.saved.items():
+            config.set_number(self.prefix + name, value)
+
+    def bias(self, z, fraction):
+        "The bias, computed independently of the implementation."
+        p = self.p
+        z = np.clip(z, p["z_min"], p["z_max"])
+        phase = 2.0 * np.pi * np.asarray(fraction)
+        return (p["background"] + p["excess"] * np.exp(-z / p["scale_height"]) +
+                (p["cos"] + p["cos_gradient"] * z) * np.cos(phase) +
+                (p["sin"] + p["sin_gradient"] * z) * np.sin(phase))
+
+    def modifier(self, surface):
+        self.geometry.ice_surface_elevation.set(surface)
+        modifier = PISM.AtmosphereCARRA2Bias(self.grid, self.model)
+        modifier.init(self.geometry)
+        return modifier
+
+    def test_defaults(self):
+        "The defaults are the fitted values"
+        self.assertAlmostEqual(self.p["background"], 2.17)
+        self.assertAlmostEqual(self.p["excess"], 4.60)
+        self.assertAlmostEqual(self.p["scale_height"], 1070.0)
+        self.assertAlmostEqual(self.p["cos"], -2.39)
+        self.assertAlmostEqual(self.p["cos_gradient"], 0.69e-3)
+        self.assertAlmostEqual(self.p["sin"], -0.61)
+        self.assertAlmostEqual(self.p["sin_gradient"], 0.12e-3)
+
+    def test_carra2_bias_within_range(self):
+        "Modifier 'carra2_bias': bias added at an elevation inside the range"
+        z = 1500.0
+        modifier = self.modifier(z)
+
+        # a one-second step at the start of the year
+        modifier.update(self.geometry, 0, 1)
+
+        year = seconds_per_year
+        ts = [0.5, 0.25 * year, 0.5 * year, 0.75 * year]
+        fractions = [PISM.Context().time.year_fraction(t) for t in ts]
+        np.testing.assert_almost_equal(fractions, np.array(ts) / year)
+
+        check_modifier(self.model, modifier, self.geometry,
+                       T=self.bias(z, 0.5 / year),
+                       ts=ts, Ts=self.bias(z, fractions), Ps=np.zeros(len(ts)))
+
+    def test_carra2_bias_held_beyond_thresholds(self):
+        "Modifier 'carra2_bias': constant in elevation below z_min and above z_max"
+        year = seconds_per_year
+        ts = [0.5, 0.4 * year]
+        for z, z_held in [(self.p["z_min"] - 500.0, self.p["z_min"]),
+                          (self.p["z_max"] + 500.0, self.p["z_max"])]:
+            modifier = self.modifier(z)
+            modifier.update(self.geometry, 0, 1)
+            check_modifier(self.model, modifier, self.geometry,
+                           T=self.bias(z_held, 0.5 / year),
+                           ts=ts, Ts=self.bias(z_held, np.array(ts) / year),
+                           Ps=np.zeros(len(ts)))
+
+    def test_carra2_bias_averages_over_a_step(self):
+        "Modifier 'carra2_bias': over a whole year only the annual mean remains"
+        z = 800.0
+        modifier = self.modifier(z)
+        modifier.update(self.geometry, 0, seconds_per_year)
+
+        p = self.p
+        annual_mean = p["background"] + p["excess"] * np.exp(-z / p["scale_height"])
+        check_difference(modifier.air_temperature(), self.model.air_temperature(), annual_mean)
+
+    def test_carra2_bias_rejects_bad_parameters(self):
+        "Modifier 'carra2_bias': a non-positive scale height or z_min >= z_max is an error"
+        config.set_number(self.prefix + "scale_height", 0.0)
+        with self.assertRaises(RuntimeError):
+            PISM.AtmosphereCARRA2Bias(self.grid, self.model)
+        config.set_number(self.prefix + "scale_height", self.saved["scale_height"])
+
+        config.set_number(self.prefix + "z_min", self.saved["z_max"])
+        with self.assertRaises(RuntimeError):
+            PISM.AtmosphereCARRA2Bias(self.grid, self.model)

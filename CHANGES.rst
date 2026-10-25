@@ -3,6 +3,16 @@
 Changes since v2.3.0
 ====================
 
+- Add the atmosphere modifier `carra2_bias` (`-atmosphere ...,carra2_bias`). It adds an
+  elevation- and season-dependent correction `b = b_inf + A exp(-z / H) + (c_0 + c_1 z)
+  cos(2 pi t) + (s_0 + s_1 z) sin(2 pi t)` to the near-surface air temperature, with `z` the
+  surface elevation and `t` the fraction of the year; `z` is held at
+  `atmosphere.carra2_bias.z_min` below and at `atmosphere.carra2_bias.z_max` above these
+  elevations. The default parameters (prefix `atmosphere.carra2_bias.`) are a fit of
+  CARRA2's free-air temperature carried down to the terrain minus its 2 m temperature on
+  glaciers in Alaska, so adding it to a 2 m temperature such as CARRA2's raises it to the
+  free-air temperature at the surface. It reads no input file.
+
 - With serial NetCDF output (`output.format` `netcdf3` or `netcdf4_serial`), a failure to
   read or write a variable now stops the run with an error message that names the
   variable and the file. Previously such a failure on rank 0 could leave the other ranks
