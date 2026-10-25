@@ -33,7 +33,9 @@ Changes since v2.3.0
 
   The `insolation` (daily-mean insolation reaching the surface (rate), in `W m-2`),
   `horizon`, and `sky_view_factor` diagnostics are available; `sky_view_factor` only when
-  `terrain_shaded_insolation.diffuse_fraction` is positive.
+  `terrain_shaded_insolation.diffuse_fraction` is positive. `horizon` uses its own
+  dimension `azimuth` (radians, clockwise from north) with
+  `terrain_shaded_insolation.horizon.n_directions` levels.
 - Add an `ismip7` surface model that uses the gradients but not the anomalies, and adds
   runoff. It is exposed to Python as `PISM.SurfaceISMIP7`.
 - Implement the Blatter hardness inversion (`pismi -stress_balance.model blatter -inv_design
