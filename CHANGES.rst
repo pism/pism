@@ -167,6 +167,14 @@ Changes since v2.3.0
   hydrology was not passed to the ocean model, so PICOP dereferenced an uninitialized
   `Inputs::hydrology` pointer when reading subglacial discharge. The `ocean::Inputs` fields
   now default to `nullptr` so a missing input is caught rather than causing undefined behavior.
+- With serial NetCDF output (`output.format` `netcdf3` or `netcdf4_serial`), a failure to
+  read or write a variable now stops the run with an error message that names the
+  variable and the file. Previously such a failure on rank 0 could leave the other ranks
+  waiting forever, so the run hung without printing an error.
+
+- Add configuration parameter `time.ignore_input_file` to simplify initialization when an
+  input file contains time information incompatible with current modeling choices (e.g.
+  uses a different calendar).
 - Add a `terrain_shaded` insolation model to the `debm_simple` surface model; enable it by
   setting `surface.debm_simple.insolation_model` to `terrain_shaded`. This replaces the
   computation of the insolation-driven melt.
@@ -183,7 +191,9 @@ Changes since v2.3.0
 
   The `insolation` (daily-mean insolation reaching the surface (rate), in `W m-2`),
   `horizon`, and `sky_view_factor` diagnostics are available; `sky_view_factor` only when
-  `terrain_shaded_insolation.diffuse_fraction` is positive.
+  `terrain_shaded_insolation.diffuse_fraction` is positive. `horizon` uses its own
+  dimension `azimuth` (radians, clockwise from north) with
+  `terrain_shaded_insolation.horizon.n_directions` levels.
 - Add an `ismip7` surface model that uses the gradients but not the anomalies, and adds
   runoff. It is exposed to Python as `PISM.SurfaceISMIP7`.
 - `inverse.design.variable` accepts the pairs `tauc_hardav` and `hardav_tauc`: `pismi` then

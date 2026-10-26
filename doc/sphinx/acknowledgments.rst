@@ -40,6 +40,9 @@ PISM includes the source code for three external libraries we rely on:
 
 - `JSON for Modern C++ <nlohmann-json_>`_, Copyright |copy| 2013-2025 Niels Lohmann, MIT
 
+- PISM's terrain shaded insolation code is based on `solshade
+  <https://solshade.readthedocs.io>`_ by Aman Chokshi :cite:`Chokshi2026`
+
 .. csv-table:: Past and current grants supporting PISM development.
    :name: tab-funding
    :header-rows: 1

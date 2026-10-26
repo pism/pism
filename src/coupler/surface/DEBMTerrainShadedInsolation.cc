@@ -265,6 +265,16 @@ DEBMTerrainShadedInsolation::DEBMTerrainShadedInsolation(
   }
 
   m_horizon = std::make_shared<array::Array3D>(m_grid, "horizon", array::WITHOUT_GHOSTS, azimuth);
+  {
+    // The "vertical" dimension of an Array3D is called "z" by default. Rename it: in
+    // output files "z" is the ice's vertical dimension, which has a different length.
+    auto &azimuth_dim = m_horizon->metadata(0).dimension("z");
+
+    azimuth_dim.clear()
+        .set_name("azimuth")
+        .long_name("azimuth, clockwise from north")
+        .units("radian");
+  }
   m_horizon->metadata(0)
       .long_name("terrain horizon elevation angle as a function of azimuth")
       .units("radian");
@@ -395,12 +405,19 @@ void DEBMTerrainShadedInsolation::update_shading(const array::Scalar1 &surface_e
     auto dm = surface_elevation.dm();
     petsc::TemporaryGlobalVec dem_global(dm);
 
-    // make sure surface_elevation is actually "local":
-    assert(surface_elevation.stencil_width() > 0);
+    // Copy owned values into a global Vec. (DMLocalToGlobal with INSERT_VALUES is not
+    // supported on periodic grids with only one process in the x or y direction.)
+    {
+      array::AccessScope list{ &surface_elevation };
+      petsc::DMDAVecArray dem_global_a(dm, dem_global);
+      auto *dem = static_cast<double **>(dem_global_a.get());
 
-    // Note: we use DMLocalToGlobal because surface_elevation is ghosted (local)
-    ierr = DMLocalToGlobal(*dm, surface_elevation.vec(), INSERT_VALUES, dem_global);
-    PISM_CHK(ierr, "DMLocalToGlobal");
+      for (auto p : m_grid->points()) {
+        const int i = p.i(), j = p.j();
+
+        dem[j][i] = surface_elevation(i, j);
+      }
+    }
 
     ierr = VecScatterBegin(m_scatter, dem_global, m_dem_local, INSERT_VALUES, SCATTER_FORWARD);
     PISM_CHK(ierr, "VecScatterBegin");

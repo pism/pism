@@ -676,15 +676,18 @@ Time::Time(MPI_Comm com,
 
   m_t_eps = config->get_number("time_stepping.resolution", "seconds");
 
-  auto input_file = config->get_string("input.file");
+  std::string input_file_name;
+  if (not config->get_flag("time.ignore_input_file")) {
+    input_file_name = config->get_string("input.file");
+  }
 
-  std::unique_ptr<File> file{};
-  if (not input_file.empty()) {
-    file.reset(new File(com, input_file, io::PISM_NETCDF3, io::PISM_READONLY));
+  std::unique_ptr<File> input_file{};
+  if (not input_file_name.empty()) {
+    input_file.reset(new File(com, input_file_name, io::PISM_NETCDF3, io::PISM_READONLY));
   }
 
   // set the reference date
-  auto ref_date = reference_date(file.get(), *config, log);
+  auto ref_date = reference_date(input_file.get(), *config, log);
 
   try {
     // this will validate the reference date
@@ -694,12 +697,12 @@ Time::Time(MPI_Comm com,
     throw;
   }
 
-  m_calendar_string = ::pism::calendar(file.get(), *config, log);
+  m_calendar_string = ::pism::calendar(input_file.get(), *config, log);
   init_calendar(m_calendar_string);
   m_simple_calendar = set_member(m_calendar_string, {"360_day", "365_day", "no_leap"});
 
   m_run_start = start_time(*config,
-                           file.get(),
+                           input_file.get(),
                            ref_date,
                            m_calendar_string,
                            m_time_units);

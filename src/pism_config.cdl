@@ -3176,6 +3176,10 @@ netcdf pism_config {
     pism_config:time.holocene_start_type = "number";
     pism_config:time.holocene_start_units = "years";
 
+    pism_config:time.ignore_input_file = "false";
+    pism_config:time.ignore_input_file_doc = "If true, ignore time info in the input file (see :config:`input.file`) during initialization";
+    pism_config:time.ignore_input_file_type = "flag";
+
     pism_config:time.reference_date = "0001-1-1";
     pism_config:time.reference_date_doc = "year-month-day; reference date used for calendar computations and in PISM output files";
     pism_config:time.reference_date_type = "string";
