@@ -4,14 +4,15 @@ set -e
 set -u
 set -x
 
-# Install PnetCDF 1.14.1 in ~/local/pnetcdf,
-# using ~/local/build/pnetcdf as a build directory.
+# Install PnetCDF 1.14.1 in /usr/local/,
+# using /tmp/build/pnetcdf as a build directory.
 
 version=1.14.1
-prefix=${prefix:-$HOME/local/}
-build_dir=${build_dir:-$HOME/local/build/pnetcdf/}
+prefix=${prefix:-/usr/local/}
+build_dir=${build_dir:-/tmp/build/pnetcdf/}
 url=https://parallel-netcdf.github.io/Release/pnetcdf-${version}.tar.gz
 
+rm -rf ${build_dir}
 mkdir -p ${build_dir}
 pushd ${build_dir}
 

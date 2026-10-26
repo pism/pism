@@ -11,14 +11,14 @@ then
 
   if [ ${compiler} == "gcc" ];
   then
-    # available versions: 9 10 11 12 13 14
-    version=${version:-14}
+    # available versions: 11 12 13 14 15 16
+    version=${version:-16}
     CC=gcc-${version}
     CXX=g++-${version}
   elif [ ${compiler} == "clang" ];
   then
-    # available versions: 14 15 16 17 18
-    version=${version:-18}
+    # available versions: 17 18 19 20 21 22
+    version=${version:-22}
     CC=clang-${version}
     CXX=clang++-${version}
   fi
@@ -31,11 +31,17 @@ N=${N:-8}
 # The Make target to build
 target=${target:-all}
 
+# set "minimal" to a non-zero-length string to build the minimal PISM configuration
+minimal=${minimal:-}
+
+# set "run_analyzer" to run Clang's static analyzer
+run_analyzer=${run_analyzer:-}
+
 container_pism_dir=/home/builder/project
 
 cmd="cd ${container_pism_dir}/docker/ubuntu-ci/ && ./build.sh"
 
-if [ ${target} == "all" ];
+if [ ${target} == "all" && ! -z ${run_analyzer} ];
 then
   cmd="${cmd} && ./run-tests.sh"
 fi
@@ -48,5 +54,7 @@ docker run --rm -it \
        -e N=${N} \
        -e source_dir=${container_pism_dir} \
        -e target="${target}" \
-       ckhrulev/pism-ubuntu:0.1.18 \
+       -e minimal="${minimal}" \
+       -e run_analyzer="${run_analyzer}" \
+       ckhrulev/pism-ubuntu:0.1.19 \
        bash -c "${cmd}"

@@ -13,7 +13,7 @@ jobs:
 
   build:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.18
+      - image: ckhrulev/pism-ubuntu:0.1.19
 
     parameters:
       version:                  # this parameter is needed to make a valid config (it is
@@ -35,7 +35,7 @@ jobs:
       CXX: << parameters.cxx >>
       CMAKE_PREFIX: << parameters.cmake_prefix >>
       PETSC_DIR: << parameters.petsc_dir >>
-      BUILD_PYTHON_BINDINGS: << parameters.python >>
+      python: << parameters.python >>
 
     steps:
       - checkout
@@ -50,7 +50,7 @@ jobs:
 
   build-minimal:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.18
+      - image: ckhrulev/pism-ubuntu:0.1.19
 
     parameters:
       cc:
@@ -64,7 +64,7 @@ jobs:
       CC: << parameters.cc >>
       CXX: << parameters.cxx >>
       CMAKE_PREFIX: << parameters.cmake_prefix >>
-      LOCAL_LIBRARIES: "/home/builder/local/"
+      python: "No"
 
     steps:
       - checkout
@@ -72,27 +72,23 @@ jobs:
           name: Create the build directory
           command: mkdir -p build
       - run:
-          name: Configure PISM
-          command: >-
-            cd build &&
-            ${CMAKE_PREFIX}/bin/cmake ..
-            -DCMAKE_BUILD_TYPE=Debug
-            -DCMAKE_CXX_FLAGS="-Werror"
-            -DCMAKE_PREFIX_PATH=${LOCAL_LIBRARIES}
-      - run:
           name: Build PISM
-          command: make --no-print-directory -C build -j ${N:-4} all
+          command: >-
+            minimal=1 ./docker/ubuntu-ci/build.sh
+      - run:
+          name: Run regression tests
+          command: >-
+            bash -x ./docker/ubuntu-ci/run-tests.sh
 
   manual-html:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.18
+      - image: ckhrulev/pism-ubuntu:0.1.19
 
     steps:
       - checkout
       - run:
           name: Build the HTML version of the manual
           command: |
-            source $HOME/local/pism/bin/activate
             mkdir -p build
             cmake -B build -S doc/
             make -C build manual_html
@@ -134,14 +130,13 @@ jobs:
 
   manual-pdf:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.18
+      - image: ckhrulev/pism-ubuntu:0.1.19
 
     steps:
       - checkout
       - run:
           name: Build the PDF version of the manual
           command: |
-            source $HOME/local/pism/bin/activate
             mkdir -p build
             cmake -B build -S doc/
             make -C build manual_pdf
@@ -182,24 +177,18 @@ jobs:
 
   doxygen:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.18
-
-    environment:
-      LOCAL_LIBRARIES: "/home/builder/local/"
-      PETSC_DIR: /home/builder/local/petsc
+      - image: ckhrulev/pism-ubuntu:0.1.19
 
     steps:
       - checkout
       - run:
           name: Build the source code browser
           command: |
-            mkdir -p build
-            cmake -B build -S . -DCMAKE_PREFIX_PATH=${LOCAL_LIBRARIES}
-            make -C build browser
+            build_dir=./build target=browser ./docker/ubuntu-ci/build.sh
             mv build/doc/browser/html ./doxygen
             rm -f doxygen/*.md5
             touch doxygen/.nojekyll
-            du -sh doxygen
+            du -shc doxygen
       - persist_to_workspace:
           root: .
           paths: doxygen
@@ -237,7 +226,7 @@ jobs:
 
   build-and-test-with-ubuntu-libs:
     docker:
-      - image: ckhrulev/pism-ubuntu-deb-package:0.1.2
+      - image: ckhrulev/pism-ubuntu-deb-package:0.2.0
 
     environment:
       OMPI_ALLOW_RUN_AS_ROOT: 1
@@ -261,7 +250,7 @@ jobs:
 
   build-deb-package:
     docker:
-      - image: ckhrulev/pism-ubuntu-deb-package:0.1.2
+      - image: ckhrulev/pism-ubuntu-deb-package:0.2.0
 
     steps:
       - checkout
@@ -295,13 +284,14 @@ jobs:
 
   clang-static-analyzer:
     docker:
-      - image: ckhrulev/pism-ubuntu:0.1.18
+      - image: ckhrulev/pism-ubuntu:0.1.19
 
     steps:
       - checkout
       - run:
           name: Run Clang's static analyzer
-          command: bash -x ./docker/ubuntu-ci/static-analyzer.sh
+          command: >-
+            CC=clang-22 CXX=clang++-22 run_analyzer=1 python=No ./docker/ubuntu-ci/build.sh
 
 workflows:
   version: 2
@@ -312,67 +302,67 @@ workflows:
           cc: gcc-<< matrix.version >>
           cxx: g++-<< matrix.version >>
           cmake_prefix: /usr
-          petsc_dir: /home/builder/local/petsc
+          petsc_dir: /usr/local/
           python: "Yes"
           matrix:
             parameters:
-              version: ["9", "10", "11", "12", "13", "14"]
+              version: ["11", "12", "13", "14", "15", "16"]
 
       - build:
           name: clang-<< matrix.version >>
           cc: clang-<< matrix.version >>
           cxx: clang++-<< matrix.version >>
           cmake_prefix: /usr
-          petsc_dir: /home/builder/local/petsc
+          petsc_dir: /usr/local
           python: "Yes"
           matrix:
             parameters:
-              version: ["14", "15", "16", "17", "18"]
+              version: ["19", "20", "21", "22"]
 
       - build:
           version: default
           name: old-petsc
-          cc: clang-18
-          cxx: clang++-18
+          cc: clang-22
+          cxx: clang++-22
           cmake_prefix: /usr
-          petsc_dir: /home/builder/local/petsc-3.15.0
+          petsc_dir: /usr/local/petsc-3.22
           python: "No"
 
       - build:
           version: default
           name: petsc-64bit
-          cc: clang-18
-          cxx: clang++-18
+          cc: clang-22
+          cxx: clang++-22
           cmake_prefix: /usr
-          petsc_dir: /home/builder/local/petsc-64bit
+          petsc_dir: /usr/local/petsc-64bit
           python: "Yes"
 
       - build:
           version: default
           name: old-cmake
-          cc: clang-18
-          cxx: clang++-18
-          cmake_prefix: /home/builder/local/cmake-3.20.0
-          petsc_dir: /home/builder/local/petsc
+          cc: clang-22
+          cxx: clang++-22
+          cmake_prefix: /usr/local/cmake-3.20
+          petsc_dir: /usr/local
           python: "Yes"
 
       - build-minimal:
           name: gcc-minimal
-          cc: gcc-14
-          cxx: g++-14
+          cc: gcc-16
+          cxx: g++-16
           cmake_prefix: /usr
 
       - build-minimal:
           name: clang-minimal
-          cc: clang-18
-          cxx: clang++-18
+          cc: clang-22
+          cxx: clang++-22
           cmake_prefix: /usr
 
       - build-minimal:
           name: old-cmake-minimal
-          cc: clang-18
-          cxx: clang++-18
-          cmake_prefix: /home/builder/local/cmake-3.20.0
+          cc: clang-22
+          cxx: clang++-22
+          cmake_prefix: /usr/local/cmake-3.20
 
       - manual-html
       - manual-pdf
@@ -384,18 +374,17 @@ workflows:
 
       - deploy-p:
           requires:
-            - gcc-9
-            - gcc-10
             - gcc-11
             - gcc-12
             - gcc-13
             - gcc-14
+            - gcc-15
+            - gcc-16
             - gcc-minimal
-            - clang-14
-            - clang-15
-            - clang-16
-            - clang-17
-            - clang-18
+            - clang-19
+            - clang-20
+            - clang-21
+            - clang-22
             - clang-minimal
             - clang-static-analyzer
             - old-petsc

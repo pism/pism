@@ -13,7 +13,7 @@ build_dir=${build_dir:-/var/tmp/build/yac}
 mkdir -p ${build_dir}
 cd ${build_dir}
 
-yac_version=${yac_version:-3.15.0}
+yac_version=${yac_version:-3.21}
 git clone -b release-${yac_version} \
     https://github.com/pism/yac-mirror.git yac
 

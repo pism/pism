@@ -8,13 +8,14 @@ set -x
 # ~/local/build/netcdf as a build directory.
 
 # directory containing HDF5 and PnetCDF
-lib_dir=${lib_dir:-$HOME/local}
+lib_dir=${lib_dir:-/usr/local}
 
 version=4.9.3
-prefix=${prefix:-$HOME/local/}
-build_dir=${build_dir:-$HOME/local/build/netcdf}
+prefix=${prefix:-${lib_dir}}
+build_dir=${build_dir:-/tmp/build/netcdf}
 url=https://github.com/Unidata/netcdf-c/archive/refs/tags/v${version}.tar.gz
 
+rm -rf ${build_dir}
 mkdir -p ${build_dir}
 cd ${build_dir}
 
@@ -28,7 +29,7 @@ export LDFLAGS="-L${lib_dir}/lib"
 export CC=${CC:-mpicc}
 
 ./configure \
-  --enable-netcdf4 \
+  --enable-hdf5 \
   --enable-parallel4 \
   --enable-pnetcdf \
   --disable-dap \

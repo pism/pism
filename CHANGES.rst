@@ -3,6 +3,10 @@
 Changes since v2.3.0
 ====================
 
+- Update the oldest supported PETSc version from 3.15 to 3.22. (PISM's code probably still
+  works with PETSc 3.15 and newer, but testing with PETSc older than 3.22 requires Python
+  older than 3.13 (Ubuntu 26.10 has Python 3.14).)
+
 - With serial NetCDF output (`output.format` `netcdf3` or `netcdf4_serial`), a failure to
   read or write a variable now stops the run with an error message that names the
   variable and the file. Previously such a failure on rank 0 could leave the other ranks

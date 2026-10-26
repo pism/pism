@@ -9,8 +9,7 @@ mark_as_advanced(CUT_EXECUTABLE SED_EXECUTABLE XARGS_EXECUTABLE GREP_EXECUTABLE)
 # custom versions in Docker images. In particular:
 #
 # - libx11-dev is not needed
-# - petsc-dev uses OpenMPI (it is easier to use MPICH for development)
-# - petsc-dev uses OpenMPI-based parallel HDF5 (we build our own HDF5)
+# - petsc-dev is replaced by a version built from sources
 # - libnetcdf-dev is replaced by a parallel version built from sources
 execute_process(
   COMMAND ${GREP_EXECUTABLE} "required" ${Pism_SOURCE_DIR}/doc/sphinx/installation/debian-packages.csv

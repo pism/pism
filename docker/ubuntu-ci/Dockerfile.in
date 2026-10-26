@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM ubuntu:26.10
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install required packages listed in the manual. This is done separately so that we can
@@ -15,7 +15,6 @@ RUN set -eux; \
 # - wget to download sources of I/O libraries
 # - NumPy is used by petsc4py and PISM's scripts
 # - SciPy is used by at least one regression test
-# - python-netcdf4 is used by many regression tests
 # - NCO is used by many regression tests
 # - PROJ is used by PISM's code computing lon,lat coordinates
 # - python3-dev is needed to build Python bindings
@@ -36,26 +35,25 @@ RUN set -eux; \
     build-essential \
     ccache \
     cdo \
-    clang-14 \
-    clang-15 \
-    clang-16 \
-    clang-17 \
-    clang-18 \
-    clang-tools-18 \
+    clang-19 \
+    clang-20 \
+    clang-21 \
+    clang-22 \
+    clang-tools-22 \
     cython3 \
     doxygen \
-    g++-10 \
     g++-11 \
     g++-12 \
     g++-13 \
     g++-14 \
-    g++-9 \
-    gcc-10 \
+    g++-15 \
+    g++-16 \
     gcc-11 \
     gcc-12 \
     gcc-13 \
     gcc-14 \
-    gcc-9 \
+    gcc-15 \
+    gcc-16 \
     gfortran \
     graphviz \
     latexmk \
@@ -66,59 +64,58 @@ RUN set -eux; \
     lld \
     m4 \
     make \
+    netcdf-bin \
     nco \
     pkg-config \
     python3-dev \
-    python3-netcdf4 \
-    python3-numpy \
     python3-pip \
-    python3-pyproj \
-    python3-scipy \
     python3-setuptools \
-    python3-sphinx \
-    python3-sphinxcontrib.bibtex \
     python3-venv \
-    python3-xarray \
     swig \
     tex-gyre \
     texlive-fonts-recommended \
     texlive-latex-extra \
     texlive-latex-recommended \
     wget \
+    libblas-dev \
+    liblapack-dev \
     ; \
     rm -rf /var/lib/apt/lists/*
 
-RUN useradd --create-home --system --shell=/bin/false builder && usermod --lock builder
-USER builder
 
-# Create a venv for Python stuff that we cannot install using apt-get:
-RUN python3 -m venv --system-site-packages $HOME/local/pism
+# Create a venv for Python stuff that we don't want to install using apt-get:
+RUN python3 -m venv --system-site-packages /usr/local/
 
-# Install a more recent mpi4py version
+# Install Python packages (avoiding apt-get to install newer versions)
 RUN <<EOF
-    echo "Install mpi4py"
+    echo "Install Python packages"
     set -eux
-    . $HOME/local/pism/bin/activate
-    python3 -m pip install "mpi4py>=4.0.0"
+
+    python3 -m pip install \
+    mpi4py \
+    netCDF4 \
+    numpy \
+    pyproj \
+    scipy \
+    sphinx \
+    sphinxcontrib-bibtex \
+    xarray \
+    ;
 EOF
 
-# Install xarray
-RUN <<EOF
-    echo "Install xarray"
-    set -eux
-    . $HOME/local/pism/bin/activate
-    python3 -m pip install xarray
-EOF
+# tell OpenMPI that it's OK to run as root (since we're in a Docker container)
+ENV OMPI_ALLOW_RUN_AS_ROOT=1
+ENV OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
 
 # Build the oldest supported PETSc version. The goal is to check if PISM's C++ code
-# compiles with PETSc 3.15. We do not support PISM's Python bindings with old PETSc
+# compiles with PETSc 3.22. We do not support PISM's Python bindings with old PETSc
 # versions, so we build PETSc without petsc4py here.
 COPY old-petsc.sh /tmp/
 RUN <<EOF
-    echo "Install PETSc 3.15"
+    echo "Install PETSc 3.22"
     set -eux
-    cd /tmp && version=3.15.0 ./old-petsc.sh
-    rm -rf ~/local/build
+    cd /tmp && version=3.22.0 build_dir=/tmp/build/petsc ./old-petsc.sh
+    rm -rf /tmp/build/petsc
 EOF
 
 # Install parallel HDF5, NetCDF and PnetCDF by building them from sources.
@@ -133,8 +130,8 @@ RUN <<EOF
     echo "Install HDF5"
     set -eux
     cd /tmp
-    ./hdf5.sh
-    rm -rf ~/local/build
+    build_dir=/tmp/build/netcdf prefix=/usr/local/netcdf-parallel ./hdf5.sh
+    rm -rf /tmp/build/netcdf
 EOF
 
 COPY pnetcdf.sh /tmp/
@@ -142,8 +139,8 @@ RUN <<EOF
     echo "Install PnetCDF"
     set -eux
     cd /tmp
-    ./pnetcdf.sh
-    rm -rf ~/local/build
+    build_dir=/tmp/build/pnetcdf prefix=/usr/local/netcdf-parallel ./pnetcdf.sh
+    rm -rf /tmp/build/pnetcdf
 EOF
 
 COPY netcdf.sh /tmp/
@@ -151,8 +148,8 @@ RUN <<EOF
     echo "Install NetCDF"
     set -eux
     cd /tmp
-    ./netcdf.sh
-    rm -rf ~/local/build
+    CC=mpicc build_dir=/tmp/build/netcdf lib_dir=/usr/local/netcdf-parallel ./netcdf.sh
+    rm -rf /tmp/build/netcdf
 EOF
 
 # Build the oldest supported CMake version
@@ -160,17 +157,8 @@ COPY cmake-3_20_0.sh /tmp/
 RUN <<EOF
     echo "Install CMake 3.20"
     set -eux;
-    cd /tmp && ./cmake-3_20_0.sh
-EOF
-
-# Build YAXT and YAC
-COPY yac.sh /tmp/
-RUN <<EOF
-    echo "Install YAXT and YAC"
-    set -eux
-    . $HOME/local/pism/bin/activate
-    cd /tmp && ./yac.sh
-    rm -rf yaxt yac
+    cd /tmp && build_dir=/tmp/build/cmake prefix=/usr/local/cmake-3.20 ./cmake-3_20_0.sh
+    rm -rf /tmp/build/cmake
 EOF
 
 # Build the current PETSc version
@@ -178,9 +166,8 @@ COPY petsc.sh /tmp/
 RUN <<EOF
     echo "Install PETSc"
     set -eux
-    . $HOME/local/pism/bin/activate
-    cd /tmp && ./petsc.sh
-    rm -rf ~/local/build
+    cd /tmp && build_dir=/tmp/build/petsc prefix=/usr/local ./petsc.sh
+    rm -rf /tmp/build/petsc
 EOF
 
 # Build the current PETSc version with 64-bit indices
@@ -188,17 +175,29 @@ COPY petsc-64bit.sh /tmp/
 RUN <<EOF
     echo "Install PETSc (64-bit indices)"
     set -eux
-    . $HOME/local/pism/bin/activate
-    cd /tmp && ./petsc-64bit.sh
-    rm -rf ~/local/build
+    cd /tmp && build_dir=/tmp/build/petsc prefix=/usr/local/petsc-64bit ./petsc-64bit.sh
+    rm -rf /tmp/build/petsc
 EOF
 
-# OMPI_MCA_plm_rsh_agent="" is needed to silence OpenMPI
+# Build YAXT and YAC
+COPY yac.sh /tmp/
+RUN <<EOF
+    echo "Install YAXT and YAC"
+    set -eux
+    cd /tmp && build_dir=/tmp/build/yac prefix=/usr/local ./yac.sh
+    rm -rf /tmp/build/yac
+EOF
+
+RUN ldconfig
+
+RUN useradd --create-home --system --shell=/bin/false builder && usermod --lock builder
+USER builder
+
 ARG HOME=/home/builder
-ARG YAC_DIR=$HOME/local/
-ENV PETSC_DIR="$HOME/local/petsc"
-# set PATH to activate the venv in ~/local/pism:
-ENV PATH=$HOME/local/pism/bin:$PATH
-ENV PYTHONPATH="$PETSC_DIR/lib:$YAC_DIR/lib/python3.12/site-packages" \
-    OMPI_MCA_plm_rsh_agent="" \
+
+# Add petsc4py location to PYTHONPATH:
+ENV PYTHONPATH=/usr/local/lib
+
+# Silence OpenMPI warnings:
+ENV OMPI_MCA_plm_rsh_agent="" \
     OMPI_MCA_rmaps_base_oversubscribe=yes
