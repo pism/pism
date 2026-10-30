@@ -15,7 +15,6 @@
 ``libproj-dev``, optional; used to compute longitude and latitude coordinates of grid points
 ``libx11-dev``, optional; used by PISM's run-time viewers
 ``nco``, optional; used in many pre-processing scripts
-``ncview``, optional; a nice tool for examining NetCDF datasets
 ``python3-dev``, optional; used by PISM's Python bindings
 ``python3-netcdf4``, optional; used in some test scripts
 ``python3-numpy``, optional; used in some pre- and post-processing scripts
