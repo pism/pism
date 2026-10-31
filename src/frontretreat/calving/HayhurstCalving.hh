@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2021, 2022 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2021, 2022, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,16 +17,14 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef HAYHURSTCALVING_H
-#define HAYHURSTCALVING_H
+#ifndef PISM_HAYHURSTCALVING_H
+#define PISM_HAYHURSTCALVING_H
 
 #include "pism/util/Component.hh"
 #include "pism/util/array/Scalar.hh"
 #include "pism/util/array/CellType.hh"
 
 namespace pism {
-
-class Geometry;
 
 namespace calving {
 
@@ -37,7 +35,7 @@ public:
 
   void init();
 
-  void update(const array::CellType1 &cell_type, const array::Scalar &ice_thickness,
+  void update(const array::CellType1 &cell_type, const array::Scalar1 &ice_thickness,
               const array::Scalar &sea_level, const array::Scalar &bed_elevation);
 
   const array::Scalar &calving_rate() const;
@@ -45,14 +43,18 @@ public:
 protected:
   DiagnosticList spatial_diagnostics_impl() const;
   
-protected:
   array::Scalar1 m_calving_rate;
 
-  double m_B_tilde, m_exponent_r, m_sigma_threshold;
+  double m_B_tilde;
+  double m_exponent_r;
+  double m_sigma_threshold;
+
+  //! if true, use floatation thickness instead of modelled ice thickness
+  bool m_use_floatation_thickness;
 
 };
 
 } // end of namespace calving
 } // end of namespace pism
 
-#endif /* HAYHURSTCALVING_H */
+#endif /* PISM_HAYHURSTCALVING_H */

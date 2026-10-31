@@ -3,6 +3,13 @@
 Changes since v2.3.0
 ====================
 
+- Add three new calving mechanisms for ice cliff calving: `cliff_calving_shear` (calving
+  parameterization based on shear failure of ice cliffs), `cliff_calving_tensile` (calving
+  parameterization based on tensile failure of ice cliffs), and `linear_calving` (linear
+  calving parameterization with linear dependence on cliff height). Use `-calving
+  cliff_calving_shear`, `-calving cliff_calving_tensile`, or `-calving linear_calving` to
+  enable these mechanisms. See the manual for details.
+
 - Update the oldest supported PETSc version from 3.15 to 3.22. (PISM's code probably still
   works with PETSc 3.15 and newer, but testing with PETSc older than 3.22 requires Python
   older than 3.13 (Ubuntu 26.10 has Python 3.14).)
