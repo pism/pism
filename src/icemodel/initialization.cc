@@ -72,6 +72,7 @@
 #include "pism/stressbalance/SSB_Modifier.hh"
 #include "pism/util/array/Forcing.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/coupler/surface/verhaegen_melt_factor.hh"
 
 namespace pism {
 
@@ -295,6 +296,54 @@ void IceModel::model_state_setup(InputOptions input_options) {
     auto startstr =
         pism::printf("PISM (%s) started on %d procs.", pism::revision, (int)m_grid->size());
     append_history(startstr + args_string());
+  }
+
+  // initialize the ice melt scaling factor
+  {
+    std::string debris_file = m_config->get_string("surface.debris.thickness.file");
+    std::string ice_melt_scaling_file =
+        m_config->get_string("surface.debris.ice_melt_scaling.file");
+
+    // both configuration parameters are set: stop
+    if ((not debris_file.empty()) and (not ice_melt_scaling_file.empty())) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Please set '%s' or '%s' (not both)",
+                                    "surface.debris.thickness.file",
+                                    "surface.debris.ice_melt_scaling.file");
+    }
+
+    // at least one is non-empty: allocate storage
+    if (not(debris_file.empty() and ice_melt_scaling_file.empty())) {
+      m_ice_melt_scaling_factor =
+          std::make_shared<array::Scalar>(m_grid, "ice_melt_scaling_factor");
+      m_ice_melt_scaling_factor->metadata(0)
+          .long_name(
+              "multiplicative scaling factor for ice melt, used by PDD and debm_simple surface models")
+          .units("1")
+          .set_string("comment", "represents the influence of a debris layer on ice melt");
+    }
+
+    if (not debris_file.empty()) {
+      File F(m_grid->com, debris_file, io::PISM_GUESS, io::PISM_READONLY);
+
+      array::Scalar debris_thickness(m_grid, "debris_thickness");
+      debris_thickness.metadata().long_name("debris thickness").units("m");
+
+      debris_thickness.regrid(F, io::Default::Nil());
+
+      auto &factor = *m_ice_melt_scaling_factor;
+      array::AccessScope list{&debris_thickness, &factor};
+
+      for (auto p : m_grid->points()) {
+        const int i = p.i(), j = p.j();
+
+        factor(i, j) = verhaegen_melt_factor(debris_thickness(i, j));
+      }
+    }
+
+    if (not ice_melt_scaling_file.empty()) {
+      File F(m_grid->com, ice_melt_scaling_file, io::PISM_GUESS, io::PISM_READONLY);
+      m_ice_melt_scaling_factor->regrid(F, io::Default::Nil());
+    }
   }
 
   // forget stored interpolation weights to free up some RAM
