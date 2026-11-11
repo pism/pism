@@ -296,9 +296,15 @@ DEBMSimpleMelt DEBMSimplePointwise::melt(double declination, double latitude,
  *
  * - a fraction of the melted snow and ice refreezes, conceptualized
  *   as superimposed ice
+ *
+ * the `ice_melt_scaling_factor` represents the effect of debris cover on ice melt,
+ * enhancing melt in the case of thin debris layers and reducing melt where ice is covered
+ * by a thicker (insulating) debris layer
+ *
  */
 DEBMSimpleChanges DEBMSimplePointwise::step(double ice_thickness, double max_melt,
-                                            double old_snow_depth, double accumulation) const {
+                                            double old_snow_depth, double accumulation,
+                                            double ice_melt_scaling_factor) const {
   DEBMSimpleChanges result;
 
   double
@@ -332,7 +338,10 @@ DEBMSimpleChanges DEBMSimplePointwise::step(double ice_thickness, double max_mel
     max_ice_melt = max_melt - snow_melted;
   }
 
-  ice_melted  = std::min(max_ice_melt, ice_thickness);
+  // adjust max_ice_melt using the provided scaling factor
+  max_ice_melt *= ice_melt_scaling_factor;
+
+  ice_melted = std::min(max_ice_melt, ice_thickness);
 
   double ice_created_by_refreeze = m_refreeze_fraction * snow_melted;
   if (m_refreeze_ice_melt) {
