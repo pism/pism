@@ -365,6 +365,10 @@ void DEBMSimple::update_impl(const Inputs &inputs, double t, double dt) {
     list.add(*m_input_albedo);
   }
 
+  if (inputs.ice_melt_scaling_factor != nullptr) {
+    list.add(*inputs.ice_melt_scaling_factor);
+  }
+
   double
     ice_density    = m_config->get_number("constants.ice.density"),
     sigmalapserate = m_config->get_number("surface.pdd.std_dev.lapse_lat_rate"),
@@ -477,10 +481,19 @@ void DEBMSimple::update_impl(const Inputs &inputs, double t, double dt) {
             // clang-format on
           }
 
+          // this ice melt scaling factor represents the effect of debris cover on ice
+          // melt, enhancing melt in the case of thin debris layers and reducing melt
+          // where ice is covered by a thicker (insulating) debris layer
+          double ice_melt_scaling_factor = 1.0;
+          if (inputs.ice_melt_scaling_factor != nullptr) {
+            ice_melt_scaling_factor = (*inputs.ice_melt_scaling_factor)(i, j);
+          }
+
           auto changes = m_model.step(ice_thickness,
                                       melt_info.total_melt,
                                       snow,
-                                      accumulation);
+                                      accumulation,
+                                      ice_melt_scaling_factor);
 
           if ((bool) m_input_albedo) {
             albedo = Alb[k];
