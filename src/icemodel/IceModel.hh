@@ -337,6 +337,10 @@ protected:
 
   std::shared_ptr<FrontRetreat> m_front_retreat;
 
+  // ice melt scaling factor is an optional input of surface models used by PDD and
+  // debm_simple
+  std::shared_ptr<array::Scalar> m_ice_melt_scaling_factor;
+
   std::shared_ptr<surface::SurfaceModel>      m_surface;
   std::shared_ptr<ocean::OceanModel>          m_ocean;
   std::shared_ptr<frontalmelt::FrontalMelt>   m_frontal_melt;
