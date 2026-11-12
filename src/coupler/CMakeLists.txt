@@ -75,6 +75,7 @@ add_library (boundary OBJECT
   ./surface/DEBMSimplePointwise.cc
   ./surface/DEBMTerrainShadedInsolation.cc
   ./surface/terrain_insolation_kernel.cc
+  ./surface/verhaegen_melt_factor.cc
   )
 
 add_subdirectory (surface/tests)
