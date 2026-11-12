@@ -296,9 +296,15 @@ DEBMSimpleMelt DEBMSimplePointwise::melt(double declination, double latitude,
  *
  * - a fraction of the melted snow and ice refreezes, conceptualized
  *   as superimposed ice
+ *
+ * the `ice_melt_scaling_factor` represents the effect of debris cover on ice melt,
+ * enhancing melt in the case of thin debris layers and reducing melt where ice is covered
+ * by a thicker (insulating) debris layer
+ *
  */
 DEBMSimpleChanges DEBMSimplePointwise::step(double ice_thickness, double max_melt,
-                                            double old_snow_depth, double accumulation) const {
+                                            double old_snow_depth, double accumulation,
+                                            double ice_melt_scaling_factor) const {
   DEBMSimpleChanges result;
 
   double
@@ -315,19 +321,27 @@ DEBMSimpleChanges DEBMSimplePointwise::step(double ice_thickness, double max_mel
 
   snow_depth += accumulation;
 
+  // maximum thickness of ice that can be melted given the amount of available energy
+  double max_ice_melt = 0.0;
+
   if (max_melt <= 0.0) { // The "no melt" case.
     snow_melted = 0.0;
-    ice_melted  = 0.0;
+    max_ice_melt = 0.0;
   } else if (max_melt <= snow_depth) {
     // Some of the snow melted and some is left; in any case, all of the energy available
     // for melt was used up in melting snow.
     snow_melted = max_melt;
-    ice_melted  = 0.0;
+    max_ice_melt = 0.0;
   } else {
     // All (snow_depth meters) of snow melted. Excess melt is available to melt ice.
     snow_melted = snow_depth;
-    ice_melted  = std::min(max_melt - snow_melted, ice_thickness);
+    max_ice_melt = max_melt - snow_melted;
   }
+
+  // adjust max_ice_melt using the provided scaling factor
+  max_ice_melt *= ice_melt_scaling_factor;
+
+  ice_melted = std::min(max_ice_melt, ice_thickness);
 
   double ice_created_by_refreeze = m_refreeze_fraction * snow_melted;
   if (m_refreeze_ice_melt) {

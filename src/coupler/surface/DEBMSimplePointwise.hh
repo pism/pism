@@ -83,7 +83,7 @@ public:
                       double T_std_deviation, double T, double albedo) const;
 
   DEBMSimpleChanges step(double ice_thickness, double max_melt, double snow_depth,
-                         double accumulation) const;
+                         double accumulation, double ice_melt_scaling_factor = 1.0) const;
 
   // public because it is a diagnostic field
   double atmosphere_transmissivity(double elevation) const;

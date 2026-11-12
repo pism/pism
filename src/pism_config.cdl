@@ -2642,6 +2642,14 @@ netcdf pism_config {
     pism_config:surface.debm_simple.tau_a_slope_type = "number";
     pism_config:surface.debm_simple.tau_a_slope_units = "m^-1";
 
+    pism_config:surface.debris.ice_melt_scaling.file = "";
+    pism_config:surface.debris.ice_melt_scaling.file_doc = "The file containing :var:`ice_melt_scaling_factor` to be used to adjust ice melt at the surface";
+    pism_config:surface.debris.ice_melt_scaling.file_type = "string";
+
+    pism_config:surface.debris.thickness.file = "";
+    pism_config:surface.debris.thickness.file_doc = "The file containing :var:`debris_thickness` to be used to adjust ice melt at the surface";
+    pism_config:surface.debris.thickness.file_type = "string";
+
     pism_config:surface.delta_T.file = "";
     pism_config:surface.delta_T.file_doc = "Name of the file containing temperature offsets.";
     pism_config:surface.delta_T.file_option = "surface_delta_T_file";

@@ -40,6 +40,7 @@ namespace surface {
 
 struct Inputs {
   const Geometry *geometry;
+  const array::Scalar *ice_melt_scaling_factor;
 };
 
 //! \brief The interface of PISM's surface models.

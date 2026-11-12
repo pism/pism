@@ -1126,3 +1126,23 @@ line. See :ref:`sec-tillphi-optimization` for an application.
    - This does *not* prevent grounding line retreat caused by the thinning of the ice due
      to the melt at the base. Set :config:`geometry.update.use_basal_melt_rate` to "false"
      to ensure that basal melt has no effect on the position of the grounding line
+
+.. _sec-scaling-ice-melt:
+
+Scaling ice melt in PDD and dEBM-simple
++++++++++++++++++++++++++++++++++++++++
+
+The :ref:`sec-surface-pdd` and the :ref:`sec-surface-debm-simple` can scale the ice melt
+to approximate the influence of a surface debris layer.
+
+Set :config:`surface.debris.ice_melt_scaling.file` to read in the 2D time-independent
+multiplicative melt scaling factor :var:`ice_melt_scaling_factor` (units: "1").
+
+Alternatively, set :config:`surface.debris.thickness.file` to read in time-independent
+:var:`debris_thickness` (units: meters) and convert it to the melt scaling factor using
+equation 14 in :cite:`Verhaegen2026`.
+
+
+.. note::
+
+   In the PDD model this has the effect of scaling the degree day factor for ice.

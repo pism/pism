@@ -658,7 +658,7 @@ double IceModel::step(bool do_mass_continuity,
   //! \li Update surface and ocean models.
   {
     profiling.begin("surface");
-    surface::Inputs inputs{&m_geometry};
+    surface::Inputs inputs{&m_geometry, m_ice_melt_scaling_factor.get()};
     m_surface->update(inputs, current_time, dt);
     profiling.end("surface");
   }
