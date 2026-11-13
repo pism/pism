@@ -61,7 +61,7 @@ void IceModel::init_scalar_diagnostics() {
     return;
   }
 
-  // initialize m_ts_times and m_ts_vars
+  // initialize m_scalar_times and m_scalar_vars
   {
     try {
       *m_scalar_times = m_time->parse_times(times);
@@ -77,6 +77,14 @@ void IceModel::init_scalar_diagnostics() {
     if (not m_scalar_vars.empty()) {
       m_scalar_vars = process_ts_shortcuts(*m_config, m_scalar_vars);
       m_log->message(2, "variables requested: %s\n", set_join(m_scalar_vars, ",").c_str());
+    }
+
+    if (m_scalar_times->empty()) {
+      throw RuntimeError::formatted(
+          PISM_ERROR_LOCATION,
+          "all requested time in 'output.scalar.times' (%s) are outside the modeled time interval [%s, %s]",
+          times.c_str(), m_time->date(m_time->start()).c_str(),
+          m_time->date(m_time->end()).c_str());
     }
   }
 
