@@ -135,7 +135,7 @@ void IceModel::init_spatial_diagnostics() {
   if (m_spatial_times.empty()) {
     throw RuntimeError::formatted(
         PISM_ERROR_LOCATION,
-        "all requested time in 'output.spatial.times' (%s) are outside the modeled time interval [%s, %s]",
+        "all requested times in 'output.spatial.times' (%s) are outside the modeled time interval [%s, %s]",
         times.c_str(), m_time->date(m_time->start()).c_str(), m_time->date(m_time->end()).c_str());
   }
 

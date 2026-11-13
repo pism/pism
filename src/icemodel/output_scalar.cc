@@ -82,7 +82,7 @@ void IceModel::init_scalar_diagnostics() {
     if (m_scalar_times->empty()) {
       throw RuntimeError::formatted(
           PISM_ERROR_LOCATION,
-          "all requested time in 'output.scalar.times' (%s) are outside the modeled time interval [%s, %s]",
+          "all requested times in 'output.scalar.times' (%s) are outside the modeled time interval [%s, %s]",
           times.c_str(), m_time->date(m_time->start()).c_str(),
           m_time->date(m_time->end()).c_str());
     }
