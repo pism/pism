@@ -1,4 +1,4 @@
-/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2024, 2025 PISM Authors
+/* Copyright (C) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2021, 2022, 2023, 2024, 2025, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -38,7 +38,7 @@ CalvingAtThickness::CalvingAtThickness(std::shared_ptr<const Grid> g)
 
   ForcingOptions opt(*m_grid->ctx(), "calving.thickness_calving");
   {
-    unsigned int buffer_size = m_config->get_number("input.forcing.buffer_size");
+    auto buffer_size = (unsigned int)m_config->get_number("input.forcing.buffer_size");
 
     File file(m_grid->com, opt.filename, io::PISM_NETCDF3, io::PISM_READONLY);
 

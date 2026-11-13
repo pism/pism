@@ -4,41 +4,33 @@ set -e
 set -u
 set -x
 
-# Install an old PETSc version in ~/local/petsc-${version} using
-# ~/local/build/petsc-${version} as the build directory.
+# Install an old PETSc version in /usr/local/petsc-${version} using
+# /tmp/build/petsc-${version} as the build directory.
 
 # The default below corresponds to the oldest version supported by PISM.
-version=${version:-3.15.0}
-build_dir=~/local/build/petsc-${version}
+version=${version:-3.22.0}
+build_dir=/tmp/build/petsc-${version}
 
 rm -rf ${build_dir}
 mkdir -p ${build_dir}
-pushd ${build_dir}
+cd ${build_dir}
 
-wget -nc https://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-${version}.tar.gz
+git clone -b v${version} --depth=1 https://gitlab.com/petsc/petsc.git .
 
-tar xzf petsc-lite-${version}.tar.gz
-
-pushd petsc-${version}
-
-petsc_prefix=$HOME/local/petsc-${version}
+prefix=/usr/local/petsc-${version}
 PETSC_DIR=$PWD
 PETSC_ARCH="linux-opt"
 
 python3 ./configure \
   CFLAGS="-fPIC" \
-  --prefix=${petsc_prefix} \
+  --prefix=${prefix} \
   --with-cc=mpicc \
   --with-cxx=mpicxx \
   --with-fc=0 \
   --with-shared-libraries \
   --with-debugging=0 \
-  --with-x=0 \
-  --download-f2cblaslapack
+  --with-x=0 || (cat configure.log && exit 1)
 
 make all
 make install
-make PETSC_DIR=${petsc_prefix} PETSC_ARCH="" check
-
-popd
-popd
+make PETSC_DIR=${prefix} PETSC_ARCH="" check

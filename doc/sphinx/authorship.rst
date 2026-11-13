@@ -74,6 +74,9 @@ Research (PIK), and several additional developers listed here.
    * - `Julius Garbe <https://orcid.org/0000-0003-3140-3307>`_ (Potsdam Institute for Climate Impact Research (PIK))
      - surface mass and energy balance (dEBM-simple)
 
+   * - `Tanja Schlemm <https://orcid.org/0000-0003-0145-4904>`_ (Potsdam Institute for Climate Impact Research (PIK))
+     - grounded calving parameterizations
+
    * - `Marianne Haseloff <https://orcid.org/0000-0002-6576-5384>`_ (University of Wisconsin-Madison)
      - PISM-PIK development, SSA and SIA theory and numerics
 

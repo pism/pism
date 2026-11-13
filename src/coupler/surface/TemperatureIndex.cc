@@ -305,7 +305,9 @@ void TemperatureIndex::update_impl(const Inputs &inputs, double t, double dt) {
     fausto_greve->update_temp_mj(surface_altitude, *latitude, longitude);
   }
 
-  LocalMassBalance::DegreeDayFactors ddf = m_base_ddf;
+  if (inputs.ice_melt_scaling_factor != nullptr) {
+    list.add(*inputs.ice_melt_scaling_factor);
+  }
 
   m_atmosphere->init_timeseries(ts);
 
@@ -348,10 +350,19 @@ void TemperatureIndex::update_impl(const Inputs &inputs, double t, double dt) {
         }
       }
 
+      auto ddf = m_base_ddf;
+
       if (fausto_greve != nullptr) {
         // we have been asked to set mass balance parameters according to
         //   formula (6) in [\ref Faustoetal2009]; they overwrite ddf set above
         ddf = fausto_greve->degree_day_factors(i, j, (*latitude)(i, j));
+      }
+
+      // this ice melt scaling factor represents the effect of debris cover on ice melt,
+      // enhancing melt in the case of thin debris layers and reducing melt where ice is
+      // covered by a thicker (insulating) debris layer
+      if (inputs.ice_melt_scaling_factor != nullptr) {
+        ddf.ice *= (*inputs.ice_melt_scaling_factor)(i, j);
       }
 
       // apply standard deviation lapse rate on top of prescribed values

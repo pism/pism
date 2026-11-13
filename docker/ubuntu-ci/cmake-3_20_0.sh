@@ -7,9 +7,10 @@ set -x
 # Install CMake 3.20 (the oldest supported version).
 
 version=3.20.0
-build_dir=${build_dir:-/var/tmp/build/cmake-${version}}
-prefix=${prefix:-~/local/cmake-${version}}
+build_dir=${build_dir:-/tmp/build/cmake-${version}}
+prefix=${prefix:-/usr/local/cmake-${version}}
 
+rm -rf ${build_dir}
 mkdir -p ${build_dir}
 cd ${build_dir}
 

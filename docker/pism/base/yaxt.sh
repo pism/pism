@@ -12,7 +12,7 @@ build_dir=${build_dir:-/var/tmp/build/yaxt}
 mkdir -p ${build_dir}
 cd ${build_dir}
 
-yaxt_version=${yaxt_version:-0.11.5.1}
+yaxt_version=${yaxt_version:-0.12.2.1}
 git clone -b release-${yaxt_version} \
     https://github.com/pism/yaxt-mirror.git yaxt
 

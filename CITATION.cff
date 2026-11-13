@@ -159,6 +159,11 @@ authors:
     orcid: 'https://orcid.org/0000-0003-3140-3307'
     affiliation: Potsdam Institute for Climate Impact Research (PIK)
     # contribution-areas: surface mass and energy balance (dEBM-simple)
+  - given-names: Tanja
+    family-names: Schlemm
+    orcid: 'https://orcid.org/0000-0003-0145-4904'
+    affiliation: Potsdam Institute for Climate Impact Research (PIK)
+    # contribution-areas: grounded calving parameterizations
   - given-names: Marianne
     family-names: Haseloff
     affiliation: University of Wisconsin-Madison

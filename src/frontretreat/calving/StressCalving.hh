@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2018, 2019, 2021, 2022 PISM Authors
+/* Copyright (C) 2016, 2018, 2019, 2021, 2022, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,8 +17,8 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef STRESSCALVING_H
-#define STRESSCALVING_H
+#ifndef PISM_STRESSCALVING_H
+#define PISM_STRESSCALVING_H
 
 #include "pism/util/Component.hh"
 #include "pism/util/array/Scalar.hh"
@@ -53,4 +53,4 @@ protected:
 } // end of namespace pism
 
 
-#endif /* STRESSCALVING_H */
+#endif /* PISM_STRESSCALVING_H */

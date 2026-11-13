@@ -21,7 +21,7 @@ install_dir=${install_dir:-$HOME/local/pism}
 
 git config --global --add safe.directory ${source_dir}
 
-scan_build=${scan_build:-scan-build-18}
+scan_build=${scan_build:-scan-build-22}
 analyze="${scan_build} -o ${build_dir}/report --status-bugs -v --exclude ${source_dir}/src/external/cubature"
 
 ${analyze} cmake -S ${source_dir} \

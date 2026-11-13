@@ -17,9 +17,9 @@ export CC=${CC:-mpicc}
 export FC=${FC:-mpifort}
 export CFLAGS="-O3 -g -march=native"
 
-prefix=${prefix:-$HOME/local/}
+prefix=${prefix:-/usr/local/}
 
-yaxt_version=0.11.5.1
+yaxt_version=0.12.2.1
 git clone -b release-${yaxt_version} \
     https://gitlab.dkrz.de/dkrz-sw/yaxt.git
 
@@ -34,7 +34,7 @@ make all && make install
 
 cd -
 
-yac_version=3.15.0
+yac_version=3.21
 git clone -b release-${yac_version} \
     https://gitlab.dkrz.de/dkrz-sw/yac.git
 

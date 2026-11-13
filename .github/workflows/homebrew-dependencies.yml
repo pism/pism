@@ -11,7 +11,7 @@ jobs:
         os: [macos-13, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - run: |
           brew update
           brew tap pism/pism

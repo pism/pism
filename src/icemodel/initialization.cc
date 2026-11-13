@@ -31,6 +31,9 @@
 #include "pism/frontretreat/calving/FloatKill.hh"
 #include "pism/frontretreat/calving/HayhurstCalving.hh"
 #include "pism/frontretreat/calving/vonMisesCalving.hh"
+#include "pism/frontretreat/calving/CliffCalvingShear.hh"
+#include "pism/frontretreat/calving/CliffCalvingTensile.hh"
+#include "pism/frontretreat/calving/LinearCalving.hh"
 #include "pism/energy/BedThermalUnit.hh"
 #include "pism/hydrology/NullTransport.hh"
 #include "pism/hydrology/Routing.hh"
@@ -69,6 +72,7 @@
 #include "pism/stressbalance/SSB_Modifier.hh"
 #include "pism/util/array/Forcing.hh"
 #include "pism/util/io/IO_Flags.hh"
+#include "pism/coupler/surface/verhaegen_melt_factor.hh"
 
 namespace pism {
 
@@ -155,7 +159,7 @@ void IceModel::model_state_setup(InputOptions input_options) {
   // Now surface elevation is initialized, so we can initialize surface models (some use
   // elevation-based parameterizations of surface temperature and/or mass balance).
   {
-    surface::Inputs inputs{&m_geometry};
+    surface::Inputs inputs{&m_geometry, m_ice_melt_scaling_factor.get()};
     m_surface->init(inputs);
   }
 
@@ -292,6 +296,54 @@ void IceModel::model_state_setup(InputOptions input_options) {
     auto startstr =
         pism::printf("PISM (%s) started on %d procs.", pism::revision, (int)m_grid->size());
     append_history(startstr + args_string());
+  }
+
+  // initialize the ice melt scaling factor
+  {
+    std::string debris_file = m_config->get_string("surface.debris.thickness.file");
+    std::string ice_melt_scaling_file =
+        m_config->get_string("surface.debris.ice_melt_scaling.file");
+
+    // both configuration parameters are set: stop
+    if ((not debris_file.empty()) and (not ice_melt_scaling_file.empty())) {
+      throw RuntimeError::formatted(PISM_ERROR_LOCATION, "Please set '%s' or '%s' (not both)",
+                                    "surface.debris.thickness.file",
+                                    "surface.debris.ice_melt_scaling.file");
+    }
+
+    // at least one is non-empty: allocate storage
+    if (not(debris_file.empty() and ice_melt_scaling_file.empty())) {
+      m_ice_melt_scaling_factor =
+          std::make_shared<array::Scalar>(m_grid, "ice_melt_scaling_factor");
+      m_ice_melt_scaling_factor->metadata(0)
+          .long_name(
+              "multiplicative scaling factor for ice melt, used by PDD and debm_simple surface models")
+          .units("1")
+          .set_string("comment", "represents the influence of a debris layer on ice melt");
+    }
+
+    if (not debris_file.empty()) {
+      File F(m_grid->com, debris_file, io::PISM_GUESS, io::PISM_READONLY);
+
+      array::Scalar debris_thickness(m_grid, "debris_thickness");
+      debris_thickness.metadata().long_name("debris thickness").units("m");
+
+      debris_thickness.regrid(F, io::Default::Nil());
+
+      auto &factor = *m_ice_melt_scaling_factor;
+      array::AccessScope list{&debris_thickness, &factor};
+
+      for (auto p : m_grid->points()) {
+        const int i = p.i(), j = p.j();
+
+        factor(i, j) = verhaegen_melt_factor(debris_thickness(i, j));
+      }
+    }
+
+    if (not ice_melt_scaling_file.empty()) {
+      File F(m_grid->com, ice_melt_scaling_file, io::PISM_GUESS, io::PISM_READONLY);
+      m_ice_melt_scaling_factor->regrid(F, io::Default::Nil());
+    }
   }
 
   // forget stored interpolation weights to free up some RAM
@@ -947,6 +999,42 @@ void IceModel::init_calving() {
     methods.erase("hayhurst_calving");
 
     m_submodels["Hayhurst calving"] = m_hayhurst_calving.get();
+  }
+
+  if (set_member("cliff_calving_shear", methods)) {
+    allocate_front_retreat = true;
+
+    if (not m_cliff_calving_shear) {
+      m_cliff_calving_shear = std::make_shared<calving::CliffCalvingShear>(m_grid);
+    }
+
+    m_cliff_calving_shear->init();
+    methods.erase("cliff_calving_shear");
+
+    m_submodels["cliff calving shear"] = m_cliff_calving_shear.get();
+  }
+
+  if (set_member("cliff_calving_tensile", methods)) {
+    allocate_front_retreat = true;
+
+    if (not m_cliff_calving_tensile) {
+      m_cliff_calving_tensile = std::make_shared<calving::CliffCalvingTensile>(m_grid);
+    }
+
+    m_cliff_calving_tensile->init();
+    methods.erase("cliff_calving_tensile");
+
+    m_submodels["cliff calving tensile"] = m_cliff_calving_tensile.get();
+  }
+
+  if (set_member("linear_calving", methods)) {
+    allocate_front_retreat = true;
+    if (not m_linear_calving) {
+        m_linear_calving = std::make_shared<calving::LinearCalving>(m_grid);
+    }
+    m_linear_calving->init();
+    methods.erase("linear_calving");
+    m_submodels["linear calving"] = m_linear_calving.get();
   }
 
   if (set_member("float_kill", methods)) {

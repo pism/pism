@@ -1,4 +1,4 @@
-/* Copyright (C) 2016, 2017, 2018, 2019, 2022, 2023 PISM Authors
+/* Copyright (C) 2016, 2017, 2018, 2019, 2022, 2023, 2026 PISM Authors
  *
  * This file is part of PISM.
  *
@@ -17,14 +17,12 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef VONMISESCALVING_H
-#define VONMISESCALVING_H
+#ifndef PISM_VONMISESCALVING_H
+#define PISM_VONMISESCALVING_H
 
 #include "pism/frontretreat/calving/StressCalving.hh"
 
 namespace pism {
-
-class Geometry;
 
 namespace rheology {
 class FlowLaw;
@@ -34,16 +32,16 @@ namespace calving {
 
 class vonMisesCalving : public StressCalving {
 public:
-  vonMisesCalving(std::shared_ptr<const Grid> grid, std::shared_ptr<const rheology::FlowLaw> flow_law);
+  vonMisesCalving(std::shared_ptr<const Grid> grid,
+                  std::shared_ptr<const rheology::FlowLaw> flow_law);
   virtual ~vonMisesCalving() = default;
 
   void init();
 
-  void update(const array::CellType1 &cell_type,
-              const array::Scalar &ice_thickness,
-              const array::Vector1 &ice_velocity,
-              const array::Array3D &ice_enthalpy);
-  const array::Scalar& threshold() const;
+  void update(const array::CellType1 &cell_type, const array::Scalar &ice_thickness,
+              const array::Vector1 &ice_velocity, const array::Array3D &ice_enthalpy);
+
+  const array::Scalar &threshold() const;
 
 protected:
   DiagnosticList spatial_diagnostics_impl() const;
@@ -56,4 +54,4 @@ protected:
 } // end of namespace calving
 } // end of namespace pism
 
-#endif /* VONMISESCALVING_H */
+#endif /* PISM_VONMISESCALVING_H */

@@ -78,6 +78,9 @@ class FloatKill;
 class HayhurstCalving;
 class CalvingAtThickness;
 class IcebergRemover;
+class CliffCalvingShear;
+class CliffCalvingTensile;
+class LinearCalving;
 }
 
 class FractureDensity;
@@ -323,6 +326,9 @@ protected:
   std::shared_ptr<calving::EigenCalving>       m_eigen_calving;
   std::shared_ptr<calving::HayhurstCalving>    m_hayhurst_calving;
   std::shared_ptr<calving::vonMisesCalving>    m_vonmises_calving;
+  std::shared_ptr<calving::CliffCalvingShear>   m_cliff_calving_shear;
+  std::shared_ptr<calving::CliffCalvingTensile> m_cliff_calving_tensile;
+  std::shared_ptr<calving::LinearCalving>       m_linear_calving;
   std::shared_ptr<PrescribedRetreat>           m_prescribed_retreat;
 
   // scalar time-dependent scaling for retreat rates coming from eigen calving, von Mises
@@ -330,6 +336,10 @@ protected:
   std::unique_ptr<ScalarForcing> m_calving_rate_factor;
 
   std::shared_ptr<FrontRetreat> m_front_retreat;
+
+  // ice melt scaling factor is an optional input of surface models used by PDD and
+  // debm_simple
+  std::shared_ptr<array::Scalar> m_ice_melt_scaling_factor;
 
   std::shared_ptr<surface::SurfaceModel>      m_surface;
   std::shared_ptr<ocean::OceanModel>          m_ocean;

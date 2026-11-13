@@ -4,10 +4,10 @@ set -e
 set -u
 set -x
 
-# Install the latest PETSc with 64 bit indices in ~/local/petsc using ~/local/build/petsc
-# as the build directory.
+# Install the latest PETSc with 64 bit indices in /usr/local/petsc-64bit using
+# /tmp/build/petsc-64bit as the build directory.
 
-build_dir=~/local/build/petsc
+build_dir=${build_dir:-/tmp/build/petsc-64bit}
 
 rm -rf ${build_dir}
 mkdir -p ${build_dir}
@@ -15,13 +15,13 @@ pushd ${build_dir}
 
 git clone -b release --depth=1 https://gitlab.com/petsc/petsc.git .
 
-petsc_prefix=$HOME/local/petsc-64bit
+prefix=/usr/local/petsc-64bit
 PETSC_DIR=$PWD
 PETSC_ARCH="linux-opt"
 
 ./configure \
   COPTFLAGS="-g -O3" \
-  --prefix=${petsc_prefix} \
+  --prefix=${prefix} \
   --with-cc=mpicc \
   --with-cxx=mpicxx \
   --with-fc=mpifort \
@@ -32,8 +32,8 @@ PETSC_ARCH="linux-opt"
   --with-64-bit-indices \
   --download-f2cblaslapack
 
-export PYTHONPATH=${petsc_prefix}/lib
+export PYTHONPATH=${prefix}/lib
 make all
 make install
-make PETSC_DIR=${petsc_prefix} PETSC_ARCH="" check
+make PETSC_DIR=${prefix} PETSC_ARCH="" check
 popd

@@ -12,6 +12,29 @@ Changes since v2.3.0
   CARRA2's free-air temperature carried down to the terrain minus its 2 m temperature on
   glaciers in Alaska, so adding it to a 2 m temperature such as CARRA2's raises it to the
   free-air temperature at the surface. It reads no input file.
+- Add the ability to scale ice melt in `-surface pdd` and `-surface debm_simple` using a
+  multiplicative factor representing the influence of a surface debris layer. To read this
+  spatially-variable (but time-independent) factor from a file, set
+  `surface.debris.ice_melt_scaling.file` to the name of the file containing
+  `ice_melt_scaling_factor` (units: "1"). To read in `debris_thickness` (meters) and
+  convert to the melt scaling factor using the equation (14) from Verhaegen and Huybrechts
+  (2026), set `surface.debris.thickness.file`.
+
+  Y. Verhaegen and P. Huybrechts, “Coupling Debris Transport to 3D Higher‐Order Ice Flow
+  Dynamics to Model the Behavior and Climate Change Response of Debris‐Covered Glaciers,”
+  Journal of Geophysical Research: Earth Surface, vol. 131, no. 5, May 2026, doi:
+  10.1029/2025jf008748.
+
+- Add three new calving mechanisms for ice cliff calving: `cliff_calving_shear` (calving
+  parameterization based on shear failure of ice cliffs), `cliff_calving_tensile` (calving
+  parameterization based on tensile failure of ice cliffs), and `linear_calving` (linear
+  calving parameterization with linear dependence on cliff height). Use `-calving
+  cliff_calving_shear`, `-calving cliff_calving_tensile`, or `-calving linear_calving` to
+  enable these mechanisms. See the manual for details.
+
+- Update the oldest supported PETSc version from 3.15 to 3.22. (PISM's code probably still
+  works with PETSc 3.15 and newer, but testing with PETSc older than 3.22 requires Python
+  older than 3.13 (Ubuntu 26.10 has Python 3.14).)
 
 - With serial NetCDF output (`output.format` `netcdf3` or `netcdf4_serial`), a failure to
   read or write a variable now stops the run with an error message that names the
