@@ -3,6 +3,15 @@
 Changes since v2.3.0
 ====================
 
+- Add the atmosphere modifier `carra2_bias` (`-atmosphere ...,carra2_bias`). It adds an
+  elevation- and season-dependent correction `b = b_inf + A exp(-z / H) + (c_0 + c_1 z)
+  cos(2 pi t) + (s_0 + s_1 z) sin(2 pi t)` to the near-surface air temperature, with `z` the
+  surface elevation and `t` the fraction of the year; `z` is held at
+  `atmosphere.carra2_bias.z_min` below and at `atmosphere.carra2_bias.z_max` above these
+  elevations. The default parameters (prefix `atmosphere.carra2_bias.`) are a fit of
+  CARRA2's free-air temperature carried down to the terrain minus its 2 m temperature on
+  glaciers in Alaska, so adding it to a 2 m temperature such as CARRA2's raises it to the
+  free-air temperature at the surface. It reads no input file.
 - Add the ability to scale ice melt in `-surface pdd` and `-surface debm_simple` using a
   multiplicative factor representing the influence of a surface debris layer. To read this
   spatially-variable (but time-independent) factor from a file, set

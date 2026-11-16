@@ -1,5 +1,6 @@
 %{
 #include "coupler/atmosphere/Anomaly.hh"
+#include "coupler/atmosphere/CARRA2Bias.hh"
 #include "coupler/atmosphere/CosineYearlyCycle.hh"
 #include "coupler/atmosphere/Delta_P.hh"
 #include "coupler/atmosphere/Delta_T.hh"
@@ -22,6 +23,10 @@
 %shared_ptr(pism::atmosphere::Anomaly)
 %rename(AtmosphereAnomaly) pism::atmosphere::Anomaly;
 %include "coupler/atmosphere/Anomaly.hh"
+
+%shared_ptr(pism::atmosphere::CARRA2Bias)
+%rename(AtmosphereCARRA2Bias) pism::atmosphere::CARRA2Bias;
+%include "coupler/atmosphere/CARRA2Bias.hh"
 
 %shared_ptr(pism::atmosphere::Delta_P)
 %rename(AtmosphereDeltaP) pism::atmosphere::Delta_P;

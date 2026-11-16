@@ -8,6 +8,7 @@ add_library (boundary OBJECT
   ./atmosphere/CosineYearlyCycle.cc
   ./atmosphere/GivenClimate.cc
   ./atmosphere/PIK.cc
+  ./atmosphere/CARRA2Bias.cc
   ./atmosphere/ElevationChange.cc
   ./atmosphere/Delta_T.cc
   ./atmosphere/Delta_P.cc

@@ -21,6 +21,51 @@ netcdf pism_config {
     pism_config:atmosphere.anomaly.periodic_doc = "If true, interpret forcing data as periodic in time";
     pism_config:atmosphere.anomaly.periodic_type = "flag";
 
+    pism_config:atmosphere.carra2_bias.background = 2.17;
+    pism_config:atmosphere.carra2_bias.background_doc = "Bias b_inf far above the lowest terrain, in b = b_inf + A exp(-z / H) + (c_0 + c_1 z) cos(2 pi t) + (s_0 + s_1 z) sin(2 pi t), with z the surface elevation and t the fraction of the calendar year";
+    pism_config:atmosphere.carra2_bias.background_type = "number";
+    pism_config:atmosphere.carra2_bias.background_units = "kelvin";
+
+    pism_config:atmosphere.carra2_bias.cos = -2.39;
+    pism_config:atmosphere.carra2_bias.cos_doc = "Coefficient c_0 of cos(2 pi t) at sea level";
+    pism_config:atmosphere.carra2_bias.cos_type = "number";
+    pism_config:atmosphere.carra2_bias.cos_units = "kelvin";
+
+    pism_config:atmosphere.carra2_bias.cos_gradient = 0.69;
+    pism_config:atmosphere.carra2_bias.cos_gradient_doc = "Elevation gradient c_1 of the coefficient of cos(2 pi t)";
+    pism_config:atmosphere.carra2_bias.cos_gradient_type = "number";
+    pism_config:atmosphere.carra2_bias.cos_gradient_units = "kelvin / km";
+
+    pism_config:atmosphere.carra2_bias.excess = 4.60;
+    pism_config:atmosphere.carra2_bias.excess_doc = "Bias A in excess of b_inf at sea level";
+    pism_config:atmosphere.carra2_bias.excess_type = "number";
+    pism_config:atmosphere.carra2_bias.excess_units = "kelvin";
+
+    pism_config:atmosphere.carra2_bias.scale_height = 1070.0;
+    pism_config:atmosphere.carra2_bias.scale_height_doc = "Elevation H over which the excess bias A falls by a factor of e";
+    pism_config:atmosphere.carra2_bias.scale_height_type = "number";
+    pism_config:atmosphere.carra2_bias.scale_height_units = "m";
+
+    pism_config:atmosphere.carra2_bias.sin = -0.61;
+    pism_config:atmosphere.carra2_bias.sin_doc = "Coefficient s_0 of sin(2 pi t) at sea level";
+    pism_config:atmosphere.carra2_bias.sin_type = "number";
+    pism_config:atmosphere.carra2_bias.sin_units = "kelvin";
+
+    pism_config:atmosphere.carra2_bias.sin_gradient = 0.12;
+    pism_config:atmosphere.carra2_bias.sin_gradient_doc = "Elevation gradient s_1 of the coefficient of sin(2 pi t)";
+    pism_config:atmosphere.carra2_bias.sin_gradient_type = "number";
+    pism_config:atmosphere.carra2_bias.sin_gradient_units = "kelvin / km";
+
+    pism_config:atmosphere.carra2_bias.z_max = 5125.0;
+    pism_config:atmosphere.carra2_bias.z_max_doc = "Above this surface elevation the bias is evaluated at this elevation: constant in elevation, still seasonal";
+    pism_config:atmosphere.carra2_bias.z_max_type = "number";
+    pism_config:atmosphere.carra2_bias.z_max_units = "m";
+
+    pism_config:atmosphere.carra2_bias.z_min = 125.0;
+    pism_config:atmosphere.carra2_bias.z_min_doc = "Below this surface elevation the bias is evaluated at this elevation: constant in elevation, still seasonal";
+    pism_config:atmosphere.carra2_bias.z_min_type = "number";
+    pism_config:atmosphere.carra2_bias.z_min_units = "m";
+
     pism_config:atmosphere.delta_P.file = "";
     pism_config:atmosphere.delta_P.file_doc = "Name of the file containing scalar precipitation offsets.";
     pism_config:atmosphere.delta_P.file_option = "atmosphere_delta_P_file";
